@@ -1,0 +1,114 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {jobEditTransition,jobEditProjection,preserveJobEditAuthority,optionalJobAmount} from '../supabase/functions/workshop-api/job_edit_rules.js';
+import {preserveQcAuthority,qcTransition} from '../supabase/functions/workshop-api/qc_delivery_rules.js';
+const clone=structuredClone;
+const initial={jobs:[{no:'JC1',make:'Toyota',model:'Camry',reg:'123',jobType:'Credit',amount:null,notes:''}],assign:[{id:'a',job:'JC1',emp:'e',completed:true}],sessions:[],consumables:{actuals:[{id:'material'}]}};
+const request={jobCard:'JC1',expectedEditRevision:0,patch:{amount:'12.345',notes:'Customer estimate'},reason:'Agreed initial amount'};
+for(const role of ['Manager','Supervisor','Receptionist']){
+ const actor={id:'u',role},r=jobEditTransition(initial,actor,request,1);assert.equal(r.ok,true);assert.equal(r.job.amount,12.345);assert.equal(r.job.editRevision,1);assert.deepEqual(r.data.assign,initial.assign);assert.deepEqual(r.data.consumables,initial.consumables);assert.deepEqual(initial.jobs[0].amount,null);
+ assert.equal(jobEditTransition(r.data,actor,request,2).code,'job_edit_conflict');
+ const stale=clone(initial);preserveJobEditAuthority(stale,r.data,actor);assert.equal(stale.jobs[0].amount,12.345);
+ const delivered=clone(initial);delivered.jobs[0].delivered=true;delivered.jobs[0].status='Delivered';
+ const d=jobEditTransition(delivered,actor,request,2);assert.equal(d.ok,role==='Manager');if(role!=='Manager')assert.equal(d.code,'job_edit_manager_required');
+ const forged=clone(delivered);forged.jobs[0].delivered=false;forged.jobs[0].model='Forged';forged.jobs[0].amount=1;
+ preserveJobEditAuthority(forged,delivered,actor);if(role!=='Manager'){assert.equal(forged.jobs[0].delivered,true);assert.equal(forged.jobs[0].model,'Camry');assert.equal(forged.jobs[0].amount,null);}
+ for(const amount of ['',null,0,'0','1000000','1.001'])assert.equal(jobEditTransition(initial,actor,{...request,patch:{amount}},1).ok,true);
+ for(const amount of [-1,'1e3','NaN',Infinity,1000001,'0.0001',{},true])assert.equal(jobEditTransition(initial,actor,{...request,patch:{amount}},1).code,'job_edit_invalid_amount');
+}
+for(const role of ['Employee','Purchaser','Denter'])assert.equal(jobEditTransition(initial,{id:'u',role},request,1).code,'job_edit_forbidden');
+// Directly created job cards have no linked Reception Checklist. Supervisor
+// identity edits must not be rejected as linked-identity changes.
+const direct=clone(initial);direct.jobs[0].directReceptionJob=true;
+for(const role of ['Supervisor','Receptionist']){
+ const changed=jobEditTransition(direct,{id:'u',role},{...request,patch:{vin:'JTEBU11F4GK233167',customer:'Updated Customer'}},1);
+ assert.equal(changed.ok,true,'direct job should be editable by '+role);
+ assert.equal(changed.job.vin,'JTEBU11F4GK233167');
+ assert.equal(changed.job.customer,'Updated Customer');
+}
+const linked=clone(initial);linked.jobs[0].receptionNo='RC1';
+assert.equal(jobEditTransition(linked,{id:'u',role:'Supervisor'},{...request,patch:{model:'Corolla'}},1).code,'job_edit_linked_identity');
+assert.equal(jobEditTransition(linked,{id:'u',role:'Receptionist'},request,1).ok,true);
+for(const type of ['Cash','Credit','Insurance']){
+ const invoiced=clone(initial);Object.assign(invoiced.jobs[0],{jobType:type,amount:20,finalInvoiceAmount:20,invoiceDate:'2026-10-11',financialAudit:[]});
+ assert.equal(jobEditTransition(invoiced,{id:'u',role:'Manager'},request,1).code,'job_edit_invoice_authoritative');
+ const stale=clone(invoiced);stale.jobs[0].amount=1;preserveJobEditAuthority(stale,invoiced,{id:'u',role:'Manager'});preserveQcAuthority(stale,invoiced,{id:'u',role:'Manager'});assert.equal(stale.jobs[0].amount,20);
+}
+assert.equal(optionalJobAmount('1.001').value,1.001);
+const dom=new JSDOM('<div id="modal"></div>',{url:'https://qa.invalid',runScripts:'outside-only'}),w=dom.window;
+let data=clone(initial),calls=[],messages=[];w.me={id:'u',role:'Receptionist'};w.zukaitAuth={getToken:()=> 'qa'};w.openModal=h=>w.document.getElementById('modal').innerHTML=h;w.closeModal=()=>{};w.alert=m=>messages.push(m);w.zukaitReceptionDashboard={showJobs:async()=>{}};
+w.fetch=async(_url,args)=>{const body=JSON.parse(args.body);calls.push(body);const r=body.operation==='GET'?{ok:true,job:jobEditProjection(data.jobs[0]),invoice_locked:data.jobs[0].finalInvoiceAmount!=null}:jobEditTransition(data,w.me,body,1);if(r.data)data=r.data;return {ok:r.ok,json:async()=>r};};
+w.eval(fs.readFileSync('app/src/main/assets/job_card_edit.js','utf8'));
+await w.zukaitJobEdit.open('JC1');assert.match(w.document.body.innerHTML,/Cash Amount/);w.document.getElementById('jce-amount').value='30.125';w.document.getElementById('jce-reason').value='Customer agreed';await w.zukaitJobEdit.save();assert.equal(data.jobs[0].amount,30.125);assert.equal(calls.at(-1).action,'job_card_edit');
+// Regression: a capitalized Job Type from stored data must not become a
+// spurious edit when Reception saves a VIN on a Cash Job Card.
+data.jobs[0].jobType='CASH';
+await w.zukaitJobEdit.open('JC1');
+w.document.getElementById('jce-vin').value='WP0ZZZ98ZFK181382';
+w.document.getElementById('jce-reason').value='Confirm the VIN';
+await w.zukaitJobEdit.save();
+assert.equal(data.jobs[0].vin,'WP0ZZZ98ZFK181382');
+assert.deepEqual(calls.at(-1).patch,{vin:'WP0ZZZ98ZFK181382'},'VIN edit must not include an unchanged Job Type');
+// A linked checklist also must never acquire a spurious Job Type edit.
+data.jobs[0].receptionNo='RC-QA-LINKED';
+await w.zukaitJobEdit.open('JC1');
+assert.equal(w.document.getElementById('jce-jobType').disabled,true);
+w.document.getElementById('jce-notes').value='Updated job notes';
+w.document.getElementById('jce-reason').value='Correct notes';
+await w.zukaitJobEdit.save();
+assert.equal(data.jobs[0].notes,'Updated job notes');
+assert.deepEqual(calls.at(-1).patch,{notes:'Updated job notes'});
+data.jobs[0].delivered=true;await w.zukaitJobEdit.open('JC1');assert.match(messages.at(-1),/Only Manager/);
+w.me.role='Manager';data.jobs[0].finalInvoiceAmount=30.125;await w.zukaitJobEdit.open('JC1');assert.equal(w.document.getElementById('jce-amount').readOnly,true);
+dom.window.close();console.log('Job Card edit: server role matrix, delivered/stale/forged writes, optional amounts, linked identity, invoice locks, preserved work, and Reception UI passed.');
+
+// The Manager page can edit linked identity, the creation date, allocated time,
+// and finalized amount together while preserving actual sessions and QC results.
+const fullData=clone(initial);Object.assign(fullData.jobs[0],{receptionNo:'RC-FULL',delivered:true,createdAt:1000,finalInvoiceAmount:20,amount:20,invoiceDate:'2026-10-11',qcWorkflow:{revision:3,painting:{result:'PASS'},history:[]}});fullData.assign[0].suggested=60;
+const fullRequest={...request,operation:'FULL_EDIT',expectedJob:clone(fullData.jobs[0]),expectedAssignments:[{id:'a',suggested:60}],patch:{model:'Corolla',createdAt:2000,amount:30.125},allocations:[{id:'a',minutes:90}]};
+const fullResult=jobEditTransition(fullData,{id:'m',role:'Manager'},fullRequest,100);
+assert.equal(fullResult.ok,true);assert.equal(fullResult.job.model,'Corolla');assert.equal(fullResult.job.createdAt,2000);assert.equal(fullResult.job.amount,30.125);assert.equal(fullResult.job.finalInvoiceAmount,30.125);assert.equal(fullResult.job.invoiceAmount,30.125);assert.equal(fullResult.job.invoiceDate,'2026-10-11');assert.equal(fullResult.job.financialAudit[0].reason,fullRequest.reason);assert.deepEqual(fullResult.job.qcWorkflow.painting,fullData.jobs[0].qcWorkflow.painting);assert.equal(fullResult.data.assign[0].suggested,90);assert.deepEqual(fullResult.data.sessions,fullData.sessions);assert.equal(fullData.assign[0].suggested,60);
+assert.equal(jobEditTransition(fullData,{id:'m',role:'Manager'},{...fullRequest,expectedJob:{...fullRequest.expectedJob,model:'Changed'}},100).code,'job_edit_conflict');
+assert.equal(jobEditTransition(fullData,{id:'m',role:'Manager'},{...fullRequest,allocations:[{id:'other',minutes:90}]},100).code,'job_edit_invalid_fields');
+assert.equal(jobEditTransition(fullData,{id:'m',role:'Manager'},{...fullRequest,expectedAssignments:[]},100).code,'job_edit_conflict');
+console.log('Manager full server edit: linked identity, creation date, final-invoice synchronization, allocation audit, work/QC preservation, stale snapshot and forged allocations passed.');
+
+// Full Edit accepts the whole job-card information set only for Manager.
+const detailPatch={promiseDate:'2026-10-25',email:'customer@example.com',customerAddress:'Barka, Oman',creditAccount:'ACCOUNT-25',jobIntakeOdometer:123456.5,jobIntakeOdometerUnit:'KM',invoiceDate:'2026-10-17',workDescription:'Repair front bumper\nReplace damaged lamp',notes:'Call before delivery'};
+const detailResult=jobEditTransition(fullData,{id:'m',role:'Manager'},{...fullRequest,patch:{...fullRequest.patch,...detailPatch}},100);
+assert.equal(detailResult.ok,true);
+for(const [key,value] of Object.entries(detailPatch))assert.deepEqual(detailResult.job[key],value,key);
+assert.deepEqual(detailResult.data.sessions,fullData.sessions);
+assert.deepEqual(detailResult.job.qcWorkflow.painting,fullData.jobs[0].qcWorkflow.painting);
+for(const patch of [{promiseDate:'2026-02-30'},{invoiceDate:'bad'},{email:'invalid'},{jobIntakeOdometer:-1},{jobIntakeOdometerUnit:'INVALID'},{no:'OTHER'},{status:'Delivered'}])assert.equal(jobEditTransition(fullData,{id:'m',role:'Manager'},{...fullRequest,patch},100).code,'job_edit_invalid_fields',JSON.stringify(patch));
+for(const role of ['Supervisor','Receptionist'])assert.equal(jobEditTransition(initial,{id:'u',role},{...request,patch:detailPatch},100).code,'job_edit_invalid_fields');
+const staleDetails=clone(fullData);preserveJobEditAuthority(staleDetails,detailResult.data,{id:'u',role:'Manager'});
+assert.equal(staleDetails.jobs[0].workDescription,detailPatch.workDescription);
+assert.equal(staleDetails.jobs[0].jobIntakeOdometer,123456.5);
+const legacyDescription=clone(fullData);legacyDescription.jobs[0].work_description='Old work';
+const changedDescription=jobEditTransition(legacyDescription,{id:'m',role:'Manager'},{...fullRequest,expectedJob:clone(legacyDescription.jobs[0]),patch:{workDescription:'Corrected work'}},100);
+assert.equal(changedDescription.job.work_description,'Corrected work');
+const deliveryEdit=jobEditTransition(fullData,{id:'m',role:'Manager'},{...fullRequest,patch:{deliveredAt:Date.parse('2026-10-17T09:00:00+04:00')}},100);
+assert.equal(deliveryEdit.ok,true);assert.equal(deliveryEdit.job.deliveryDate,'2026-10-17');
+
+// Manager entry points use the complete editor; its new fields reach real transition validation.
+const fullDom=new JSDOM('<div id="modal"></div>',{url:'https://qa.invalid',runScripts:'outside-only'}),mw=fullDom.window;
+let serverData=clone(initial),refreshes=0,editBody;
+Object.assign(serverData.jobs[0],{make:'Toyota',model:'Camry',vehicle:'Toyota Camry',createdAt:Date.parse('2026-10-01T10:00:00+04:00'),year:'2014'});serverData.assign[0].suggested=60;
+mw.state=clone(serverData);mw.me={id:'m',role:'Manager'};mw.users=[];mw.alert=m=>{throw Error(m)};
+mw.openModal=h=>mw.document.getElementById('modal').innerHTML=h;mw.closeModal=()=>{};mw.render=()=>{};
+mw.zukaitCloud={pull:async()=>{refreshes++},managerJobEdit:async body=>{const r=await mw.fetch('',{body:JSON.stringify(body)});const result=await r.json();if(result.ok)mw.state=clone(result.data);return result}};
+mw.fetch=async(_url,args)=>{editBody=JSON.parse(args.body);if(editBody.operation==='GET')return {ok:true,json:async()=>({ok:true,job:serverData.jobs[0]})};const result=jobEditTransition(serverData,mw.me,editBody,Date.now());assert.equal(result.ok,true,JSON.stringify(result));serverData=result.data;return {ok:true,json:async()=>result}};
+const vehicleAppHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=vehicleAppHtml.slice(vehicleAppHtml.indexOf('function formatVehicleName('),vehicleAppHtml.indexOf('const KEY='));
+mw.eval(formatter);
+mw.eval(fs.readFileSync('app/src/main/assets/manager_job_edit.js','utf8'));
+mw.eval(fs.readFileSync('app/src/main/assets/job_card_edit.js','utf8'));
+await mw.zukaitJobEdit.open('JC1');assert.equal(refreshes,1);assert.match(mw.document.body.innerHTML,/Full Edit/);assert.equal(mw.document.querySelector('.jce-form'),null);
+for(const [key,value] of Object.entries(detailPatch)){const input=mw.document.getElementById('mje-'+key);assert.ok(input,key);input.value=String(value)}
+mw.document.getElementById('mje-reason').value='Correct complete job details';
+await mw.zukaitSaveManagerFullEdit();assert.equal(editBody.action,'manager_job_full_edit');
+assert.equal(serverData.jobs[0].email,detailPatch.email);assert.equal(serverData.jobs[0].workDescription,detailPatch.workDescription);assert.equal(serverData.jobs[0].jobIntakeOdometer,123456.5);
+fullDom.window.close();
+console.log('Complete Manager form routes correctly and saves date, customer, odometer and work fields; invalid or non-Manager writes rejected and stale snapshot protections retained.');

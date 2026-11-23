@@ -1,0 +1,217 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {randomUUID} from 'node:crypto';
+const src=fs.readFileSync('app/src/main/assets/time_management_rules.js','utf8');
+assert.equal(src,fs.readFileSync('supabase/functions/workshop-api/time_management_rules.js','utf8'));
+const {timeManagementTransition:transition,allocationToken,employeeTimeToken,workedMinutes,assignmentHasStarted}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
+const at=Date.parse('2026-10-01T06:00:00Z'),manager={id:'MGR1',role:'Manager',name:'Manager'},clone=x=>JSON.parse(JSON.stringify(x));
+const fixture=()=>({users:[manager,{id:'EMP1',role:'Employee',name:'Babu'},{id:'EMP2',role:'Employee',name:'Akhil'}],jobs:[{no:'JC1',vehicle:'Toyota',reg:'12345',status:'Open'}],assign:[{id:'A1',job:'JC1',emp:'EMP1',suggested:240,assignedAt:at-86400000,completed:false}],sessions:[{id:'S1',assignmentId:'A1',emp:'EMP1',job:'JC1',start:at-3600000,end:at,paused:true}],requests:[{id:'R1'}],consumables:{issues:[{id:'C1'}]}});
+const command=(d,operation,extra={})=>({requestId:'tm-'+randomUUID(),operation,assignmentId:'A1',sessionId:'S1',reason:'Incorrect entry',expectedSource:allocationToken(d.assign[0]),expectedSessions:employeeTimeToken(d,'EMP1'),...extra});
+let d=fixture(),req=command(d,'CORRECT_SESSION',{start:at-1800000,end:at}),r=transition(d,manager,req,at);
+assert.equal(r.ok,true);assert.equal(r.data.sessions[0].start,at-1800000);assert.equal(d.sessions[0].start,at-3600000);assert.deepEqual(r.audit.before,d.sessions[0]);assert.equal(r.audit.after.start,at-1800000);assert.deepEqual(r.data.requests,d.requests);assert.deepEqual(r.data.consumables,d.consumables);
+assert.equal(transition(r.data,manager,req,at+1).duplicate,true);assert.equal(transition(r.data,manager,{...req,reason:'Changed'},at).code,'time_request_reused');
+for(const operation of ['CORRECT_SESSION','ADD_SESSION','CANCEL_SESSION','CANCEL_ASSIGNMENT','SET_ALLOCATION','REOPEN','REASSIGN']){
+ for(const role of ['Supervisor','Employee','Purchaser'])assert.equal(transition(d,{id:'X',role},command(d,operation),at).code,'time_permission_denied');
+ assert.equal(transition(d,manager,command(d,operation,{reason:'  '}),at).code,'time_reason_required');
+}
+r=transition(d,manager,command(d,'CANCEL_SESSION'),at);assert.equal(r.ok,true);assert.equal(r.data.sessions.length,1);assert.equal(r.data.sessions[0].cancelled,true);assert.equal(r.data.sessions[0].end,r.data.sessions[0].start);assert.equal(workedMinutes(r.data,r.data.assign[0],at),0);assert.equal(r.audit.before.end,at);
+r=transition(d,manager,command(d,'ADD_SESSION',{start:at-7200000,end:at-3600000}),at);assert.equal(r.ok,true);assert.equal(r.data.sessions.length,2);assert.equal(r.data.sessions[1].assignmentId,'A1');assert.equal(r.data.sessions[1].manual,true);
+assert.equal(transition(d,manager,command(d,'ADD_SESSION',{start:at-1800000,end:at}),at).code,'time_session_overlap');
+for(const extra of [{start:at,end:at},{start:0,end:at},{start:at,end:at+60000},{start:NaN,end:at}])assert.equal(transition(d,manager,command(d,'CORRECT_SESSION',extra),at).code,'invalid_session_time');
+const running=fixture();delete running.sessions[0].end;
+for(const operation of ['CANCEL_SESSION','CORRECT_SESSION'])assert.equal(transition(running,manager,command(running,operation),at).code,'time_session_inactive');
+for(const operation of ['CANCEL_ASSIGNMENT','SET_ALLOCATION','REASSIGN','REOPEN'])assert.equal(transition(running,manager,command(running,operation),at).code,'time_work_running');
+r=transition(d,manager,command(d,'CANCEL_ASSIGNMENT'),at);assert.equal(r.ok,true);assert.equal(r.data.assign.length,1);assert.equal(r.data.assign[0].cancelled,true);assert.deepEqual(r.data.sessions,d.sessions,'cancelling allotted work preserves actual work');assert.equal(r.data.cancelledAssignments[0].reason,'Incorrect entry');
+for(const type of ['repeat','ID001']){const f=fixture();f.sessions=[];if(type==='repeat')f.assign[0].rework=true;else{f.assign[0].job='ID001';f.jobs[0].no='ID001'}assert.equal(transition(f,manager,command(f,'CANCEL_ASSIGNMENT'),at).data.assign[0].cancelled,true);}
+r=transition(d,manager,command(d,'SET_ALLOCATION',{minutes:30}),at);assert.equal(r.ok,true);assert.equal(r.data.assign[0].suggested,30);assert.deepEqual(r.data.sessions,d.sessions);
+assert.equal(transition(d,manager,command(d,'SET_ALLOCATION',{minutes:-1}),at).code,'invalid_time_change');
+const completed=fixture();completed.assign[0].completed=true;completed.assign[0].completedAt=at;
+r=transition(completed,manager,command(completed,'REOPEN'),at);assert.equal(r.ok,true);assert.equal(r.data.assign[0].completed,false);assert.deepEqual(r.data.sessions,completed.sessions);assert.equal(completed.jobs[0].status,'Open');assert.equal(completed.assign[0].completed,true);
+assert.equal(transition(d,manager,command(d,'REASSIGN',{targetEmployeeId:'EMP2'}),at).code,'time_reassign_work_logged');
+const unused=fixture();unused.sessions=[];
+r=transition(unused,manager,command(unused,'REASSIGN',{targetEmployeeId:'EMP2'}),at);assert.equal(r.ok,true);assert.equal(r.data.assign[0].cancelled,true);assert.equal(r.data.assign[1].emp,'EMP2');assert.equal(r.data.assign[1].suggested,240);
+const stale=fixture();req=command(stale,'CANCEL_ASSIGNMENT');stale.sessions.push({id:'S2',assignmentId:'A1',job:'JC1',emp:'EMP1',start:at});assert.equal(transition(stale,manager,req,at).code,'time_sessions_changed');
+req=command(d,'CORRECT_SESSION',{start:at-1800000,end:at});const changed=fixture();changed.assign[0].suggested++;assert.equal(transition(changed,manager,req,at).code,'time_allocation_changed');
+// Exercise the actual server route and stale full-state preservation.
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8'),block=api.slice(api.indexOf('    if (action === "time_management") {'),api.indexOf('    if (action === "qc_delivery") {'));
+const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor,endpoint=new AsyncFunction('admin','timeManagementTransition','computeLiveStatus','reply','user','body','action',api.split('// FINAL_SESSION_STATUS_BEGIN')[1].split('// FINAL_SESSION_STATUS_END')[0]+block);
+let committed,casCalls=0,remote=fixture();const db={from(){return{select(){return this},eq(){return this},async single(){return{data:{revision:1,data:remote}}}}},async rpc(name,args){committed=args;casCalls++;return{data:{ok:true,revision:2}}}};
+let response=await endpoint(db,(...args)=>transition(...args.slice(0,3),at),()=>[],(body,status=200)=>({body,status}),manager,command(remote,'CANCEL_ASSIGNMENT'),'time_management');assert.equal(response.body.ok,true);assert.equal(committed.p_changed_by,'MGR1');assert.equal(committed.p_data.assign[0].cancelled,true);
+response=await endpoint(db,transition,()=>[],(body,status=200)=>({body,status}),{id:'SUP1',role:'Supervisor'},command(remote,'CANCEL_ASSIGNMENT'),'time_management');assert.equal(response.status,403);assert.equal(casCalls,1);
+const keep=api.slice(api.indexOf('function preserveManagerTimeAuthority('),api.indexOf('// A delayed legacy client'));
+const protect=new Function('cloneValue',keep.replace(/: any\b/g,'').replace(/:any\b/g,'').replace(/ as const/g,'')+';return preserveManagerTimeAuthority;')(clone);
+const corrected=transition(d,manager,command(d,'CANCEL_SESSION'),at).data,protectedData=protect(clone(d),corrected);assert.deepEqual(protectedData.sessions,corrected.sessions);assert.deepEqual(protectedData.additionalActions,corrected.additionalActions);assert.deepEqual(protectedData.corrections,corrected.corrections);
+const cancelled=transition(d,manager,command(d,'CANCEL_ASSIGNMENT'),at).data;assert.equal(protect(clone(d),cancelled).assign[0].cancelled,true);
+// The test server already supports this earlier correction request shape.
+const oldSession=d.sessions[0],legacyRequest={requestId:'tm-'+randomUUID(),operation:'CORRECT_SESSION',assignmentId:'A1',sessionId:'S1',reason:'Legacy correction',startAt:at-1800000,endAt:at,expectedSource:allocationToken(d.assign[0]),expectedSession:JSON.stringify([oldSession.id,oldSession.assignmentId,oldSession.job,oldSession.emp,oldSession.start,oldSession.end,!!oldSession.paused,!!oldSession.finished,!!oldSession.autoPausedAt,!!oldSession.autoStopped])};
+const legacy=transition(d,manager,legacyRequest,at);assert.equal(legacy.ok,true);assert.equal(legacy.data.sessions[0].start,at-1800000);assert.equal(transition(legacy.data,manager,legacyRequest,at).duplicate,true);assert.equal(transition(d,{id:'SUP1',role:'Supervisor'},legacyRequest,at).code,'time_correction_manager_only');assert.deepEqual(protect(clone(d),legacy.data).corrections,legacy.data.corrections);assert.deepEqual(protect(clone(d),legacy.data).sessions,legacy.data.sessions);
+// Real rendered handlers: dashboard -> Manager hub -> assignment -> review -> save.
+const ui=fs.readFileSync('app/src/main/assets/time_management.js','utf8'),dashboard=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');
+function harness(role='Manager'){
+ const elements=new Map();class Element{value='';hidden=false;disabled=false;textContent='';focus(){}get innerHTML(){return this.html||''}set innerHTML(v){this.html=v;const options=[...v.matchAll(/<option value="([^"]*)"/g)].map(m=>({value:m[1]}));if(options.length){this.options=options;this.value=options[0].value}for(const m of v.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)){const el=new Element();el.hidden=/\bhidden\b/.test(m[0]);el.value=m[0].match(/\bvalue="([^"]*)"/)?.[1]||'';elements.set(m[1],el)}}}
+ const ctx={state:fixture(),users:fixture().users,me:{...manager,role},allocationToken,workedMinutes,employeeTimeToken,assignmentHasStarted,crypto:{randomUUID},navigator:{onLine:true},Date,console,localStorage:{_data:new Map(),getItem(key){return this._data.get(key)||null},setItem(key,value){this._data.set(key,value)},removeItem(key){this._data.delete(key)}},document:{getElementById:id=>elements.get(id)||null,createElement:()=>new Element(),head:{appendChild(){}}},alert(msg){ctx.lastAlert=msg},openModal(html){elements.clear();ctx.html=html;new Element().innerHTML=html},closeModal(){elements.clear()}};ctx.window=ctx;
+ ctx.zukaitCloud={syncHealth:{ready:true},async syncNow(){ctx.syncCalls=(ctx.syncCalls||0)+1},async readLatest(){ctx.readCalls=(ctx.readCalls||0)+1;return{revision:10,data:clone(ctx.serverState||ctx.state)}},async timeManagement(command){ctx.calls=(ctx.calls||0)+1;const r=transition(ctx.state,ctx.me,command,Date.now());if(!r.ok)throw Object.assign(Error(r.code),{code:r.code});ctx.state=r.data;return r}};
+ vm.createContext(ctx);vm.runInContext(ui.replace(/^import[^\n]+\n/,''),ctx);return{ctx,get:id=>elements.get(id),click:async handler=>await vm.runInContext(handler,ctx)};
+}
+const launcher=dashboard.match(/data-manager-time-management="1" onclick="([^"]+)"/);assert.ok(launcher);assert.equal(dashboard.match(/data-manager-time-management="1"/g).length,1);
+let h=harness();await h.click(launcher[1]);assert.match(h.ctx.html,/Time Management/);assert.match(h.get('mtRows').innerHTML,/Babu/);
+h.get('mtSearch').value='12345';h.ctx.zukaitManagerTimeSearch();assert.match(h.get('mtRows').innerHTML,/JC1/);
+h.ctx.zukaitManagerTimeSelect('A1');assert.match(h.ctx.html,/Edit \/ Correct Time/);assert.doesNotMatch(h.ctx.html,/Cancel Allotted Work/,'started assignment cannot be cancelled from Time Management');h.ctx.zukaitManagerTimeAction('CORRECT_SESSION','S1');
+const inputTime=t=>new Date(t-new Date(t).getTimezoneOffset()*60000).toISOString().slice(0,16);h.get('mtStart').value=inputTime(at-1800000);h.get('mtEnd').value=inputTime(at);
+h.ctx.zukaitManagerTimeReview();assert.match(h.get('mtNotice').textContent,/reason/);h.get('mtReason').value='Wrong start';h.ctx.zukaitManagerTimeReview();assert.match(h.get('mtNotice').textContent,/Choose Pause/);h.get('mtWorkStatus').value='PAUSED';h.ctx.zukaitManagerTimeReview();assert.equal(h.ctx.calls,undefined);assert.equal(h.get('mtInputs').disabled,true);
+await Promise.all([h.ctx.zukaitManagerTimeConfirm(),h.ctx.zukaitManagerTimeConfirm()]);assert.equal(h.ctx.calls,1);assert.match(h.ctx.html,/Work History/);h.ctx.zukaitManagerTimeHistory(true);assert.match(h.ctx.html,/Wrong start/);assert.match(h.ctx.html,/Original \/ changed values/);
+for(const role of ['Supervisor','Employee','Purchaser']){h=harness(role);await h.click(launcher[1]);assert.equal(h.ctx.html,undefined);h.ctx.zukaitManagerTimeSelect('A1');assert.equal(h.ctx.html,undefined);}
+h=harness();h.ctx.navigator.onLine=false;await h.click(launcher[1]);assert.match(h.ctx.lastAlert,/Connection/);assert.equal(h.ctx.html,undefined);
+h=harness();h.ctx.state.sessions=[];await h.click(launcher[1]);h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('CANCEL_ASSIGNMENT');h.get('mtReason').value='Wrong allocation';h.ctx.zukaitManagerTimeReview();const save=h.ctx.zukaitCloud.timeManagement;let requestId;h.ctx.zukaitCloud.timeManagement=async req=>{requestId=req.requestId;await save(req);throw Error('TIMEOUT')};await h.ctx.zukaitManagerTimeConfirm();assert.match(h.get('mtNotice').textContent,/timed out/);h.ctx.zukaitCloud.timeManagement=async req=>{assert.equal(req.requestId,requestId);return save(req)};await h.ctx.zukaitManagerTimeConfirm();assert.equal(h.ctx.state.additionalActions.length,1);assert.equal(h.ctx.state.assign[0].cancelled,true);
+h=harness();h.ctx.state.sessions=[];await h.click(launcher[1]);h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('CANCEL_ASSIGNMENT');h.get('mtReason').value='Wrong allocation';h.ctx.zukaitManagerTimeReview();h.ctx.zukaitCloud.timeManagement=async()=>{h.ctx.closeModal();return{ok:true}};await h.ctx.zukaitManagerTimeConfirm();assert.equal(h.get('mtReview'),undefined);
+
+// Opening is a read, even when an unrelated financial save is permission-blocked.
+h=harness();h.ctx.serverState=fixture();h.ctx.state.assign=[];h.ctx.state.consumables={pending:'must be preserved'};
+h.ctx.zukaitCloud.syncHealth={ready:true,dirty:true,pendingConflict:true,lastError:'consumables_correction_forbidden'};
+const pendingBefore=JSON.stringify(h.ctx.state);await h.click(launcher[1]);
+assert.equal(h.ctx.readCalls,1);assert.equal(h.ctx.syncCalls,undefined);assert.equal(h.ctx.lastAlert,undefined);
+assert.equal(JSON.stringify(h.ctx.state),pendingBefore);assert.match(h.ctx.html,/Pending workshop changes are preserved/);assert.match(h.get('mtRows').innerHTML,/JC1/);
+h.ctx.zukaitManagerTimeSelect('A1');assert.match(h.ctx.html,/Work History/);h.ctx.zukaitManagerTimeAction('CORRECT_SESSION','S1');assert.match(h.ctx.lastAlert,/Resolve the pending save/);assert.equal(h.ctx.calls,undefined);
+h.ctx.zukaitManagerTimeHistory(true);assert.match(h.ctx.html,/Work History/);assert.equal(JSON.stringify(h.ctx.state),pendingBefore);
+await h.ctx.zukaitOpenTimeManagement();assert.equal(h.ctx.syncCalls,undefined);
+// A delayed read must not display one manager's records to a different login.
+h=harness();let finish;h.ctx.zukaitCloud.readLatest=()=>new Promise(r=>finish=r);const opening=h.ctx.zukaitOpenManagerTimeManagement();h.ctx.me={id:'MGR2',role:'Manager'};finish({revision:10,data:fixture()});await opening;assert.equal(h.ctx.html,undefined);
+h=harness();h.ctx.zukaitCloud.readLatest=async()=>{throw Error('NETWORK')};await h.ctx.zukaitOpenManagerTimeManagement();assert.equal(h.ctx.html,undefined);assert.match(h.ctx.lastAlert,/Connection/);
+
+console.log('Manager Time Management: permissions, correction, missing time, cancellation, reopen/reassign, audit, stale writes, retries and real click handlers passed.');
+
+for(const status of ['PAUSED','FINISHED']){
+ h=harness();h.ctx.state.sessions=[];
+ await h.ctx.zukaitOpenManagerTimeManagement();
+ h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('ADD_SESSION');
+ assert.match(h.ctx.html,/id="mtWorkStatus"/,'Add Missing Time must show Pause/Finish selection');
+ h.get('mtStart').value=inputTime(at-1800000);h.get('mtEnd').value=inputTime(at);h.get('mtReason').value='Missing work interval';
+ h.ctx.zukaitManagerTimeReview();assert.match(h.get('mtNotice').textContent,/Choose Pause/);
+ assert.equal(h.ctx.calls,undefined);
+ h.get('mtWorkStatus').value=status;h.ctx.zukaitManagerTimeReview();
+ assert.match(h.get('mtReview').innerHTML,/Work status/);
+ await h.ctx.zukaitManagerTimeConfirm();
+ assert.equal(h.ctx.state.sessions[0].paused,status==='PAUSED');
+ assert.equal(h.ctx.state.sessions[0].finished,status==='FINISHED');
+ assert.equal(h.ctx.state.assign[0].completed,status==='FINISHED');
+}
+console.log('Add Missing Time real form: required Pause/Finish selection and confirmed save passed.');
+
+h=harness();h.ctx.state.sessions=[];h.ctx.state.jobs[0].delivered=true;h.ctx.state.jobs[0].deliveredAt=at;h.ctx.state.jobs[0].status='Delivered';
+await h.ctx.zukaitOpenManagerTimeManagement();h.ctx.zukaitManagerTimeSelect('A1');h.ctx.zukaitManagerTimeAction('ADD_SESSION');
+assert.match(h.ctx.html,/job stays closed/);assert.match(h.ctx.html,/Finished — record historical time only/);assert.doesNotMatch(h.ctx.html,/value="PAUSED"/);
+h.get('mtStart').value=inputTime(at-1800000);h.get('mtEnd').value=inputTime(at);h.get('mtReason').value='Historical missing time on delivered job';h.get('mtWorkStatus').value='FINISHED';h.ctx.zukaitManagerTimeReview();await h.ctx.zukaitManagerTimeConfirm();
+assert.equal(h.ctx.state.jobs[0].delivered,true);assert.equal(h.ctx.state.jobs[0].status,'Delivered');assert.equal(h.ctx.state.assign[0].completed,true);
+console.log('Delivered job form: historical Finish only, server-confirmed save and delivery status preservation passed.');
+
+
+// V377 Job Card Time Inspection drilldown — Manager and Supervisor, read-only confirmed snapshot.
+for(const role of ['Manager','Supervisor']){
+ h=harness(role);
+ const selected=fixture();
+ selected.jobs[0].delivered=true;
+ selected.jobs[0].status='Delivered';
+ selected.assign.push({id:'R1',job:'JC1',emp:'EMP1',suggested:45,rework:true,completed:true});
+ selected.sessions.push({id:'RS1',assignmentId:'R1',job:'JC1',emp:'EMP1',start:at-3600000,end:at-1800000});
+ selected.assign.push({id:'A2',job:'JC1',emp:'EMP2',suggested:30,completed:true});
+ selected.sessions.push({id:'S2',assignmentId:'A2',job:'JC1',emp:'EMP2',start:at-3600000,end:at});
+ h.ctx.serverState=selected;
+ h.ctx.state.assign=[]; // stale device data must not become the inspection source
+ h.ctx.zukaitCloud.syncHealth={ready:true,dirty:true,pendingConflict:true,lastError:'unrelated unsaved correction'};
+ const localBefore=JSON.stringify(h.ctx.state);
+ await h.ctx.zukaitOpenJobTimeInspection();
+ assert.match(h.ctx.html,/Search JC Number \/ Registration Number/);
+ assert.equal(h.ctx.readCalls,1);
+ assert.equal(h.ctx.syncCalls,undefined);
+ assert.equal(JSON.stringify(h.ctx.state),localBefore);
+ h.get('tmInspectQuery').value='12345';
+ h.ctx.zukaitTimeInspectSearch();
+ assert.match(h.get('tmInspectResults').innerHTML,/JC JC1/,'Registration lookup finds completed and delivered JCs');
+ h.ctx.zukaitTimeInspectJob('JC1');
+ assert.match(h.ctx.html,/Assigned Employees/);
+ assert.match(h.ctx.html,/Babu/);
+ assert.match(h.ctx.html,/Akhil/);
+ assert.match(h.ctx.html,/Repeat Hours/);
+ h.ctx.zukaitTimeInspectEmployee('EMP1');
+ assert.match(h.ctx.html,/tm-inspection-employee/,'Employee detail gets the approved modern style; other Time Management views are unchanged');
+ assert.match(h.ctx.html,/tm-inspect-vehicle/,'Vehicle and registration have a clear identity card');
+ assert.equal((h.ctx.html.match(/class="tm-inspect-metric tm-inspect-metric--/g)||[]).length,5,'Exactly five time metrics, no duplicates');
+ for(const theme of ['assigned','actual','remaining','repeat'])assert.match(h.ctx.html,new RegExp('tm-inspect-metric--'+theme),'Accessible color-coded time cards');
+ assert.match(h.ctx.html,/tm-inspect-info/,'Read-only duty-time explanation remains visible');
+ assert.match(h.ctx.html,/tm-inspect-assignments/,'Assignment breakdown stays in the styled detail page');
+ assert.match(h.ctx.html,/onclick="zukaitTimeInspectJob\(this.dataset.jc\)"/,'Back to Assigned Employees remains functional');
+ assert.match(h.ctx.html,/onclick="closeModal\(\)"/,'Close action remains functional');
+ for(const item of ['Assigned Time','Actual Time','Remaining Time','Exceeded Time','Repeat Hours','Assignment Breakdown'])
+  assert.match(h.ctx.html,new RegExp(item));
+ assert.match(h.ctx.html,/4h 00m/,'Normal allocated 240 minutes');
+ assert.match(h.ctx.html,/1h 00m/,'Normal actual 60 minutes');
+ assert.match(h.ctx.html,/3h 00m/,'Remaining 180 minutes');
+ assert.match(h.ctx.html,/0h 30m/,'Repeat actual 30 minutes shown separately');
+ assert.match(h.ctx.html,/Normal Work/);
+ assert.match(h.ctx.html,/Repeat Work/);
+ h.ctx.zukaitTimeInspectEmployee('EMP2');
+ assert.match(h.ctx.html,/tm-inspect-metric--exceeded/,'Positive exceeded time uses coral warning styling');
+ assert.match(h.ctx.html,/1h 00m/,'Positive exceeded time remains a calculated figure');
+ assert.match(h.ctx.html,/0h 30m/,'Akhil allocation 30 minutes');
+ assert.match(h.ctx.html,/1h 00m/,'Akhil actual 60 minutes');
+ assert.equal(h.ctx.calls,undefined,'Inspection must never write time');
+ assert.equal(JSON.stringify(h.ctx.state),localBefore,'Inspection must not change local workshop data');
+ h.ctx.zukaitTimeInspectJob('JC1');
+ h.ctx.zukaitTimeInspectSearchPage();
+ assert.equal(h.get('tmInspectQuery').value,'12345','Return to search retains registration query');
+}
+h=harness('Employee');await h.ctx.zukaitOpenJobTimeInspection();
+assert.equal(h.ctx.html,undefined,'Employee cannot access Manager/Supervisor inspection');
+h=harness('Supervisor');h.ctx.navigator.onLine=false;await h.ctx.zukaitOpenJobTimeInspection();
+assert.equal(h.ctx.html,undefined);assert.match(h.ctx.lastAlert,/Connect and retry/);
+h=harness('Manager');let finishInspection;h.ctx.zukaitCloud.readLatest=()=>new Promise(resolve=>finishInspection=resolve);
+const openingInspection=h.ctx.zukaitOpenJobTimeInspection();
+h.ctx.me={id:'OTHER',role:'Manager'};
+finishInspection({revision:10,data:fixture()});await openingInspection;
+assert.equal(h.ctx.html,undefined,'Delayed snapshot must not show other account data');
+console.log('V377 Job Card Time Inspection drilldown: Manager/Supervisor, registration search, employee metrics, repeat separation, server snapshot, offline and role guards passed.');
+
+
+// ID001 missing-time Continue: no artificial job row, no end time, no JC modification.
+{
+ const started=Date.now()-60000;
+ const id001=fixture();
+ id001.assign.push({id:'ID-001',job:'ID001',emp:'EMP1',suggested:0,completed:false,idealCard:true,noSuggestedTime:true,countsAsNormalWorking:false});
+ id001.sessions[0].start=started-3600000;
+ id001.sessions[0].end=started-120000;
+ const req={requestId:'tm-'+randomUUID(),operation:'ADD_SESSION',assignmentId:'ID-001',sessionId:'',
+  start:started,end:null,workStatus:'CONTINUE',reason:'Owner confirmed ID001 start',
+  expectedSource:allocationToken(id001.assign[1]),expectedSessions:employeeTimeToken(id001,'EMP1')};
+ const result=transition(id001,manager,req,Date.now());
+ assert.equal(result.ok,true,'Manager can start open-ended ID001 without a Job Card master row');
+ assert.equal(result.data.sessions[1].job,'ID001');
+ assert.equal(result.data.sessions[1].end,null);
+ assert.equal(result.data.sessions[1].paused,false);
+ assert.equal(result.data.sessions[1].finished,false);
+ assert.deepEqual(result.data.jobs,id001.jobs,'normal Job Cards remain untouched');
+ assert.deepEqual(result.data.sessions[0],id001.sessions[0],'paused normal JC remains intact');
+ assert.equal(result.audit.command.workStatus,'CONTINUE');
+ assert.equal(transition(result.data,manager,req,Date.now()).duplicate,true,'retry is idempotent');
+ assert.equal(transition(id001,{id:'SUP1',role:'Supervisor'},req,Date.now()).code,'time_permission_denied');
+ const collision=clone(id001);collision.sessions.push({id:'OTHER',emp:'EMP1',job:'JC1',start:started-1000,end:null});
+ const collidingReq={...req,expectedSessions:employeeTimeToken(collision,'EMP1')};
+ assert.equal(transition(collision,manager,collidingReq,Date.now()).code,'time_session_overlap');
+ h=harness();h.ctx.state=id001;
+ await h.ctx.zukaitOpenManagerTimeManagement();
+ h.ctx.zukaitManagerTimeSelect('ID-001');
+ h.ctx.zukaitManagerTimeAction('ADD_SESSION');
+ assert.match(h.ctx.html,/value="CONTINUE"/,'ID001 offers Continue Working');
+ h.get('mtWorkStatus').value='CONTINUE';
+ h.ctx.zukaitManagerTimeStatusChanged();
+ assert.equal(h.get('mtEnd').disabled,true,'end date disabled for running ID001');
+ assert.equal(h.get('mtEndLabel').hidden,true,'end date hidden for running ID001');
+ h.get('mtStart').value=inputTime(started);
+ h.get('mtReason').value='Owner confirmed ID001 start';
+ h.ctx.zukaitManagerTimeReview();
+ assert.match(h.get('mtReview').innerHTML,/Continue Working/);
+ await h.ctx.zukaitManagerTimeConfirm();
+ assert.equal(h.ctx.state.sessions.at(-1).end,null);
+ assert.equal(h.ctx.state.sessions.at(-1).job,'ID001');
+}
+console.log('ID001 Manager Continue: UI, open-ended save, audit, permissions, overlap and JC preservation passed.');

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {createMechanicalInspectionSessionVerifier} from '../supabase/functions/workshop-api/extensions/mechanical_inspection_session.js';
+const expectedActor={id:'SUP003',role:'Supervisor',department:'Mechanical'};
+const sessionUser=async token=>token==='valid'?{...expectedActor}:null;
+const verify=createMechanicalInspectionSessionVerifier({sessionUser,token:'valid',expectedActor});
+assert.deepEqual(await verify(),{...expectedActor,active:true});
+assert.equal(await createMechanicalInspectionSessionVerifier({sessionUser,token:'revoked',expectedActor})(),null);
+assert.equal(await createMechanicalInspectionSessionVerifier({sessionUser:async()=>({...expectedActor,department:'Body'}),token:'valid',expectedActor})(),null);
+assert.equal(await createMechanicalInspectionSessionVerifier({sessionUser:async()=>({...expectedActor,role:'Employee'}),token:'valid',expectedActor})(),null);
+assert.equal(await createMechanicalInspectionSessionVerifier({sessionUser:async()=>({...expectedActor,id:'SUP001'}),token:'valid',expectedActor})(),null);
+assert.equal(await createMechanicalInspectionSessionVerifier({sessionUser,token:'valid'})(),null);
+const manager={id:'MGR001',role:'Manager',department:'Management'};
+assert.equal((await createMechanicalInspectionSessionVerifier({sessionUser:async()=>manager,token:'valid',expectedActor:manager})()).active,true);
+console.log('PASS inactive Mechanical inspection session bridge');

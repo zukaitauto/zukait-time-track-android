@@ -1,0 +1,49 @@
+{
+  "project": "pjknotnjkufadqavcmii",
+  "installedAt": "2026-11-23T13:06:11Z",
+  "migration": {
+    "version": "20261123130611",
+    "name": "consumables_stock_compact_installation",
+    "sqlSha256": "d62285a8a94e1b25401442c93ad8395d88dc9f5368c9108b5f0a2e6f2da87cbc"
+  },
+  "backend": {
+    "name": "workshop-api",
+    "previousVersion": 146,
+    "installedVersion": 147,
+    "changed": [
+      "index.ts"
+    ],
+    "added": [
+      "extensions/consumables_stock_api.js"
+    ],
+    "unchangedFilesVerified": 50,
+    "bundleSha256": "84b260da9f9d85e1fb692e1a93a7af66c609ea8e82bbaf2f9f0f4f231254e737"
+  },
+  "activation": {
+    "ownerExplicitlyApproved": true,
+    "stockEnabled": true,
+    "writesEnabled": true,
+    "masterLinkEnabled": true,
+    "mechanicalIssuingEnabled": false,
+    "configurationReadbackVerified": true
+  },
+  "verification": {
+    "installationReady": true,
+    "sevenTablesUseRls": true,
+    "directClientAccessDenied": true,
+    "serviceRoleSequenceAccess": true,
+    "stockItemsAtInstallation": 0,
+    "stockValueAtInstallation": 0,
+    "stockMovementsAtInstallation": 0,
+    "unauthenticatedStockHttpStatus": 401,
+    "unauthenticatedWorkshopHttpStatus": 401,
+    "healthAdvisories": [],
+    "isolatedStockSuite": "PASSED",
+    "authenticatedManagerUi": "Live Stock menu opens, confirmed by owner"
+  },
+  "backup": {
+    "skippedByOwner": true,
+    "freshBackupPerformed": false,
+    "restoreVerified": false
+  }
+}

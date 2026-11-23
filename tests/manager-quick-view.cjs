@@ -1,0 +1,27 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('app/src/main/assets/workshop_overview.js','utf8');
+const listeners=[];let modal='',qcOpened=0,idleOpened=0;
+const users=[{id:'free',role:'Employee',name:'Free <Employee>'},{id:'waiting',role:'Employee'},{id:'leave',role:'Employee'},{id:'assigned',role:'Employee'},{id:'disabled',role:'Employee',active:false},{id:'manager',role:'Manager'}];
+const state={jobs:[{no:'OLD',createdAt:1},{no:'NEW'},{no:'DONE',completed:true},{no:'DEL',delivered:true},{no:'ARCH',archived:true},{no:'ID001'},{no:'PAUSED'}],assign:[{job:'OLD',emp:'assigned'}],leaves:[{emp:'leave',date:'2026-10-05'},{emp:'leave',date:'2026-10-05'},{emp:'free',date:'2026-10-05',cancelled:true}],consumables:{issues:[{id:1,createdAt:'2026-10-04T20:00:00Z',jobCard:'OLD',mainPainterId:'free',lines:[{materialId:'tape',quantity:2}]},{id:2,createdAt:'2026-10-04T19:59:59Z'},{id:3,createdAt:'2026-10-04T21:00:00Z',voided:true}],materials:[{id:'tape',name:'Tape <red>',unit:'roll'}]},paintPurchasing:{orders:[{id:1,createdAt:'2026-10-05T19:59:59Z',poNumber:'PO1',vendor:'Supplier',lines:[]},{id:2,createdAt:'2026-10-05T20:00:00Z'}]}};
+const statuses=users.map(u=>({emp:u.id,status:u.id==='waiting'?'ID001':'Available'})).concat([{emp:'worker1',status:'Working',job:'OLD'},{emp:'worker2',status:'Overtime',job:'OLD'},{emp:'worker3',status:'Working',job:'DONE'},{emp:'worker4',status:'Working',job:'DEL'},{emp:'worker5',status:'Working',job:'ARCH'},{emp:'worker6',status:'ID001',job:'ID001'},{emp:'worker7',status:'Paused',job:'PAUSED'}]);
+let fresh=true;
+const window={currentStaffStatuses:()=>statuses,zukaitLiveStatusAuthority:{fresh:()=>fresh},zukaitQCPendingJobs:()=>[{no:'QC1'}],zukaitOpenQCQueue(){qcOpened++},v273RunningAttentionCount:()=>2,openModal(html){modal=html},zukaitV2:{sparePartsMain:{managerDashboardSummary:()=>({waiting:3,pending:7,deliveredPending:1})}}};
+const document={addEventListener(type,fn){listeners.push({type,fn})},createElement(){return{}},head:{appendChild(){}},body:{},getElementById(){return null}};
+window.v247CurrentIdealRows=()=>[{u:users[0],minutes:15}];window.v247OpenIdealTime=()=>{idleOpened++};
+vm.runInNewContext(source,{window,document,state,users,me:{role:'Manager'},navigator:{onLine:true},MutationObserver:class{observe(){}},setTimeout(){},setInterval(){},Date,Intl});
+const api=window.zukaitWorkshopOverview,q=api.quickData(state,users,statuses,Date.parse('2026-10-05T10:00:00Z'));
+assert.deepEqual(Array.from(q.running,j=>j.no),['OLD'],'count unique running jobs from earlier days, excluding paused, ID001 and closed jobs');
+assert.equal(q.idle,null,'pure data selector must not create a competing idle calculation');
+assert.equal(api.quickViewData().idle.length,1,'idle count uses the existing V247 authority');
+assert.equal(q.leave.length,1,'leave counts employees, not duplicate records');
+assert.deepEqual(Array.from(q.consumables,x=>x.id),[1],'Oman day starts at 20:00 UTC; voided issues excluded');
+assert.deepEqual(Array.from(q.paint,x=>x.id),[1],'next Oman day excluded');
+const unavailable=api.quickData(state,users,null);assert.equal(unavailable.running,null);assert.equal(unavailable.idle,null);
+const html=api.summaryHtml();assert.equal((html.match(/class="wo-quick-card"/g)||[]).length,10);
+assert.match(html,/data-workshop-action="waiting"/);assert.match(html,/data-workshop-action="parts-pending"/);assert.match(html,/Delivered · pending parts/);
+fresh=false;assert.equal(api.quickViewData().running,null);assert.match(api.summaryHtml(),/Waiting for live status/);fresh=true;
+function click(action){for(const l of listeners.filter(l=>l.type==='click'))l.fn({target:{closest(selector){return selector==='[data-workshop-action]'?{dataset:{workshopAction:action}}:null}},preventDefault(){},stopPropagation(){}})}
+click('quick-idle');assert.equal(idleOpened,1,'idle details use the existing V247 authority');
+click('quick-running');assert.match(modal,/JC OLD/);assert.doesNotMatch(modal,/JC DONE|JC DEL|JC PAUSED/);
+click('quick-qc');assert.equal(qcOpened,1,'QC card opens existing authoritative QC queue');
+console.log('Manager quick view: 10 cards, click routes, unique active jobs, existing idle authority, unavailable status and Oman day boundaries passed.');

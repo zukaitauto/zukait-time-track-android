@@ -1,0 +1,388 @@
+import {qcStatus,invoiceComplete,invoiceDateValid} from './qc_delivery_rules.js?v=377-reopen-1';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jobs=()=>state.jobs||[],rawFind=no=>jobs().find(j=>String(j.no)===String(no)),find=no=>{const raw=rawFind(no);if(!raw)return null;const live=window.zukaitJobCardMaster?.display?.(no,raw);return live?{...raw,...live}:raw};
+const allowed=()=>['Supervisor','Manager'].includes(me?.role);
+function vehicleLabel(j){
+ const live=window.zukaitJobCardMaster?.display?.(j?.no,j)||j||{};
+ const explicit=[live.make,live.model].filter(Boolean).join(' ').trim();
+ if(explicit)return explicit;
+ const raw=String(live.vehicle||j?.vehicle||'').trim();
+ try{
+   const n=window.zukaitNormalizeVehicle?.(live.make||'',live.model||'',raw)||{};
+   const normalized=[n.make,n.model].filter(Boolean).join(' ').trim();
+   return normalized||n.vehicle||raw||'Vehicle';
+ }catch(_){return raw||'Vehicle'}
+}
+const messages={mechanical_delivery_review_required:'This Mechanical job needs its delivery review. Keep any saved action and ask the Manager before retrying.',qc_permission_denied:'Your login is not authorized for this QC stage.',work_not_finished:'Finish all assigned work, including repeat work, before QC.',qc_conflict:'Another device updated this vehicle. Refresh and try again.',both_qc_required:'Both Painting QC and Final QC must pass before delivery.',painting_qc_required:'Vinayan must pass Painting QC first.',already_delivered:'This vehicle is already delivered.',invoice_date_required:'Enter a valid Invoice Date.',invoice_job_type_required:'Ask the Manager to set Cash, Credit or Insurance for this Job Card.',final_invoice_already_entered:'This invoice was already saved. Refresh the list.',manager_required:'Only a Manager can change an existing final invoice amount.',final_invoice_amount_required:'Enter a valid Invoice Amount in OMR.',cash_amount_required:'Enter a valid Cash Amount in OMR.',cash_job_required:'This action is only available for Cash Job Cards.',delivery_required:'The vehicle must be delivered before final invoice correction.',financial_correction_reason_required:'Enter the mandatory correction reason.',delivery_date_required:'Enter a valid delivery date.',delivery_date_reason_required:'Enter the mandatory delivery date correction reason.',reopen_reason_required:'Enter a reason (at least 5 characters) for returning the delivered vehicle to the workshop.',mechanical_reopen_requires_separate_workflow:'Mechanical deliveries require the Mechanical return workflow.',qc_failure_reason_required:'Enter the QC failure reason.'};
+let busy=false,view=null,lastNotice='',invoiceView=null;
+function shell(title,body){openModal('<section class="qc-page"><div class="section-title"><h2>'+esc(title)+'</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+body+'</section>')}
+function action(label,fn,no,disabled=false){const cls=label==='PASS'?'qc-btn-pass':label==='FAIL'?'qc-btn-fail':label==='Painting QC'?'qc-btn-paint':label==='Final QC'?'qc-btn-final':label==='Mark Delivered'||label==='Confirm Delivered'?'qc-btn-deliver':label==='Issue Repeat Work'?'qc-btn-repeat':'qc-btn-detail';return '<button type="button" class="'+cls+'" data-jc="'+esc(no)+'" onclick="'+fn+'(this.dataset.jc)"'+(disabled?' disabled':'')+'>'+esc(label)+'</button>'}
+function record(label,event){const cls=!event?' qc-record-pending':event.result==='PASS'?' qc-record-pass':event.result==='FAIL'?' qc-record-fail':'';return '<div class="qc-record'+cls+'"><b>'+esc(label)+'</b><span>'+esc(event?event.result+' · '+event.name+' · '+new Date(event.at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Pending')+'</span>'+(event?.reason?'<small>'+esc(event.reason)+'</small>':'')+'</div>'}
+const materialReader=()=>['Manager','Supervisor','Receptionist'].includes(me?.role);
+const sameJob=(a,b)=>String(a||'').trim().toUpperCase()===String(b||'').trim().toUpperCase();
+function deliveredMaterialRecords(no){
+ const c=state.consumables||{};
+ return {issues:(c.issues||[]).filter(r=>r&&!r.voided&&sameJob(r.jobCard,no)),actuals:(c.actuals||[]).filter(r=>r&&!r.voided&&sameJob(r.jobCard,no)),paint:(state.paintPurchasing?.orders||[]).filter(r=>r&&!r.voided&&sameJob(r.jobCard,no))};
+}
+let materialBack=null;
+window.zukaitDeliveredMaterialsSummary=function(no,source='delivery'){
+ if(!materialReader()||(source!=='job-view'&&!find(no)?.delivered))return '';
+ const r=deliveredMaterialRecords(no),actual=r.actuals.filter(x=>x.locked),consText=actual.length?'Actual entered':r.actuals.length?'Actual draft — not finalized':r.issues.length?'Issued — actual not entered':'No consumables recorded',paintText=!r.paint.length?'No paint record':r.paint.some(o=>o.nilPaintPurchase)?'NIL record available':r.paint.some(o=>!o.receivedAt)?'Paint receipt pending':'Paint received';
+ const card=(kind,title,text,count,color)=>'<button type="button" data-jc="'+esc(no)+'" data-kind="'+kind+'" data-from="'+esc(source)+'" onclick="zukaitOpenDeliveredMaterials(this.dataset.jc,this.dataset.kind,this.dataset.from)" style="text-align:left;min-height:90px;padding:14px;border:1px solid '+color+';border-left:4px solid '+color+';border-radius:12px;background:#f8fbff;color:#16334b"><b>'+title+' ›</b><strong style="display:block;margin:6px 0">'+count+' record'+(count===1?'':'s')+'</strong><small>'+esc(text)+'</small></button>';
+ return '<section class="qc-delivered-materials"><h3>Materials Entry Check</h3><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">'+card('consumables','Consumables',consText,r.issues.length+r.actuals.length,'#0d9488')+card('paint','Paint',paintText,r.paint.length,'#8b5cf6')+'</div><p style="font-size:12px">Open each list to check that all used materials were entered.</p></section>';
+};
+window.zukaitReturnDeliveredMaterials=function(){const back=materialBack;if(!back)return;if(back.source==='job-view')return window.zukaitJobEdit?.view?.(back.no);return window.zukaitOpenDeliveredRecord(back.no)};
+window.zukaitOpenDeliveredMaterials=async function(no,kind,source='delivery'){
+ if(!materialReader()||!['consumables','paint'].includes(kind))return;
+ if(navigator.onLine&&typeof window.zukaitCloud?.pull==='function'){try{const synced=await window.zukaitCloud.pull(true);if(synced===false)return alert('Server refresh failed. Retry before checking missing materials.');}catch(_){return alert('Server refresh failed. Retry before checking missing materials.');}}
+ if(!materialReader())return;const job=find(no);if(!job?.delivered)return alert('Delivered Job Card not found.');
+ materialBack={no,source};const records=deliveredMaterialRecords(no),money=v=>'OMR '+(Number(v)||0).toFixed(3),manager=me?.role==='Manager';
+ const date=v=>{if(!v)return 'Date not recorded';const d=new Date(/^\d+$/.test(String(v))?Number(v):v);return Number.isFinite(d.getTime())?d.toLocaleDateString('en-GB',{timeZone:'Asia/Muscat'}):'Date not recorded'};
+ const card=(title,status,body)=>'<article style="margin:10px 0;padding:14px;border:1px solid #d7e5ee;border-radius:12px;background:#fff"><h3 style="margin:0 0 6px">'+esc(title)+'</h3><b>'+esc(status)+'</b>'+body+'</article>';
+ let body='';
+ if(kind==='consumables'){
+  const c=state.consumables||{},material=id=>(c.materials||[]).find(m=>String(m.id)===String(id))||{},brand=id=>(c.brands||[]).find(b=>String(b.id)===String(id))?.name||'';
+  const lines=(r,actual)=>(r.lines||[]).map(l=>{const m=material(l.materialId);return '<li><b>'+esc(m.name||l.name||l.materialId||'Material')+'</b> · '+esc(brand(l.brandId))+' · '+esc(actual?(l.actualQuantity??l.quantity??0):(l.quantity??0))+' '+esc(l.unit||m.unit||'')+(manager&&actual?' · '+money(l.lineCost):'')+'</li>'}).join('')||'<li>No material lines entered.</li>';
+  if(!records.actuals.some(r=>r.locked))body+='<p role="status" style="padding:12px;background:#fff1f2;color:#9f1239;border-radius:10px"><b>No finalized actual consumables.</b> Check whether the used materials still need to be entered.</p>';
+  body+=records.actuals.map(r=>card('Actual Materials · '+date(r.actualAt||r.createdAt),r.locked?'Finalized':'Draft — not finalized','<ul>'+lines(r,true)+'</ul>'+(manager&&r.locked?'<b>Total: '+money(r.totalCost)+'</b>':''))).join('');
+  body+=records.issues.map(r=>card((String(r.type||'').toLowerCase().includes('additional')?'Additional Materials':'Suggested / Issued Materials')+' · '+date(r.createdAt),r.locked?'Issued':'Draft — not finalized','<ul>'+lines(r,false)+'</ul>')).join('');
+  if(!records.issues.length&&!records.actuals.length)body+='<p>No consumables records for this job card.</p>';
+ }else{
+  if(!records.paint.length)body='<p role="status" style="padding:12px;background:#fff1f2;color:#9f1239;border-radius:10px"><b>No paint records.</b> Check whether paint was used but not entered. If none was needed, record a NIL paint purchase in the Paint module.</p>';
+  body+=records.paint.map(o=>card((o.poNumber||'Paint PO')+' · '+date(o.createdAt),o.nilPaintPurchase?'NIL — No purchase required':o.receivedAt?'Received':'Ordered — receipt not entered',(o.nilPaintPurchase?'<p>'+esc(o.nilDescription||'No purchase required')+'</p>':'<ul>'+(o.lines||[]).map(l=>'<li><b>'+esc(l.paintType||'Paint')+'</b> · '+esc(l.quantity??0)+' L'+(manager&&o.receivedAt?' · '+money(l.lineTotal??Number(l.quantity||0)*Number(l.pricePerLitre||0)):'')+'</li>').join('')+'</ul>')+((o.returns||[]).some(r=>r&&!r.voided)?'<h4>Returns</h4><ul>'+o.returns.filter(r=>r&&!r.voided).map(r=>'<li>'+esc(r.paintType||'Paint')+' · '+esc(r.quantity??0)+' L · '+esc(r.reason||'')+'</li>').join('')+'</ul>':''))).join('');
+ }
+ shell((kind==='paint'?'Paint':'Consumables')+' · JC '+no,'<button type="button" class="secondary" onclick="zukaitReturnDeliveredMaterials()">← Back to vehicle details</button><p>'+esc(formatVehicleName(job.vehicle)||'')+' · '+esc(job.reg||'')+'</p>'+body);
+};
+// A server snapshot for overview display, never command authorization.
+const projectionPilot=()=>window.ZUKAIT_MECHANICAL_ENABLED===true&&allowed();
+const projectionSession=()=>({id:me?.id,role:me?.role,key:window.zukaitAuth?.getToken?.()||''});
+let projectionController=null,projectionModule=null,projectionInitialOwner='',projectionError='',projectionLoadingOwner='',projectionLastPullKey='';
+const projectionCurrent=()=>projectionPilot()?projectionController?.current()||null:null;
+const projectionLastConfirmed=()=>projectionPilot()?projectionController?.lastConfirmed?.()||null:null;
+const projectedRow=no=>projectionCurrent()?.rows.find(r=>sameJob(r.jobCard,no));
+async function ensureProjection(){
+ if(!projectionPilot())return null;
+ if(!projectionModule)projectionModule=import('./mechanical_qc_projection.js').then(module=>{projectionController=module.createMechanicalQcProjection({enabled:projectionPilot,getSession:projectionSession,getRevision:()=>window.zukaitCloud?.syncHealth?.revision,read:()=>window.zukaitCloud.readMechanicalQcOverview()});return projectionController});
+ return projectionModule;
+}
+async function refreshProjection(){
+ if(!projectionPilot())return null;
+ const owner=JSON.stringify(projectionSession());projectionInitialOwner=owner;projectionLoadingOwner=owner;projectionError='';
+ try{
+  const controller=await ensureProjection(),result=await controller.refresh();
+  if(owner!==JSON.stringify(projectionSession()))return null;
+  if(!result)projectionError='QC status could not be confirmed after synchronization.';
+  return result;
+ }catch(e){if(owner===JSON.stringify(projectionSession()))projectionError=String(e?.message||'QC synchronization failed.');return null}
+ finally{
+  if(owner===JSON.stringify(projectionSession())){
+   projectionLoadingOwner='';apply();window.zukaitWorkshopOverview?.refreshShared?.();
+  }
+ }
+}
+function projectionSyncReady(){
+ const h=window.zukaitCloud?.syncHealth;
+ return !!(h?.ready&&!h.dirty&&!h.pendingConflict&&!h.lastError);
+}
+function initialProjection(){
+ if(!projectionPilot()||document.visibilityState==='hidden'||typeof window.zukaitCloud?.readMechanicalQcOverview!=='function'||!projectionSyncReady())return;
+ const owner=JSON.stringify(projectionSession());if(owner===projectionInitialOwner)return;
+ projectionInitialOwner=owner;void refreshProjection();
+}
+// Retry only when a completed cloud pull supplies a new revision (or the first
+// healthy pull follows a failed initial attempt). Ordinary renders never read.
+function projectionAfterCloudPull(){
+ if(!projectionPilot()||document.visibilityState==='hidden'||typeof window.zukaitCloud?.readMechanicalQcOverview!=='function')return;
+ if(!projectionSyncReady()){projectionError='Workshop synchronization is incomplete.';apply();return}
+ if(projectionCurrent()&&!projectionError)return;
+ const owner=JSON.stringify(projectionSession());
+ if(projectionLoadingOwner===owner)return;
+ const key=owner+'|'+String(window.zukaitCloud.syncHealth.revision);
+ if(key===projectionLastPullKey)return;
+ projectionLastPullKey=key;void refreshProjection();
+}
+function overviewCard(r,mode){
+ const label=r.reviewRequired?'QC record needs Manager review':r.stage==='WORK_PENDING'?'Work pending':r.deliveryReady?'Ready to deliver':r.stage==='MECHANICAL_QC'?'Mechanical QC pending':r.stage==='FINAL_QC'?'Final QC pending':'Painting QC pending';
+ const checks=(r.paintingRequired?'<p>Painting QC · '+(r.painting?'Passed':'Pending')+'</p>':'')+(r.finalRequired?'<p>Final QC · '+(r.final?'Passed':'Pending')+'</p>':'')+(r.mechanicalRequired?'<p>Mechanical QC · Jibin · '+(r.mechanicalPassed?'Passed':'Pending')+'</p>':'');
+ const health=window.zukaitCloud?.syncHealth,localCurrent=health?.ready&&!health.dirty&&health.revision===projectionCurrent()?.workshopRevision;
+ let buttons='';
+ if(r.mechanical&&(r.canMechanical||r.reviewRequired))buttons+=action(r.canMechanical?'Mechanical QC':'View Mechanical checklist','zukaitOverviewMechanicalQC',r.jobCard);
+ if((r.canPaint||r.canFinal||(!r.mechanical&&mode==='ready'))&&!localCurrent)buttons+=action('Sync workshop records','zukaitOverviewSync',r.jobCard);
+ else{if(r.canPaint)buttons+=action('Painting QC','zukaitOpenPaintingQC',r.jobCard);if(r.canFinal)buttons+=action('Final QC','zukaitOpenFinalQC',r.jobCard)}
+ if(mode==='ready'&&me?.role==='Supervisor'&&(r.mechanical||localCurrent))buttons+=action(r.mechanical?'Review vehicle delivery':'Mark Delivered','zukaitOverviewDeliver',r.jobCard);
+ return '<article class="qc-row qc-overview-row"><b>JC '+esc(r.jobCard)+' · '+esc(formatVehicleName(r.vehicle)||'Vehicle')+'</b><span>'+esc(r.registration||'—')+'</span><b>'+esc(label)+'</b>'+checks+(r.reviewRequired?'<p>Required approval policy or records must be reviewed before delivery.</p>':'')+'<div class="qc-actions">'+buttons+'</div></article>';
+}
+function renderProjectedPage(){
+ const host=document.getElementById('qcRows');if(!host)return;const snapshot=projectionCurrent();
+ if(!snapshot){host.innerHTML='<p role="status">'+(projectionError==='mechanical_overview_limit'?'This QC overview exceeds the safe limit. Ask the Manager to review the active records.':'QC status has not been confirmed. Refresh the server snapshot.')+'</p><button type="button" onclick="zukaitOverviewRefresh()">Refresh QC status</button>';return}
+ const q=(document.getElementById('qcSearch')?.value||'').toLowerCase(),list=snapshot.rows.filter(r=>view==='ready'?r.deliveryReady:r.qcVisible).filter(r=>[r.jobCard,r.vehicle,r.registration].some(v=>String(v).toLowerCase().includes(q))).sort((a,b)=>a.readyAt-b.readyAt||String(a.jobCard).localeCompare(String(b.jobCard)));
+ const stamp=new Date(snapshot.capturedAt).toLocaleString('en-GB',{timeZone:'Asia/Muscat'});
+ host.innerHTML='<p>Server snapshot · '+esc(stamp)+'</p><button type="button" onclick="zukaitOverviewRefresh()">Refresh QC status</button>'+list.map(r=>overviewCard(r,view)).join('')+(list.length?'':'<p>No matching vehicles.</p>');
+}
+async function openProjectedPage(mode){openPage(mode);if(projectionPilot())await refreshProjection()}
+window.zukaitOverviewRefresh=refreshProjection;
+window.zukaitOverviewMechanicalQC=async no=>{const r=projectedRow(no);if(r?.checklistId)await window.zukaitCloud?.openMechanicalWorkspace?.(r.checklistId)};
+window.zukaitOverviewSync=async()=>{await window.zukaitCloud?.syncNow?.();await refreshProjection()};
+window.zukaitOverviewDeliver=async no=>{const r=projectedRow(no);if(!r?.deliveryReady)return;if(r.mechanical){try{const opened=await window.zukaitCloud?.openMechanicalDelivery?.(r.jobCard);if(!opened)alert('Mechanical delivery is unavailable. Ask the Manager.')}catch(e){alert(e.message)}}else window.v213AskDelivered(no)};
+window.addEventListener('zukait-mechanical-change',()=>{projectionController?.invalidate();if(projectionPilot()&&document.visibilityState!=='hidden')refreshProjection()});
+document.addEventListener?.('visibilitychange',()=>{if(document.visibilityState==='visible'&&projectionPilot())refreshProjection()});
+function row(j,mode='qc'){const s=qcStatus(state,j),qc=j.qcWorkflow||{},delivered=mode==='delivered',ready=mode==='ready',canPaint=mode==='qc'&&me?.role==='Supervisor'&&me.id==='SUP002'&&s.stage==='PAINTING_QC',canFinal=mode==='qc'&&me?.role==='Supervisor'&&me.id==='SUP001'&&s.stage==='FINAL_QC';
+ const stale=qc.fingerprint&&!s.painting&&qc.painting?.result==='PASS',stageFail=mode==='qc'&&(s.stage==='PAINTING_QC'?qc.painting?.result==='FAIL':s.stage==='FINAL_QC'?qc.final?.result==='FAIL':false);
+ return '<article class="qc-row qc-stage-'+esc(s.stage.toLowerCase().replace(/_/g,'-'))+(stageFail?' qc-row-fail':'')+'"><div class="qc-row-head"><b>JC '+esc(j.no)+' · '+esc(formatVehicleName(j.vehicle)||'Vehicle')+'</b>'+(stageFail?'<span class="qc-fail-badge">FAIL</span>':'')+'</div><span>'+esc(j.reg||'—')+'</span>'+record('Painting QC · Vinayan',qc.painting)+record('Final QC · Shine',qc.final)+(mode==='qc'&&me?.id==='SUP001'&&s.stage==='PAINTING_QC'?'<p class="qc-notice">Waiting for Vinayan Painting QC — Final QC is locked until Painting QC passes.</p>':'')+(stale?'<p>Work changed since QC. Painting QC is required again.</p>':'')+(!s.workComplete&&!delivered?'<p>Assigned work / repeat work pending.</p>':'')+(delivered?'<p>Delivered '+esc(j.deliveredByName||j.deliveredBy||'')+' · '+esc(j.deliveredAt?new Date(j.deliveredAt).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Date not recorded')+'</p>':'')+(delivered?invoiceSummary(j)+window.zukaitDeliveredMaterialsSummary(j.no):'')+(ready?'<p class="qc-ready-note"><span>Painting QC ✓</span><span>Final QC ✓</span><b>Ready to deliver</b></p>':'')+'<div class="qc-actions">'+(!delivered&&!ready?(canPaint?action('Painting QC','zukaitOpenPaintingQC',j.no):'')+(canFinal?action('Final QC','zukaitOpenFinalQC',j.no):'')+(me?.role==='Supervisor'&&(qc.painting?.result==='FAIL'||qc.final?.result==='FAIL')?action('Issue Repeat Work','zukaitQCRepeat',j.no,!s.workComplete):''):'')+(ready&&me?.role==='Supervisor'?action('Mark Delivered','v213AskDelivered',j.no):'')+(delivered&&me?.role==='Manager'?action('Correct Delivery Date','zukaitCorrectDeliveryDate',j.no)+(['CASH','CREDIT','INSURANCE'].includes(String(j.jobType||'').toUpperCase())?action('Correct Final Invoice','zukaitCorrectFinalInvoice',j.no):''):'')+(delivered&&me?.role==='Manager'?action('Reopen Delivered JC','zukaitReopenDelivered',j.no):'')+(delivered&&allowed()&&!invoiceComplete(j)?action('Enter Invoice','zukaitOpenInvoiceJob',j.no):'')+action('View Details','zukaitQCDetails',j.no)+'</div></article>';
+}
+function qcQueueMatches(j){const s=qcStatus(state,j);if(!j||j.no==='ID001'||j.deleted||j.archived||j.delivered||!s.workComplete)return false;if(me?.role==='Manager')return s.stage==='PAINTING_QC'||s.stage==='FINAL_QC';if(me?.id==='SUP002')return s.stage==='PAINTING_QC';if(me?.id==='SUP001')return s.stage==='PAINTING_QC'||s.stage==='FINAL_QC';return false}
+window.zukaitQCPendingJobs=()=>!allowed()?[]:projectionPilot()?(projectionCurrent()?.rows.filter(r=>r.qcVisible).map(r=>({no:r.jobCard,vehicle:r.vehicle,reg:r.registration}))||null):jobs().filter(qcQueueMatches);
+function readyMatches(j){return !!(j&&j.no!=='ID001'&&!j.deleted&&!j.archived&&qcStatus(state,j).deliveryReady)}
+function workCompletedAt(j){const a=(state.assign||[]).filter(x=>x&&!x.cancelled&&String(x.job)===String(j.no));return a.reduce((m,x)=>Math.max(m,Number(x.completedAt||0)),0)}
+function queueSince(j){const s=qcStatus(state,j),qc=j.qcWorkflow||{};return s.stage==='FINAL_QC'?Number(qc.painting?.at||0):workCompletedAt(j)}
+function readySince(j){return Number(j?.qcWorkflow?.final?.at||0)}
+
+const deliveryMonthFormat = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'Asia/Muscat', year: 'numeric', month: '2-digit'
+});
+function deliveryTime(value) {
+  return !value ? NaN : new Date(/^\d+$/.test(String(value)) ? Number(value) : value).getTime();
+}
+function currentDeliveryMonth() {
+  return deliveryMonthFormat.format(Date.now());
+}
+function deliveredInMonth(month) {
+  return jobs().filter(j => {
+    if (!j?.delivered || j.deleted || j.archived) return false;
+    const time = deliveryTime(j.deliveredAt);
+    return Number.isFinite(time) && deliveryMonthFormat.format(time) === month;
+  });
+}
+function deliveredListRow(j,index){const live=window.zukaitJobCardMaster?.display?.(j.no,j)||j,stamp=new Date(deliveryTime(j.deliveredAt)).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}),vehicle=formatVehicleName(vehicleLabel(j));return '<button type="button" class="qc-delivered-list-row" data-jc="'+esc(j.no)+'" onclick="zukaitOpenDeliveredRecord(this.dataset.jc)"><span class="qc-delivered-no">'+(index+1)+'</span><span class="qc-delivered-copy"><b>JC '+esc(j.no)+' · '+esc(vehicle)+'</b><small>'+esc(live.reg||live.registration||'—')+' · '+esc(stamp)+' · '+(invoiceComplete(j)?'Invoice Saved':'Invoice Pending')+'</small></span><span class="qc-delivered-next" aria-hidden="true">›</span></button>'}
+window.zukaitOpenDeliveredRecord=function(no){if(!allowed())return;const j=find(no);if(!j||!j.delivered)return;const month=document.getElementById('qcDeliveryMonth')?.value;view=null;shell('Delivered Vehicle Details','<button type="button" class="secondary" data-month="'+esc(month)+'" onclick="zukaitOpenDeliveredVehicles(this.dataset.month)">← Back to list</button>'+row(j,'delivered'))};
+
+function renderPage(){if(!allowed()||!view)return;if(projectionPilot()&&['qc','ready'].includes(view))return renderProjectedPage();const q=document.getElementById('qcSearch')?.value||'';const delivered=view==='delivered', monthInput=document.getElementById('qcDeliveryMonth'), month=monthInput?.value||currentDeliveryMonth();if(delivered&&monthInput&&!monthInput.value)monthInput.value=month;const list=(delivered?deliveredInMonth(month):jobs().filter(view==='ready'?readyMatches:qcQueueMatches)).filter(j=>[j.no,j.reg,j.vehicle,delivered?formatVehicleName(vehicleLabel(j)):''].some(v=>String(v||'').toLowerCase().includes(q.toLowerCase()))).sort((a,b)=>view==='delivered'?deliveryTime(b.deliveredAt)-deliveryTime(a.deliveredAt):view==='ready'?(readySince(a)-readySince(b)||String(a.no).localeCompare(String(b.no))):(queueSince(a)-queueSince(b)||String(a.no).localeCompare(String(b.no))));
+ const host=document.getElementById('qcRows');if(host){const html=(view==='delivered'?list.map((j,i)=>deliveredListRow(j,i)):list.map(j=>row(j,view))).join('')||(delivered?'<p>No matching deliveries for this month.</p>':'<p>No matching vehicles.</p>');if(host.innerHTML!==html){
+ const active=document.activeElement;if(active&&host.contains?.(active)&&active.tagName==='INPUT')return;
+ const draftValues=new Map([...host.querySelectorAll?.('.invoice-entry-row input')||[]].map(input=>[input.id,input.value]));
+ host.innerHTML=html;
+ for(const [id,value] of draftValues){const input=document.getElementById(id);if(input&&host.contains?.(input))input.value=value;}
+ }}}
+function openPage(mode='qc', month=currentDeliveryMonth()){if(!allowed())return;invoiceView=null;view=mode;const title=mode==='delivered'?'Delivered Vehicles':mode==='ready'?'Ready to Deliver':'QC',notice=lastNotice?'<div id="qcNotice" class="qc-notice">'+esc(lastNotice)+'</div>':'';lastNotice='';shell(title,notice+(mode==='delivered'?'<label>Delivery month<input id="qcDeliveryMonth" type="month" value="'+esc(month)+'" onchange="zukaitQCRefresh()"></label>':'')+'<label>Search JC / registration / vehicle<input id="qcSearch" type="search" oninput="zukaitQCRefresh()"></label><div id="qcRows"></div>');renderPage();window.setTimeout?.(()=>document.getElementById('qcNotice')?.remove(),2200)}
+function openQC(no,operation){const j=find(no);if(!j||!allowed())return;view=null;shell(operation==='PAINTING_QC'?'Painting QC · Vinayan':'Final QC · Shine','<b>JC '+esc(j.no)+' · '+esc(formatVehicleName(j.vehicle))+' · '+esc(j.reg)+'</b><label>Reason / remarks<textarea id="qcReason" maxlength="2000"></textarea></label><p>Failure reason is required when QC fails. Supervisor can issue repeat work to the responsible employee when needed.</p><div class="qc-actions">'+action('PASS',operation==='PAINTING_QC'?'zukaitPaintingPass':'zukaitFinalPass',no)+action('FAIL',operation==='PAINTING_QC'?'zukaitPaintingFail':'zukaitFinalFail',no)+'</div>')}
+async function submit(no,operation,result){if(busy)return;const j=find(no);if(!j||!allowed())return;const expectedQcRevision=Number(j.qcWorkflow?.revision||0),reason=document.getElementById('qcReason')?.value.trim()||'';if(result==='FAIL'&&!reason)return alert(messages.qc_failure_reason_required);if(!navigator.onLine)return alert('Connect to the server before recording QC or delivery.');
+ busy=true;try{
+  await window.zukaitCloud?.syncNow?.();const h=window.zukaitCloud?.syncHealth;if(!h||!h.ready||h.dirty||h.pendingConflict||h.lastError)throw Error('Workshop sync is pending. Please sync and try again.');
+  if(operation==='DELIVER'&&await window.zukaitCloud?.openMechanicalDelivery?.(no))return;
+  const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':window.zukaitAuth?.getToken?.()||''},body:JSON.stringify({action:'qc_delivery',jobCard:no,operation,result,reason,expectedQcRevision})});
+  const r=await response.json();if(!response.ok||!r.ok)throw Error(messages[r.code]||'QC / delivery could not be saved. Refresh and try again.');
+  await window.zukaitCloud.syncNow();lastNotice=operation==='DELIVER'?'Vehicle marked delivered':operation==='PAINTING_QC'?(result==='PASS'?'Painting QC passed':'Painting QC failed'):result==='PASS'?'Final QC passed':'Final QC failed';openPage(operation==='DELIVER'?'delivered':'qc');if(projectionPilot())await refreshProjection();
+ }catch(e){alert(e.message)}finally{busy=false}
+}
+window.zukaitOpenPaintingQC=no=>openQC(no,'PAINTING_QC');window.zukaitOpenFinalQC=no=>openQC(no,'FINAL_QC');
+window.zukaitPaintingPass=no=>submit(no,'PAINTING_QC','PASS');window.zukaitPaintingFail=no=>submit(no,'PAINTING_QC','FAIL');window.zukaitFinalPass=no=>submit(no,'FINAL_QC','PASS');window.zukaitFinalFail=no=>submit(no,'FINAL_QC','FAIL');
+window.v213ToggleQC=()=>openProjectedPage('qc');window.v74Ready=()=>openProjectedPage('ready');window.v143OpenReadyForDelivery=()=>openProjectedPage('ready');
+window.v213AskDelivered=function(no){const j=find(no);if(!j||me?.role!=='Supervisor'||!qcStatus(state,j).deliveryReady)return;view=null;shell('Mark Delivered · JC '+j.no,'<p>Both QC stages passed. The delivered Job Card will stay in Invoice Entry until its invoice amount and date are saved.</p>'+action('Confirm Delivered','v213ConfirmDelivered',no))};
+window.v213ConfirmDelivered=no=>submit(no,'DELIVER');
+async function submitFinancial(no,operation,amount,reason='',extra={}){if(busy)return;const j=find(no);if(!j||!allowed())return;if(!navigator.onLine)return alert('Connect to the server before changing a Job Card amount.');const expectedQcRevision=Number(j.qcWorkflow?.revision||0);busy=true;try{await window.zukaitCloud?.syncNow?.();const h=window.zukaitCloud?.syncHealth;if(!h||!h.ready||h.dirty||h.pendingConflict||h.lastError)throw Error('Workshop sync is pending. Please sync and try again.');const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':window.zukaitAuth?.getToken?.()||''},body:JSON.stringify({action:'qc_delivery',jobCard:no,operation,amount:Number(amount),reason:String(reason||'').trim(),...extra,expectedQcRevision})});const r=await response.json();if(!response.ok||!r.ok)throw Error(messages[r.code]||'Job Card amount could not be saved. Refresh and try again.');await window.zukaitCloud.syncNow();lastNotice=operation==='FINAL_INVOICE_ENTRY'?'Invoice saved':operation==='FINAL_INVOICE_CORRECTION'?'Final invoice corrected with audit':operation==='DELIVERY_DATE_CORRECTION'?'Delivery date corrected with audit':'Cash amount updated';closeModal?.();if(operation==='FINAL_INVOICE_ENTRY')window.zukaitOpenInvoiceEntry(invoiceView?.type||'')}catch(e){alert(e.message)}finally{busy=false}}
+window.zukaitEditCashAmount=function(no){const j=find(no);if(!['Supervisor','Manager'].includes(me?.role)||!j||j.delivered||String(j.jobType||'').toUpperCase()!=='CASH')return;shell('Edit Cash Amount · JC '+j.no,'<p>Supervisor or Manager may edit the Cash Amount while this Job Card is open.</p><label><b>Cash Amount (OMR)</b><input id="qcCashAmountEdit" type="number" inputmode="decimal" min="0" max="1000000" step="0.001" value="'+esc(Number(j.amount||0).toFixed(3))+'"></label><div class="qc-actions"><button type="button" class="qc-btn-pass" data-jc="'+esc(j.no)+'" onclick="zukaitSaveCashAmount(this.dataset.jc)">Save Cash Amount</button></div>')};
+window.zukaitSaveCashAmount=function(no){const amount=document.getElementById('qcCashAmountEdit')?.value;return submitFinancial(no,'CASH_AMOUNT_UPDATE',amount)};
+window.zukaitCorrectDeliveryDate=function(no){const j=find(no);if(me?.role!=='Manager'||!j||!j.delivered)return;const d=j.deliveredAt?new Date(Number(j.deliveredAt)):new Date();const pad=n=>String(n).padStart(2,'0');const value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());shell('Correct Delivery Date · JC '+j.no,'<p>Manager-only correction. A reason is mandatory and will be kept in the audit trail.</p><label><b>Delivery Date & Time</b><input id="qcDeliveryCorrectionDate" type="datetime-local" value="'+esc(value)+'"></label><label><b>Correction Reason</b><textarea id="qcDeliveryCorrectionReason" maxlength="2000"></textarea></label><div class="qc-actions"><button type="button" class="qc-btn-deliver" data-jc="'+esc(j.no)+'" onclick="zukaitSaveDeliveryDateCorrection(this.dataset.jc)">Save Delivery Date</button></div>')};
+window.zukaitSaveDeliveryDateCorrection=function(no){const raw=document.getElementById('qcDeliveryCorrectionDate')?.value||'';const reason=String(document.getElementById('qcDeliveryCorrectionReason')?.value||'').trim();const deliveredAt=Date.parse(raw);if(!Number.isFinite(deliveredAt))return alert(messages.delivery_date_required);if(!reason)return alert(messages.delivery_date_reason_required);return submitFinancial(no,'DELIVERY_DATE_CORRECTION',0,reason,{deliveredAt})};
+// Return an already-delivered Bodyshop JC only through the server-owned QC command.
+// This keeps its old delivery, invoice, LPO, material and labour records intact.
+window.zukaitReopenDelivered=function(no){
+ const j=rawFind(no);
+ if(me?.role!=='Manager'||!j||!j.delivered||j.deleted||j.archived||j.cancelled)return;
+ shell('Reopen Delivered JC '+esc(j.no),'<p>This returns the vehicle to workshop status under the SAME Job Card. The original delivery and invoice remain in the audit history. All QC stages must pass again before another delivery.</p><label><b>Reopening Reason (required)</b><textarea id="qcReopenDeliveryReason" maxlength="2000" placeholder="Reason for return to workshop"></textarea></label><div class="qc-actions"><button type="button" class="secondary" onclick="zukaitOpenDeliveredRecord(this.dataset.jc)" data-jc="'+esc(no)+'">CANCEL</button><button type="button" class="qc-btn-deliver" data-jc="'+esc(no)+'" onclick="zukaitConfirmReopenDelivered(this.dataset.jc)">CONFIRM RETURN TO WORKSHOP</button></div>');
+};
+window.zukaitConfirmReopenDelivered=async function(no){
+ if(busy||me?.role!=='Manager')return;
+ const reason=String(document.getElementById('qcReopenDeliveryReason')?.value||'').trim();
+ if(reason.length<5||reason.length>2000)return alert(messages.reopen_reason_required);
+ if(!navigator.onLine)return alert('Connect to the server before reopening a delivered vehicle.');
+ const actor=String(me.id),token=window.zukaitAuth?.getToken?.()||'';
+ if(!token)return alert('Session expired. Log in again.');
+ busy=true;
+ try{
+  await window.zukaitCloud?.syncNow?.();
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)throw Error('Account changed. Reopen cancelled.');
+  const pulled=await window.zukaitCloud?.pull?.(true);
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)throw Error('Account changed. Reopen cancelled.');
+  const h=window.zukaitCloud?.syncHealth;
+  if(pulled===false||!h?.ready||h.dirty||h.pendingConflict||h.lastError)throw Error('Workshop data is not synchronized. Retry when Server Live.');
+  const j=rawFind(no);
+  if(!j||!j.delivered)throw Error('Vehicle is no longer Delivered. Refresh Job Card details.');
+  const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
+   method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
+   body:JSON.stringify({action:'qc_delivery',operation:'REOPEN_DELIVERED',jobCard:no,reason,expectedQcRevision:Number(j.qcWorkflow?.revision||0)})
+  });
+  const result=await response.json();
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)throw Error('Account changed. Refresh Job Cards.');
+  if(!response.ok||!result.ok)throw Error(messages[result.code]||'Server did not confirm the reopening. Refresh and retry.');
+  await window.zukaitCloud?.pull?.(true);
+  const current=rawFind(no);
+  if(!current||current.delivered)throw Error('Server accepted the return; refresh the workshop to see the updated Job Card.');
+  if(typeof window.v132OpenSupervisorJobFull==='function')window.v132OpenSupervisorJobFull(no);
+  else window.zukaitOpenQCQueue?.();
+ }catch(e){alert(e.message||'Unable to reopen delivered Job Card.')}
+ finally{busy=false}
+};
+// Manager Job Card → View: two different kinds of work on the same JC.
+// Additional Work is not a technician mistake and never counts as Repeat Work.
+window.zukaitManagerOpenWorkAction=function(no,kind){
+ if(me?.role!=='Manager')return;
+ const j=rawFind(no);
+ if(!j||j.deleted||j.archived||j.cancelled)return alert('Job Card is not available.');
+ if(!['ADDITIONAL','REPEAT'].includes(kind))return;
+ const emps=(state.users||window.users||[]).filter(u=>u&&u.role==='Employee'&&u.active!==false);
+ const completed=(state.assign||[]).filter(a=>a&&!a.cancelled&&String(a.job)===String(no)&&a.completed);
+ if(!completed.length)return alert('Finish existing work before opening a new work cycle.');
+ const options=emps.map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name||u.id)+' ('+esc(u.id)+')</option>').join('');
+ const prior=completed.filter(a=>!a.rework).map(a=>a.emp);
+ const mistakes=emps.filter(e=>prior.includes(e.id)).map(u=>'<option value="'+esc(u.id)+'">'+esc(u.name||u.id)+'</option>').join('');
+ if(kind==='REPEAT'&&!mistakes)return alert('No original technician is available for Repeat Work.');
+ const title=kind==='REPEAT'?'Repeat Work — Mistake / Poor Quality':'Reopen — Additional Work';
+ shell(title+' · JC '+esc(no),
+   '<p><b>Same Job Card:</b> '+esc(no)+' · '+esc(formatVehicleName(j.vehicle)||'')+'</p>'+
+   '<p>'+(kind==='REPEAT'?'Repeat Work records the mistake employee and repeat reason.':'Additional work is normal productive work, with no mistake penalty.')+'</p>'+
+   (j.delivered?'<p>Delivered vehicle: returning to the workshop will preserve its previous delivery, invoice and QC history. Fresh QC is mandatory.</p>':'')+
+   '<label>Technician<select id="jcrEmployee">'+options+'</select></label>'+
+   (kind==='REPEAT'?'<label>Responsible / Mistake Employee<select id="jcrMistake">'+mistakes+'</select></label>':'')+
+   '<label>Allocated Time (hours and minutes, H.MM)<input id="jcrMinutes" inputmode="decimal" value="8.00"></label>'+
+   '<label>Reason (required)<textarea id="jcrReason" maxlength="2000"></textarea></label>'+
+   '<div class="qc-actions"><button class="secondary" data-jc="'+esc(no)+'" onclick="openManagerJobDetails(this.dataset.jc)">CANCEL</button>'+
+   '<button class="qc-btn-deliver" data-jc="'+esc(no)+'" data-kind="'+esc(kind)+'" onclick="zukaitManagerSaveWorkAction(this.dataset.jc,this.dataset.kind)">CONFIRM '+(kind==='REPEAT'?'REPEAT WORK':'REOPEN')+'</button></div>');
+};
+window.zukaitManagerSaveWorkAction=async function(no,kind){
+ if(busy||me?.role!=='Manager'||!['ADDITIONAL','REPEAT'].includes(kind))return;
+ const emp=document.getElementById('jcrEmployee')?.value||'';
+ const mistake=kind==='REPEAT'?document.getElementById('jcrMistake')?.value||'':'';
+ const textMinutes=document.getElementById('jcrMinutes')?.value||'';
+ const minutes=typeof parseWorkMinutes==='function'?parseWorkMinutes(textMinutes):NaN;
+ const reason=String(document.getElementById('jcrReason')?.value||'').trim();
+ if(!emp||!Number.isSafeInteger(minutes)||minutes<1||minutes>60000)return alert('Select a technician and enter valid allocated time (H.MM).');
+ if(kind==='REPEAT'&&!mistake)return alert('Select the responsible technician.');
+ if(reason.length<5)return alert(messages.reopen_reason_required);
+ if(!navigator.onLine)return alert('Connect to the server first.');
+ const actor=String(me.id),token=window.zukaitAuth?.getToken?.()||'';
+ if(!token)return alert('Please sign in again.');
+ const requestId='jr-'+(crypto.randomUUID?.()||'');
+ if(requestId.length!==39)return alert('Device cannot create a safe work request ID.');
+ busy=true;
+ try{
+  await window.zukaitCloud?.syncNow?.();
+  const pulled=await window.zukaitCloud?.pull?.(true),h=window.zukaitCloud?.syncHealth;
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)throw Error('Account changed. Action cancelled.');
+  if(pulled===false||!h?.ready||h.dirty||h.pendingConflict||h.lastError)throw Error('Server synchronization is pending. Refresh and retry.');
+  const j=rawFind(no);
+  if(!j)throw Error('Job Card not found.');
+  const payload={action:'qc_delivery',operation:kind==='REPEAT'?'REOPEN_REPEAT':'REOPEN_ADDITIONAL',jobCard:no,employeeId:emp,
+    ...(kind==='REPEAT'?{mistakeEmployeeId:mistake}:{}),minutes,reason,requestId,expectedQcRevision:Number(j.qcWorkflow?.revision||0)};
+  const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{
+   method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':token},
+   body:JSON.stringify(payload)});
+  const result=await response.json();
+  if(!response.ok||!result.ok)throw Error(messages[result.code]||result.code||'Server could not create this assignment.');
+  await window.zukaitCloud?.pull?.(true);
+  if(String(me?.id)!==actor||window.zukaitAuth?.getToken?.()!==token)return;
+  openManagerJobDetails(no);
+ }catch(e){alert(e.message||'Unable to reopen Job Card.')}finally{busy=false}
+};
+window.zukaitCorrectFinalInvoice=function(no){const j=find(no);if(me?.role!=='Manager'||!j||!j.delivered||!['CASH','CREDIT','INSURANCE'].includes(String(j.jobType||'').toUpperCase()))return;shell('Correct Final Invoice · JC '+j.no,'<p>Manager-only correction after delivery. A reason is mandatory and will be kept in the audit trail.</p><label><b>Final Invoice Amount (OMR)</b><input id="qcFinalCorrectionAmount" type="number" inputmode="decimal" min="0" max="1000000" step="0.001" value="'+esc(Number(j.finalInvoiceAmount??j.amount??0).toFixed(3))+'"></label><label><b>Invoice Date</b><input id="qcFinalCorrectionDate" type="date" value="'+esc(j.invoiceDate||'')+'" required></label><label><b>Correction Reason</b><textarea id="qcFinalCorrectionReason" maxlength="2000" placeholder="Required"></textarea></label><div class="qc-actions"><button type="button" class="qc-btn-pass" data-jc="'+esc(j.no)+'" onclick="zukaitSaveFinalInvoiceCorrection(this.dataset.jc)">Save Manager Correction</button></div>')};
+window.zukaitSaveFinalInvoiceCorrection=function(no){const amount=document.getElementById('qcFinalCorrectionAmount')?.value,reason=document.getElementById('qcFinalCorrectionReason')?.value.trim()||'';if(!reason)return alert(messages.financial_correction_reason_required);const invoiceDate=document.getElementById('qcFinalCorrectionDate')?.value||'';if(!invoiceDateValid(invoiceDate))return alert(messages.invoice_date_required);if(String(amount??'').trim()==='')return alert(messages.final_invoice_amount_required);return submitFinancial(no,'FINAL_INVOICE_CORRECTION',amount,reason,{invoiceDate})};
+window.zukaitOpenDeliveredVehicles=month=>openPage('delivered',typeof month==='string'&&month?month:undefined);window.zukaitOpenReadyToDeliver=()=>openProjectedPage('ready');window.zukaitOpenQCQueue=()=>openProjectedPage('qc');window.zukaitQCRefresh=renderPage;
+window.zukaitQCRepeat=no=>{view=null;window.addRepeatWorkV56?.(no)};window.zukaitQCDetails=no=>{if(!allowed())return;const j=find(no);if(!j)return;const mode=view==='delivered'?'delivered':view==='ready'?'ready':'qc';view=null;shell(mode==='qc'?'QC Details':mode==='ready'?'Delivery Details':'Delivered Vehicle',row(j,mode))};
+
+function invoicePending(){return jobs().filter(j=>j&&j.delivered&&!j.deleted&&!j.archived&&j.no!=='ID001'&&!invoiceComplete(j)).sort((a,b)=>Number(a.deliveredAt||0)-Number(b.deliveredAt||0)||String(a.no).localeCompare(String(b.no)))}
+function invoiceSummary(j){const complete=invoiceComplete(j),amount=j.finalInvoiceAmount;return '<div class="qc-invoice-summary"><b>'+esc(j.jobType||'Job Type missing')+' · '+(complete?'Invoice Saved':'Invoice Pending')+'</b><p>Invoice Amount: '+(amount==null?'Not entered':'OMR '+Number(amount).toFixed(3))+' · Invoice Date: '+esc(j.invoiceDate||'Not entered')+'</p>'+((j.financialAudit||[]).length?'<details><summary>Invoice History</summary>'+(j.financialAudit||[]).slice().reverse().map(a=>'<p><b>'+esc(String(a.operation||'Invoice update').replace(/_/g,' '))+'</b> · '+esc(a.name||a.by||'')+' · '+esc(a.at?new Date(a.at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'')+'<br>OMR '+Number(a.from||0).toFixed(3)+' → '+Number(a.to||0).toFixed(3)+(a.toDate?' · Invoice Date '+esc(a.fromDate||'Not entered')+' → '+esc(a.toDate):'')+(a.reason?'<br>Reason: '+esc(a.reason):'')+'</p>').join('')+'</details>':'')+'</div>'}
+function invoiceLive(j){const live=window.zukaitJobCardMaster?.display?.(j.no,j);return live?{...j,...live,amount:j.amount,finalInvoiceAmount:j.finalInvoiceAmount,invoiceDate:j.invoiceDate}:j}
+
+function invoiceEditVersion(j){return JSON.stringify([Number(j.qcWorkflow?.revision||0),j.jobType,j.delivered,j.deleted,j.archived,j.finalInvoiceAmount,j.invoiceDate,j.insuranceLpo])}
+function invoiceDraft(no){return invoiceView?.owner===String(me?.id||'')?invoiceView.drafts?.get(String(no)):null}
+function invoiceDraftCurrent(no){
+ if(invoiceView&&invoiceView.owner!==String(me?.id||'')){alert('Reopen Invoice Entry with your current login.');return false;}
+ const version=invoiceDraft(no)?.version||(invoiceView?.no===String(no)?invoiceView.version:null),j=rawFind(no);
+ if(version&&(!j||version!==invoiceEditVersion(j))){alert(messages.qc_conflict);return false;}
+ return true;
+}
+window.zukaitInvoiceDraft=function(no,field,value){
+ if(!allowed()||!invoiceView||invoiceView.owner!==String(me?.id||'')||!['amount','date'].includes(field))return;
+ const j=rawFind(no);if(!j)return;
+ let draft=invoiceView.drafts.get(String(no));
+ if(!draft){draft={version:invoiceEditVersion(j)};invoiceView.drafts.set(String(no),draft)}
+ draft[field]=String(value??'');
+};
+
+function invoiceJobTypeDisplay(j){
+ const type=String(j.jobType||'').trim();
+ if(type.toUpperCase()!=='INSURANCE')return type||'Job Type missing';
+ const identity=window.zukaitJobCardMaster?.identity?.(j.no)||{};
+ const company=[identity.insuranceCompany,j.insuranceCompany,j.insurance].find(value=>typeof value==='string'&&value.trim()&&value.trim().toUpperCase()!=='INSURANCE');
+ return company?company.trim():'Insurance';
+}
+function invoiceInlineRow(j,draft=null){j=invoiceLive(j);const no=esc(j.no),amount=draft?.amount??(j.finalInvoiceAmount==null?'':Number(j.finalInvoiceAmount).toFixed(3)),date=esc(draft?.date??j.invoiceDate??'');return '<article class="invoice-entry-row"><div class="invoice-entry-vehicle"><b>JC '+no+' · '+esc(formatVehicleName(j.vehicle)||'Vehicle')+'</b><small>'+esc(j.reg||'—')+' · '+esc(invoiceJobTypeDisplay(j))+'</small></div><label><span>Amount OMR</span><input id="invoiceAmount-'+no+'" data-jc="'+no+'" oninput="zukaitInvoiceDraft(this.dataset.jc,\'amount\',this.value)" type="number" inputmode="decimal" min="0" max="1000000" step="0.001" value="'+esc(amount)+'" placeholder="0.000"></label><label><span>Invoice Date</span><input id="invoiceDate-'+no+'" data-jc="'+no+'" oninput="zukaitInvoiceDraft(this.dataset.jc,\'date\',this.value)" onchange="zukaitInvoiceDraft(this.dataset.jc,\'date\',this.value)" type="date" value="'+date+'"></label><button type="button" class="qc-btn-pass invoice-row-save" data-jc="'+no+'" onclick="zukaitSaveInvoiceRow(this.dataset.jc)">Save</button><button type="button" class="qc-btn-detail invoice-row-detail" data-jc="'+no+'" onclick="zukaitQCDetails(this.dataset.jc)">Details</button></article>'}
+function renderInvoicePage(){if(!allowed()||!invoiceView)return;const host=document.getElementById('invoiceBody');if(!host)return;if(invoiceView.owner!==String(me?.id||'')){invoiceView=null;host.innerHTML='<p>Reopen Invoice Entry with your current login.</p>';return;}const list=invoicePending(),type=invoiceView.type,q=(document.getElementById('invoiceSearch')?.value||'').toLowerCase();let html='';if(!type){html='<p>Delivered vehicles waiting for an invoice amount and date.</p><div class="invoice-circles">'+['Cash','Credit','Insurance'].map(t=>'<button type="button" class="invoice-circle invoice-'+t.toLowerCase()+'" data-type="'+t+'" onclick="zukaitOpenInvoiceEntry(this.dataset.type)"><span>'+t+'</span><b>'+list.filter(j=>String(j.jobType||'').toUpperCase()===t.toUpperCase()).length+'</b><small>Pending</small></button>').join('')+'</div>';const missing=list.filter(j=>!['CASH','CREDIT','INSURANCE'].includes(String(j.jobType||'').toUpperCase()));if(missing.length)html+='<p class="qc-notice">'+missing.length+' delivered Job Card(s) need a Job Type. Ask the Manager to review.</p>'+missing.map(j=>{const x=invoiceLive(j);return '<div class="qc-row"><b>JC '+esc(x.no)+' · '+esc(formatVehicleName(x.vehicle)||'Vehicle')+'</b><p>'+esc(x.reg||'—')+'</p>'+action('View Details','zukaitQCDetails',x.no)+'</div>'}).join('')}else{html=list.map(invoiceLive).filter(j=>String(j.jobType||'').toUpperCase()===type.toUpperCase()).filter(j=>[j.no,j.reg,j.vehicle].some(v=>String(v||'').toLowerCase().includes(q))).map(j=>invoiceInlineRow(j)).join('')||'<p>No pending invoices.</p>'}// Unchanged saved rows must not replace inputs or interrupt a date picker.
+if(invoiceView.renderedHtml===html)return;
+invoiceView.renderedHtml=html;
+if(type)html=list.map(invoiceLive).filter(j=>String(j.jobType||'').toUpperCase()===type.toUpperCase()).filter(j=>[j.no,j.reg,j.vehicle].some(v=>String(v||'').toLowerCase().includes(q))).map(j=>invoiceInlineRow(j,invoiceDraft(j.no))).join('')||'<p>No pending invoices.</p>';
+if(host.innerHTML!==html)host.innerHTML=html}
+let invoiceOpening=0;
+window.zukaitOpenInvoiceEntry=async function(type=''){if(!allowed())return;if(type&&!['Cash','Credit','Insurance'].includes(type))return;
+ const opening=++invoiceOpening;
+ if(window.zukaitCloud?.pull)try{await window.zukaitCloud.pull(true)}catch(e){return alert('Could not refresh invoice records from the server. Please check the connection and retry.')}
+ if(opening!==invoiceOpening||!allowed())return;
+ view=null;invoiceView={type,owner:String(me?.id||''),drafts:new Map()};shell('Invoice Entry'+(type?' · '+type:''),(type?'<button class="secondary" onclick="zukaitOpenInvoiceEntry()">← Cash / Credit / Insurance</button><label>Search JC / registration / vehicle<input id="invoiceSearch" type="search" oninput="zukaitInvoiceRefresh()"></label>':'')+'<div id="invoiceBody"></div>');renderInvoicePage()};
+window.zukaitInvoiceRefresh=renderInvoicePage;
+window.zukaitInvoiceSyncRefresh=()=>{apply();renderInvoicePage()};
+window.zukaitOpenInvoiceJob=function(no){if(!allowed())return;const raw=rawFind(no),j=raw?invoiceLive(raw):null;if(!j||!invoicePending().some(x=>String(x.no)===String(no)))return;if(!['CASH','CREDIT','INSURANCE'].includes(String(j.jobType||'').toUpperCase()))return alert(messages.invoice_job_type_required);if(!invoiceDraftCurrent(no))return;const draft=invoiceDraft(no);view=null;invoiceView={owner:String(me?.id||''),drafts:new Map(),version:invoiceEditVersion(rawFind(no)),type:['Cash','Credit','Insurance'].find(t=>t.toUpperCase()===String(j.jobType).toUpperCase()),no:String(no)};const recorded=j.finalInvoiceAmount!=null,amount=draft?.amount??(recorded?Number(j.finalInvoiceAmount).toFixed(3):'');shell('Invoice Entry · JC '+j.no,'<p>'+esc(formatVehicleName(j.vehicle)||'')+' · '+esc(j.reg||'')+' · '+esc(j.jobType)+'</p>'+(String(j.jobType).toUpperCase()==='INSURANCE'?'<p>This entry also records Insurance LPO receipt using this amount and date. A different existing LPO requires a Manager correction reason.</p>':'')+'<label><b>Invoice Amount (OMR)</b><input id="invoiceEntryAmount" type="number" inputmode="decimal" min="0" max="1000000" step="0.001" required value="'+esc(amount)+'"'+(recorded&&me.role==='Supervisor'?' readonly':'')+'></label><label><b>Invoice Date</b><input id="invoiceEntryDate" type="date" required value="'+esc(draft?.date??j.invoiceDate??'')+'"></label>'+(recorded?'<p>The existing final amount is preserved. Only a Manager may change it with a reason.</p>':'')+((recorded||j.insuranceLpo)&&me.role==='Manager'?'<label>Reason if changing the existing amount<textarea id="invoiceEntryReason" maxlength="2000"></textarea></label>':'')+'<div class="qc-actions">'+action('Save Invoice','zukaitSaveInvoiceEntry',no)+'<button class="secondary" onclick="zukaitOpenInvoiceEntry(\''+invoiceView.type+'\')">Back to pending list</button></div>')};
+window.zukaitSaveInvoiceEntry=function(no){if(!allowed()||!invoiceDraftCurrent(no))return;const amount=document.getElementById('invoiceEntryAmount')?.value,invoiceDate=document.getElementById('invoiceEntryDate')?.value||'',reason=document.getElementById('invoiceEntryReason')?.value||'';if(String(amount??'').trim()===''||!Number.isFinite(Number(amount))||Number(amount)<0||Number(amount)>1000000)return alert(messages.final_invoice_amount_required);if(!invoiceDateValid(invoiceDate))return alert(messages.invoice_date_required);return submitFinancial(no,'FINAL_INVOICE_ENTRY',amount,reason,{invoiceDate})};
+window.zukaitSaveInvoiceRow=function(no){if(!allowed()||!invoiceDraftCurrent(no))return;const j=find(no);if(!j||!['CASH','CREDIT','INSURANCE'].includes(String(j.jobType||'').toUpperCase()))return alert(messages.invoice_job_type_required);const amount=document.getElementById('invoiceAmount-'+no)?.value,invoiceDate=document.getElementById('invoiceDate-'+no)?.value||'';if(String(amount??'').trim()===''||!Number.isFinite(Number(amount))||Number(amount)<0||Number(amount)>1000000)return alert(messages.final_invoice_amount_required);if(!invoiceDateValid(invoiceDate))return alert(messages.invoice_date_required);if(j.insuranceLpo&&me.role==='Manager')return window.zukaitOpenInvoiceJob(no);return submitFinancial(no,'FINAL_INVOICE_ENTRY',amount,'',{invoiceDate})};
+function apply(){if(!allowed())return;initialProjection();const root=document.getElementById(me.role==='Manager'?'managerView':'supervisorView');if(!root)return;
+ const managerPerfGrid=me.role==='Manager'?root.querySelector('.v123-manager-performance .v123-grid'):null;
+ let delivered=root.querySelector('[data-qc-delivered]')||[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Delivered Vehicles'));
+ if(!delivered){delivered=document.createElement('button');delivered.className='v143-resource qc-launch';delivered.textContent='Delivered Vehicles';(root.querySelector('.v143-two')||root).appendChild(delivered)}
+ if(!delivered.dataset.qcDelivered)delivered.dataset.qcDelivered='1';delivered.disabled=false;delivered.removeAttribute('aria-disabled');delivered.onclick=window.zukaitOpenDeliveredVehicles;const dn=deliveredInMonth(currentDeliveryMonth()).length,dtext=String(dn);if(delivered.dataset.qcCount!==dtext){delivered.innerHTML='<span class="qc-card-icon" aria-hidden="true">🚗✓</span><span class="qc-card-copy"><b>Delivered Vehicles</b><small>This month</small></span><span class="qc-card-count">'+esc(dn)+'</span><span class="qc-card-arrow" aria-hidden="true">›</span>';delivered.dataset.qcCount=dtext;}
+ let queue=root.querySelector('[data-qc-queue]');if(!queue){queue=document.createElement('button');queue.dataset.qcQueue='1';queue.className=me.role==='Manager'?'v67-control sky qc-launch':'v143-resource qc-launch';queue.onclick=window.zukaitOpenQCQueue;(managerPerfGrid||root.querySelector('.v67-control-grid,.v143-two')||root).appendChild(queue)}
+ const pilot=projectionPilot(),confirmed=pilot&&projectionSyncReady()&&!projectionError?projectionCurrent():null;
+ const previousConfirmed=pilot?projectionLastConfirmed():null;
+ const currentOrLast=confirmed||previousConfirmed;
+ const loading=pilot&&projectionLoadingOwner===JSON.stringify(projectionSession());
+ const countHint=!pilot?'Painting / Final quality check':confirmed?'Mechanical / painting / final QC':previousConfirmed?'Last confirmed · QC sync warning':loading?'Loading QC status…':'QC sync warning · Refresh QC status';
+ const qn=pilot?(currentOrLast?.counts.qc??null):jobs().filter(qcQueueMatches).length,qtext=String(qn)+'|'+countHint;
+ if(queue.dataset.qcCount!==qtext){queue.innerHTML='<span class="qc-card-icon" aria-hidden="true">✅</span><span class="qc-card-copy"><b>QC</b><small>'+esc(countHint)+'</small></span><span class="qc-card-count">'+esc(qn??(loading?'…':'!'))+'</span><span class="qc-card-arrow" aria-hidden="true">›</span>';queue.dataset.qcCount=qtext;}
+ let ready=root.querySelector('[data-qc-ready]')||[...root.querySelectorAll('button')].find(b=>/Ready\s*(for|to)\s*Delivery/i.test(b.textContent||''));if(!ready){ready=document.createElement('button');ready.className=me.role==='Manager'?'v67-control sky qc-launch':'v143-resource qc-launch';}if(me.role==='Manager'){const mg=managerPerfGrid||root.querySelector('.v67-control-grid');if(mg&&ready.parentElement!==mg)mg.appendChild(ready)}else if(!ready.parentElement){(root.querySelector('.v143-two')||root).appendChild(ready)}ready.dataset.qcReady='1';if(!String(ready.className||'').split(/\s+/).includes('qc-launch'))ready.className=(ready.className||'')+' qc-launch';ready.disabled=false;ready.removeAttribute('aria-disabled');ready.onclick=window.zukaitOpenReadyToDeliver;
+ const readyHint=!pilot?'Both QC stages passed':confirmed?'Checked '+new Date(confirmed.capturedAt).toLocaleTimeString('en-GB',{timeZone:'Asia/Muscat',hour:'2-digit',minute:'2-digit'}):previousConfirmed?'Last confirmed · Delivery sync warning':loading?'Loading delivery status…':'Delivery sync warning · Refresh status';
+ const rn=pilot?(currentOrLast?.counts.ready??null):jobs().filter(readyMatches).length,rtext=String(rn)+'|'+readyHint;
+ if(ready.dataset.qcCount!==rtext){ready.innerHTML='<span class="qc-card-icon" aria-hidden="true">🚘✓</span><span class="qc-card-copy"><b>Ready to Deliver</b><small>'+esc(readyHint)+'</small></span><span class="qc-card-count">'+esc(rn??(loading?'…':'!'))+'</span><span class="qc-card-arrow" aria-hidden="true">›</span>';ready.dataset.qcCount=rtext;}
+ if(me.role==='Manager'||me.role==='Supervisor'){
+  const managerView=document.getElementById('managerView');
+  const grid=me.role==='Manager'?((managerView&&managerView.querySelector('.v67-control-grid'))||root.querySelector('.v67-control-grid')):(root.querySelector('.v143-two')||root.querySelector('.v67-control-grid'));
+  if(grid){
+   const find=t=>[...grid.querySelectorAll('button')].find(b=>new RegExp(t,'i').test(b.textContent||''));
+   const estimate=find('Estimate'),consumables=find('Consumables'),parts=find('Spare Parts'),qc=grid.querySelector('[data-qc-queue]'),readyCard=ready,deliveredCard=grid.querySelector('[data-qc-delivered]')||find('Delivered Vehicles');
+   (me.role==='Manager'?[estimate,consumables,parts,deliveredCard]:[estimate,consumables,parts,qc,readyCard,deliveredCard]).filter(Boolean).forEach(x=>{if(grid.lastElementChild!==x)grid.appendChild(x)});
+   root.querySelectorAll('.v67-first-row .v74-ready').forEach(x=>x.remove());
+   if(me.role==='Supervisor')root.querySelectorAll('.v143-glance [data-ready],.v143-glance .v74-ready').forEach(x=>x.remove());
+  }
+ }
+ if(me.role==='Manager'){
+  // Use the original live QC and Ready cards: only their DOM placement/style changes.
+  // Their click handlers and server-backed counts remain owned by this module.
+  if(managerPerfGrid){
+   for(const [card,key,icon] of [[queue,'qc','✅'],[ready,'ready','🚘']]){
+    card.classList.remove('v67-control','sky');
+    card.classList.add('v123-perf','qc-launch');
+    card.dataset.perfKey=key;
+    card.dataset.perfIcon=icon;
+    if(card.parentElement!==managerPerfGrid)managerPerfGrid.appendChild(card);
+   }
+  }
+  root.querySelectorAll('[data-manager-ready-slot]').forEach(slot=>{if(slot!==ready)slot.remove()});
+  root.querySelectorAll('button').forEach(button=>{
+   if(!button.closest('.v67-control-grid,.v123-manager-performance')&&/Ready\s*(for|to)\s*Deliver(?:y)?/i.test(button.textContent||''))button.remove();
+  });
+ }
+ let invoice=root.querySelector('[data-invoice-entry]');if(!invoice){invoice=document.createElement('button');invoice.dataset.invoiceEntry='1';invoice.className=me.role==='Manager'?'v67-control violet qc-launch':'v143-resource qc-launch';invoice.onclick=()=>window.zukaitOpenInvoiceEntry();(root.querySelector('.v67-control-grid,.v143-two')||root).appendChild(invoice)}
+ const pending=invoicePending().length;if(invoice.dataset.qcCount!==String(pending)){invoice.dataset.qcCount=String(pending);invoice.innerHTML='<span class="qc-card-icon" aria-hidden="true">🧾</span><span class="qc-card-copy"><b>Invoice Entry</b><small>Invoices pending amount / date</small></span><span class="qc-card-count">'+pending+'</span><span class="qc-card-arrow" aria-hidden="true">›</span>'}
+ if(invoiceView&&!invoiceView.no&&document.getElementById('invoiceBody'))renderInvoicePage();
+ if(view&&document.getElementById('qcRows'))renderPage();
+}
+const style=document.createElement('style');style.textContent='.qc-page{color:#172033}.qc-page .section-title{padding:8px 10px;border-radius:14px;background:linear-gradient(145deg,#f7fbff,#eef4fb);border:1px solid #d6e3f0}.qc-page .section-title .secondary{color:#a61b1b!important;background:#fff0f0!important;border:1px solid #efb8b8!important;border-radius:10px!important}.qc-page label{display:block;margin:10px 0}.qc-page input,.qc-page textarea{width:100%;box-sizing:border-box;min-height:42px}.qc-row{display:grid;gap:5px;margin:7px 0;padding:10px;border:1px solid #dbe5ef;border-radius:12px;background:linear-gradient(145deg,#fff,#f8fafc);box-shadow:0 2px 5px #17324b0d}.qc-row>b{font-size:15px}.qc-row-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.qc-row-head b{font-size:15px}.qc-row-fail{border-left:4px solid #dc2626}.qc-fail-badge{display:inline-grid;place-items:center;min-width:42px;height:22px;padding:0 7px;border-radius:999px;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:900}.qc-row>span,.qc-record{font-size:12px}.qc-record{display:grid;gap:2px;padding:6px 8px;border-radius:9px;border:1px solid transparent}.qc-record-pass{background:#ecfdf3;border-color:#b7e4c7}.qc-record-pass b,.qc-record-pass span{color:#17603a}.qc-record-pending{background:#fff8e7;border-color:#f0d995}.qc-record-pending b{color:#7a5700}.qc-record-pending span{color:#8b6915}.qc-record-fail{background:#fff0f0;border-color:#efb8b8}.qc-record-fail b,.qc-record-fail span{color:#a61b1b}.qc-record small{color:#9a3412}.qc-stage-painting-qc{border-left:4px solid #e29a35}.qc-stage-final-qc{border-left:4px solid #4f7fc0}.qc-stage-delivery{border-left:4px solid #2f8a61}.qc-stage-delivered{border-left:4px solid #64748b}.qc-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.qc-actions button{padding:8px 11px!important;min-height:38px!important;border-radius:10px!important;font-size:12px!important;font-weight:850!important;box-shadow:0 3px 8px rgba(23,48,77,.08)!important}.qc-btn-paint{color:#6f4300!important;background:#fff1d8!important;border:1px solid #edc47e!important}.qc-btn-final{color:#174b7a!important;background:#e7f2ff!important;border:1px solid #9ec5ec!important}.qc-btn-deliver,.qc-btn-pass{color:#17603a!important;background:#e8f8ee!important;border:1px solid #9ed2b1!important}.qc-btn-fail{color:#a61b1b!important;background:#ffe9e9!important;border:1px solid #e8a6a6!important}.qc-btn-repeat{color:#8a4b00!important;background:#fff0df!important;border:1px solid #e9ba79!important}.qc-btn-detail{color:#5b3f86!important;background:#f1eaff!important;border:1px solid #cbb7eb!important}.qc-actions button:disabled{opacity:.45!important;filter:grayscale(.15);box-shadow:none!important}.qc-launch{position:relative;min-height:92px!important;padding:14px 14px!important;display:grid!important;grid-template-columns:42px minmax(0,1fr) auto auto!important;align-items:center!important;gap:10px!important;text-align:left!important;border-radius:18px!important;color:#17324b!important;box-shadow:0 9px 20px rgba(23,48,77,.10),inset 0 1px 0 rgba(255,255,255,.85)!important;overflow:hidden!important}.qc-launch[data-qc-delivered]{background:linear-gradient(145deg,#f8fbff,#dbeafe)!important;border:1.5px solid #93c5fd!important;color:#1e3a8a!important;box-shadow:inset 0 2px 1px #fff,0 4px 0 #93c5fd,0 9px 15px rgba(37,99,235,.16)!important}.qc-launch[data-qc-delivered] .qc-card-copy b,.qc-launch[data-qc-delivered] .qc-card-copy small,.qc-launch[data-qc-delivered] .qc-card-arrow{color:#1e3a8a!important}.qc-launch[data-qc-delivered] .qc-card-icon{border:1px solid #93c5fd;border-radius:50%;background:linear-gradient(145deg,#fff,#dbeafe)}.qc-launch[data-qc-delivered] .qc-card-count{color:#1d4ed8}.qc-launch[data-qc-delivered]:focus-visible{outline:3px solid #2563eb;outline-offset:4px}.qc-launch[data-qc-delivered]:active{transform:translateY(2px)}.qc-launch[data-qc-queue]{background:linear-gradient(145deg,#f8fffc,#dff5ec)!important;border:1px solid #b7decf!important}.qc-launch[data-qc-ready]{background:linear-gradient(145deg,#fffdf7,#fff0c9)!important;border:1px solid #ead49a!important}.qc-ready-note{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0;color:#386642;font-weight:800;font-size:11px}.qc-ready-note span{padding:3px 6px;border-radius:999px;background:#e8f7ed;color:#267043}.qc-ready-note b{padding:3px 6px;color:#7b5b00}.qc-notice{margin:0 0 8px;padding:8px 10px;border-radius:10px;background:#e8f7ed;border:1px solid #b9dfc5;color:#246b3a;font-size:12px;font-weight:900}.qc-card-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:rgba(255,255,255,.78);box-shadow:0 4px 10px rgba(23,48,77,.08);font-size:21px;line-height:1}.qc-card-copy{display:grid;gap:4px;min-width:0}.qc-card-copy b{font-size:17px!important;line-height:1.1!important;font-weight:900!important;color:#172033!important}.qc-card-copy small{font-size:11px!important;line-height:1.2!important;font-weight:700!important;color:#607286!important}.qc-card-count{display:grid;place-items:center;min-width:30px;height:30px;padding:0 7px;border-radius:999px;background:#fff;color:#17704a;font-size:14px;font-weight:900;box-shadow:0 3px 8px rgba(23,48,77,.08)}.qc-card-arrow{font-size:28px;font-weight:900;color:#315b7c;line-height:1}@media(max-width:420px){.qc-launch{grid-template-columns:36px minmax(0,1fr) auto auto!important;padding:12px!important;gap:8px!important}.qc-card-icon{width:36px;height:36px;font-size:19px}.qc-card-copy b{font-size:15px!important}.qc-card-copy small{font-size:10px!important}}';style.textContent+="\n/* Raised dashboard cards; QC and delivery continue using their own queues. */\n.qc-launch[data-qc-queue],.qc-launch[data-qc-ready]{--qc-bg:#fef3c7;--qc-edge:#fbbf24;--qc-ink:#78350f;--qc-badge:#d97706;--qc-shadow:rgba(217,119,6,.17);border:1.5px solid var(--qc-edge)!important;border-radius:17px!important;background:linear-gradient(145deg,#fff,var(--qc-bg))!important;color:var(--qc-ink)!important;box-shadow:inset 0 2px 1px #fff,0 4px 0 var(--qc-edge),0 9px 15px var(--qc-shadow)!important;overflow:visible!important}\n.qc-launch[data-qc-ready]{--qc-bg:#d1fae5;--qc-edge:#34d399;--qc-ink:#064e3b;--qc-badge:#059669;--qc-shadow:rgba(5,150,105,.19)}\n.qc-launch[data-qc-queue][data-qc-count=\"0\"]{--qc-bg:#edf0f4;--qc-edge:#cbd5e1;--qc-ink:#475569;--qc-badge:#64748b;--qc-shadow:rgba(71,85,105,.10)}\n.qc-launch[data-qc-queue] .qc-card-icon,.qc-launch[data-qc-ready] .qc-card-icon{border:1px solid var(--qc-edge);border-radius:50%;background:linear-gradient(145deg,#fff,var(--qc-bg));box-shadow:0 3px 6px var(--qc-shadow)}\n.qc-launch[data-qc-queue] .qc-card-copy b,.qc-launch[data-qc-ready] .qc-card-copy b,.qc-launch[data-qc-queue] .qc-card-copy small,.qc-launch[data-qc-ready] .qc-card-copy small,.qc-launch[data-qc-queue] .qc-card-arrow,.qc-launch[data-qc-ready] .qc-card-arrow{color:var(--qc-ink)!important}\n.qc-launch[data-qc-queue] .qc-card-count,.qc-launch[data-qc-ready] .qc-card-count{min-width:37px;height:37px;padding:0 6px;border-radius:50%;border:1px solid var(--qc-badge);background:linear-gradient(145deg,var(--qc-edge),var(--qc-badge) 65%);color:#fff;font-size:22px;font-weight:900;box-shadow:inset 0 2px 2px #ffffffaa,0 3px 6px var(--qc-shadow)}\n.qc-launch[data-qc-queue]:focus-visible,.qc-launch[data-qc-ready]:focus-visible{outline:3px solid var(--qc-badge);outline-offset:4px}\n.qc-launch[data-qc-queue]:active,.qc-launch[data-qc-ready]:active{transform:translateY(2px)}\n#managerView .qc-launch[data-qc-queue],#managerView .qc-launch[data-qc-ready],#supervisorView .v143-glance .qc-launch[data-qc-ready]{grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto;gap:7px!important;padding:12px!important}\n#managerView .qc-launch[data-qc-queue] .qc-card-icon,#managerView .qc-launch[data-qc-ready] .qc-card-icon,#supervisorView .v143-glance .qc-launch[data-qc-ready] .qc-card-icon{grid-column:1;grid-row:1;width:34px;height:34px}\n#managerView .qc-launch[data-qc-queue] .qc-card-count,#managerView .qc-launch[data-qc-ready] .qc-card-count,#supervisorView .v143-glance .qc-launch[data-qc-ready] .qc-card-count{grid-column:2;grid-row:1}\n#managerView .qc-launch[data-qc-queue] .qc-card-copy,#managerView .qc-launch[data-qc-ready] .qc-card-copy,#supervisorView .v143-glance .qc-launch[data-qc-ready] .qc-card-copy{grid-column:1/-1;grid-row:2}\n#managerView .qc-launch[data-qc-queue] .qc-card-arrow,#managerView .qc-launch[data-qc-ready] .qc-card-arrow,#supervisorView .v143-glance .qc-launch[data-qc-ready] .qc-card-arrow{display:none}\n@media(max-width:420px){#managerView .qc-launch .qc-card-copy b,#supervisorView .v143-glance .qc-launch .qc-card-copy b{font-size:13px!important}}\n";style.textContent+="\n.qc-delivered-list-row{box-sizing:border-box;width:100%;display:grid!important;grid-template-columns:26px minmax(0,1fr) 14px;gap:8px;align-items:center;text-align:left;margin:0!important;padding:9px 3px!important;min-height:54px!important;border:0!important;border-bottom:1px solid #dce5ee!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;color:#17324b!important}\n.qc-delivered-no{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;background:#edf4fb;color:#31577d;font-size:11px;font-weight:900}\n.qc-delivered-copy{display:grid;gap:3px;min-width:0}\n.qc-delivered-copy b{font-size:13px;line-height:1.25;font-weight:850;overflow-wrap:anywhere;color:#17324b}\n.qc-delivered-copy small{font-size:11px;line-height:1.25;color:#607286;overflow-wrap:anywhere}\n.qc-delivered-next{font-size:23px;color:#64809b}\n.qc-delivered-list-row:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}\n.qc-delivered-list-row:active{background:#f1f6fb!important}\n";style.textContent+='.invoice-entry-row{display:grid;grid-template-columns:minmax(180px,1.5fr) minmax(110px,.8fr) minmax(130px,.9fr) auto auto;gap:8px;align-items:end;padding:10px 4px;border-bottom:1px solid #dce5ee}.invoice-entry-vehicle{display:grid;gap:3px;align-self:center}.invoice-entry-vehicle b{font-size:14px;color:#17324b}.invoice-entry-vehicle small{font-size:11px;color:#607286}.invoice-entry-row label{display:grid;gap:4px;margin:0!important}.invoice-entry-row label span{font-size:10px;font-weight:850;color:#607286}.invoice-entry-row input{box-sizing:border-box;width:100%;min-height:39px;padding:7px 8px!important;margin:0!important;font-size:13px!important}.invoice-entry-row button{min-height:39px!important;margin:0!important;padding:7px 10px!important}.invoice-row-detail{background:#f4edff!important;color:#67468f!important}@media(max-width:650px){.invoice-entry-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.invoice-entry-vehicle{grid-column:1/-1}.invoice-entry-row .invoice-row-save,.invoice-entry-row .invoice-row-detail{width:100%}}.invoice-circles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px 0}.qc-page .invoice-circle{aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid #cbdff3;box-shadow:0 5px 12px #17324b20;color:#245b8d;background:#eef7ff}.invoice-circle span{font-weight:900}.invoice-circle b{font-size:30px}.invoice-circle small{font-size:11px}.qc-page .invoice-credit{color:#70509d;background:#f6f1ff;border-color:#e2d8f2}.qc-page .invoice-insurance{color:#21704e;background:#edf9f3;border-color:#cce9d9}.qc-invoice-summary{padding:8px;border-radius:9px;background:#f5f8fc;margin:7px 0}.qc-invoice-summary p{font-size:12px}.qc-launch[data-invoice-entry]{background:#f6f1ff!important;border-color:#ded1f2!important}@media(max-width:420px){.invoice-circles{gap:6px}.invoice-circle span{font-size:12px}}';style.textContent+='.qc-overview-row{min-width:0;overflow-wrap:anywhere}.qc-overview-row .qc-actions button{min-height:44px}';document.head.appendChild(style);
+window.zukaitQCRefreshManagerCards=apply;
+const previous=window.render;window.render=function(){const out=previous?.apply(this,arguments);apply();return out};const after=window.v42AfterCloudPull;window.v42AfterCloudPull=function(){const out=after?.apply(this,arguments);apply();Promise.resolve().then(projectionAfterCloudPull);return out};window.addEventListener('zukait-live-status',apply);apply();

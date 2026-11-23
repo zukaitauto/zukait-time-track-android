@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),a=require('node:assert/strict');
+const r=JSON.parse(fs.readFileSync('accounts-web-preview-request.json','utf8'));
+a.equal(process.env.GITHUB_REF,'refs/heads/architecture-v2');
+a.equal(r.scope,'accounts-cash-invoices-visual-preview');a.equal(r.ownerApprovedWebVisualTesting,true);
+for(const k of ['productionAccountingWrites','staffActivation','publishApk','changeUpdater'])a.equal(r[k],false,k);
+for(const k of ['sourceCommit','preservedWorkshopSource'])a.match(r[k],/^[0-9a-f]{40}$/);
+for(const k of ['accountant','signed'])a.ok(Number.isSafeInteger(r.verificationRuns[k])&&r.verificationRuns[k]>0);
+a.equal(JSON.parse(fs.readFileSync('release-accountant-activation.json','utf8')).approved,false);
+console.log('Protected additive visual preview only: no staff activation, accounting writes, APK or updater changes.');

@@ -1,0 +1,5 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_JOBCARD_PROJECTION.sql','utf8');const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(sql,/zukait_v2_wip_page/i);assert.match(sql,/completed_at is null/i);assert.match(sql,/status not in \('DELIVERED','CLOSED','CANCELLED'\)/i);assert.match(sql,/interval '30 days' then 'OVERDUE'/i);assert.match(sql,/interval '25 days' then 'WARNING'/i);assert.match(sql,/else 'NORMAL'/i);assert.match(sql,/p_stage/i);assert.match(sql,/p_risk/i);assert.match(sql,/least\(coalesce\(p_limit,100\),500\)/i);assert.match(sql,/revoke all[^;]+anon,authenticated/is);assert.match(sql,/grant execute[^;]+service_role/is);
+assert.match(api,/report === "WIP" \|\| report === "COMPLETION_TARGET"/);assert.ok(api.includes('zukait_v2_wip_page'));assert.match(api,/filters\.stage \|\| null/);assert.match(api,/filters\.risk \|\| null/);
+console.log('V2 WIP/30-day projection contract: ok');

@@ -1,0 +1,95 @@
+name: Build Zukait Time Track APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'Branch to build (release workflow is locked to architecture-v2)'
+        required: false
+        default: 'architecture-v2'
+        type: string
+  push:
+    branches: [ main, feature/painting-consumables-v1, architecture-v2 ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout architecture-v2 release branch
+        uses: actions/checkout@v4
+        with:
+          ref: architecture-v2
+
+      - name: Verify release branch and version
+        shell: bash
+        run: |
+          test "$(git branch --show-current)" = "architecture-v2"
+          VERSION_CODE=$(jq -r '.versionCode' release-request.json)
+          VERSION_NAME=$(jq -r '.versionName' release-request.json)
+          grep -Fq "versionCode $VERSION_CODE" app/build.gradle
+          grep -Fq "versionName \"$VERSION_NAME\"" app/build.gradle
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Validate JavaScript
+        shell: bash
+        run: |
+          bash scripts/ci-validate-js.sh
+      - name: Run functional smoke tests
+        shell: bash
+        run: |
+          bash scripts/ci-full-regression.sh
+      - name: Check production assets
+        shell: bash
+        run: |
+          bash scripts/ci-check-production-assets.sh
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build release APK
+        run: gradle assembleRelease --stacktrace
+
+      - name: Rename unsigned APK
+        shell: bash
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE.apk
+
+      - name: Upload unsigned APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE
+          path: ZUKAIT_TIME_TRACK_UNSIGNED_RELEASE.apk
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Prepare Android signing tools
+        shell: bash
+        run: |
+          mkdir -p signing-tools/lib
+          cp "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" signing-tools/
+          cp "$ANDROID_SDK_ROOT/build-tools/35.0.0/zipalign" signing-tools/
+          cp "$ANDROID_SDK_ROOT/build-tools/35.0.0/lib/apksigner.jar" signing-tools/lib/
+          chmod +x signing-tools/apksigner signing-tools/zipalign
+
+      - name: Upload Android signing tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: ANDROID_SIGNING_TOOLS_35
+          path: signing-tools
+          retention-days: 7

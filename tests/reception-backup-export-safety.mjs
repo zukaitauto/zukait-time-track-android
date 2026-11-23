@@ -1,0 +1,43 @@
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const file='scripts/backup-zukait-production-readonly.ps1';
+const source=fs.readFileSync(file,'utf8');
+const receipt=fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8');
+const req=JSON.parse(fs.readFileSync('release-request.json','utf8'));
+const gate=JSON.parse(receipt);
+const expected=[
+ /#Requires -Version 7/,
+ /EncryptedOffsiteConfirmed/,
+ /ZUKAIT_PROD_DB_URL/,
+ /pjknotnjkufadqavcmii/,
+ /omqgkqknbdcnotabffek/,
+ /Postgres/i,
+ /--role-only/,
+ /schema\.sql/,
+ /--data-only/,
+ /--use-copy/,
+ /workshop_state/,
+ /workshop_v2_spare_part_state/,
+ /Get-FileHash/,
+ /EXPORT_VERIFIED_FILES_ONLY/,
+ /databaseRestoreTest='NOT_RUN'/,
+ /storageObjectBackup='NOT_INCLUDED'/,
+ /edgeFunctionBackup='NOT_INCLUDED'/
+];
+for(const re of expected) assert.match(source,re,'Missing backup safety prerequisite '+re);
+for(const forbidden of [/\bDROP\s+(?:DATABASE|TABLE)\b/i,/\bTRUNCATE\b/i,
+ /\bDELETE\s+FROM\b/i,/\bALTER\s+TABLE\b/i,
+ /\bpg_restore\s+--dbname\b/i,/\bsupabase\s+db\s+reset\b/i])
+ assert.doesNotMatch(source,forbidden,'Backup helper must not include destructive database operations');
+assert.equal(typeof req.approvedForStaff,'boolean','Release approval flag must be explicit');
+// Backup preparation must never modify the approval record; an independently approved UI-only release can coexist.
+assert.ok(!req.approvedForStaff || /^[a-f0-9]{40}$/.test(req.sourceCommit || ''),
+ 'Approved release must retain its pinned source');
+assert.doesNotMatch(source,/INSURANCE_V305_ACCEPTANCE_GATE|release-request\.json/,
+ 'Static backup helper must not write approval or acceptance records');
+if(gate.checks.fresh_backup_restored.passed) {
+ createRequire(import.meta.url)('../scripts/verify-v305-acceptance.cjs').validate(req,gate);
+ assert.match(gate.checks.fresh_backup_restored.evidence,/restor/i,'Separate restore evidence required');
+}
+console.log('PASS: read-only Free-plan backup helper, production-project and encryption checks, three separate SQL dumps, integrity hashes, no implicit restore or publication.');

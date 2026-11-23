@@ -1,0 +1,9 @@
+{
+  "versionCode": 377,
+  "versionName": "V414",
+  "status": "current",
+  "package": "com.zukait.timetrack",
+  "sourceCommit": "e01f6f6b20b62a95fccce1bd211e9c34e6bb2d46",
+  "apkSha256": "2c8d39e5a1272072a8ff9f289b65465da91a5436c8d78715f3633625fcd8cf5b",
+  "releaseTag": "release-V414-architecture-v2"
+}

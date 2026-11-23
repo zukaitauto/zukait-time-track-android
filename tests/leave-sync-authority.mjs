@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(api,/function preserveLeaveAuthority\(/);
+assert.match(api,/Leave deletion is never a valid workflow action/);
+assert.match(api,/String\(user\?\.role\|\|""\)!=="Manager"/);
+assert.match(api,/candidate = preserveLeaveAuthority\(candidate, current\.data, user\)/);
+const ui=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+assert.match(ui,/function leaveToday\(\)\{const d=window\.zukaitV2\?\.leave\?\.dashboard\?\.\(state\)/);
+assert.match(ui,/function leaveMonth\(\)\{const d=window\.zukaitV2\?\.leave\?\.dashboard\?\.\(state\)/);
+console.log('Leave persistence authority and Oman-date list routing passed');

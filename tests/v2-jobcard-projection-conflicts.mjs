@@ -1,0 +1,6 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_JOBCARD_PROJECTION.sql','utf8');const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(sql,/zukait_v2_upsert_jobcard/i);assert.match(sql,/excluded\.revision>workshop_v2_jobcards\.revision/i);assert.match(sql,/last_event_id is distinct from excluded\.last_event_id/i);assert.match(sql,/stale_jobcard_revision/i);assert.match(sql,/outrow\.last_event_id is distinct from p_event_id/i);assert.match(sql,/coalesce\(p_revision,0\)<=outrow\.revision/i);assert.match(sql,/on conflict\(job_card\) do update/i);assert.match(api,/action === "v2_upsert_jobcard"/);assert.match(api,/p_revision:revision/);assert.match(api,/p_event_id:j\.eventId/);
+const current={revision:4,eventId:'e4'};const decide=(incoming)=>incoming.eventId===current.eventId?'ACK':incoming.revision>current.revision?'APPLY':'STALE';
+assert.equal(decide({revision:4,eventId:'e4'}),'ACK');assert.equal(decide({revision:3,eventId:'e3'}),'STALE');assert.equal(decide({revision:4,eventId:'other'}),'STALE');assert.equal(decide({revision:5,eventId:'e5'}),'APPLY');
+console.log('V2 Job Card projection conflict contract: ok');

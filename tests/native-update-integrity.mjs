@@ -1,0 +1,11 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const java=fs.readFileSync('app/src/main/java/com/zukait/timetrack/MainActivity.java','utf8');
+const ui=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const manifest=fs.readFileSync('app/src/main/AndroidManifest.xml','utf8');
+for(const x of ['updateEnqueueInProgress','hasExistingUpdateDownload()','persistUpdateDownloadState(id, publishedCode)','restoreUpdateDownloadState()','resumeUpdateDownloadMonitoring()','clearInstalledUpdateDownloadIfNeeded()','removeDownloadedUpdate(completedId)','pending_install_permission','installDownloadedUpdateNative()'])assert.ok(java.includes(x),'native updater missing '+x);
+assert.match(java,/publishedCode <= installedVersionCode\(\)/,'native updater must block downgrade/reinstall');
+assert.match(java,/DownloadManager\.STATUS_SUCCESSFUL/,'native updater must restore completed download');
+assert.match(manifest,/REQUEST_INSTALL_PACKAGES/);assert.match(manifest,/FileProvider/);
+for(const x of ['Current Version','New Version','CHECK FOR UPDATES','DOWNLOAD UPDATE','INSTALL UPDATE','App is up to date.'])assert.ok(ui.includes(x),'update UI missing '+x);
+assert.match(ui,/Number\(latestCode\)<=current/,'web update UI must block downgrade');
+console.log('Native updater persistence, duplicate guard, install handoff and cleanup: ok');

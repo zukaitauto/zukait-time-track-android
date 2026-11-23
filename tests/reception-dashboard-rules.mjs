@@ -1,0 +1,192 @@
+import assert from "node:assert/strict";
+import {qcWork} from "../supabase/functions/workshop-api/qc_delivery_rules.js";
+import {receptionDashboardProjection,receptionPromiseTransition,preserveReceptionPromiseAuthority,validPromiseDate} from "../supabase/functions/workshop-api/reception_dashboard_rules.js";
+const rec=(n,seq,status,location,job="",type="INSURANCE",date="2026-10-10T09:00:00+04:00")=>({
+ rc_no:n,sequence_no:seq,details:{make:"Toyota",model:"Camry",registration:"QA-"+seq,customer:"QA-only"},
+ job_card:job,job_type:type,received_at:date,location,approval_status:status,insurance_company:"QA Insurance"});
+const cases=[
+ rec("RC0002",2,"WAITING","VIW"),
+ rec("RC0010",10,"APPROVED","VIW"),
+ rec("RC0009",9,"APPROVED","VWC","JC120"),
+ rec("RC0012",12,"WAITING","VWC"),
+ rec("RC0011",11,"APPROVED","VWC","JC125"),
+ rec("RC0013",13,"WAITING","VIW","JC199","CASH")
+];
+const jobs=[
+ {no:"JC125",receptionNo:"RC0011",jobType:"INSURANCE",reg:"QA-11",make:"Toyota",model:"Camry",status:"Open",promiseDate:"2026-10-15",createdAt:Date.parse("2026-10-10T10:00:00+04:00")},
+ {no:"JC120",receptionNo:"RC0009",jobType:"INSURANCE",reg:"QA-9",make:"Toyota",model:"Camry",status:"Open",promiseDate:""},
+ {no:"JC199",receptionNo:"RC0013",jobType:"CASH",reg:"QA-13",status:"Delivered",delivered:true,deliveredAt:Date.parse("2026-10-11T11:25:00+04:00")},
+ {no:"JC100",jobType:"CREDIT",reg:"QA-100",status:"Open",promiseDate:""},
+ {no:"ID001",status:"Open"}
+];
+const data={jobs,assign:[{id:"QC-ASSIGN",emp:"QA-EMP",job:"JC125",completed:true,completedAt:15}],
+ sessions:[{id:"QC-SESSION",emp:"QA-EMP",job:"JC125",start:10,end:14}],
+ expenses:[{amount:199.5}],password:"NOPE"};
+jobs[0].qcWorkflow={revision:1,fingerprint:qcWork(data,"JC125").fingerprint,painting:{result:"PASS"},final:{result:"PASS"}};
+const projection=opts=>receptionDashboardProjection(data,cases,{section:"checklists",...opts});
+const start=projection({});
+assert.equal(start.ok,true);assert.equal(start.counts.checklists,6);
+assert.equal(start.rows[0].rc_no,"RC0013","Numeric reception sorting must be newest first");
+assert.equal(start.counts.waiting,2,"Waiting insurance only, not direct cash or linked jobs");
+assert.equal(start.counts.approved,1,"Approved checklist disappears after JC creation");
+assert.equal(start.counts["vwc-checklists"],1);
+assert.equal(start.counts["vwc-jobs"],2);
+assert.equal(start.counts.vwc,3);
+assert.equal(start.counts.ready,1,"Ready uses existing final QC fingerprint, not status alone");
+assert.equal(start.counts.delivered,1);
+assert.equal(start.counts.no_promise_date,2);
+assert.deepEqual(projection({section:"ready"}).rows.map(r=>r.job_card),["JC125"]);
+assert.equal(projection({section:"delivered"}).rows[0].job_card,"JC199");
+assert.equal(projection({section:"approved"}).rows[0].rc_no,"RC0010");
+assert.deepEqual(projection({section:"jobs"}).rows.map(r=>r.job_card),["JC125","JC199","JC120","JC100"]);
+const isolated=[...cases, {...rec("RC-DIRECT",99,"APPROVED","VIW","JC-DIRECT","INSURANCE"),details:{...rec("RC-DIRECT",99,"APPROVED","VIW").details,direct_job_only:true}}];
+const isolatedData={...data,jobs:[...jobs,{no:"JC-DIRECT",receptionNo:"RC-DIRECT",createdAt:Date.parse("2026-10-11T12:00:00+04:00"),jobType:"INSURANCE",status:"Open"}]};
+const isolatedProjection=section=>receptionDashboardProjection(isolatedData,isolated,{section});
+assert.equal(isolatedProjection("checklists").rows.some(r=>r.rc_no==="RC-DIRECT"),false,"Direct Job Cards must not appear as checklists");
+assert.equal(isolatedProjection("jobs").rows[0].job_card,"JC-DIRECT","Newest creation timestamp appears first, regardless of Job Card number");
+const simultaneousData={...isolatedData,jobs:[...isolatedData.jobs,
+ {no:"JC-LINKED-NEW",receptionNo:"RC0010",createdAt:Date.parse("2026-10-11T13:00:00+04:00"),jobType:"INSURANCE",status:"Open"},
+ {no:"JC-LINKED-NEW",receptionNo:"RC0010",createdAt:Date.parse("2026-10-11T13:00:00+04:00"),jobType:"INSURANCE",status:"Open"}]};
+const simultaneous=receptionDashboardProjection(simultaneousData,isolated,{section:"jobs"});
+assert.equal(simultaneous.rows[0].job_card,"JC-LINKED-NEW","Newer linked intake precedes older numeric Job Cards");
+assert.equal(simultaneous.rows.filter(r=>r.job_card==="JC-LINKED-NEW").length,1,"Duplicate state entries must not duplicate the visible Job Card");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"JC-LINKED-NEW"}).total,1,"Job number lookup stays unique");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"qa-11"}).rows.some(r=>r.job_card==="JC125"),true,"Registration search finds matching Job Card");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"toyota camry"}).rows.some(r=>r.job_card==="JC125"),true,"Vehicle make and model search is supported");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",month:"2026-09"}).total,0,"Month filter excludes nonmatching Job Cards");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",from:"2026-10-12"}).total,0,"Date range excludes earlier Job Cards");
+assert.equal(receptionDashboardProjection(simultaneousData,isolated,{section:"jobs",search:"JC-LINKED-NEW",month:"2026-10"}).total,1,"Combined Job Card search and month filters preserve deduplication");
+
+
+// "Job Card Not Open" is an actionable in-garage-only queue, not simply
+// a synonym for every Checklist that lacks a JC.
+const notOpenedCases=[
+ rec("RC-ELIGIBLE",50,"APPROVED","VIW"),
+ rec("RC-WAITING",49,"WAITING","VIW"),
+ {...rec("RC-CTL",48,"APPROVED","VIW"),repair_status:"CTL"},
+ {...rec("RC-NOT-REPAIRED",47,"APPROVED","VIW"),repair_status:"NOT_REPAIRED"},
+ {...rec("RC-CASH-SETTLED",46,"APPROVED","VIW","", "CASH"),outcome:"CASH_SETTLED"},
+ rec("RC-OUTSIDE",45,"APPROVED","VWC"),
+ {...rec("RC-RELEASED",44,"APPROVED","VIW"),released_date:"2026-10-12"},
+ rec("RC-OPENED",43,"APPROVED","VIW","JC-OPENED"),
+ {...rec("RC-DIRECT",42,"APPROVED","VIW"),details:{make:"Toyota",model:"Camry",registration:"QA-42",direct_job_only:true}}
+];
+const unlinked=receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened"});
+assert.equal(unlinked.ok,true);
+assert.deepEqual(unlinked.rows.map(r=>r.rc_no),["RC-ELIGIBLE","RC-WAITING"],"Only pending repairs in garage with no JC qualify");
+assert.equal(unlinked.total,2,"Filter total is computed before pagination");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened",search:"QA-50"}).total,1,"Filter combines with registration search");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened",month:"2026-09"}).total,0,"Filter combines with month");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"not_opened",company_filter:"cash"}).total,0,"Filter combines with job type");
+assert.equal(receptionDashboardProjection({jobs:[]},notOpenedCases,{section:"checklists",checklist_status:"nonsense"}).code,"reception_invalid_filter");
+
+assert.equal(projection({section:"checklists",search:"JC125"}).rows[0].rc_no,"RC0011");
+assert.equal(projection({section:"checklists",search:"qa-12"}).rows[0].rc_no,"RC0012");
+assert.equal(projection({section:"checklists",search:"rc0010"}).rows[0].rc_no,"RC0010");
+assert.equal(projection({section:"checklists",month:"2026-10"}).total,6);
+assert.equal(projection({section:"checklists",month:"2026-09"}).total,0);
+assert.equal(projection({section:"followup",missing_only:true}).total,2);
+assert.deepEqual(projection({section:"followup",from:"2026-10-10",to:"2026-10-16"}).rows.map(x=>x.job_card),["JC125"]);
+assert.equal(projection({section:"followup",from:"2026-10-16",to:"2026-10-20"}).total,0);
+assert.equal(projection({section:"followup",dated_only:true}).total,1);
+const followupJobs={jobs:[
+ {no:"JC201",createdAt:"2026-10-07T10:00:00+04:00",promiseDate:"2026-10-16"},
+ {no:"JC202",createdAt:"2026-10-05T10:00:00+04:00",promiseDate:"2026-10-16"},
+ {no:"JC203",createdAt:"2026-10-09T10:00:00+04:00",promiseDate:"2026-10-15"},
+ {no:"JC204",createdAt:"2026-10-04T10:00:00+04:00"},
+ {no:"JC205",createdAt:"2026-10-08T10:00:00+04:00"},
+ {no:"JC206",createdAt:"2026-10-01T10:00:00+04:00",promiseDate:"2026-10-14",delivered:true}
+]};
+const followupOrder=filters=>receptionDashboardProjection(followupJobs,[],{section:"followup",...filters}).rows.map(row=>row.job_card);
+assert.deepEqual(followupOrder(),["JC203","JC202","JC201","JC205","JC204"]);
+assert.deepEqual(followupOrder({dated_only:true}),["JC203","JC202","JC201"]);
+assert.deepEqual(followupOrder({missing_only:true}),["JC205","JC204"]);
+assert.equal(projection({section:"invalid"}).code,"reception_invalid_section");
+assert.equal(validPromiseDate("2026-02-30"),false);
+assert.equal(validPromiseDate("2026-10-15"),true);
+const user={id:"SUP-QA",role:"Supervisor"},id="f474101c-73a4-4c0b-930d-5aa5cd6feb64";
+const body={action:"reception_promise_date",job_card:"JC100",promise_date:"2026-10-14",expected_promise_date:"",request_id:id};
+const first=receptionPromiseTransition(data,user,body,42);
+assert.equal(first.ok,true);
+assert.equal(first.data.jobs.find(j=>j.no==="JC100").promiseDate,"2026-10-14");
+assert.equal(data.jobs.find(j=>j.no==="JC100").promiseDate,"");
+assert.deepEqual(first.data.expenses,data.expenses);
+assert.equal(first.data.assign.length,data.assign.length);
+assert.equal(receptionPromiseTransition(first.data,user,body,43).duplicate,true);
+const deliveredAfterPromise=structuredClone(first.data);
+const deliveredJob=deliveredAfterPromise.jobs.find(j=>j.no==="JC100");
+deliveredJob.delivered=true;deliveredJob.status="Delivered";deliveredJob.deliveredAt=123;
+const beforeDeliveredReplay=structuredClone(deliveredAfterPromise);
+const deliveredReplay=receptionPromiseTransition(deliveredAfterPromise,user,body,234);
+assert.equal(deliveredReplay.ok,true,"Lost promise response must remain confirmable after delivery");
+assert.equal(deliveredReplay.duplicate,true,"Saved UUID must deduplicate after delivery");
+assert.equal(deliveredReplay.data,undefined,"Promise retry must not commit another state revision");
+assert.deepEqual(deliveredAfterPromise,beforeDeliveredReplay,"Promise retry must not alter delivery");
+assert.equal(receptionPromiseTransition(deliveredAfterPromise,user,
+ {...body,request_id:"a474101c-73a4-4c0b-930d-5aa5cd6feb64"},235).code,"reception_job_not_open");
+assert.equal(receptionPromiseTransition(deliveredAfterPromise,user,
+ {...body,promise_date:"2026-10-16"},235).code,"reception_request_conflict");
+assert.equal(receptionPromiseTransition(deliveredAfterPromise,{...user,id:"DIFFERENT"},body,235).code,"reception_request_conflict");
+const cancelledAfterPromise=structuredClone(first.data);
+cancelledAfterPromise.jobs.find(j=>j.no==="JC100").cancelled=true;
+cancelledAfterPromise.jobs.find(j=>j.no==="JC100").status="CANCELLED";
+assert.equal(receptionPromiseTransition(cancelledAfterPromise,user,body,235).duplicate,true,
+ "Retry confirmation must survive cancellation after a completed promise write");
+const archivedAfterPromise=structuredClone(first.data);
+archivedAfterPromise.jobs.find(j=>j.no==="JC100").archived=true;
+assert.equal(receptionPromiseTransition(archivedAfterPromise,user,body,235).duplicate,true,
+ "Retry confirmation must survive archiving after a completed promise write");
+assert.equal(receptionPromiseTransition(first.data,user,{...body,job_card:"JC120"},235).code,
+ "reception_request_conflict","A request UUID must not be reused for a different Job Card");
+const upperUuid={...body,request_id:body.request_id.toUpperCase()};
+assert.equal(receptionPromiseTransition(first.data,user,upperUuid,235).duplicate,true,
+ "Promise receipt UUID comparison must be case-insensitive");
+
+assert.equal(receptionPromiseTransition(first.data,{...user,id:"DIFFERENT"},body,43).code,"reception_request_conflict");
+assert.equal(receptionPromiseTransition(first.data,user,{...body,request_id:"a474101c-73a4-4c0b-930d-5aa5cd6feb64"},43).code,"reception_promise_conflict");
+assert.equal(receptionPromiseTransition(data,{id:"QA-RC",role:"Receptionist"},body,42).code,"reception_promise_forbidden");
+assert.equal(receptionPromiseTransition(data,user,{...body,promise_date:"2026-02-30"},42).code,"reception_promise_invalid_date");
+assert.equal(receptionPromiseTransition(data,user,{...body,job_card:"JC199"},42).code,"reception_job_not_open");
+const preserved=preserveReceptionPromiseAuthority({jobs:first.data.jobs.map(j=>({...j,promiseDate:"TAMPERED",promiseAudit:[]}))},first.data);
+assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseDate,"2026-10-14");
+assert.equal(preserved.jobs.find(j=>j.no==="JC100").promiseAudit.length,1);
+assert.equal(JSON.stringify(start).includes("199.5"),false,"No expense data exposed to Reception");
+console.log("Reception dashboard: all ten categories, creation-time sorting, month/date ranges, RC/JC/registration search, shared QC/delivery authority, no-date follow-up, audited promise date and old-client preservation passed.");
+
+const deliveredCase=projection({section:'checklists',search:'RC0013'}).rows[0];
+assert.equal(deliveredCase.status,'Delivered');
+assert.equal(deliveredCase.location,'DELIVERED');
+assert.equal(deliveredCase.delivered,true);
+assert.equal(deliveredCase.delivered_date,'2026-10-11');
+assert.equal(projection({section:'jobs',search:'JC199'}).rows[0].location,'DELIVERED');
+assert.equal(cases.find(r=>r.rc_no==='RC0013').location,'VIW','Projection must preserve intake history');
+assert.equal(jobs.find(j=>j.no==='JC199').delivered,true);
+console.log('Delivered checklist and Job Card projections agree without rewriting intake locations');
+
+const ageNow=Date.parse('2026-10-23T20:00:00Z');
+const ageData={jobs:[
+ {no:'AGE1',jobType:'INSURANCE',insuranceCompany:'Alpha Insurance',createdAt:Date.parse('2026-10-23T19:59:00Z'),status:'Open'},
+ {no:'AGE2',jobType:'CASH',insuranceCompany:'Alpha Insurance',createdAt:Date.parse('2026-10-24T00:01:00+04:00'),status:'Open'},
+ {no:'AGE3',jobType:'INSURANCE',insuranceCompany:'Beta Insurance',createdAt:Date.parse('2026-10-13T00:00:00+04:00'),delivered:true,deliveredAt:Date.parse('2026-10-16T19:00:00+04:00'),status:'Delivered'},
+ {no:'AGE4',jobType:'CREDIT',status:'Open'}
+]};
+const ageSnapshot=JSON.stringify(ageData);
+const ages=receptionDashboardProjection(ageData,[],{section:'jobs'},ageNow).rows;
+assert.equal(ages.find(r=>r.job_card==='AGE1').days_open,1,'Oman midnight advances calendar-day age');
+assert.equal(ages.find(r=>r.job_card==='AGE2').days_open,0,'Same-day opening starts at zero');
+assert.equal(ages.find(r=>r.job_card==='AGE3').days_open,3,'Delivered age stops on delivery date');
+assert.equal(ages.find(r=>r.job_card==='AGE4').days_open,null,'Missing opening date cannot invent an age');
+for(const [filter,nos] of [['cash',['AGE2']],['credit',['AGE4']],['insurer:ALPHA INSURANCE',['AGE1']],['insurance',['AGE1','AGE3']]]){
+ const result=receptionDashboardProjection(ageData,[],{section:'jobs',company_filter:filter},ageNow);
+ assert.deepEqual(result.rows.map(r=>r.job_card).sort(),nos.sort());
+}
+assert.equal(receptionDashboardProjection(ageData,[],{section:'followup',company_filter:'insurer:ALPHA INSURANCE',missing_only:true},ageNow).total,1,'Promise filters cannot bypass the company restriction');
+const many={jobs:Array.from({length:70},(_,i)=>({no:'PAGE'+i,createdAt:Date.parse('2026-10-01T00:00:00Z')+i*1000,jobType:i===0?'INSURANCE':'CASH',insuranceCompany:i===0?'Last Page Insurer':'',status:'Open'}))};
+const firstPage=receptionDashboardProjection(many,[],{section:'jobs'},ageNow);
+assert.equal(firstPage.rows.length,50);
+assert.ok(firstPage.company_options.some(x=>x.value==='insurer:LAST PAGE INSURER'),'Options include companies outside the visible page');
+const lastInsurer=receptionDashboardProjection(many,[],{section:'jobs',company_filter:'insurer:LAST PAGE INSURER'},ageNow);
+assert.equal(lastInsurer.total,1);assert.equal(lastInsurer.rows[0].job_card,'PAGE0');
+for(const value of [{},'unknown','insurer:','x'.repeat(261)])assert.equal(receptionDashboardProjection(ageData,[],{section:'jobs',company_filter:value}).code,'reception_invalid_filter');
+assert.equal(JSON.stringify(ageData),ageSnapshot);
+console.log('Days-open calendar boundaries, delivery cutoff, company/type isolation and filter-before-pagination passed');

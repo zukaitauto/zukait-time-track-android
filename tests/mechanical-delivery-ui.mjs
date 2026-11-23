@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';
+import fs from 'node:fs';
+import {mountMechanicalDelivery} from '../app/src/main/assets/mechanical_delivery.js';
+const id=n=>'78000000-0000-4000-8000-'+String(n).padStart(12,'0'),user={id:'SUP003',role:'Supervisor',key:'QA_SESSION'},checklist=id(1);let serial=100;
+const status=()=>({checklistId:checklist,workComplete:true,deliveryReady:true,delivered:false,recordsRevision:8,workshopRevision:12,workToken:'a'.repeat(64)});
+const preview=()=>({ok:true,status:status(),vehicle:{jobCard:'QA_JC',description:'Vehicle <script>unsafe</script>',registration:'QA_REG'}});
+const settle=()=>new Promise(r=>setTimeout(r,0));
+async function setup({who=user,enabled=true,stored=[],apiOverride,scope=checklist}={}){
+ const dom=new JSDOM('<div id="root"></div>',{url:'https://example.invalid'}),root=dom.window.document.getElementById('root'),storage=new Map(stored),calls=[];let current=who,network=true,done=0;
+ const storageApi={getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)};
+ const api=async body=>{calls.push(structuredClone(body));if(apiOverride)return apiOverride(body);return body.action==='mechanical_delivery_preview'?preview():{ok:true,requestId:body.command.requestId}};
+ const controller=await mountMechanicalDelivery(root,{enabled,checklistId:scope,getSession:()=>current,online:()=>network,storage:storageApi,uuid:()=>id(serial++),api,onDone:()=>{done++}});
+ return {root,dom,storage,storageApi,calls,controller,offline:()=>{network=false},switch:()=>{current={...current,key:'ROTATED'}},done:()=>done};
+}
+async function click(x,label){const button=[...x.root.querySelectorAll('button')].find(b=>b.textContent===label);assert.ok(button,'Missing '+label);button.click();await settle()}
+for(const role of ['Manager','Accountant','Employee']){const x=await setup({who:{...user,role}});assert.equal(x.calls.length,0)}
+let x=await setup({enabled:false});assert.equal(x.calls.length,0);
+x=await setup();assert.equal(x.calls.length,1);assert.equal(x.root.querySelectorAll('script,img').length,0);assert.ok(!x.root.textContent.includes('a'.repeat(64)));await click(x,'Confirm vehicle delivered');assert.equal(x.done(),1);assert.equal(x.storage.has('zukait_mechanical_delivery_pending_v1:SUP003'),false);assert.equal(x.calls[1].command.expectedRevision,8);assert.equal(x.calls[1].command.expectedWorkshopRevision,12);assert.ok(!JSON.stringify(x.calls).includes('QA_SESSION'));
+let writes=[],lost=true;x=await setup({who:{...user,id:'QA_REC',role:'Receptionist'},apiOverride:async body=>{if(body.action==='mechanical_delivery_preview')return preview();writes.push(structuredClone(body.command));if(lost){lost=false;throw Error('QA_LOST_ACK')}return {ok:true,duplicate:true,requestId:body.command.requestId}}});await click(x,'Confirm vehicle delivered');assert.equal(x.done(),0);assert.match(x.root.textContent,/Response not confirmed/);const saved=[...x.storage];await click(x,'Retry saved delivery');assert.deepEqual(writes[0],writes[1]);assert.equal(x.done(),1);
+x=await setup({who:{...user,id:'QA_REC',role:'Receptionist'},stored:saved});assert.equal(x.calls.filter(c=>c.action==='mechanical_command').length,0);await click(x,'Retry saved delivery');assert.deepEqual(x.calls.at(-1).command,writes[0]);
+x=await setup({who:{...user,id:'QA_REC',role:'Receptionist'},stored:saved,scope:id(2)});assert.equal(x.calls.length,0);assert.match(x.root.textContent,/Reopen delivery/);assert.equal(x.storage.has('zukait_mechanical_delivery_pending_v1:QA_REC'),true);
+x=await setup();x.offline();await click(x,'Confirm vehicle delivered');assert.equal(x.calls.length,1);
+x=await setup();x.storageApi.setItem=()=>{throw Error('QA_DISK_FULL')};await click(x,'Confirm vehicle delivered');assert.equal(x.calls.length,1);assert.match(x.root.textContent,/No change was sent/);
+let revision=8,token='a'.repeat(64);writes=[];x=await setup({apiOverride:async body=>{if(body.action==='mechanical_delivery_preview')return {...preview(),status:{...status(),recordsRevision:revision,workToken:token}};writes.push(structuredClone(body.command));return {ok:false,code:'mechanical_revision_conflict'}}});await click(x,'Confirm vehicle delivered');revision=9;token='b'.repeat(64);await click(x,'Refresh for delivery review');assert.equal(writes.length,1);await click(x,'Confirm reviewed delivery');assert.equal(writes.length,2);assert.notEqual(writes[0].requestId,writes[1].requestId);assert.equal(writes[1].expectedRevision,9);assert.equal(writes[1].payload.expectedFingerprint,token);
+x=await setup({apiOverride:async body=>body.action==='mechanical_delivery_preview'?{...preview(),status:{...status(),deliveryReady:false}}:{ok:true}});assert.equal([...x.root.querySelectorAll('button')].some(b=>b.textContent==='Confirm vehicle delivered'),false);
+let resolve;x=await setup({apiOverride:async body=>body.action==='mechanical_delivery_preview'?preview():new Promise(r=>resolve=r)});const clickPromise=click(x,'Confirm vehicle delivered');x.switch();resolve({ok:true,requestId:x.calls.at(-1).command.requestId});await clickPromise;assert.equal(x.done(),0);assert.equal(x.storage.has('zukait_mechanical_delivery_pending_v1:SUP003'),true);assert.match(x.root.textContent,/login changed/);
+x=await setup({apiOverride:async body=>body.action==='mechanical_delivery_preview'?preview():{ok:true,requestId:'WRONG'}});await click(x,'Confirm vehicle delivered');assert.equal(x.done(),0);assert.equal(x.storage.has('zukait_mechanical_delivery_pending_v1:SUP003'),true);
+// Run the actual isolated Receptionist host function, replacing only module
+// loading and network with the tested module/synthetic adapters.
+const receptionSource=fs.readFileSync('app/src/main/assets/receptionist_session.js','utf8');
+const hostSource=receptionSource.slice(receptionSource.indexOf(' async function deliveries(){'),receptionSource.indexOf(" el('deliveries').onclick")).replace("await import('./mechanical_delivery.js')","await loadDelivery()");
+const hostDom=new JSDOM('<div id="workspace"></div><div id="message"></div>',{url:'https://example.invalid'}),hostCalls=[];let registered=true,wasDelivered=false,legacyCalls=0;
+const hostWindow=hostDom.window;hostWindow.me={id:'QA_REC',role:'Receptionist'};hostWindow.ZUKAIT_MECHANICAL_ENABLED=true;hostWindow.ZUKAIT_MECHANICAL_DELIVERY_ENABLED=true;
+const env={window:hostWindow,document:hostWindow.document,localStorage:hostWindow.localStorage,navigator:{onLine:true},crypto:globalThis.crypto,token:'QA_REC_TOKEN',el:id=>hostWindow.document.getElementById(id),pending:()=>null,escape:s=>String(s??''),error:e=>assert.fail(e.message),confirm:()=>true,loadDelivery:async()=>({mountMechanicalDelivery}),deliver:async()=>{legacyCalls++},request:async(_,body)=>{
+ hostCalls.push(body);if(body.action==='receptionist_delivery_list')return {ok:true,rows:[{jobCard:'QA_JC',receptionNo:'QA_REC',registration:'QA_REG',vehicle:'Synthetic',delivered:wasDelivered,deliveryReady:!registered,expectedQcRevision:0,expectedVehicleIdentity:'QA_ID'}]};
+ if(body.action==='mechanical_delivery_probe')return {ok:true,registered,checklistId:checklist};if(body.action==='mechanical_delivery_preview')return preview();wasDelivered=true;return {ok:true,requestId:body.command.requestId};
+}};
+const hostDeliveries=new Function('env','with(env){'+hostSource+';return deliveries;}')(env);await hostDeliveries();const hostRoot=env.el('workspace');await click({root:hostRoot},'Review vehicle delivery');await click({root:hostRoot},'Confirm vehicle delivered');assert.equal(legacyCalls,0);assert.equal(hostCalls.filter(c=>c.action==='mechanical_command').length,1);assert.equal(hostWindow.localStorage.getItem('zukait_mechanical_delivery_pending_v1:QA_REC'),null);
+registered=false;wasDelivered=false;await hostDeliveries();await click({root:hostRoot},'Review vehicle delivery');assert.equal(legacyCalls,1,'Ordinary Receptionist delivery keeps its original action/journal');
+// A late response from an old session cannot clear a new login.
+const requestSource=receptionSource.slice(receptionSource.indexOf(' async function request('),receptionSource.indexOf(' function password()'));
+let response,clears=0;const requestWindow={me:{id:'OLD'}};
+const requestHost=new Function('fetch','window','clear','navigator','AbortController','setTimeout','clearTimeout','const BASE="https://example.invalid/",KEY="QA",messages={};let token="OLD_TOKEN";'+requestSource+';return {request,switch(){token="NEW_TOKEN";window.me={id:"NEW"}}};')(()=>new Promise(r=>response=r),requestWindow,()=>{clears++},{onLine:true},AbortController,()=>1,()=>{});
+const inFlight=requestHost.request('workshop-api',{action:'mechanical_delivery_preview'});requestHost.switch();response({ok:false,status:401,json:async()=>({ok:false,code:'invalid_session'})});await assert.rejects(inFlight,/login changed/);assert.equal(clears,0);
+console.log('PASS delivery UI: Supervisor/Receptionist review, no Manager approval, escaping, opaque revisions, explicit handover, durable same-request retry/reload, reviewed conflict, offline/storage/account guards and no automatic delivery.');

@@ -1,0 +1,96 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.zukait.timetrack'
+    compileSdk 35
+
+    // Browser VIN OCR uses LSTM mode (OEM 1). Keep both SIMD and non-SIMD
+    // LSTM cores, worker and English data. Exclude only unused legacy
+    // non-LSTM cores from Android; web-hosted files remain unchanged.
+    androidResources {
+        ignoreAssetsPatterns.addAll([
+            'tesseract-core.wasm.js',
+            'tesseract-core-simd.wasm.js'
+        ])
+    }
+
+    defaultConfig {
+        applicationId 'com.zukait.timetrack'
+        minSdk 24
+        targetSdk 35
+        // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
+        // Manager worked hours use the Saturday–Thursday workshop week in Oman.
+        versionCode 378
+        versionName "V415" // Restore Manager Create Material and Brand & Price shortcuts on Stock chooser
+        // V396 final acceptance source: modern Mechanical dashboard, source-pinned web/APK, unchanged secure Mechanical, Reception and financial APIs.
+        // V395 exact-source verification: concise Profit/Loss UI, unchanged Accountant backend and release gate.
+        // V394 acceptance source: verified 320–1280px Accounts layout, current notification cache and protected API cost checks.
+        // V393: dedicated Accountant UI/Profit toggle candidate; release only after coordinated backend checks.
+        // V393 exact-source Acceptance: Accounts reports + financial popup + hours/minutes.
+        // Browser acceptance re-run with package-mirror-independent Playwright setup.
+        // WebKit verified in supported container; Android and financial runtime unchanged.
+        // V393 protected Acceptance: all Reception browser tests use isolated Playwright image.
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+}
+
+
+dependencies {
+    androidTestImplementation "androidx.test:runner:1.6.2"
+    androidTestImplementation "androidx.test:rules:1.6.1"
+    androidTestImplementation "androidx.test.ext:junit:1.2.1"
+    androidTestImplementation "androidx.test.espresso:espresso-intents:3.6.1"
+    implementation "androidx.webkit:webkit:1.17.0"
+    implementation "androidx.core:core:1.15.0"
+    implementation "com.google.android.gms:play-services-code-scanner:16.1.0"
+    implementation "com.google.mlkit:text-recognition:16.0.1"
+}
+
+
+// V327: verify model code preservation and cash age display.
+
+// V327: synchronize pending UI release metadata before acceptance.
+
+// V327: include responsive Paint PO list and received/waiting colours.
+
+// V346: verify the refreshed leave cache keys in the exact signed candidate.
+
+// Revalidate V346 against current pending-work eligibility contracts.
+
+// Revalidate V347 hidden-read cadence with matching runtime and authority contracts.
+
+// V348 staging and public packages include the same Manager stylesheet.
+
+// V352 acceptance also verifies stale ID001 stop confirmations.
+
+// V353: Verify readable material rows and three-card mobile follow-up groups.
+
+// V354: Verify shared arrival counts and audited receipt recovery.
+
+// V355: Verify outage retry barriers and database-pressure recovery.
+
+// Revalidate V355 with the matching sync cache-key assertion.
+
+// Include delayed-state banner refresh coverage in exact-source V355 acceptance.
+
+// V357: Verify scoped Cash/Insurance reads while preserving staged Sublet changes.
+
+// Verify a concurrent shared revision cannot substitute unsynced values in monthly lists.
+
+// V365: Verify readable insurer labels in the coordinated web and Android release.
+
+// V367: Verify sandbox-external navigation with bounded browser setup time.
+
+// V368: Validate Paint Reports with reliable HTTPS browser dependency setup.
+
+// V369: Verify additive delivery fields preserve authorized API responses and privacy.
+
+// V392 Accounts release: rerun full Accountant, Reception and signed APK acceptance against the held candidate.
+
+// V392 exact-source acceptance: existing Reception 14-tile browser regression corrected.
+
+// V392 final release acceptance: preserve production Reception/Receptionist dashboard tile counts.
+
+// V392 acceptance: restore complete Consumables browser-test fixture without changing workshop UI.

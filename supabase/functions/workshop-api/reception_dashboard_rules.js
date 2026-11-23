@@ -1,0 +1,187 @@
+import {qcStatus} from "./qc_delivery_rules.js";
+
+// Server-authoritative read-only projection; no purchases, amounts, time,
+// password hashes or full workshop state are exposed to Reception clients.
+const text=v=>String(v??"").trim();
+const norm=v=>text(v).toUpperCase();
+export function validPromiseDate(s) {
+ if(typeof s!=="string"||!/^(19|20)\d\d-\d\d-\d\d$/.test(s))return false;
+ const d=new Date(s+"T00:00:00Z");
+ return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===s;
+}
+function omanDate(value) {
+ if(value==null||value==="")return "";
+ const d=new Date(typeof value==="number"?value:(/^\d+$/.test(String(value))?Number(value):value));
+ if(!Number.isFinite(d.getTime()))return "";
+ const p=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Muscat",day:"2-digit",month:"2-digit",year:"numeric"}).formatToParts(d).map(x=>[x.type,x.value]));
+ return p.year+"-"+p.month+"-"+p.day;
+}
+const serial=(a,b)=>String(b).localeCompare(String(a),"en",{numeric:true});
+const sortRc=(a,b)=>(Number(b.sequence_no||0)-Number(a.sequence_no||0))||serial(a.rc_no,b.rc_no);
+const createdTime=value=>{if(value==null||value==='')return 0;const n=typeof value==='number'?value:/^\d+$/.test(String(value))?Number(value):Date.parse(value);return Number.isFinite(n)?n:0};
+const sortJobs=(a,b)=>createdTime(b.created_at)-createdTime(a.created_at)||serial(a.job_card,b.job_card)||String(b.job_card).localeCompare(String(a.job_card))||serial(a.job_id,b.job_id);
+function safeRc(r,company) {
+ const d=r?.details||{};
+ return {rc_no:text(r.rc_no),sequence_no:Number(r.sequence_no||0),
+ job_card:text(r.job_card),manually_linked:r.manually_linked===true,direct_job_only:d.direct_job_only===true,job_type:text(r.job_type||"INSURANCE"),
+ vehicle:[d.make,d.model,d.year].filter(Boolean).join(" ").slice(0,240),
+ registration:text(d.registration),customer:text(d.customer),
+ insurance_company:company||"",received_at:r.received_at||"",
+ received_date:omanDate(r.received_at),location:text(r.location),
+ outcome:text(r.outcome),repair_status:text(r.repair_status||"PENDING"),repair_notes:text(r.repair_notes),released_date:text(r.released_date),release_remark:text(r.release_remark),approval_status:text(r.approval_status),
+ promise_date:"",delivered_date:"",created_date:omanDate(r.received_at),status:r.released_date?"Vehicle Released":r.job_card?"JC Opened":text(r.repair_status!=="PENDING"&&r.repair_status||r.outcome||r.approval_status)};
+}
+export function receptionCompanyMatches(row,value){
+ const filter=String(value||'all');
+ if(filter==='all')return true;
+ const type=norm(row.job_type);
+ if(filter==='cash')return type==='CASH';
+ if(filter==='credit')return type==='CREDIT';
+ if(filter==='insurance')return type==='INSURANCE';
+ return filter.startsWith('insurer:')&&type==='INSURANCE'&&norm(row.insurance_company)===norm(filter.slice(8));
+}
+function receptionOpenDays(j,now){
+ const opened=createdTime(j.createdAt),start=opened?omanDate(opened):'',end=omanDate(j.delivered?(j.deliveredAt||j.deliveryDate):now);
+ if(!start||!end)return null;
+ return Math.max(0,Math.floor((Date.parse(end+'T00:00:00Z')-Date.parse(start+'T00:00:00Z'))/86400000));
+}
+function safeJob(j,rc,now) {
+ return {rc_no:text(j.receptionNo||rc?.rc_no),sequence_no:Number(rc?.sequence_no||0),
+ job_card:text(j.no),job_id:text(j.id),created_at:createdTime(j.createdAt),job_type:text(j.jobType||rc?.job_type),vehicle:
+   [j.make||j.brand,j.model,j.year||j.vehicleYear].filter(Boolean).join(" ").trim()||
+   text(j.vehicle||rc?.vehicle),
+ registration:text(j.reg||j.registration||rc?.registration),
+ customer:text(j.customer??j.customerName??rc?.customer),mobile:text(j.mobile??j.customerMobile??rc?.mobile),vin:text(j.vin??j.vinNumber??j.chassis??rc?.vin),intake_odometer:('jobIntakeOdometer' in j?j.jobIntakeOdometer:(j.intakeOdometer??j.odometer??null)),intake_odometer_unit:j.jobIntakeOdometerUnit||j.intakeOdometerUnit||j.odometerUnit||'KM',insurance_company:text(j.insuranceCompany||rc?.insurance_company),
+ received_at:rc?.received_at||"",received_date:rc?.received_date||"",
+ created_date:omanDate(j.createdAt),days_open:receptionOpenDays(j,now),
+ delivered_date:omanDate(j.deliveredAt),delivered_at:Number(j.deliveredAt||0),promise_date:validPromiseDate(j.promiseDate)?j.promiseDate:"",
+ movement_history:(j.vehicleMovements||[]).slice(-20).map(a=>({from:a.from,to:a.to,date:a.date,reason:a.reason,by:a.by})),location:j.delivered?'DELIVERED':text(rc?.location||j.receptionLocation),outcome:text(rc?.outcome),
+ approval_status:text(rc?.approval_status),
+ status:j.delivered?"Delivered":text(j.status||"Open"),delivered:!!j.delivered,
+ qc_revision:Number(j.qcWorkflow?.revision||0)};
+}
+function matchFilter(row,opts,kind) {
+ if(!receptionCompanyMatches(row,opts.company_filter))return false;
+ const search=text(opts.search).toLowerCase();
+ if(search&&![row.rc_no,row.job_card,row.registration,row.vehicle,row.customer,row.insurance_company].some(v=>text(v).toLowerCase().includes(search)))return false;
+ if(kind==="checklists"&&opts.checklist_status==="pending"&&(row.job_card||row.outcome||row.released_date||row.repair_status!=="PENDING"))return false;
+ if(kind==="checklists"&&opts.checklist_status==="opened"&&!row.job_card)return false;
+ // Actionable, in-garage checklists only: exclude CTL, cash settled,
+ // customer-held/not-in-garage, not-repaired and already-linked vehicles.
+ if(kind==="checklists"&&opts.checklist_status==="not_opened"&&
+    (row.job_card||row.location!=="VIW"||row.repair_status!=="PENDING"||row.outcome||row.released_date||row.delivered))return false;
+ const month=text(opts.month),from=text(opts.from),to=text(opts.to);
+ const date=kind==="delivered"?row.delivered_date:kind==="followup"?row.promise_date:
+  (kind==="jobs"||kind==="ready"||kind==="vwc-jobs")?row.created_date:row.received_date;
+ if(kind==="followup"){
+  if(opts.missing_only===true&&!row.promise_date)return true;
+  if(opts.missing_only===true)return false;
+  if(opts.dated_only===true&&!row.promise_date)return false;
+ }
+ if(month && (!/^\d{4}-\d{2}$/.test(month)||!date.startsWith(month)))return false;
+ if(from && (!validPromiseDate(from)||!date||date<from))return false;
+ if(to && (!validPromiseDate(to)||!date||date>to))return false;
+ return true;
+}
+export function receptionDashboardProjection(data,receptions,opts={},now=Date.now()) {
+ const rows=(Array.isArray(receptions)?receptions:[]).map(x=>safeRc(x,x.insurance_company));
+ const byRc=new Map(rows.map(x=>[x.rc_no,x]));
+ const uniqueJobs=new Map();
+ for(const j of (data?.jobs||[])){
+  if(!j||!j.no||norm(j.no)==="ID001"||j.deleted||j.archived||j.cancelled||norm(j.status)==="CANCELLED")continue;
+  const key=norm(j.no),existing=uniqueJobs.get(key);
+  if(!existing||createdTime(j.createdAt)>createdTime(existing.createdAt))uniqueJobs.set(key,j);
+ }
+ const jobs=[...uniqueJobs.values()].map(j=>({raw:j,row:safeJob(j,byRc.get(text(j.receptionNo)),now)}));
+ const jobByNumber=new Map(jobs.map(x=>[norm(x.row.job_card),x.row]));
+ for(const row of rows){const job=jobByNumber.get(norm(row.job_card));if(job)Object.assign(row,{days_open:job.days_open,job_created_date:job.created_date});}
+ const deliveredByJob=new Map(jobs.filter(x=>x.row.delivered).map(x=>[norm(x.row.job_card),x.row]));
+ for(const row of rows){const job=deliveredByJob.get(norm(row.job_card));if(job)Object.assign(row,{delivered:true,delivered_date:job.delivered_date,delivered_at:job.delivered_at,status:'Delivered',location:'DELIVERED'});}
+ const allJobs=jobs.map(x=>x.row),activeJobs=jobs.filter(x=>!x.raw.delivered).map(x=>x.row);
+ const checklists=rows.filter(r=>!r.direct_job_only).sort(sortRc);
+ const pendingRepair=r=>r.repair_status==="PENDING"&&!r.released_date;
+ const waiting=checklists.filter(r=>pendingRepair(r)&&r.job_type==="INSURANCE"&&!r.job_card&&!r.outcome&&r.approval_status==="WAITING");
+ const approved=checklists.filter(r=>pendingRepair(r)&&!r.job_card&&!r.outcome&&r.approval_status==="APPROVED");
+ const vwcChecklists=checklists.filter(r=>pendingRepair(r)&&r.location==="VWC"&&!r.job_card&&!r.outcome);
+ const vwcJobs=activeJobs.filter(r=>r.location==="VWC"&&!r.outcome);
+ const ready=jobs.filter(x=>!x.raw.delivered&&qcStatus(data,x.raw).deliveryReady).map(x=>x.row);
+ const delivered=jobs.filter(x=>x.raw.delivered).map(x=>x.row);
+ const followup=activeJobs.filter(r=>!r.outcome);
+ const lists={checklists,jobs:allJobs.sort(sortJobs),waiting,approved,
+ ctl:checklists.filter(r=>r.repair_status==="CTL"&&r.location==="VIW"&&!r.released_date&&!r.job_card),
+ "not-repaired":checklists.filter(r=>r.repair_status==="NOT_REPAIRED"),
+ "vwc-checklists":vwcChecklists,"vwc-jobs":vwcJobs.sort(sortJobs),
+ ready:ready.sort(sortJobs),delivered:delivered.sort((a,b)=>b.delivered_at-a.delivered_at||sortJobs(a,b)),
+ followup:followup.sort((a,b)=>{
+  if(!a.promise_date&&!b.promise_date)return sortJobs(a,b);
+  if(!a.promise_date)return 1;
+  if(!b.promise_date)return -1;
+  return a.promise_date.localeCompare(b.promise_date)||a.created_at-b.created_at||sortJobs(a,b);
+ })};
+ const counts=Object.fromEntries(Object.entries(lists).map(([k,v])=>[k,v.length]));
+ counts.vwc=counts["vwc-checklists"]+counts["vwc-jobs"];
+ counts.no_promise_date=followup.filter(r=>!r.promise_date).length;
+ const section=text(opts.section)||"checklists";
+ if(!["", "all", "pending", "opened", "not_opened"].includes(String(opts.checklist_status||"")))return {ok:false,code:"reception_invalid_filter"};
+ if(!Object.hasOwn(lists,section))return {ok:false,code:"reception_invalid_section"};
+ if(!["", "true", "false"].includes(String(opts.missing_only??"")))return {ok:false,code:"reception_invalid_filter"};
+ const companyFilter=opts.company_filter??'all';
+ if(typeof companyFilter!=='string'||companyFilter.length>260||!(['','all','cash','credit','insurance'].includes(companyFilter)||(companyFilter.startsWith('insurer:')&&text(companyFilter.slice(8)))))return {ok:false,code:'reception_invalid_filter'};
+ const selected=lists[section].filter(x=>matchFilter(x,opts,section));
+ const page=Math.max(0,Math.min(100000,Number.isInteger(Number(opts.page))?Number(opts.page):0));
+ const limit=50;
+ const companyNames=new Map();for(const row of lists[section])if(norm(row.job_type)==='INSURANCE'&&text(row.insurance_company))companyNames.set(norm(row.insurance_company),text(row.insurance_company));
+ const company_options=[{value:'all',label:'All companies / job types'},{value:'cash',label:'Cash'},{value:'credit',label:'Credit'},{value:'insurance',label:'All insurance'},...[...companyNames.values()].sort((a,b)=>a.localeCompare(b)).map(name=>({value:'insurer:'+norm(name),label:name}))];
+ return {ok:true,counts,section,company_options,total:selected.length,page,page_size:limit,
+ rows:selected.slice(page*limit,(page+1)*limit)};
+}
+export function receptionPromiseTransition(data,user,request,now){
+ const role=text(user?.role);
+ if(!["Manager","Supervisor"].includes(role))return {ok:false,code:"reception_promise_forbidden"};
+ if(!request||!Array.isArray(data?.jobs)||Object.keys(request).some(k=>!["action","job_card","promise_date","expected_promise_date","request_id"].includes(k)))
+  return {ok:false,code:"reception_promise_invalid_fields"};
+ const reqid=text(request.request_id),no=norm(request.job_card),promise=request.promise_date,expected=request.expected_promise_date;
+ if(!/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i.test(reqid))
+  return {ok:false,code:"reception_request_required"};
+ if(!no||no==="ID001"||typeof promise!=="string"||(promise!==""&&!validPromiseDate(promise))||
+    typeof expected!=="string"||(expected!==""&&!validPromiseDate(expected)))
+  return {ok:false,code:"reception_promise_invalid_date"};
+ // A successful promise update may be followed by delivery/cancellation
+ // before its HTTP response reaches the Supervisor. Confirm the saved UUID
+ // receipt before checking whether the Job Card is still open. This replay
+ // is read-only and must never reopen, edit or mutate a delivered vehicle.
+ const matches=(data.jobs||[]).flatMap(j=>
+   (Array.isArray(j?.promiseAudit)?j.promiseAudit:[]).filter(a=>norm(a?.request_id)===norm(reqid))
+     .map(a=>({job:j,audit:a})));
+ if(matches.length){
+  if(matches.length!==1)return {ok:false,code:"reception_request_conflict"};
+  const {job:priorJob,audit:prev}=matches[0];
+  return norm(priorJob?.no)===no&&prev.by===text(user.id)&&prev.to===promise&&prev.expected===expected?
+    {ok:true,duplicate:true,promise_date:prev.to,job_card:no}:
+    {ok:false,code:"reception_request_conflict"};
+ }
+ const current=(data.jobs||[]).find(j=>norm(j?.no)===no);
+ if(!current||current.deleted||current.archived||current.cancelled||norm(current.status)==="CANCELLED"||current.delivered)
+  return {ok:false,code:"reception_job_not_open"};
+ const old=text(current.promiseDate);
+ if(old!==expected)return {ok:false,code:"reception_promise_conflict"};
+ const next=structuredClone(data),job=next.jobs.find(j=>norm(j?.no)===no);
+ job.promiseDate=promise;
+ job.promiseAudit=[...(Array.isArray(job.promiseAudit)?job.promiseAudit:[]),
+   {request_id:reqid,by:text(user.id),at:now,from:old,to:promise,expected}];
+ return {ok:true,data:next,job_card:no,promise_date:promise};
+}
+
+export function preserveReceptionPromiseAuthority(candidate,current) {
+ const originals=new Map((current?.jobs||[]).filter(j=>j?.no).map(j=>[norm(j.no),j]));
+ for(const job of candidate?.jobs||[]) {
+  if(!job?.no)continue;
+  const before=originals.get(norm(job.no));
+  for(const field of ["promiseDate","promiseAudit"]) {
+   if(before&&Object.prototype.hasOwnProperty.call(before,field))
+     job[field]=structuredClone(before[field]);
+   else delete job[field];
+  }
+ }
+ return candidate;
+}

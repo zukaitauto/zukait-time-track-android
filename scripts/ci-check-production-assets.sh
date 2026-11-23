@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+test -s app/src/main/assets/zukait_logo.webp
+test -s app/src/main/assets/consumables.js
+test -s app/src/main/assets/consumables_ui.js
+test -s app/src/main/assets/professional_ux.js
+test -s app/src/main/assets/v54_improvements.js
+test -s app/src/main/assets/v65_updates.js
+test -s app/src/main/assets/v66_updates.js
+test -s app/src/main/assets/v67_updates.js
+test -s app/src/main/assets/v68_updates.js
+test -s app/src/main/assets/v69_updates.js
+test -s app/src/main/assets/v74_updates.js
+test -s app/src/main/assets/supervisor_stable.js
+test -s app/src/main/assets/leave_history.js
+test -s app/src/main/assets/live_status_authority.js
+test -s app/src/main/assets/dashboard_diagnostics.js
+test -s app/src/main/assets/job_cost_summary_v128.js
+test -s app/src/main/res/drawable/app_icon.webp
+test -s app/src/main/res/drawable/app_logo.webp
+test -s app/src/main/res/drawable/splash_screen.xml
+test -s app/src/main/res/values/styles.xml
+
+test -s app/src/main/assets/technician_workload.js
+
+test -s app/src/main/assets/time_management.js
+test -s app/src/main/assets/time_management_rules.js
+
+
+test -s app/src/main/assets/report_pdf_export.js
+test -s app/src/main/assets/vendor/pdf/html2canvas-1.4.1.min.js
+test -s app/src/main/assets/vendor/pdf/jspdf-4.2.1.min.js

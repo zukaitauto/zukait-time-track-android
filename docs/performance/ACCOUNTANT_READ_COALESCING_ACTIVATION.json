@@ -1,0 +1,47 @@
+{
+  "project": "pjknotnjkufadqavcmii",
+  "qualifiedSource": "0c59b456bc09d7a3eebd76e40bdb003ff3f23495",
+  "ownerApprovedActivation": true,
+  "activatedAt": "2026-11-12T17:23:05.039Z",
+  "backend": {
+    "version": 119,
+    "previousDisabledVersion": 118,
+    "bundleSha256": "c782ffe9fbdaf2c253730e786b81687c989669b3d85e77e4c842efa0ea033ebb",
+    "enabled": true,
+    "dispatcherSetting": "coalesceContextReads:true",
+    "changedModules": [
+      "index.ts"
+    ],
+    "unchangedModules": 42,
+    "filesVerified": 43,
+    "verifyJwt": false,
+    "importMap": "deno.json"
+  },
+  "checks": {
+    "databaseResponsive": true,
+    "databaseStartedAt": "2026-11-12T16:30:18.117243+00:00",
+    "lockWaits": 0,
+    "existingFinancialContextMd5": "5cb0e04223f9f3e517ece00eb11fa8a3",
+    "invalidSessionWorkshopStatus": 401,
+    "invalidSessionStaffAuthStatus": 401,
+    "positiveServiceProbeReadOnlyChecksPassed": true
+  },
+  "productionFinancialRecordsModified": false,
+  "historyDeleted": false,
+  "androidOrWebsitePublished": false,
+  "olderSpillPatchApplied": false,
+  "authenticatedScreenTest": "AWAITING_OWNER",
+  "productionSavingsMeasured": false,
+  "workingHourTrialComplete": false,
+  "measurement": {
+    "logWindowStart": "2026-11-12T17:23:06Z",
+    "logWindowEnd": "2026-11-12T17:27:00Z",
+    "recordedRequestsInWindow": 0,
+    "statisticsResetMatchesBaseline": true,
+    "statisticsDeallocMatchesBaseline": true,
+    "databaseStartMatchesBaseline": true,
+    "targetStatementRowsAtCheckpoint": 0,
+    "conclusion": "Quiet off-hours window; no savings claim. Missing query IDs have unavailable baselines, never assumed zero. Staging-to-checkpoint interval includes both disabled and enabled periods."
+  },
+  "rollback": "Redeploy exact archived disabled v118 source/import-map/auth configuration; resulting backend version increments. An environment secret change alone cannot override the current literal true."
+}

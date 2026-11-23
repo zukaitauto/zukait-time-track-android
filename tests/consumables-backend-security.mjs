@@ -1,0 +1,18 @@
+import fs from 'node:fs'; import assert from 'node:assert/strict';
+const foundation=fs.readFileSync('supabase/CONSUMABLES_V1_SECURE_FOUNDATION.sql','utf8');
+const rpc=fs.readFileSync('supabase/CONSUMABLES_V1_MANAGER_RPC.sql','utf8');
+assert.match(foundation,/enable row level security/);
+assert.match(foundation,/revoke all[\s\S]*from anon/i);
+assert.doesNotMatch(foundation,/grant\s+(update|delete)/i);
+assert.match(foundation,/transaction_type in \('issued','additional','actual'\)/);
+assert.match(foundation,/public\.zukait_role\(\)='Manager'/);
+assert.match(rpc,/zukait_require_manager/);
+assert.match(rpc,/REASON_REQUIRED/);
+assert.match(rpc,/CLIENT_REQUEST_ID_REQUIRED/);
+assert.match(rpc,/SECURITY DEFINER/i);
+assert.match(rpc,/consumables_audit/);
+assert.match(rpc,/select id into v_id from public\.consumables_transactions where client_request_id=p_client_request_id/);
+assert.match(rpc,/revoke all[\s\S]*from public,anon/i);
+assert.doesNotMatch(foundation,/alter table public\.workshop_state/i);
+assert.doesNotMatch(rpc,/zukait_save_workshop_state|update public\.workshop_state/i);
+console.log('Consumables backend security contract tests passed');

@@ -1,0 +1,139 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import vm from 'node:vm';
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const formatter=appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY='));
+const source=fs.readFileSync('app/src/main/assets/qc_delivery_rules.js','utf8');assert.equal(source,fs.readFileSync('supabase/functions/workshop-api/qc_delivery_rules.js','utf8'));
+const {qcTransition,invoiceComplete,invoiceDateValid,preserveQcAuthority,qcStatus}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const manager={id:'MGR1',role:'Manager',name:'Manager'},supervisor={id:'SUP001',role:'Supervisor',name:'Shine'},employee={id:'E1',role:'Employee'};
+const base={jobs:['Cash','Credit','Insurance'].map((jobType,i)=>({no:String(i+1),jobType,delivered:true,amount:25,qcWorkflow:{revision:3,history:[]}})),assign:[{id:'A',emp:'E1',job:'1',completed:true}],sessions:[{id:'S',emp:'E1',job:'1',start:1,end:100}],consumables:{actuals:[{id:'C'}]}};
+const request={jobCard:'1',operation:'FINAL_INVOICE_ENTRY',amount:'100.125',invoiceDate:'2026-10-04',expectedQcRevision:3};
+assert.equal(invoiceComplete(base.jobs[0]),false);assert.equal(invoiceDateValid('2026-02-30'),false);assert.equal(invoiceDateValid('2024-02-29'),true);
+for(const user of [manager,supervisor])for(const no of ['1','2','3']){const r=qcTransition(base,user,{...request,jobCard:no},1000);assert.equal(r.ok,true);assert.equal(invoiceComplete(r.job),true);assert.equal(r.job.invoiceDate,'2026-10-04');assert.equal(r.job.finalInvoiceAmount,100.125);assert.equal(r.job.invoiceEnteredBy,user.id);assert.equal(r.job.financialAudit[0].toDate,'2026-10-04');assert.equal(r.job.amount,100.125,'Final invoice must synchronize Cash Amount for every Job Card type');assert.deepEqual(r.data.assign,base.assign);assert.deepEqual(r.data.sessions,base.sessions);assert.deepEqual(r.data.consumables,base.consumables);assert.equal(qcTransition(r.data,user,{...request,jobCard:no,expectedQcRevision:4},1001).code,'final_invoice_already_entered');}
+assert.equal(qcTransition(base,employee,request,1000).code,'qc_permission_denied');
+for(const amount of ['',null,'   ','invalid',-1,1000001])assert.equal(qcTransition(base,manager,{...request,amount},1000).code,'final_invoice_amount_required');
+for(const invoiceDate of ['',null,'2026-02-30','04/10/2026'])assert.equal(qcTransition(base,manager,{...request,invoiceDate},1000).code,'invoice_date_required');
+assert.equal(qcTransition(base,manager,{...request,expectedQcRevision:2},1000).code,'qc_conflict');
+let missing=structuredClone(base);delete missing.jobs[0].jobType;assert.equal(qcTransition(missing,manager,request,1000).code,'invoice_job_type_required');missing.jobs[0].jobType='Cash';missing.jobs[0].delivered=false;assert.equal(qcTransition(missing,manager,request,1000).code,'delivery_required');
+let legacy=structuredClone(base);legacy.jobs[0].finalInvoiceAmount=80;
+assert.equal(qcTransition(legacy,supervisor,{...request,amount:80},1000).ok,true);
+assert.equal(qcTransition(legacy,supervisor,request,1000).code,'manager_required');
+assert.equal(qcTransition(legacy,manager,request,1000).code,'financial_correction_reason_required');
+assert.equal(qcTransition(legacy,manager,{...request,reason:'Invoice checked'},1000).ok,true);
+let saved=qcTransition(base,supervisor,request,1000).data;
+assert.equal(qcTransition(saved,supervisor,{...request,operation:'FINAL_INVOICE_CORRECTION',expectedQcRevision:4,reason:'Fix'},1001).code,'qc_permission_denied');
+for(const no of ['1','2','3']){let r=qcTransition(base,manager,{...request,jobCard:no,operation:'FINAL_INVOICE_CORRECTION',reason:'Invoice reviewed'},1001);assert.equal(r.ok,true);assert.equal(r.job.financialAudit[0].reason,'Invoice reviewed');assert.equal(r.job.amount,100.125,'Manager invoice correction must synchronize amount for every Job Card type');assert.equal(r.job.invoiceDate,'2026-10-04');}
+let stale=structuredClone(base);stale.jobs[0].invoiceDate='2000-01-01';preserveQcAuthority(stale,saved);assert.equal(stale.jobs[0].invoiceDate,'2026-10-04');assert.equal(stale.jobs[0].finalInvoiceAmount,100.125);assert.equal(stale.jobs[0].invoiceEnteredBy,'SUP001');
+let forged=structuredClone(base);forged.jobs[0].invoiceDate='2026-10-04';preserveQcAuthority(forged,base);assert.equal(forged.jobs[0].invoiceDate,undefined);
+const ui=fs.readFileSync('app/src/main/assets/qc_delivery.js','utf8').replace(/^import[^\n]+\n/,'');
+class Element{constructor(){this.dataset={};this.children=[];this.innerHTML='';this.className=''}get textContent(){return this.innerHTML.replace(/<[^>]*>/g,' ')}set textContent(value){this.innerHTML=value}appendChild(child){child.remove();this.children.push(child);child.parentElement=this}remove(){if(this.parentElement)this.parentElement.children=this.parentElement.children.filter(x=>x!==this);this.parentElement=null}removeAttribute(){}closest(){return this.parentElement}querySelector(selector){if(selector.includes('.v67-control-grid')||selector==='.v143-two')return this;if(selector.startsWith('[data-')){const key=selector.slice(6,-1).replace(/-([a-z])/g,(_,c)=>c.toUpperCase());return this.children.find(x=>key in x.dataset)||null}return null}querySelectorAll(selector){return selector==='button'?this.children:[]}}
+for(const user of [manager,supervisor,employee]){
+ let modal='',calls=0;const dashboard=new Element(),events={};const nodes={managerView:dashboard,supervisorView:dashboard,invoiceBody:{innerHTML:''},invoiceSearch:{value:''},invoiceEntryAmount:{value:'100.125'},invoiceEntryDate:{value:'2026-10-04'},qcRows:{innerHTML:''}};
+ const ctx={invoiceComplete,invoiceDateValid,qcStatus,state:structuredClone(base),me:user,window:{addEventListener(name,fn){events[name]=fn},zukaitAuth:{getToken(){return 'test'}},zukaitCloud:{syncHealth:{ready:true},async syncNow(){}}},navigator:{onLine:true},document:{getElementById(id){return nodes[id]||null},createElement(){return new Element()},head:{appendChild(){}}},openModal(html){modal=html},closeModal(){},alert(message){throw Error(message)},Date,console,async fetch(url,opts){calls++;let body=JSON.parse(opts.body);assert.equal(body.invoiceDate,'2026-10-04');assert.equal(body.operation,'FINAL_INVOICE_ENTRY');let result=qcTransition(ctx.state,user,body,1000);assert.equal(result.ok,true);ctx.state=result.data;return{ok:true,async json(){return result}}}};
+ vm.runInNewContext(formatter+ui+'\nwindow.testPending=invoicePending;window.testRow=row;window.testInvoiceInlineRow=invoiceInlineRow;',ctx);
+ if(user.role==='Manager'||user.role==='Supervisor'){
+  const invoiceRow=ctx.window.testInvoiceInlineRow;
+  const insurance={...base.jobs[2],reg:'92329.DD'};
+  assert.match(invoiceRow({...insurance,insuranceCompany:'Liva Insurance'}),/92329\.DD · Liva Insurance<\/small>/);
+  assert.match(invoiceRow({...insurance,insurance:'Oman United Insurance'}),/92329\.DD · Oman United Insurance<\/small>/);
+  assert.match(invoiceRow(insurance),/92329\.DD · Insurance<\/small>/,'Missing company must safely fall back to Insurance');
+  assert.match(invoiceRow({...base.jobs[0],insuranceCompany:'Wrong company'}),/ · Cash<\/small>/);
+  assert.match(invoiceRow({...base.jobs[1],insuranceCompany:'Wrong company'}),/ · Credit<\/small>/);
+  const escaped=invoiceRow({...insurance,insuranceCompany:'<img src=x onerror=alert(1)>'});
+  assert.match(escaped,/&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.doesNotMatch(escaped,/<img/,'Insurance company must be HTML-escaped');
+  ctx.window.zukaitJobCardMaster={identity:()=>({insuranceCompany:'New India Insurance'})};
+  assert.match(invoiceRow(insurance),/92329\.DD · New India Insurance<\/small>/,'Linked vehicle identity should supply company');
+  delete ctx.window.zukaitJobCardMaster;
+ }
+
+ await ctx.window.zukaitOpenInvoiceEntry();assert.equal(modal.includes('Invoice Entry'),user.role!=='Employee');
+ if(user.role==='Employee'){await ctx.window.zukaitSaveInvoiceEntry('1');assert.equal(calls,0);continue;}
+ const launcher=dashboard.querySelector('[data-invoice-entry]');assert.ok(launcher);assert.equal(launcher.dataset.qcCount,'3');launcher.onclick();assert.match(modal,/Invoice Entry/);ctx.window.render();assert.equal(dashboard.children.filter(x=>x.dataset.invoiceEntry).length,1);
+ assert.equal((nodes.invoiceBody.innerHTML.match(/class="invoice-circle /g)||[]).length,3);
+ ctx.window.zukaitJobCardMaster={display:(no,j)=>({...j,amount:0,finalInvoiceAmount:0})};
+ await ctx.window.zukaitOpenInvoiceEntry('Cash');assert.match(nodes.invoiceBody.innerHTML,/JC 1/);assert.match(nodes.invoiceBody.innerHTML,/id="invoiceAmount-1"[^>]*value=""/,'Missing invoice amount must remain blank despite a cached display helper');delete ctx.window.zukaitJobCardMaster;assert.doesNotMatch(nodes.invoiceBody.innerHTML,/JC 2/);
+ ctx.window.zukaitOpenInvoiceJob('1');assert.match(modal,/Invoice Date/);assert.match(modal,/Save Invoice/);assert.match(modal,/Back to pending list/);
+ await ctx.window.zukaitSaveInvoiceEntry('1');assert.equal(calls,1);assert.equal(ctx.window.testPending().length,2);assert.match(nodes.invoiceBody.innerHTML,/No pending invoices/);assert.equal(ctx.state.jobs[0].delivered,true);
+ ctx.window.v42AfterCloudPull();assert.equal(launcher.dataset.qcCount,'2');events['zukait-live-status']();assert.equal(dashboard.children.filter(x=>x.dataset.invoiceEntry).length,1);
+ ctx.window.zukaitOpenDeliveredRecord('1');assert.match(modal,/Invoice Saved/);assert.match(modal,/100\.125/);assert.match(modal,/2026-10-04/);
+ assert.equal(ctx.window.testRow(ctx.state.jobs[1],'delivered').includes('Correct Final Invoice'),user.role==='Manager');
+ ctx.window.zukaitOpenInvoiceJob('2');nodes.invoiceEntryDate.value='';assert.throws(()=>ctx.window.zukaitSaveInvoiceEntry('2'),/Invoice Date/);assert.equal(calls,1);
+ ctx.state=structuredClone(base);await ctx.window.zukaitOpenInvoiceEntry();
+ assert.match(nodes.invoiceBody.innerHTML,/<span>Cash<\/span><b>1<\/b>/);
+ ctx.state.jobs[0].finalInvoiceAmount=100.125;ctx.state.jobs[0].invoiceDate='2026-10-04';
+ ctx.window.zukaitInvoiceSyncRefresh();
+ assert.match(nodes.invoiceBody.innerHTML,/<span>Cash<\/span><b>0<\/b>/,'Remote invoice save must update the open Cash counter');
+ const current=structuredClone(ctx.state);ctx.state=structuredClone(base);let pulls=0;
+ ctx.window.zukaitCloud.pull=async()=>{pulls++;ctx.state=structuredClone(current);return true};
+ await ctx.window.zukaitOpenInvoiceEntry('Cash');
+ assert.equal(pulls,1,'Opening Invoice Entry must read current server records');
+ assert.match(nodes.invoiceBody.innerHTML,/No pending invoices/,'Manager and Supervisor must agree with server Cash pending');
+ assert.equal(calls,1,'Refreshing invoices must not write financial records');
+
+}
+console.log('Invoice Entry passed: all three types, roles, date/amount validation, legacy amount protection, audit, concurrency, pending navigation, saved delivery details and stale-client protection.');
+
+ // The host setter recreates inputs like a real innerHTML write. A value-only mock
+ // misses the regression where background rendering erases an in-progress edit.
+for(const user of [manager,supervisor])for(const type of ['Cash','Credit','Insurance']){
+ const no='draft-'+type;let modal='',writes=0,replacements=0;
+ const initial={jobs:[{no,jobType:type,delivered:true,qcWorkflow:{revision:0,history:[]}}],assign:[],sessions:[]};
+ let server=structuredClone(initial);
+ const nodes={invoiceSearch:{value:''}},events={};
+ let body='';
+ nodes.invoiceBody={get innerHTML(){return body},set innerHTML(html){
+  body=html;replacements++;
+  for(const id of Object.keys(nodes))if(id.startsWith('invoiceAmount-')||id.startsWith('invoiceDate-'))delete nodes[id];
+  for(const match of html.matchAll(/<input\b([^>]+)>/g)){
+   const attrs=match[1],id=attrs.match(/\bid="([^"]+)"/)?.[1],value=attrs.match(/\bvalue="([^"]*)"/)?.[1]||'';
+   if(id)nodes[id]={value};
+  }
+ }};
+ const ctx={invoiceComplete,invoiceDateValid,qcStatus,state:structuredClone(initial),me:user,Date,console,
+ navigator:{onLine:true},window:{addEventListener:(name,fn)=>events[name]=fn,zukaitAuth:{getToken:()=> 'test'},zukaitCloud:{syncHealth:{ready:true},async syncNow(){}}},
+ document:{getElementById:id=>nodes[id]||null,createElement:()=>new Element(),head:{appendChild(){}}},
+ openModal(html){modal=html},closeModal(){},alert(message){throw Error(message)},
+ async fetch(url,opts){writes++;const body=JSON.parse(opts.body);assert.equal(body.amount,123.456);assert.equal(body.invoiceDate,'2026-10-25');const result=qcTransition(server,user,body,1000);assert.equal(result.ok,true);server=result.data;ctx.state=structuredClone(server);return {ok:true,json:async()=>result};}};
+ vm.runInNewContext(formatter+ui,ctx);
+ const enter=async()=>{
+  await ctx.window.zukaitOpenInvoiceEntry(type);
+  nodes['invoiceAmount-'+no].value='123.456';
+  ctx.window.zukaitInvoiceDraft?.(no,'amount','123.456');
+ };
+ await enter();
+ const input=nodes['invoiceAmount-'+no],before=replacements;
+ events['zukait-live-status']();
+ assert.equal(replacements,before,'Unchanged background refresh must not rebuild active inputs');
+ assert.equal(nodes['invoiceAmount-'+no],input);
+ assert.equal(input.value,'123.456');
+ // A new pending vehicle forces a real list redraw; this row's draft must survive.
+ ctx.state.jobs.push({no:'OTHER',jobType:type,delivered:true});
+ ctx.window.v42AfterCloudPull();
+ assert.equal(nodes['invoiceAmount-'+no].value,'123.456');
+ nodes['invoiceDate-'+no].value='2026-10-25';ctx.window.zukaitInvoiceDraft?.(no,'date','2026-10-25');
+ nodes.invoiceSearch.value='not found';ctx.window.zukaitInvoiceRefresh();
+ nodes.invoiceSearch.value='';ctx.window.zukaitInvoiceRefresh();
+ assert.equal(nodes['invoiceAmount-'+no].value,'123.456');
+ assert.equal(nodes['invoiceDate-'+no].value,'2026-10-25');
+ ctx.window.zukaitInvoiceSyncRefresh();
+ await ctx.window.zukaitSaveInvoiceRow(no);
+ assert.equal(writes,1);assert.equal(server.jobs[0].finalInvoiceAmount,123.456);
+ assert.equal(server.jobs[0].invoiceDate,'2026-10-25');
+ assert.equal(server.jobs[0].financialAudit.length,1);
+ // A concurrent edit is never silently overwritten with the preserved draft.
+ ctx.state=structuredClone(initial);await enter();
+ ctx.state.jobs[0].qcWorkflow.revision=1;
+ assert.throws(()=>ctx.window.zukaitSaveInvoiceRow(no),/Another device updated/);
+ assert.equal(writes,1);
+ ctx.state=structuredClone(initial);await enter();
+ ctx.me={...user,id:'DIFFERENT'};
+ assert.throws(()=>ctx.window.zukaitSaveInvoiceRow(no),/current login/);
+ assert.equal(writes,1);
+ if(user.role==='Manager'&&type==='Insurance'){
+  ctx.me=user;ctx.state=structuredClone(initial);ctx.state.jobs[0].insuranceLpo={amount:123.456,receivedDate:'2026-10-25'};
+  await enter();nodes['invoiceDate-'+no].value='2026-10-25';ctx.window.zukaitInvoiceDraft?.(no,'date','2026-10-25');
+  ctx.window.zukaitSaveInvoiceRow(no);
+  assert.match(modal,/id="invoiceEntryAmount"[^>]*value="123.456"/);
+  assert.match(modal,/id="invoiceEntryDate"[^>]*value="2026-10-25"/,'Manager LPO review must carry the typed date');
+ }
+}
+console.log('PASS: Cash/Credit/Insurance amount and date survive background sync, forced redraw and filtering; one audited save; concurrent-edit and account guards; Insurance Manager review preserves both fields.');

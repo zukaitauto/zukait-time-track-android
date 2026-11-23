@@ -1,0 +1,15 @@
+{
+  "scope": "accounts-cash-invoices-visual-preview",
+  "ownerApprovedWebVisualTesting": true,
+  "productionAccountingWrites": false,
+  "staffActivation": false,
+  "publishApk": false,
+  "changeUpdater": false,
+  "sourceCommit": "f4fb5a9b4b3a59f75381bf60967a2b723880f6de",
+  "preservedWorkshopSource": "5ab6dd27e78ad6bf0df6b14fd3e420c9d6ad22e3",
+  "verificationRuns": {
+    "accountant": 42847660585,
+    "signed": 42847661198
+  },
+  "authorization": "Owner requested publishing the verified Cash Invoices redesign for web visual testing while preserving the workshop and keeping unfinished accounting functions inactive. Additive sandboxed example-data preview only; no staff release approval."
+}

@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {mechanicalTimeProjection,mechanicalTimeTransition} from '../supabase/functions/workshop-api/extensions/mechanical_time_rules.js';
+import {allocationToken,employeeTimeToken,timeManagementTransition} from '../supabase/functions/workshop-api/time_management_rules.js';
+const actor={id:'SUP003',role:'Mechanical Supervisor',active:true};
+const data={jobs:[{no:'M1',reg:'MECH',status:'Open'},{no:'B1',reg:'PRIVATE-BODYSHOP',status:'Open'}],users:[{id:'M',role:'Employee',department:'Mechanic',name:'Mechanic'},{id:'B',role:'Employee',department:'Painter',name:'Bodyshop'}],assign:[{id:'MA',job:'M1',emp:'M',suggested:60,assignedAt:1},{id:'BA',job:'B1',emp:'B',suggested:60,assignedAt:1}],sessions:[],expenses:[{amount:100,private:'never-return'}]};
+const context={sessionCurrent:true,enabled:true,department:'Mechanic',checklists:[{id:'C',jobCard:'M1'}],tasks:[{id:'T',checklistId:'C'}],links:[{taskId:'T',assignmentId:'MA',employeeId:'M'}]};
+const command={requestId:'tm-12345678-1234-4123-8123-123456789012',operation:'SET_ALLOCATION',assignmentId:'MA',minutes:90,reason:'Correct original allocation',expectedSource:allocationToken(data.assign[0]),expectedSessions:employeeTimeToken(data,'M')};
+const original=JSON.stringify(data);
+const projected=mechanicalTimeProjection(data,actor,context);
+assert.equal(projected.ok,true);assert.deepEqual(projected.jobs.map(j=>j.no),['M1']);assert.equal(JSON.stringify(projected).includes('PRIVATE-BODYSHOP'),false);assert.equal('expenses' in projected,false);
+for(const user of [actor,{id:'MGR',role:'Manager',active:true}]){
+ const result=mechanicalTimeTransition(data,user,command,context,100000);
+ assert.equal(result.ok,true,JSON.stringify(result));assert.equal(result.data.assign[0].suggested,90);
+ assert.deepEqual(result.data.assign[1],data.assign[1]);assert.deepEqual(result.data.expenses,data.expenses);
+ assert.equal(result.audit.by,user.id);assert.equal(result.audit.actorRole,user.role);assert.equal(result.audit.reason,command.reason);
+ assert.equal(result.audit.source,'Mechanical Time Management');
+ assert.equal(mechanicalTimeTransition(result.data,user,command,context,100001).duplicate,true);
+ assert.equal(mechanicalTimeTransition(result.data,user,{...command,minutes:91},context,100001).code,'time_request_reused');
+}
+assert.equal(JSON.stringify(data),original);
+assert.equal(timeManagementTransition(data,actor,command,100000).code,'time_permission_denied','Bodyshop permission must not expand');
+for(const user of [{...actor,id:'OTHER'},{...actor,active:false},{id:'EMP',role:'Employee'}])assert.equal(mechanicalTimeTransition(data,user,command,context).code,'mechanical_time_forbidden');
+assert.equal(mechanicalTimeTransition(data,actor,command,{...context,sessionCurrent:false}).code,'mechanical_time_forbidden');
+assert.equal(mechanicalTimeTransition(data,actor,command,{...context,enabled:false}).code,'mechanical_time_forbidden');
+assert.equal(mechanicalTimeTransition(data,actor,{...command,assignmentId:'BA'},context).code,'mechanical_time_job_required');
+assert.equal(mechanicalTimeTransition(data,actor,{...command,reason:''},context).code,'time_reason_required');
+assert.equal(mechanicalTimeTransition(data,actor,{...command,expectedSessions:'stale'},context).code,'time_sessions_changed');
+assert.equal(mechanicalTimeTransition(data,actor,{...command,operation:'SPLIT',targetEmployeeId:'B'},context).code,'mechanical_time_technician_required');
+assert.equal(mechanicalTimeTransition({...data,jobs:[{no:'M1',delivered:true}]},actor,command,context).code,'time_job_inactive');
+console.log('PASS scoped Mechanical Manager/SUP003 allocation correction, audit and exact retry; Bodyshop/financial privacy, wrong-role/revoked/disabled/cross-department/stale/reason/closed-job denial.');

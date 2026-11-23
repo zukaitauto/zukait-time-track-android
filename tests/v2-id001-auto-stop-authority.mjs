@@ -1,0 +1,14 @@
+import fs from'node:fs';import assert from'node:assert/strict';
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_OPERATIONAL_PROJECTIONS.sql','utf8');
+const start=sql.indexOf("if p_event_type in ('WORK_START','ID001_START') then");
+const end=sql.indexOf("elsif not found then",start);
+assert.ok(start>0&&end>start);
+const block=sql.slice(start,end);
+assert.match(block,/if p_event_type='WORK_START' then/);
+assert.match(block,/x\.kind='ID001'/);
+assert.match(block,/status='STOPPED'/);
+assert.match(block,/actual_minutes=x\.accumulated_minutes\+greatest/);
+assert.match(block,/zukait_v2_duty_minutes/);
+assert.ok(block.indexOf("x.kind='ID001'")<block.indexOf("raise exception 'employee_already_active'"),'ID001 must stop before active-session rejection');
+assert.match(block,/raise exception 'employee_already_active'/);
+console.log('V2 ID001 productive-work auto-stop gate: ok');

@@ -1,0 +1,363 @@
+import fs from "node:fs";
+import assert from "node:assert/strict";
+import { JSDOM } from "jsdom";
+const source = fs.readFileSync(
+  "app/src/main/assets/v2/features/insurance/reception.js",
+  "utf8",
+);
+// Candidate version must match Android packaging and never self-approve publication.
+const candidate = JSON.parse(fs.readFileSync("release-request.json", "utf8"));
+const gradle = fs.readFileSync("app/build.gradle", "utf8");
+assert.ok(gradle.includes('versionName "' + candidate.versionName + '"'));
+assert.ok(gradle.includes("versionCode " + candidate.versionCode));
+assert.equal(typeof candidate.approvedForStaff,"boolean");
+if (candidate.versionName === "V380" && candidate.approvedForStaff === false) {
+  assert.equal(candidate.versionCode, 343, "V380 must increment Android version code");
+  assert.equal(candidate.ownerPublicationRequested, false, "V380 QA draft must not authorize publication");
+  assert.equal(candidate.releaseHeldByOwner, true, "Unapproved V380 must remain held");
+  assert.equal(candidate.phase2ActivationApproved, false, "Mechanical backend activation is separate");
+  assert.match(candidate.v380ReopenCandidate?.feature || "", /Manager Job Card/,
+    "V380 draft must document the Job Card reopen scope");
+}
+
+if (candidate.approvedForStaff) {
+  assert.match(candidate.sourceCommit || "", /^[a-f0-9]{40}$/, "Approved release requires a pinned source");
+  assert.ok(Number.isSafeInteger(candidate.signedAcceptanceRun) && candidate.signedAcceptanceRun > 0,
+    "Approved release requires signed acceptance evidence");
+  assert.ok(!Number.isNaN(Date.parse(candidate.approvedAt)),"Approved release requires approval timestamp");
+}
+const html = fs.readFileSync("app/src/main/assets/offline_test.html", "utf8");
+const api = fs.readFileSync("supabase/functions/workshop-api/index.ts", "utf8");
+assert.match(html, /script src="v2\/features\/insurance\/reception.js/);
+assert.match(api, /p_actor_id:String\(user.id\),p_command:command/);
+const dom = new JSDOM('<div id="managerView"></div><div id="modal"></div>', {
+  url: "https://test.invalid",
+  runScripts: "outside-only",
+});
+const w = dom.window,
+  commands = [],
+  records = new Map(),
+  requests = new Map();
+let failCreate = false,
+  failMove = false,
+  createCount = 0;
+w.me = { id: "MGR001", role: "Manager" };
+w.zukaitAuth = { getToken: () => "test-session" };
+w.openModal = (h) => (w.document.getElementById("modal").innerHTML = h);
+w.closeModal = () => (w.document.getElementById("modal").innerHTML = "");
+w.alert = () => {};
+w.fetch = async (_url, args) => {
+  assert.equal(args.headers["x-zukait-session"], "test-session");
+  const b = JSON.parse(args.body);
+  assert.equal(b.action, "reception");
+  const c = b.command;
+  commands.push(c);
+  let result = { ok: true };
+  if (c.operation === "CAPABILITIES")
+    result = { ok: true, allowed: true, manager: true };
+  if (c.operation === "MASTER")
+    result = { ok: true, companies: [{ id: 1, name: "Liva Insurance" }] };
+  if (c.operation === "LIST")
+    result = { ok: true, rows: [...records.values()] };
+  if (c.operation === "CREATE") {
+    if (requests.has(c.request_id)) result = requests.get(c.request_id);
+    else {
+      const record = {
+        rc_no: "RC" + String(++createCount).padStart(4, "0"),
+        sequence_no: createCount,
+        insurance_id: c.insurance_id,
+        insurance_company: c.insurance_id ? "Liva Insurance" : null,
+        job_type: c.job_type || "INSURANCE",
+        details: c.details,
+        location: "VIW",
+        approval_status: "WAITING",
+        revision: 1,
+        received_at: "2026-10-08T20:00:00Z",
+        can_edit: true,
+      };
+      records.set(record.rc_no, record);
+      result = { ok: true, record };
+      requests.set(c.request_id, result);
+    }
+    if (failCreate) {
+      failCreate = false;
+      throw Error("Network lost after commit");
+    }
+  }
+  if (c.operation === "EDIT") {
+    const record={...records.get(c.rc_no),details:c.details};
+    records.set(c.rc_no,record); result={ok:true,record};
+  }
+  if (c.operation === "GET")
+    result = {
+      ok: true,
+      record: records.get(c.rc_no),
+      movements: [
+        {
+          from_location: null,
+          to_location: "VIW",
+          occurred_at: "2026-10-08T20:00:00Z",
+          actor_id: "MGR001",
+          reason: "Vehicle received",
+        },
+      ],
+      audit: [],
+    };
+  if (c.operation === "MOVE") {
+    if (failMove) throw Error("Movement not confirmed");
+    const old = records.get(c.rc_no);
+    result = {
+      ok: true,
+      record: { ...old, location: c.location, revision: old.revision + 1 },
+    };
+    records.set(c.rc_no, result.record);
+  }
+  return { ok: true, json: async () => structuredClone(result) };
+};
+w.eval(source);
+const settle = async () => {
+  for (let i = 0; i < 8; i++) await new Promise((r) => setImmediate(r));
+};
+const click = async (action) => {
+  const el = w.document.querySelector('[data-rc-action="' + action + '"]');
+  assert.ok(el, "missing " + action);
+  el.click();
+  await settle();
+};
+const value = (name, v) => {
+  w.document.querySelector('[name="' + name + '"]').value = v;
+};
+const submit = async (id) => {
+  w.document
+    .getElementById(id)
+    .dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
+  await settle();
+};
+// Startup uses a browser timer; setImmediate alone does not wait for that timer
+// consistently across Node versions. Wait for the observable launcher instead.
+const launcherDeadline = Date.now() + 2000;
+while (!w.document.querySelector("[data-rc-menu]") && Date.now() < launcherDeadline)
+  await new Promise((resolve) => setTimeout(resolve, 10));
+assert.equal(w.document.querySelectorAll("[data-rc-menu]").length, 1);
+await w.zukaitReception.open();
+await click("new");
+assert.equal(w.document.querySelectorAll("#rc-form input[required]").length, 2);
+assert.equal(
+  w.document.querySelectorAll("#rc-form input[type=checkbox]").length,
+  9,
+);
+assert.equal(
+  w.document.querySelectorAll("#rc-form input[type=file]").length,
+  0,
+);
+assert.match(
+  w.document.getElementById("rc-root").textContent,
+  /Unticked means not recorded/,
+);
+value("make", "Toyota");
+value("model", "Camry");
+value("insurance_id", "1");
+value("damage", "<script>unsafe</script>");
+const approvedBytes=fs.readFileSync("app/src/main/assets/v2/features/insurance/vehicle-inspection-approved.png");
+assert.deepEqual(Buffer.from(w.document.querySelector('.rc-car-svg image').getAttribute('href').split(',')[1], 'base64'),approvedBytes);
+assert.equal(w.document.querySelectorAll('.rc-zone-legend').length,0);
+w.document.querySelector('[name="rc-dashboard-warning"][value="ISSUE"]').click();
+assert.equal(w.document.querySelector('[data-rc-warning-details]').hidden,false);
+value("warnings","Airbag, Check Engine");
+w.document.querySelector('[name="rc-function-0"][value="OK"]').click();
+const zone=w.document.querySelector('[data-rc-zone="front_bumper"]');
+assert.ok(zone,"Bilingual damage diagram must expose a clickable front bumper");
+zone.click();assert.equal(zone.textContent,"X");
+w.document.querySelector('[data-rc-mode="S"]').click();
+w.document.querySelector('[data-rc-zone="roof"]').click();
+w.document.querySelector('[data-rc-accessory="wheel_covers"]').click();
+assert.equal(w.document.querySelector('[data-rc-accessory="wheel_covers"]').getAttribute("aria-pressed"),"true");
+assert.equal(w.document.querySelector('[name=rc_extra_accessories]').value.includes("wheel_covers"),true);
+failCreate = true;
+await submit("rc-form");
+assert.match(w.document.getElementById("rc-error").textContent, /Network lost/);
+assert.equal(records.size, 1);
+assert.match(records.get("RC0001").details.damage,/\[\[ZUKAIT-DAMAGE-V1\]\]/);
+assert.match(records.get("RC0001").details.damage,/front_bumper/);
+assert.match(records.get("RC0001").details.damage,/roof/);
+assert.match(records.get("RC0001").details.other_accessories,/wheel_covers/);
+assert.ok(records.get("RC0001").details.tools.every(x=>["spare_tyre","jack","wheel_spanner","tool_kit","spare_key","warning_triangle","first_aid_kit","floor_mats","other"].includes(x)),"No unsupported accessory key sent to server");
+const firstId = commands.find((c) => c.operation === "CREATE").request_id;
+await submit("rc-form");
+assert.equal(records.size, 1);
+assert.equal(
+  commands.filter((c) => c.operation === "CREATE").at(-1).request_id,
+  firstId,
+);
+assert.match(w.document.getElementById("rc-root").textContent, /RC0001/);
+assert.equal(w.document.querySelectorAll("#rc-root script").length, 0);
+assert.match(
+  w.document.getElementById("rc-root").textContent,
+  /<script>unsafe<\/script>/,
+);
+assert.doesNotMatch(w.document.querySelector(".rc-cl-condition").textContent,/Front Bumper: Dent/,"Detail screen must not list damage mark names");
+assert.doesNotMatch(w.document.querySelector(".rc-cl-condition").textContent,/Damage Description/,"Separate damage description removed");
+assert.match(w.document.querySelector(".rc-cl-work-notes").textContent,/Work Descriptions \/ Notes/,"Unified notes shown");
+assert.match(w.document.querySelector(".rc-cl-observations").textContent,/Dashboard Warning:/);
+assert.doesNotMatch(w.document.querySelector(".rc-cl-observations").textContent,/Issue recorded/);
+assert.ok(w.document.querySelector(".rc-cl-diagram svg"),"Marked car diagram remains visible");
+// Compact detail cards are presentation-only; escaped values and existing actions remain.
+assert.ok(w.document.getElementById("rc-root").classList.contains("rc-checklist-view"));
+assert.equal(w.document.querySelectorAll(".rc-cl-grid > .rc-box").length,4);
+assert.ok(w.document.querySelector(".rc-cl-grid .rc-cl-diagram svg"));
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Vehicle & Customer Information/);
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Customer Name:/);
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Tools & Accessories/);
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/Reception Observations/);
+assert.match(w.document.querySelector(".rc-cl-grid").textContent,/(?:KM|Miles):/);
+assert.ok(w.document.querySelector(".rc-cl-actions [data-rc-action=pdf]"));
+assert.equal(w.document.querySelectorAll("#rc-root script").length,0);
+await click("edit");
+assert.equal(w.document.querySelector('[data-rc-zone="front_bumper"]').textContent,"X","Saved dent restored on edit");
+assert.equal(w.document.querySelector('[data-rc-zone="roof"]').textContent,"S","Saved scratch restored on edit");
+assert.equal(w.document.querySelector('[data-rc-accessory="wheel_covers"]').getAttribute("aria-pressed"),"true","Extra accessory restored on edit");
+assert.equal(w.document.querySelector('[name=damage]').value,"<script>unsafe</script>","Legacy damage notes remain editable");
+assert.equal(w.document.querySelector('[name="rc-dashboard-warning"]:checked').value,"ISSUE");
+assert.equal(w.document.querySelector('[name="warnings"]').value,"Airbag, Check Engine");
+assert.equal(w.document.querySelector('[name="rc-function-0"]:checked').value,"OK");
+w.document.querySelector('[name="rc-dashboard-warning"][value="OK"]').click();
+assert.equal(w.document.querySelector('[data-rc-warning-details]').hidden,true);
+await submit("rc-form");
+await click("edit");
+assert.equal(w.document.querySelector('[name="rc-dashboard-warning"]:checked').value,"OK","No Warning survives save/reopen");
+await click("back");
+await click("movement");
+value("reason", "Waiting for parts");
+failMove = true;
+await submit("rc-move");
+assert.equal(records.get("RC0001").location, "VIW");
+assert.match(
+  w.document.getElementById("rc-error").textContent,
+  /Movement not confirmed/,
+);
+failMove = false;
+await submit("rc-move");
+assert.equal(records.get("RC0001").location, "VWC");
+assert.match(w.document.getElementById("rc-root").textContent, /With customer/);
+let pdf = null,
+  printed = null;
+w.AndroidBridge = {
+  shareHtmlAsPdf: (s, n) => (pdf = { s, n }),
+  printHtmlNamed: (s, n) => (printed = { s, n }),
+};
+await click("pdf");
+assert.equal(pdf.n, "RC0001.pdf");
+assert.match(pdf.s, /Customer Signature/);
+assert.match(pdf.s, /Reception Staff Signature/);
+assert.match(pdf.s, /&lt;script&gt;unsafe/);
+assert.match(pdf.s,/class="rc-print-car"/);
+assert.match(pdf.s,/viewBox="0 0 1536 1152"/,"Printed car must use the same three-view proportions as the screen");
+assert.match(pdf.s,/data:image\/png;base64,/,"Exact approved image embedded for offline printing");
+assert.match(pdf.s,/<svg/);
+assert.doesNotMatch(pdf.s,/Front Bumper: Dent/);
+assert.doesNotMatch(pdf.s,/Roof: Scratch/);
+assert.match(pdf.s,/Wheel Covers/);
+assert.doesNotMatch(pdf.s, /<script>unsafe/);
+await click("print");
+assert.equal(printed.n, "RC0001");
+// Reopen the Reception workspace directly; the redundant header Home button was removed.
+await w.zukaitReception.open();
+await click("new");
+value("make", "Toyota");
+value("model", "Camry");
+value("insurance_id", "1");
+value("damage", "<script>unsafe</script>");
+await submit("rc-form");
+assert.equal(
+  records.size,
+  2,
+  "a deliberately new identical checklist needs a new request id",
+);
+const sample = structuredClone(records.get("RC0001"));
+sample.details = {
+  make: "Toyota",
+  model: "Camry",
+  year: "2015",
+  customer: "Sample Customer",
+  contact: "90000000",
+  registration: "12345 A",
+  vin: "JTNB1234567890123",
+  odometer: "125000",
+  odometer_unit: "KM",
+  claim: "CL-001",
+  damage: "Front bumper and right fender damaged.",
+  tools: ["spare_tyre", "jack", "wheel_spanner", "floor_mats"],
+  fuel: "Half",
+  warnings: "No warning lights recorded.",
+  remarks: "Customer waiting for insurance approval.",
+};
+for(const raw of ["NO","No warning lights recorded."]){
+ const doc=new JSDOM(w.zukaitReception.documentHtml({...sample,details:{...sample.details,warnings:raw}})).window.document;
+ assert.equal(doc.querySelector('.rc-warning-options span').textContent.trim(),"✓ No Warning");
+ assert.equal(doc.querySelector('.rc-warning-description'),null);
+}
+const issueDoc=new JSDOM(w.zukaitReception.documentHtml({...sample,details:{...sample.details,warnings:'[[ZUKAIT-FUNCTION-V1]]\n{"Dashboard Warning":"ISSUE"}\n[[/ZUKAIT-FUNCTION-V1]]\nEngine'}})).window.document;
+assert.match(issueDoc.querySelector('.rc-warning-options').textContent,/✓ Warning Available/);
+assert.equal(issueDoc.querySelector('.rc-warning-description').textContent,"Engine");
+if (process.env.ZUKAIT_RECEPTION_QA_HTML)
+  fs.writeFileSync(
+    process.env.ZUKAIT_RECEPTION_QA_HTML,
+    w.zukaitReception.documentHtml(sample),
+  );
+
+// Cash must create a checklist, not silently create a Job Card or send an
+// insurance company/claim. Reusing the form preserves original field order.
+await w.zukaitReception.open();
+await click("new");
+const form=w.document.getElementById("rc-form");
+assert.deepEqual([...form.querySelectorAll(".rc-create-sections .rc-grid input,.rc-create-sections .rc-grid select")]
+  .map(x=>x.name),
+  ["registration","make","model","year","odometer_unit","odometer",
+   "vin","customer","contact","claim","customer_role"]);
+assert.equal(form.elements.namedItem("job_type").value,"INSURANCE");
+value("job_type","CASH");
+form.elements.namedItem("job_type").dispatchEvent(new w.Event("change",{bubbles:true}));
+assert.equal(form.querySelector(".rc-insurance").hidden,true);
+assert.equal(form.querySelector(".rc-claim").hidden,true);
+assert.equal(form.elements.namedItem("customer").required,true);
+assert.equal(form.elements.namedItem("insurance_id").required,false);
+value("registration","OM-123");
+value("make","Toyota");
+value("model","Camry");
+value("year","2018");
+value("odometer_unit","Miles");
+value("odometer","52000");
+value("vin","1HGCM82633A004352");
+value("customer","Cash Customer");
+value("contact","90123456");
+// Even if a hidden field retains old content, it must never be submitted.
+value("claim","HIDDEN-CLAIM-SHOULD-BE-DROPPED");
+await submit("rc-form");
+const cash=commands.filter(c=>c.operation==="CREATE").at(-1);
+assert.equal(cash.job_type,"CASH");
+assert.equal(cash.insurance_id,null);
+assert.equal(cash.details.claim,"");
+assert.equal(cash.details.registration,"OM-123");
+assert.equal(cash.details.odometer_unit,"Miles");
+assert.equal(cash.details.customer,"Cash Customer");
+assert.equal(records.get("RC0003").job_type,"CASH");
+assert.equal(records.get("RC0003").job_card,undefined);
+const printedCash=w.zukaitReception.documentHtml(records.get("RC0003"));
+assert.match(printedCash,/Job Type:/);
+assert.doesNotMatch(printedCash,/Insurance Company/);
+assert.doesNotMatch(printedCash,/Claim \/ Gate Pass/);
+assert.doesNotMatch(printedCash,/Claim Number:/);
+assert.match(printedCash,/Miles:/);
+await click("back");
+assert.ok(w.document.querySelector('[data-rc-action="new"]'),
+  "Back from checklist detail must restore Reception list");
+await click("new");
+await click("back");
+assert.ok(w.document.querySelector('[data-rc-action="new"]'),
+  "Back from new checklist must restore Reception list");
+w.me = null;
+await settle();
+dom.window.close();
+console.log(
+  "Reception UI: optional fields, accessories, escaped output, retry identity, server-confirmed movements, native print/PDF and separate new checklists passed.",
+);

@@ -1,0 +1,15 @@
+# Selected-checklist labour reporting — inactive draft
+
+The selected Mechanical checklist has an explicit Task labour report action. It reads only after Apply filters; there is no polling. This is not a department-wide efficiency, preliminary-work or payroll report.
+
+Dates are inclusive Asia/Muscat calendar dates, at most31 days, with an optional assigned mechanic filter. Recorded minutes exclude pauses and include overtime. They do not change normal-duty, leave, holiday, overtime, ID001 or payroll calculations. Two mechanics working the same60 minutes produce120 labour minutes and60 active clock minutes. Allocation totals are not earned period credit.
+
+The existing staff-history period splitter is ported unchanged and parity-tested. Original, handed-over and repeat work remain with their original assignment. Preliminary transfers and unlinked work are excluded with counts. Missing legacy assignment attribution is resolved only for exactly one same-JC noncancelled assignment. Ambiguous ownership, conflicting duplicate IDs, invalid/future times, recovery flags or employee overlaps require review; totals become Pending rather than false zero. Known employee unions and active-clock unions remain visible.
+
+The private service-only invoker reader validates the existing session, role, explicit TASK_REPORT grant and flags. It projects only the selected current JC and MC: at most100 tasks,500 links/JC assignments,10000 scoped periods,256 pauses per period and20000 pauses total. Limits fail closed; no silent truncation or historical JSON scans. Employee filtering is applied before returning period context. Context, credentials, customer, financial and ink data never leave the server. Source revisions are checked again before response. The reader performs no business writes.
+
+Both client ZUKAIT_MECHANICAL_REPORTS_ENABLED and server environment flag must explicitly be true, plus the existing Mechanical gates, reports_enabled and report_readers TASK_REPORT grant. Defaults are false/empty. experiments/mechanical-reports.sql is a disposable test fixture, not an applied migration. No live grant or account was created.
+
+PDF and Excel-compatible SpreadsheetML XML use the applied report snapshot and record its filters/as-of time. The existing PDF generator and generic Accountant spreadsheet helper are reused. Every output revalidates source revisions and the current session; filter changes discard prepared output. XML text remains typed as text, without formulas. Native share uses the existing bridge. No export happens automatically.
+
+Qualification covers pure attribution/parity, private SQL and Edge gates, read-only invariants, UI account/offline/stale/filter races, and synthetic responsive/browser PDF checks. Physical Android touch/share/print, old APK coexistence, upgrade/rollback, department-wide reporting and release qualification remain outstanding. No production savings or activation is claimed. Price source remains an unanswered owner decision; reports contain no prices/signatures.

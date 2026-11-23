@@ -1,0 +1,84 @@
+name: Preserve current PC Pages rollback artifact
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - ".github/workflows/reception-pages-rollback-archive.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preserve-pages:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download last deployed Pages artifact (read-only)
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          run-id: 38023834857
+          repository: zukaitauto/zukait-time-track-android
+          github-token: ${{ github.token }}
+          path: pages-original
+      - name: Verify archive includes the actual live website files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          from pathlib import Path
+          expected = {
+              "index.html": "f1a00d6208e3eed3cc02aafab51c70f5e4b45061513716048400f4019ea3a089",
+              "v2/features/insurance/reception.js": "ad6f061442ee606ab12ce981f659421efa6713c475b19e10115b34b9a195db91"
+          }
+          archive_files=[p for p in Path("pages-original").rglob("*") if p.is_file() and (p.suffix in (".tar",".gz") or p.name=="artifact.tar")]
+          if len(archive_files)!=1:
+              raise SystemExit(f"Expected one GitHub Pages archive; found {len(archive_files)}")
+          archive=archive_files[0]
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          observed={}
+          with tarfile.open(archive,"r:*") as tar:
+              names={x.name.removeprefix("./"):x for x in tar.getmembers() if x.isfile()}
+              for name,digest in expected.items():
+                  member=names.get(name)
+                  if not member:raise SystemExit(f"Missing deployed file: {name}")
+                  data=tar.extractfile(member).read()
+                  actual=sha(data)
+                  if actual!=digest:
+                      raise SystemExit(f"Published source hash mismatch for {name}; expected {digest}, got {actual}")
+                  observed[name]={"sha256":actual,"bytes":len(data)}
+          report={
+            "purpose":"Preserve existing live PC website for authorized rollback; NOT a database backup",
+            "original_pages_workflow_run":38023834857,
+            "original_pages_artifact_id":11659141105,
+            "original_source_commit":"8458b8082281779a0abb584cb6310354ebed1624",
+            "source_archive":str(archive),
+            "source_archive_sha256":sha(archive.read_bytes()),
+            "verified_published_files":observed,
+            "published_target":"https://zukaitauto.github.io/zukait-time-track-android/",
+            "production_restore_test":"NOT_RUN",
+            "website_restore_test":"NOT_RUN",
+            "created_at_utc":__import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+          }
+          Path("pages-rollback-manifest.json").write_text(json.dumps(report,indent=2)+"\n")
+          print("Verified exact deployed PC website archive and both live file fingerprints.")
+          print("Archive SHA256:",report["source_archive_sha256"])
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"],"a") as f:
+              f.write("## Live pre-V305 PC website rollback archive\n")
+              f.write("Original run: 38023834857; both live file hashes match preserved artifact.\n")
+              f.write("**No website publication, production write or database backup.**\n")
+          PY
+      - name: Retain verified rollback archive for 90 days
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZUKAIT_PC_PRE_V305_ROLLBACK_VERIFIED
+          path: |
+            pages-original/
+            pages-rollback-manifest.json
+          if-no-files-found: error
+          retention-days: 90

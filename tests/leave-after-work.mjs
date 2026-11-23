@@ -1,0 +1,135 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {stripTypeScriptTypes} from 'node:module';
+process.env.TZ='Asia/Muscat';
+const at=(h,m=0,s=0)=>new Date(2026,9,3,h,m,s).getTime();
+let now=at(21),serial=0,alerts=[],confirmations=[],saved=0,html='';
+class Clock extends Date{constructor(...args){super(...(args.length?args:[now]))}static now(){return now}}
+const staff=[{id:'EMP011',name:'Surab',role:'Employee'},{id:'SUP001',role:'Supervisor'},{id:'MGR001',role:'Manager'}];
+const fields={v755LeaveDate:{value:'2026-10-03'},v755LeavePeriod:{value:'FULL'},v755LeaveRemark:{value:''},v755LeaveFrom:{value:''}};
+const c={Date:Clock,state:{sessions:[],leaves:[],leaveAudit:[]},users:staff,me:staff[1],user:id=>staff.find(u=>u.id===id),uid:()=>String(++serial),document:{getElementById:id=>fields[id]},alert:x=>alerts.push(x),confirm:x=>(confirmations.push(x),true),save:()=>saved++,closeModal(){},render(){},setTimeout(){},openModal:x=>html=x};
+c.window=c;vm.createContext(c);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/leave/rules.js','utf8'),c);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/reports/efficiency_engine.js','utf8'),c);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/time/work_rules.js','utf8'),c);
+const src=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const start=src.indexOf("(function(){'use strict';",src.indexOf('V75.5 LEAVE CONTROL'));
+const end=src.indexOf(" if(!document.getElementById('v88-role-account-style'))",start);
+const editStart=src.indexOf(' window.v114EditLeave',end),editEnd=src.indexOf(' window.v114DeleteLeave',editStart);
+const approvalStart=src.indexOf(' function commitApprovedLeave',end),approvalEnd=src.indexOf(' window.v755OpenLeaveList',approvalStart);
+vm.runInContext(src.slice(start,end)+src.slice(approvalStart,approvalEnd)+src.slice(editStart,editEnd)+'})();',c);
+const r=c.zukaitV2.leave;
+const work={id:'S1',emp:'EMP011',job:'12021',start:at(8,15),end:at(10,32,46),paused:true};
+c.state.sessions=[work];
+const before=JSON.stringify(c.state.sessions);
+c.v755SaveLeave('EMP011');
+assert.equal(alerts.length,0);assert.equal(saved,1);
+let l=c.state.leaves[0];
+assert.equal(l.startAt,work.end);assert.equal(l.afterWork,true);
+assert.equal(c.v63IsOnLeave('EMP011',at(9)),false);
+assert.equal(c.v63IsOnLeave('EMP011',work.end),true);
+assert.equal(c.v63IsOnLeave('EMP011',at(14)),false);
+assert.equal(c.v63LeaveOverlapMinutes('EMP011',at(8),at(19)),(at(13)-work.end)/60000+240);
+assert.equal(JSON.stringify(c.state.sessions),before,'earlier work is untouched');
+assert.match(confirmations[0],/Remaining Day.*10:32/);
+assert.match(c.v755LeaveLabel(l),/Remaining Day/);
+assert.equal(c.zukaitV2.efficiency.eligibleMinutes(work,c.state,{start:at(8),end:at(19)},now,{excludeLeave:true}),(work.end-work.start)/60000,'actual work before leave is retained');
+assert.equal(c.zukaitV2.rules.onLeave(c.state,'EMP011',at(9)),false);
+c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,1,'duplicates prevented');
+assert.match(alerts.pop(),/already recorded/);
+c.v755OpenLeaveForm('EMP011');assert.match(html,/Leave from/);assert.match(html,/Remaining Day/);
+// Manager editing uses the same cutoff and stores before/after audit.
+c.me=staff[2];Object.assign(fields,{v114LeaveEmp:{value:'EMP011'},v114LeaveDate:{value:'2026-10-03'},v114LeavePeriod:{value:'FULL'},v114LeaveRemark:{value:'Left after work'},v114LeaveFrom:{value:'11:00:00'}});
+c.v114SaveLeaveEdit(l.id);assert.equal(l.startAt,at(11));assert.equal(c.state.leaveAudit.at(-1).after.startAt,at(11));
+assert.equal(c.state.leaveAudit.at(-1).before.startAt,work.end);
+function reset(){c.state.leaves=[];c.state.leaveAudit=[];alerts=[];confirmations=[];fields.v755LeaveFrom.value='';c.me=staff[1]}
+reset();c.state.sessions=[{...work,end:null}];c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,0);assert.match(alerts[0],/Pause or stop/);
+reset();c.state.sessions=[];c.v755SaveLeave('EMP011');l=c.state.leaves[0];assert.equal(l.startAt,undefined);assert.equal(r.days(l),1);
+assert.equal(r.days({...l,period:'AM'}),.5);assert.equal(r.days({...l,period:'PM'}),.5);
+reset();c.state.sessions=[{...work,end:at(13)},{...work,id:'S2',start:at(15),end:at(16)}];c.v755SaveLeave('EMP011');l=c.state.leaves[0];assert.equal(l.startAt,at(16));assert.equal(c.v63LeaveOverlapMinutes('EMP011',at(8),at(19)),180);
+reset();c.state.sessions=[{...work,end:at(20)}];c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,0);assert.match(alerts[0],/No duty time remains/);
+reset();c.state.sessions=[work];fields.v755LeaveFrom.value='09:00';c.v755SaveLeave('EMP011');assert.equal(c.state.leaves[0].startAt,work.end,'an early selected time cannot overlap recorded work');
+reset();c.state.sessions=[];fields.v755LeaveFrom.value='23:00';c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,0);
+assert.equal(r.validate({emp:'EMP011',date:'2026-10-03',period:'FULL'},{closedDay:true}).code,'CLOSED_DAY');
+// Exercise actual self-entry against the server's unchanged permission gate.
+reset();c.state.sessions=[];c.me=staff[0];const oldState=JSON.parse(JSON.stringify(c.state));
+c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,1);
+assert.equal(c.state.leaveNotifications,undefined,'self-entry must not modify a disallowed, unused collection');
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const validator=api.slice(api.indexOf('function same('),api.indexOf('function cloneValue'));
+const server={};vm.createContext(server);vm.runInContext(stripTypeScriptTypes(validator)+';this.validate=validateEmployeeChange;',server);
+assert.equal(server.validate('EMP011',oldState,c.state),true,'employee self-entry must be accepted without permission-rebase retries');
+assert.equal(server.validate('OTHER',oldState,c.state),false,'other employees remain protected');
+// The live status feed can show Paused while shared state still has an open
+// session. Online leave entry must refresh shared state before validation.
+c.navigator={onLine:true};
+fields.v755LeavePeriod.value='PM';fields.v755LeaveDate.value='2026-10-03';
+reset();c.state.sessions=[{...work,end:null}];
+let pulls=0;
+c.zukaitCloud={dirty:false,pull:async()=>{pulls++;c.state.sessions=[work];return true}};
+await c.v755SaveLeave('EMP011');
+assert.equal(pulls,1);assert.equal(c.state.leaves.length,1);assert.equal(alerts.length,0);
+// A remotely saved Manager leave wins before stale work validation and is
+// neither duplicated nor overwritten.
+reset();c.state.sessions=[{...work,end:null}];
+const managerLeave={id:'manager-pm',emp:'EMP011',date:'2026-10-03',period:'PM',by:'MGR001'};
+c.zukaitCloud.pull=async()=>{c.state.leaves=[managerLeave];return true};
+await c.v755SaveLeave('EMP011');
+assert.equal(c.state.leaves.length,1);assert.match(alerts[0],/already recorded/);
+assert.equal(c.state.sessions[0].end,null,'preflight must not manufacture a pause');
+// Failed/skipped pulls and pending local writes cannot authorize stale entry.
+for(const mode of ['skipped','failed','dirty']){
+ reset();c.state.sessions=[];c.zukaitCloud.dirty=mode==='dirty';
+ c.zukaitCloud.pull=async()=>{if(mode==='failed')throw Error('offline');return mode!=='skipped'};
+ await c.v755SaveLeave('EMP011');assert.equal(c.state.leaves.length,0);assert.match(alerts[0],/refresh|syncing/i);
+}
+// Repeated clicks share one in-flight refresh; genuine active work still blocks.
+reset();c.zukaitCloud.dirty=false;c.state.sessions=[{...work,start:at(15),end:null}];
+let release;pulls=0;c.zukaitCloud.pull=()=>{pulls++;return new Promise(resolve=>release=resolve)};
+const pending=c.v755SaveLeave('EMP011');c.v755SaveLeave('EMP011');
+await Promise.resolve();release(true);await pending;
+assert.equal(pulls,1);assert.equal(c.state.leaves.length,0);assert.match(alerts[0],/Pause or stop/);
+console.log('Leave after work passed: Supervisor create, Manager edit/audit, exact cutoff, work retained, lunch, duplicates, active work and no remaining duty.');
+
+reset();c.navigator.onLine=false;c.state.sessions=[];
+fields.v755LeaveDate.value='2026-10-08';
+fields.v755LeaveTo={value:'2026-10-10'};
+fields.v755LeaveApproval={value:'ANNUAL'};
+c.me=staff[1];
+c.v755SaveLeave('EMP011');
+assert.equal(c.state.leaves.length,0,'Supervisor cannot approve a range');
+c.me=staff[2];
+c.state.sessions=[{...work,start:new Date(2026,9,10,9).getTime(),end:new Date(2026,9,10,10).getTime()}];
+now=new Date(2026,9,10,11).getTime();
+fields.v755LeaveRemark.value='Approved absence';
+c.v755SaveLeave('EMP011');
+assert.equal(c.state.leaves.length,0,'conflict on last date blocks the entire approval');
+c.state.sessions=[];
+c.v755SaveLeave('EMP011');
+assert.equal(Array.from(c.state.leaves,l=>l.date).join(','),'2026-10-08,2026-10-10');
+assert.ok(c.state.leaves.every(l=>l.approvalType==='ANNUAL'&&l.period==='FULL'&&l.by==='MGR001'));
+assert.equal(c.state.leaveAudit.length,2);
+assert.equal(c.v63IsOnLeave('EMP011',new Date(2026,9,10,14).getTime()),true);
+assert.equal(c.v63IsOnLeave('EMP011',new Date(2026,9,11,8).getTime()),false);
+
+c.v755OpenLeaveHub();
+assert.match(html,/UPCOMING LEAVE/);
+staff[0].department='Paint';
+staff.push({id:'INACTIVE',name:'Inactive Staff',role:'Employee',active:false});
+c.state.leaves=[
+ {emp:'EMP011',date:'2026-10-15',period:'FULL',approvalType:'ANNUAL'},
+ {emp:'EMP011',date:'2026-10-17',period:'FULL',approvalType:'ANNUAL'},
+ {emp:'INACTIVE',date:'2026-10-18',period:'FULL'},
+ {emp:'EMP011',date:'2026-10-25',period:'FULL',cancelled:true}
+];
+c.v755OpenLeaveHub();
+assert.doesNotMatch(html,/Inactive Staff/);
+c.v755OpenUpcomingLeave();
+assert.match(html,/<h3>Paint<\/h3>/);
+assert.match(html,/Annual Leave Approved.*15\/10\/2026.*17\/10\/2026.*18\/10\/2026/);
+assert.doesNotMatch(html,/Inactive Staff|25\/10\/2026/);
+c.me=staff[1];
+html='';
+c.v755OpenUpcomingLeave();
+assert.equal(html,'','Upcoming Leave is Manager only');

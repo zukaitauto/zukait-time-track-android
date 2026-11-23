@@ -1,0 +1,101 @@
+{
+  "workflow_run": 39595786464,
+  "source": "bed7a3b596d54797ebd5a9f1e97f457e6fc78575",
+  "engine": "Native PostgreSQL 17; synthetic only; not production latency or physical Disk IO",
+  "synthetic_bytes": 3587918,
+  "employees": 19,
+  "sessions": 7000,
+  "work_mem_kib": 2184,
+  "output_identical": true,
+  "trials": [
+    {
+      "pair": 0,
+      "name": "before",
+      "execution_ms": 139.921,
+      "temp_read_blocks": 17632,
+      "temp_written_blocks": 17632
+    },
+    {
+      "pair": 0,
+      "name": "after",
+      "execution_ms": 35.576,
+      "temp_read_blocks": 943,
+      "temp_written_blocks": 944
+    },
+    {
+      "pair": 1,
+      "name": "before",
+      "execution_ms": 134.905,
+      "temp_read_blocks": 17632,
+      "temp_written_blocks": 17632
+    },
+    {
+      "pair": 1,
+      "name": "after",
+      "execution_ms": 36.585,
+      "temp_read_blocks": 943,
+      "temp_written_blocks": 944
+    },
+    {
+      "pair": 2,
+      "name": "before",
+      "execution_ms": 138.267,
+      "temp_read_blocks": 17632,
+      "temp_written_blocks": 17632
+    },
+    {
+      "pair": 2,
+      "name": "after",
+      "execution_ms": 36.34,
+      "temp_read_blocks": 943,
+      "temp_written_blocks": 944
+    }
+  ],
+  "before_median_ms": 138.267,
+  "after_median_ms": 36.34,
+  "before_temp_written_blocks": 17632,
+  "after_temp_written_blocks": 944,
+  "time_reduction_pct": 73.71751755661148,
+  "temp_block_reduction_pct": 94.64609800362976,
+  "parity_cases": 16,
+  "full_save_trials": [
+    {
+      "pair": 0,
+      "name": "before",
+      "execution_ms": 171.733,
+      "temp_written_blocks": 17632
+    },
+    {
+      "pair": 0,
+      "name": "after",
+      "execution_ms": 64.629,
+      "temp_written_blocks": 944
+    },
+    {
+      "pair": 1,
+      "name": "before",
+      "execution_ms": 169.007,
+      "temp_written_blocks": 17632
+    },
+    {
+      "pair": 1,
+      "name": "after",
+      "execution_ms": 66.149,
+      "temp_written_blocks": 944
+    },
+    {
+      "pair": 2,
+      "name": "before",
+      "execution_ms": 179.747,
+      "temp_written_blocks": 17632
+    },
+    {
+      "pair": 2,
+      "name": "after",
+      "execution_ms": 57.043,
+      "temp_written_blocks": 944
+    }
+  ],
+  "concurrent_save": "PASS: lock, one winner, stale revision rejected",
+  "identical_save_guard": "PASS: revision unchanged"
+}

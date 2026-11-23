@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const source=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+const a=source.indexOf('function purchaseCompletedPrintHtml('),b=source.indexOf('\nfunction whatsAppPurchaseCompleted(',a);
+const vehicle=source.slice(source.indexOf('function pendingVehicleLabel('),source.indexOf('\n',source.indexOf('function pendingVehicleLabel(')));
+export const sample={listNo:'PL030',jobCard:'12082',vehicle:'Hyudai Accent',model:'Accent',year:'2011',registration:'40954.a',items:[['Rr. Bumper.d',12.38],['Tail lamp.Lh.d',14.76],['Rr Bumper reflector.Lh.d',1.9],['Reinforcement.d',8.09]].map(([name,purchaseAmount])=>({name,qty:1,purchaseAmount}))};
+export function render(list=sample){let printed='';const c={purchaseCompletedRecord:()=>list,esc:x=>String(x??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])),window:{AndroidBridge:{printHtmlNamed:html=>printed=html}}};vm.createContext(c);vm.runInContext(vehicle+'\n'+source.slice(a,b),c);c.printPurchaseCompleted(list.listNo);return printed;}
+const snapshot=JSON.stringify(sample),html=render();
+assert.equal(JSON.stringify(sample),snapshot,'printing never mutates parts or prices');
+assert.match(html,/37\.130 <small>OMR<\/small>/);
+const body=html.match(/<tbody>([\s\S]*?)<\/tbody>/)[1];
+assert.doesNotMatch(body,/OMR/);for(const amount of ['12.380','14.760','1.900','8.090'])assert.ok(body.includes(amount));
+assert.doesNotMatch(html,/<th>Vendor<\/th>|>Agreed<\/th>/,'hide completely blank optional columns');
+assert.match(html,/Hyudai Accent 2011/);assert.doesNotMatch(html,/Accent Accent/);
+const populated=render({...sample,items:[{name:'Part <A>',qty:1,purchaseAmount:2.44,quoteAmount:0,supplier:'Vendor & Co'}]});
+assert.match(populated,/<th>Vendor<\/th>/);assert.match(populated,/>Agreed<\/th>/);assert.match(populated,/0\.000/);assert.match(populated,/Vendor &amp; Co/);assert.doesNotMatch(populated,/Part <A>/);
+const missing=render({...sample,items:[{name:'Missing invoice',qty:1}]});assert.match(missing,/PRICE CHECK/);assert.doesNotMatch(missing,/NaN|undefined/);
+assert.match(html,/thead\{display:table-header-group\}/);assert.match(html,/page-break-inside:avoid/);
+console.log('Purchase Completed print: one OMR label, exact 3-decimal amounts, preserved total, optional columns, escaped text, vehicle dedupe and read-only behavior passed.');

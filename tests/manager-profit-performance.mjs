@@ -1,0 +1,149 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';
+import {financialReport} from '../supabase/functions/workshop-api/accountant/finance_rules.js';
+import {managerProfitReport} from '../supabase/functions/workshop-api/accountant/profit_performance.js';
+import {accountantApi} from '../supabase/functions/workshop-api/accountant/api.js';
+import {fixture} from './accountant-finance.mjs';
+const now=Date.parse('2026-10-25T08:00:00Z'),manager={id:'M',role:'Manager'};
+// Actual 360 calculator and the server must agree when the saved rate is absent.
+const rateContext={state:{jobs:[{no:'RATE-JC',jobType:'INSURANCE',insuranceLpo:{amount:100,receivedDate:'2026-10-01'}}],users:[{id:'E',role:'Employee'}],assign:[{id:'A',job:'RATE-JC',emp:'E'}],sessions:[{id:'S',emp:'E',job:'RATE-JC',start:Date.parse('2026-10-01T04:00:00Z'),end:Date.parse('2026-10-01T05:00:00Z')} ]},events:[],entries:[]};
+const rateDom=new JSDOM('',{runScripts:'outside-only'});rateDom.window.state=structuredClone(rateContext.state);rateDom.window.eval(fs.readFileSync('app/src/main/assets/job_card_master.js','utf8'));
+const actual360=rateDom.window.zukaitJobCardMaster.costs('RATE-JC');assert.equal(actual360.rate,2.5);
+for(const missing of [undefined,null,'']){
+ const c=structuredClone(rateContext);if(missing!==undefined)c.state.labourRate=missing;
+ const row=managerProfitReport(c,financialReport(c,{},now),{month:'2026-10'},now).rows[0];
+ assert.equal(row.costs_complete,true);assert.equal(Number(row.cost_breakdown_omr.labour),actual360.labour);assert.equal(Number(row.total_cost_omr),actual360.total);assert.equal(row.profit_omr,'97.500');
+ assert.equal(Object.hasOwn(c.state,'labourRate'),missing!==undefined,'read-only costing does not save defaults into production state');
+}
+const explicitRate=structuredClone(rateContext);explicitRate.state.labourRate=4;assert.equal(financialReport(explicitRate,{},now).details[0].labour_cost_omr,4);
+explicitRate.state.labourRate='invalid';assert.equal(financialReport(explicitRate,{},now).details[0].labour_cost_omr,null,'malformed configured rate cannot become a guessed cost');
+const stillRunning=structuredClone(rateContext);stillRunning.state.sessions[0].end=null;assert.equal(managerProfitReport(stillRunning,financialReport(stillRunning,{},now),{month:'2026-10'},now).rows[0].costs_complete,false,'running time remains incomplete');
+rateDom.window.close();
+const context=fixture();context.state.jobs[0].year='2017';context.state.sublets=[{id:'SUBLET-1',jobCard:'J1',amountMills:12345,date:'2026-09-01'}];
+context.entries.push({id:'duplicate-cash',kind:'CASH_IN',job_card:'J1',amount:150,transaction_date:'2026-10-02'});
+const before=JSON.stringify(context),full=financialReport(context,{},now);
+let report=managerProfitReport(context,full,{month:'2026-10'},now),cash=report.rows.find(r=>r.kind==='CASH'),insurance=report.rows.find(r=>r.kind==='INSURANCE');
+assert.equal(full.details[0].total_cost_omr,49.845,'Accounting Job Card total agrees with Manager profit');
+assert.equal(full.details[0].sublet_cost_omr,12.345,'sublet included in Accounting cost once');
+assert.equal(full.summary.sublet.amount_omr,12.345,'sublet summary includes expense');
+assert.equal(cash.amount_omr,'150.000');assert.equal(cash.date,'2026-10-01');assert.equal(cash.total_cost_omr,'49.845');assert.equal(cash.profit_omr,'100.155');assert.equal(cash.profit_percentage,66.77);assert.equal(cash.vehicle,'Toyota Camry 2017');
+assert.equal(insurance.amount_omr,'100.000');assert.equal(insurance.profit_omr,null);assert.equal(insurance.costs_complete,false);
+// Missing categories with no source records are zero; unfinished work is not.
+const absent=structuredClone(context);
+absent.state.jobs=absent.state.jobs.slice(0,1);
+absent.state.paintPurchasing.orders=[];
+absent.state.consumables.actuals=[];
+absent.events=[];
+const emptyCosts=managerProfitReport(absent,financialReport(absent,{},now),{month:'2026-10'},now).rows[0];
+assert.equal(emptyCosts.cost_breakdown_omr.consumables,'0.000');
+assert.equal(emptyCosts.cost_breakdown_omr.paint,'0.000');
+assert.equal(emptyCosts.cost_breakdown_omr.parts,'0.000');
+assert.equal(emptyCosts.cost_breakdown_omr.labour,'2.500');
+assert.equal(emptyCosts.total_cost_omr,'14.845','no-source categories cannot hide verified labour and sublet');
+const draft=structuredClone(absent);
+draft.state.consumables.issues=[{id:'PENDING-ISSUE',jobCard:'J1'}];
+const pendingDraft=managerProfitReport(draft,financialReport(draft,{},now),{month:'2026-10'},now).rows[0];
+assert.equal(pendingDraft.costs_complete,false,'unfinalized consumables activity remains pending');
+assert.equal(JSON.stringify(context),before,'read-only report never changes workshop/ledger records');
+assert.equal(managerProfitReport(context,full,{month:'2026-09'},now).rows.length,0);
+assert.deepEqual(managerProfitReport(context,full,{month:'2026-10',insurance:'liva'},now).rows.map(x=>x.kind),['INSURANCE']);
+const insured=structuredClone(context);insured.state.jobs=insured.state.jobs.slice(0,1);Object.assign(insured.state.jobs[0],{jobType:'INSURANCE',insuranceCompany:'Liva',insuranceLpo:{amount:200,receivedDate:'2026-10-03'}});
+const lpo=managerProfitReport(insured,financialReport(insured,{},now),{month:'2026-10'},now).rows[0];assert.equal(lpo.amount_omr,'200.000');assert.equal(lpo.date,'2026-10-03');assert.equal(lpo.profit_omr,'150.155','LPO revenue, not invoice or payments');
+const loss=structuredClone(context);loss.state.jobs[0].finalInvoiceAmount=20;
+assert.equal(managerProfitReport(loss,financialReport(loss,{},now),{month:'2026-10'},now).rows[0].profit_omr,'-29.845');
+loss.state.jobs[0].finalInvoiceAmount=0;const zero=managerProfitReport(loss,financialReport(loss,{},now),{month:'2026-10'},now).rows[0];assert.equal(zero.profit_percentage,null);assert.equal(zero.profit_omr,'-49.845');
+const incomplete=structuredClone(context);incomplete.state.sublets[0].amountMills=null;
+assert.equal(managerProfitReport(incomplete,financialReport(incomplete,{},now),{month:'2026-10'},now).rows[0].profit_omr,null);
+const duplicated=structuredClone(context);duplicated.state.sublets.push({...duplicated.state.sublets[0]});assert.equal(managerProfitReport(duplicated,financialReport(duplicated,{},now),{month:'2026-10'},now).rows[0].total_cost_omr,'49.845');
+const historical=structuredClone(context);historical.state.jobs[0].archived=true;assert.equal(managerProfitReport(historical,financialReport(historical,{},now),{month:'2026-10'},now).rows[0].job_card,'J1');
+const future=structuredClone(context);future.state.jobs[0].invoiceDate='2026-10-26';assert.equal(managerProfitReport(future,financialReport(future,{},now),{month:'2026-10'},now).rows.some(r=>r.kind==='CASH'),false);
+const undated=structuredClone(context);delete undated.state.jobs[0].invoiceDate;assert.equal(managerProfitReport(undated,financialReport(undated,{},now),{month:'2026-10'},now).undated_records,1);
+let reads=0;const admin={rpc:async(name)=>{assert.equal(name,'zukait_accountant_context');reads++;return{data:context,error:null};}};
+const request={action:'accountant_report',report:'manager_profit',filters:{month:'2026-10'},limit:1};
+let result=await accountantApi(admin,manager,request,'unused',now);assert.equal(result.status,200);assert.equal(result.body.rows.length,1);assert.equal(result.body.next_offset,1);
+const page2=await accountantApi(admin,manager,{...request,offset:1},'unused',now);assert.equal(page2.body.next_offset,null);assert.equal(page2.body.total_count,2);
+for(const role of ['Accountant','Supervisor','Employee','Purchaser']){const n=reads;assert.equal((await accountantApi(admin,{id:'X',role},request,'unused',now)).status,403);assert.equal(reads,n,'role denied before DB access');}
+assert.equal(JSON.stringify(context),before);
+assert.equal((await accountantApi(admin,manager,{...request,filters:{month:'2026-10',employee:'E'}},'unused',now)).status,400,'unsupported report filters fail explicitly');
+
+const rows=[{kind:'CASH',job_card:'100',date:'2026-10-01',vehicle:'Toyota Camry 2017',registration:'QA',insurance_company:'',amount_omr:'150.000',total_cost_omr:'100.000',profit_omr:'50.000',profit_percentage:100/3,costs_complete:true,cost_notes:[]},{kind:'INSURANCE',job_card:'101',date:'2026-10-02',vehicle:'Toyota Camry 2020',insurance_company:'Liva',amount_omr:'200.000',total_cost_omr:'100.000',profit_omr:'100.000',profit_percentage:50,costs_complete:true,cost_notes:[]},{kind:'INSURANCE',job_card:'102',date:'2026-10-03',vehicle:'Nissan Altima 2018',insurance_company:'Liva',amount_omr:'100.000',total_cost_omr:'120.000',profit_omr:'-20.000',profit_percentage:-20,costs_complete:true,cost_notes:[]},{kind:'INSURANCE',job_card:'103',date:'2026-10-04',vehicle:'<img src=x onerror=alert(1)>',insurance_company:'Other <script>alert(1)</script>',amount_omr:'50.000',total_cost_omr:null,profit_omr:null,profit_percentage:null,costs_complete:false,cost_notes:['Parts cost pending'],cost_breakdown_omr:{labour:'10.000',parts:null,paint:'5.000',consumables:'2.000'},sublet_cost_omr:'3.000'}];
+const dom=new JSDOM('<!doctype html><html><head></head><body><div id="managerView"><section class="v123-manager-performance"><div class="v123-grid"></div></section></div><div id="modal"></div></body></html>',{url:'https://qa.invalid',runScripts:'outside-only'}),w=dom.window;
+class FixedDate extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
+w.Date=FixedDate;w.me={id:'M',role:'Manager'};let token='QA-TOKEN',calls=0,held=null,monthlyRows=rows;
+w.zukaitAuth={getToken:()=>token};w.zukaitSessionPrivacy={locked:false};w.zukaitCloud={revision:7,readManagerProfit:async({month,offset})=>{calls++;if(held)await held;return{ok:true,rows:month==='2026-10'?monthlyRows.slice(offset,offset+2):[],total_count:month==='2026-10'?monthlyRows.length:0,next_offset:month==='2026-10'&&offset+2<monthlyRows.length?offset+2:null,snapshot_revision:7,finance_revision:2,as_of:new Date(now).toISOString(),undated_records:0};}};
+w.openModal=html=>w.document.getElementById('modal').innerHTML=html;w.closeModal=()=>w.document.getElementById('modal').replaceChildren();
+const wait=async fn=>{for(let i=0;i<100;i++){if(fn())return;await new Promise(r=>setTimeout(r,5));}throw Error('UI condition timeout');};
+const appHtml=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+w.eval(appHtml.slice(appHtml.indexOf('function formatVehicleName('),appHtml.indexOf('const KEY=')));
+w.eval(fs.readFileSync('app/src/main/assets/manager_profit_performance.js','utf8'));await wait(()=>w.document.querySelector('[data-profit-card="CASH"] b')?.textContent==='OMR 150.000');
+assert.equal(w.document.querySelectorAll('[data-profit-card]').length,2);
+w.document.querySelector('[data-profit-card="INSURANCE"]').click();await wait(()=>w.document.querySelector('#mpCompany'));
+assert.equal(w.document.querySelectorAll('tbody tr').length,3);assert.ok(w.document.querySelector('.mp-loss'));assert.ok(w.document.querySelector('.mp-profit'));assert.ok(w.document.querySelector('.mp-pending'));
+assert.equal(w.document.querySelectorAll('#mpPage img,#mpPage script').length,0,'financial names escaped');
+assert.match(w.document.querySelector('.mp-summary').textContent,/OMR 240\.000/,'known components of incomplete jobs remain in recorded cost total');assert.match(w.document.querySelector('.mp-summary').textContent,/OMR 110\.000/,'provisional profit uses recorded components once');assert.match(w.document.querySelector('.mp-cost-notice').textContent,/JC 103.*Parts cost pending/);assert.match(w.document.querySelector('tr:last-child .mp-cell-cost').textContent,/OMR 20\.000.*Provisional/);assert.match(w.document.querySelector('tr:last-child .mp-cell-profit').textContent,/OMR 30\.000.*Provisional/);
+const company=w.document.getElementById('mpCompany');company.value='LIVA';company.dispatchEvent(new w.Event('change'));assert.equal(w.document.querySelectorAll('tbody tr').length,2);
+assert.match(w.document.querySelector('.mp-summary').textContent,/OMR 300\.000/);assert.match(w.document.querySelector('.mp-summary').textContent,/26\.67%/,'weighted company margin, not mean of job percentages');
+// Both monthly Cash and Insurance views expose the same filtered Print, PDF and Excel controls.
+assert.deepEqual([...w.document.querySelectorAll('[data-mp-export]')].map(x=>x.dataset.mpExport),['print','pdf','excel']);
+let exportedBlob=null,downloadName='',printedHTML='',printed=false,savedPDF='',pdfText=[];
+w.URL.createObjectURL=blob=>{exportedBlob=blob;return 'blob:https://qa.invalid/monthly';};
+w.URL.revokeObjectURL=()=>{};
+w.HTMLAnchorElement.prototype.click=function(){downloadName=this.download;};
+w.document.querySelector('[data-mp-export="excel"]').click();
+assert.match(downloadName,/INSURANCE_Monthly_Performance_2026-10_Filtered\.csv$/);
+assert.equal(exportedBlob.type,'text/csv;charset=utf-8');
+const fileReader=new w.FileReader();
+const csvPromise=new Promise((resolve,reject)=>{fileReader.onload=()=>resolve(fileReader.result);fileReader.onerror=reject;});
+fileReader.readAsText(exportedBlob);
+const csv=await csvPromise;
+assert.match(csv,/Liva/);assert.match(csv,/JC number/);assert.match(csv,/101/);assert.match(csv,/102/);
+assert.doesNotMatch(csv,/Other <script>|Other &lt;script&gt;/);assert.match(csv,/Nissan Altima 2018/);
+assert.match(csv,/OMR 300\.000/);
+w.open=()=>({document:{write:html=>{printedHTML=html;},close(){}},focus(){},print(){printed=true;},close(){}});
+w.document.querySelector('[data-mp-export="print"]').click();
+assert.equal(printed,true);assert.match(printedHTML,/ZUKAIT INTERNATIONAL LLC/);assert.match(printedHTML,/Liva/);assert.match(printedHTML,/JC 101|101/);
+assert.doesNotMatch(printedHTML,/Other &lt;script&gt;/);assert.match(printedHTML,/Nissan Altima 2018/);
+const pdfDocs=[];
+w.jspdf={jsPDF:class{
+ constructor(){this.pages=1;pdfDocs.push(this);}
+ setFont(){}setFontSize(){}setFillColor(){}rect(){}setTextColor(){}setDrawColor(){}line(){}
+ text(value){pdfText.push(Array.isArray(value)?value.join(' '):String(value));}
+ splitTextToSize(value){return [String(value)];}
+ addPage(){this.pages++;}
+ getNumberOfPages(){return this.pages;}
+ setPage(){}
+ save(name){savedPDF=name;}
+}};
+w.document.querySelector('[data-mp-export="pdf"]').click();
+assert.match(savedPDF,/INSURANCE_Monthly_Performance_2026-10_Filtered\.pdf$/);
+assert.match(pdfText.join(' '),/Liva/);assert.match(pdfText.join(' '),/101/);assert.match(pdfText.join(' '),/Nissan Altima 2018/);assert.doesNotMatch(pdfText.join(' '),/Other <script>/);
+
+const mode=w.document.getElementById('mpMode');mode.value='graph';mode.dispatchEvent(new w.Event('change'));
+assert.equal(w.document.querySelectorAll('.mp-chart-row').length,3,'existing selected revenue/cost/result remains');
+assert.match(w.document.querySelector('.mp-chart').textContent,/OMR 80\.000/);
+assert.equal(w.document.querySelector('.mp-job-count strong').textContent,'2','selected company remains filtered in summary');
+assert.equal(w.document.querySelectorAll('.mp-comparison-row').length,0,'new cohort rows have comparison-specific class');
+assert.equal(w.document.querySelectorAll('.mp-compare-row').length,3,'Cash plus two insurers appear even with Liva filter');
+assert.match(w.document.querySelector('.mp-compare-row.is-cash').textContent,/Cash Jobs.*33\.33%/);
+assert.match(w.document.querySelector('.mp-compare-row.is-insurance').textContent,/Liva.*26\.67%/,
+ 'Insurance margin is weighted by group invoice/LPO amounts, not average of per-job percentages');
+const companies=[...w.document.querySelectorAll('.mp-compare-row.is-insurance')];
+assert.match(companies[1].textContent,/60\.00%/,'incomplete company shows provisional weighted margin');
+assert.match(companies[1].textContent,/Provisional margin/,'missing costs are not presented as final');
+assert.equal(w.document.querySelectorAll('#mpPage img,#mpPage script').length,0,'insurer names remain escaped in graph');
+assert.doesNotMatch(w.document.querySelector('.mp-period-overview').textContent,/Job cards across the month/,
+ 'Old daily count graph is replaced with insurer comparison');
+assert.match(w.document.querySelector('.mp-comparison-panel').textContent,/LPO is a document value, not an insurer payment/);
+
+assert.equal(w.document.querySelectorAll('[data-mp-export]').length,3,'Graph view retains Print/PDF/Excel');
+w.document.querySelector('[data-mp-export="pdf"]').click();
+assert.match(savedPDF,/INSURANCE_Monthly_Performance_2026-10_Filtered\.pdf$/);
+assert.doesNotMatch(w.document.querySelector('.mp-period-overview').textContent,/JC 101|JC 102|by job card/);
+await w.zukaitManagerProfit.open('CASH','2026-10','graph');
+assert.equal(w.document.querySelectorAll('.mp-compare-row').length,3,
+ 'Opening Cash graph also shows each insurer and Cash together');
+assert.match(w.document.querySelector('.mp-compare-row.is-insurance').textContent,/Liva.*26\.67%/);
+let month=w.document.getElementById('mpMonth');month.value='2026-09';month.dispatchEvent(new w.Event('change'));await wait(()=>w.document.querySelector('.mp-empty'));assert.match(w.document.querySelector('.mp-empty').textContent,/No matching/);
+const beforeOffline=calls;Object.defineProperty(w.navigator,'onLine',{configurable:true,value:false});await w.zukaitManagerProfit.open('CASH');assert.equal(calls,beforeOffline);assert.match(w.document.getElementById('mpPage').textContent,/unavailable/);
+Object.defineProperty(w.navigator,'onLine',{configurable:true,value:true});let release;held=new Promise(r=>release=r);const opening=w.zukaitManagerProfit.open('INSURANCE');await new Promise(r=>setImmediate(r));w.me={id:'NEW',role:'Manager'};token='NEW-TOKEN';release();await opening;assert.equal(w.document.querySelectorAll('#mpPage tbody tr').length,0,'old-account report cannot render after switch');
+w.me={id:'S',role:'Supervisor'};const denied=calls;await w.zukaitManagerProfit.open('CASH');assert.equal(calls,denied);dom.window.close();
+console.log('PASS Manager monthly Cash/LPO profit: source dates, three-decimal costs/sublet, no receipt double count, margins, missing costs, permissions, pagination, graph/company/month filters, escaping and account/offline isolation.');

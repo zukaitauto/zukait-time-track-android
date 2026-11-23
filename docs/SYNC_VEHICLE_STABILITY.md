@@ -1,0 +1,17 @@
+# Synchronization and shared vehicle identity stability
+
+Status: architecture-v2 development candidate; no deployment/publication or production record/schema change.
+
+Manager Full Edit previously mutated the shared Job Card, allocations and audit arrays before its online command returned. Its failure path restored entire audit collections, potentially discarding unrelated changes; its success path could overwrite global state from a response without the cloud revision/cache guards. The editor now submits an online command through the existing cloud transport (session epoch/token checks and request deadline), blocks behind pending snapshot saves, and does not mutate shared data optimistically. Server roles, reason, revision/expected-record checks, allocation and financial authorities are unchanged. Ordinary queued saves serialize behind the command and resume afterward.
+
+A confirmed mutation is not a complete workshop snapshot. The helper invalidates in-flight reads/conditional baselines without attaching the receipt revision to stale cached data, then refreshes via the normal guarded full load. Pending local changes survive; a saved command with a failed/deferred refresh is reported as saved with refresh pending. Late responses from another login cannot update the new account. Unknown/lost mutation responses are not automatically replayed. A mixed old asset set without the new helper fails closed and asks for refresh.
+
+The client three-way merge now matches Job Cards by no, as the server already does, while preserving assignment/session id keys. This preserves separate server corrections and newer local edits instead of replacing the entire jobs array during an overlapping acknowledgement.
+
+The shared identity reader now treats an explicitly present empty/null canonical field as a clear, rather than resurrecting year, registration, VIN, color/code, claim or customer/contact aliases. Legacy aliases still supply missing canonical fields; zero odometer and explicit-null odometer remain distinct. Resolved current displays remove obsolete alias copies from historical snapshots for linked and unlinked Job Cards. Current fields remain read-only. Manager form notes/work/address also preserve explicit clears. Paint PO display no longer revives its old snapshot year when the current unlinked Job Card has cleared it. No cost calculation changed.
+
+Asset cache keys for the affected frontend modules advance together. No app version bump or release request is included.
+
+Validation: new real-module/DOM tests cover no optimistic state/cache changes, confirmed refresh/cache/revision agreement, pending/double-submit guards, concurrent local edits, save-confirmed/refresh-failed distinction, account switch, keyed merges and failed-edit audit preservation. Identity/Reception/Job Card edit, outage, account isolation, permission retry, Mechanical recovery, deadlines, Paint and leave race suites passed locally. Browser and full-build results must be taken from exact-source CI. Local browser attempt was blocked by missing Playwright binaries. The old standalone traffic-optimization harness is not qualified against current source (missing sessionEpoch fixture); it is not marked passed and supplies no savings claim.
+
+Before staff release: review exact-source CI and signed candidate, exercise Manager correction/reopen and cross-dashboard identity on Android/web without production test records; retain existing protected release requirements. This candidate does not activate compact history or change backend permissions.

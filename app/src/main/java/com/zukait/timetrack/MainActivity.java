@@ -1,0 +1,1721 @@
+package com.zukait.timetrack;
+
+import android.Manifest;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageInstaller;
+import android.net.Uri;
+import android.media.MediaRecorder;
+import android.util.Base64;
+import android.provider.MediaStore;
+import android.content.ContentValues;
+import java.io.OutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
+import android.os.Build;
+import android.os.Bundle;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
+import android.view.View;
+import android.print.PrintManager;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintAttributes;
+import android.print.PageRange;
+import android.os.ParcelFileDescriptor;
+import android.os.CancellationSignal;
+import android.webkit.JavascriptInterface;
+import android.webkit.JsResult;
+import android.webkit.JsPromptResult;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.widget.EditText;
+
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
+
+import androidx.core.content.FileProvider;
+import androidx.webkit.WebViewAssetLoader;
+import androidx.webkit.WebViewClientCompat;
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+
+public class MainActivity extends Activity {
+    private static final int EXPORT_FILE_REQUEST = 7401;
+    private static final int VIN_CAPTURE_REQUEST = 7402;
+    private byte[] pendingExportData = null;
+    private Uri pendingVinCaptureUri = null;
+    private File pendingVinCaptureFile = null;
+    private static final int MIC_REQUEST = 1001;
+    private static final int NOTIFICATION_REQUEST = 1002;
+    private static final int UNKNOWN_SOURCES_REQUEST = 1003;
+    private static final int UPDATE_INSTALL_REQUEST = 1004;
+    private static final String NOTIFICATION_CHANNEL = "zukait_updates";
+    private static final String APP_HOST = "appassets.androidplatform.net";
+    private WebView webView;
+    private boolean activityStopped = false;
+    private final ArrayList<PendingJsDialog> pendingJsDialogs = new ArrayList<>();
+    private PermissionRequest pendingPermissionRequest;
+    private long updateDownloadId = -1;
+    private int updateTargetVersionCode = 0;
+    private boolean updateEnqueueInProgress = false;
+    private boolean pendingInstallAfterPermission = false;
+    private final android.os.Handler updateHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable updateProgressRunnable;
+    private BroadcastReceiver updateReceiver;
+    private SpeechRecognizer speechRecognizer;
+    private boolean pendingNativeVoice = false;
+    private boolean pendingNativeVoiceNote = false;
+    private MediaRecorder voiceNoteRecorder;
+    private File voiceNoteFile;
+    private static final long MAX_VOICE_NOTE_BYTES = 8L * 1024L * 1024L;
+    private static final String SESSION_PREFS = "zukait_secure_native_session";
+    private static final String SESSION_KEY_ALIAS = "zukait_session_aes_v1";
+    private static final String SESSION_TOKEN_PREF = "token_ciphertext";
+    private static final String SESSION_IV_PREF = "token_iv";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        createNotificationChannel();
+        registerUpdateReceiver();
+
+        if (Build.VERSION.SDK_INT >= 33 &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_REQUEST);
+        }
+
+        webView = new WebView(this);
+        setContentView(webView);
+        webView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setAllowFileAccess(false);
+        settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
+
+        webView.setWebViewClient(new WebViewClientCompat() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                return assetLoader.shouldInterceptRequest(Uri.parse(url));
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                if (uri == null) return true;
+                if (APP_HOST.equalsIgnoreCase(uri.getHost())) return false;
+                try {
+                    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+                    if ("http".equals(scheme) || "https".equals(scheme) || "tel".equals(scheme) || "mailto".equals(scheme) || "whatsapp".equals(scheme)) {
+                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                    }
+                } catch (Exception e) {
+                    android.util.Log.w("ZukaitLink", "Unable to open external link", e);
+                }
+                return true;
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                try {
+                    Uri uri = Uri.parse(url);
+                    if (APP_HOST.equalsIgnoreCase(uri.getHost())) return false;
+                    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+                    if ("http".equals(scheme) || "https".equals(scheme) || "tel".equals(scheme) || "mailto".equals(scheme) || "whatsapp".equals(scheme)) {
+                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                    }
+                    return true;
+                } catch (Exception e) {
+                    return true;
+                }
+            }
+        });
+
+        webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                String text = message == null ? "" : message;
+                if (text.startsWith("Request sent to Supervisor") || text.startsWith("Request sent")) {
+                    runOnUiThread(() -> {
+                        android.widget.Toast.makeText(MainActivity.this, text, android.widget.Toast.LENGTH_LONG).show();
+                        result.confirm();
+                    });
+                } else showJavaScriptDialog(result, text, null, false, false);
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                showJavaScriptDialog(result, message, null, false, true);
+                return true;
+            }
+
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+                showJavaScriptDialog(result, message, defaultValue, true, true);
+                return true;
+            }
+
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                runOnUiThread(() -> {
+                    boolean wantsAudio = false;
+                    for (String resource : request.getResources()) {
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) {
+                            wantsAudio = true;
+                            break;
+                        }
+                    }
+
+                    if (!wantsAudio) {
+                        request.deny();
+                        return;
+                    }
+
+                    if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                    } else {
+                        pendingPermissionRequest = request;
+                        requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+                    }
+                });
+            }
+        });
+
+        webView.clearCache(true);
+        webView.loadUrl("https://" + APP_HOST + "/assets/offline_test.html?v=124");
+        handleUpdateInstallResult(getIntent());
+        updateHandler.postDelayed(this::resumeUpdateDownloadMonitoring, 1200);
+    }
+
+    private String installedVersionName() {
+        try {
+            android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return info.versionName == null ? "" : info.versionName;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private int installedVersionCode() {
+        try {
+            android.content.pm.PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                long code = info.getLongVersionCode();
+                return code > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) code;
+            }
+            return info.versionCode;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    NOTIFICATION_CHANNEL,
+                    "Zukait Time Track",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Job assignments, requests and workshop time alerts");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+    }
+
+    private SecretKey secureSessionKey() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        java.security.Key existing = keyStore.getKey(SESSION_KEY_ALIAS, null);
+        if (existing instanceof SecretKey) return (SecretKey) existing;
+        KeyGenerator generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+        generator.init(new KeyGenParameterSpec.Builder(
+                SESSION_KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setKeySize(256)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(true)
+                .build());
+        return generator.generateKey();
+    }
+
+    private boolean storeSecureSessionToken(String token) {
+        if (token == null || token.isEmpty()) { clearSecureSessionToken(); return true; }
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secureSessionKey());
+            byte[] encrypted = cipher.doFinal(token.getBytes(StandardCharsets.UTF_8));
+            return getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).edit()
+                    .putString(SESSION_TOKEN_PREF, Base64.encodeToString(encrypted, Base64.NO_WRAP))
+                    .putString(SESSION_IV_PREF, Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP))
+                    .commit();
+        } catch (Exception e) {
+            android.util.Log.e("ZukaitAuth", "Unable to protect session token", e);
+            return false;
+        }
+    }
+
+    private String readSecureSessionToken() {
+        try {
+            android.content.SharedPreferences prefs = getSharedPreferences(SESSION_PREFS, MODE_PRIVATE);
+            String encoded = prefs.getString(SESSION_TOKEN_PREF, "");
+            String encodedIv = prefs.getString(SESSION_IV_PREF, "");
+            if (encoded == null || encoded.isEmpty() || encodedIv == null || encodedIv.isEmpty()) return "";
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secureSessionKey(),
+                    new GCMParameterSpec(128, Base64.decode(encodedIv, Base64.NO_WRAP)));
+            return new String(cipher.doFinal(Base64.decode(encoded, Base64.NO_WRAP)), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            android.util.Log.w("ZukaitAuth", "Protected session token is unavailable", e);
+            clearSecureSessionToken();
+            return "";
+        }
+    }
+
+    private void clearSecureSessionToken() {
+        getSharedPreferences(SESSION_PREFS, MODE_PRIVATE).edit()
+                .remove(SESSION_TOKEN_PREF).remove(SESSION_IV_PREF).commit();
+    }
+
+    private void deliverVinScanResult(String value, String error) {
+        deliverVinScanResult(value, error, "");
+    }
+
+    private void deliverVinScanResult(String value, String error, String source) {
+        final String v = value == null ? "" : value;
+        final String e = error == null ? "" : error;
+        final String s = source == null ? "" : source;
+        runOnUiThread(() -> {
+            if (webView == null || isFinishing() || isDestroyed()) return;
+            String js = "window.zukaitVinScan&&window.zukaitVinScan.nativeResult(" +
+                    JSONObject.quote(v) + "," + JSONObject.quote(e) + "," + JSONObject.quote(s) + ");";
+            webView.evaluateJavascript(js, null);
+        });
+    }
+
+    private boolean deletePrivateCache(File target) {
+        try {
+            String parent = getCacheDir().getCanonicalPath() + File.separator;
+            if (!target.getCanonicalPath().startsWith(parent)) return false;
+            File[] children = target.listFiles();
+            boolean success = true;
+            if (children != null) for (File child : children) success &= deletePrivateCache(child);
+            return (!target.exists() || target.delete()) && success;
+        } catch (java.io.IOException error) {
+            android.util.Log.w("ZukaitAuth", "Private cache cleanup failed", error);
+            return false;
+        }
+    }
+
+    public class AndroidBridge {
+        @JavascriptInterface
+        public void clearPrivateWebData() {
+            MainActivity.this.clearSecureSessionToken();
+            runOnUiThread(() -> {
+                if (webView == null) return;
+                webView.clearCache(true);
+                webView.clearHistory();
+                webView.clearFormData();
+                pendingExportData = null;
+                if (voiceNoteRecorder != null) stopNativeVoiceNoteInternal(true);
+                android.app.NotificationManager notifications =
+                        (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (notifications != null) notifications.cancelAll();
+                // Only disposable private output; never downloads or server data.
+                boolean cleaned = true;
+                for (String name : new String[]{"reports", "vin"}) {
+                    cleaned &= deletePrivateCache(new File(getCacheDir(), name));
+                }
+                File[] files = getCacheDir().listFiles();
+                if (files != null) for (File file : files) {
+                    if (file.getName().startsWith("voice_note_")) cleaned &= deletePrivateCache(file);
+                }
+                final boolean cleanupSucceeded = cleaned;
+                android.webkit.CookieManager.getInstance().removeAllCookies(removed -> {
+                    android.webkit.CookieManager.getInstance().flush();
+                    if (webView != null) webView.evaluateJavascript(
+                            "window.zukaitPrivateDataCleared&&window.zukaitPrivateDataCleared(" + cleanupSucceeded + ")", null);
+                });
+            });
+        }
+
+        @JavascriptInterface
+        public void exitApp() {
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) finishAndRemoveTask();
+            });
+        }
+
+        @JavascriptInterface
+        public boolean saveSecureSessionToken(String token) {
+            return storeSecureSessionToken(token == null ? "" : token);
+        }
+
+        @JavascriptInterface
+        public String getSecureSessionToken() {
+            return readSecureSessionToken();
+        }
+
+        @JavascriptInterface
+        public void clearSecureSessionToken() {
+            MainActivity.this.clearSecureSessionToken();
+        }
+
+        @JavascriptInterface
+        public void notify(String title, String message) {
+            runOnUiThread(() -> showNotification(title, message));
+        }
+
+        @JavascriptInterface
+        public boolean hasMicrophonePermission() {
+            return checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        @JavascriptInterface
+        public String getAppVersion() {
+            return installedVersionName();
+        }
+
+        @JavascriptInterface
+        public int getAppVersionCode() {
+            return installedVersionCode();
+        }
+
+        @JavascriptInterface
+        public void scanVinBarcode() {
+            runOnUiThread(() -> {
+                try {
+                    GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                            .setBarcodeFormats(Barcode.FORMAT_CODE_39, Barcode.FORMAT_CODE_128, Barcode.FORMAT_PDF417, Barcode.FORMAT_QR_CODE, Barcode.FORMAT_DATA_MATRIX, Barcode.FORMAT_AZTEC)
+                            .enableAutoZoom()
+                            .build();
+                    GmsBarcodeScanner scanner = GmsBarcodeScanning.getClient(MainActivity.this, options);
+                    scanner.startScan()
+                            .addOnSuccessListener(barcode -> deliverVinScanResult(barcode.getRawValue(), null, "BARCODE"))
+                            .addOnCanceledListener(() -> deliverVinScanResult(null, "cancelled"))
+                            .addOnFailureListener(e -> deliverVinScanResult(null, "scan_failed"));
+                } catch (Exception e) {
+                    deliverVinScanResult(null, "scanner_unavailable");
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void captureVinPhoto() {
+            runOnUiThread(() -> {
+                try {
+                    File dir = new File(getCacheDir(), "vin");
+                    if (!dir.exists() && !dir.mkdirs()) {
+                        deliverVinScanResult(null, "capture_unavailable");
+                        return;
+                    }
+                    File photo = File.createTempFile("vin_", ".jpg", dir);
+                    pendingVinCaptureFile = photo;
+                    Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".updateprovider", photo);
+                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+                    intent.setClipData(android.content.ClipData.newRawUri("VIN photo", uri));
+                    intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    pendingVinCaptureUri = uri;
+                    pendingVinCaptureFile = photo;
+                    startActivityForResult(intent, VIN_CAPTURE_REQUEST);
+                } catch (Exception e) {
+                    if (pendingVinCaptureFile != null) pendingVinCaptureFile.delete();
+                    pendingVinCaptureFile = null;
+                    pendingVinCaptureUri = null;
+                    deliverVinScanResult(null, "capture_unavailable");
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void saveExportFile(String filename, String mime, String base64) {
+            runOnUiThread(() -> {
+                try {
+                    byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Downloads.DISPLAY_NAME, filename);
+                        values.put(MediaStore.Downloads.MIME_TYPE, mime);
+                        values.put(MediaStore.Downloads.IS_PENDING, 1);
+                        Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                        if (uri == null) throw new Exception("Unable to create download");
+                        try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                            if (out == null) throw new Exception("Unable to open download");
+                            out.write(data);
+                        }
+                        values.clear();
+                        values.put(MediaStore.Downloads.IS_PENDING, 0);
+                        getContentResolver().update(uri, values, null, null);
+                        android.widget.Toast.makeText(MainActivity.this, "Export saved to Downloads", android.widget.Toast.LENGTH_LONG).show();
+                    } else {
+                        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType(mime);
+                        intent.putExtra(Intent.EXTRA_TITLE, filename);
+                        pendingExportData = data;
+                        startActivityForResult(intent, EXPORT_FILE_REQUEST);
+                    }
+                } catch (Exception e) {
+                    android.widget.Toast.makeText(MainActivity.this, "Export could not be saved", android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void printHtml(String html) {
+            printHtmlNamed(html, "Zukait Document");
+        }
+
+        @JavascriptInterface
+        public void printHtmlNamed(String html, String title) {
+            runOnUiThread(() -> {
+                try {
+                    final String safeTitle = (title == null || title.trim().isEmpty()) ? "Zukait Document" : title.trim();
+                    WebView printView = new WebView(MainActivity.this);
+                    printView.getSettings().setJavaScriptEnabled(false);
+                    printView.setWebViewClient(new android.webkit.WebViewClient() {
+                        @Override
+                        public void onPageFinished(WebView view, String url) {
+                            PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                            final PrintDocumentAdapter delegate = view.createPrintDocumentAdapter(safeTitle);
+                            PrintDocumentAdapter adapter = new PrintDocumentAdapter() {
+                                private boolean released = false;
+                                private void releasePrintView() {
+                                    if (released) return;
+                                    released = true;
+                                    view.post(() -> {
+                                        try {
+                                            view.stopLoading();
+                                            view.setWebChromeClient(null);
+                                            view.setWebViewClient(null);
+                                            view.loadUrl("about:blank");
+                                            view.clearHistory();
+                                            view.removeAllViews();
+                                            view.destroy();
+                                        } catch (Exception ignored) { }
+                                    });
+                                }
+                                @Override public void onStart() { delegate.onStart(); }
+                                @Override public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
+                                        CancellationSignal cancellationSignal,
+                                        LayoutResultCallback callback, Bundle extras) {
+                                    delegate.onLayout(oldAttributes, newAttributes, cancellationSignal, callback, extras);
+                                }
+                                @Override public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
+                                        CancellationSignal cancellationSignal, WriteResultCallback callback) {
+                                    delegate.onWrite(pages, destination, cancellationSignal, callback);
+                                }
+                                @Override public void onFinish() {
+                                    try { delegate.onFinish(); } finally { releasePrintView(); }
+                                }
+                            };
+                            pm.print(safeTitle, adapter, null);
+                        }
+                    });
+                    printView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitPrint", "Unable to print document", e);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public boolean supportsValidatedPdfExport() { return true; }
+
+        @JavascriptInterface
+        public void shareHtmlAsPdf(String html, String filename) {
+            shareHtmlAsPdfInternal(html, filename, false);
+        }
+
+        @JavascriptInterface
+        public void shareHtmlAsPdfWhatsApp(String html, String filename) {
+            shareHtmlAsPdfInternal(html, filename, true);
+        }
+
+        private volatile boolean pdfExportBusy = false;
+        private void shareHtmlAsPdfInternal(String html, String filename, boolean whatsappOnly) {
+            runOnUiThread(() -> {
+                if (pdfExportBusy) {
+                    android.widget.Toast.makeText(MainActivity.this, "A PDF is being prepared. Please wait.", android.widget.Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (html == null || html.trim().isEmpty()) {
+                    android.widget.Toast.makeText(MainActivity.this, "The report is empty. Reopen it and try again.", android.widget.Toast.LENGTH_LONG).show();
+                    return;
+                }
+                pdfExportBusy = true;
+                class Export {
+                    WebView view;
+                    File pdfFile;
+                    boolean finished = false, started = false;
+                    final String nonce = java.util.UUID.randomUUID().toString();
+                    void release(boolean failed) {
+                        if (finished) return;
+                        finished = true;
+                        try { if (view != null) { view.stopLoading(); view.removeJavascriptInterface("ZukaitPdfCapture"); view.setWebViewClient(null); if(view.getParent() instanceof android.view.ViewGroup)((android.view.ViewGroup)view.getParent()).removeView(view); view.destroy(); } } catch (Exception ignored) { }
+                        if (failed && pdfFile != null) pdfFile.delete();
+                        pdfExportBusy = false;
+                    }
+                    void fail(String message) {
+                        if (finished) return;
+                        android.util.Log.e("ZukaitPdf", message);
+                        release(true);
+                        android.widget.Toast.makeText(MainActivity.this, "PDF generation failed. Reopen the report and try again.", android.widget.Toast.LENGTH_LONG).show();
+                    }
+                    void complete(String data) {
+                        if (finished) return;
+                        try {
+                            if (data == null || data.length() > 64000000) throw new java.io.IOException("PDF size invalid");
+                            byte[] bytes = Base64.decode(data, Base64.DEFAULT);
+                            if (bytes.length < 1000 || !new String(bytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII).equals("%PDF-")) throw new java.io.IOException("PDF header invalid");
+                            try (java.io.FileOutputStream out = new java.io.FileOutputStream(pdfFile)) { out.write(bytes); }
+                            verifyVisiblePdf(pdfFile);
+                            Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".updateprovider", pdfFile);
+                            Intent share = new Intent(Intent.ACTION_SEND);
+                            share.setType("application/pdf");share.putExtra(Intent.EXTRA_STREAM, uri);
+                            share.setClipData(android.content.ClipData.newRawUri("Zukait PDF", uri));share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            release(false);
+                            if (whatsappOnly) {
+                                Intent whatsApp = new Intent(share); whatsApp.setPackage("com.whatsapp");
+                                if (whatsApp.resolveActivity(getPackageManager()) != null) { startActivity(whatsApp); return; }
+                                Intent whatsAppBusiness = new Intent(share); whatsAppBusiness.setPackage("com.whatsapp.w4b");
+                                if (whatsAppBusiness.resolveActivity(getPackageManager()) != null) { startActivity(whatsAppBusiness); return; }
+                            }
+                            startActivity(Intent.createChooser(share, "Share PDF"));
+                        } catch (Exception e) {
+                            if(finished)android.widget.Toast.makeText(MainActivity.this,"PDF is ready, but sharing failed. Try again.",android.widget.Toast.LENGTH_LONG).show();
+                            else fail("PDF validation failed: " + e.getClass().getSimpleName());
+                        }
+                    }
+                    class Capture {
+                        @JavascriptInterface public void generated(String token, String data) { if(nonce.equals(token))runOnUiThread(() -> complete(data)); }
+                        @JavascriptInterface public void failed(String token) { if(nonce.equals(token))runOnUiThread(() -> fail("Document renderer rejected the PDF")); }
+                    }
+                    void begin() {
+                        try {
+                            String name = filename == null || filename.trim().isEmpty() ? "Zukait_Report.pdf" : filename.trim();
+                            if (!name.toLowerCase().endsWith(".pdf")) name += ".pdf";
+                            name = name.replaceAll("[^A-Za-z0-9._-]", "_");
+                            File folder = new File(getCacheDir(), "reports/" + nonce);
+                            if (!folder.mkdirs() && !folder.isDirectory()) throw new java.io.IOException("Report directory unavailable");
+                            pdfFile = new File(folder, name);
+                            view = new WebView(MainActivity.this);view.getSettings().setJavaScriptEnabled(true);
+                            view.setImportantForAccessibility(android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+                            ((android.view.ViewGroup)getWindow().getDecorView()).addView(view,new android.view.ViewGroup.LayoutParams(794,1123));view.setTranslationX(-10000f);
+                            final androidx.webkit.WebViewAssetLoader assets = new androidx.webkit.WebViewAssetLoader.Builder()
+                                .addPathHandler("/assets/", new androidx.webkit.WebViewAssetLoader.AssetsPathHandler(MainActivity.this)).build();
+                            view.addJavascriptInterface(new Capture(), "ZukaitPdfCapture");
+                            view.setWebViewClient(new android.webkit.WebViewClient() {
+                                @Override public android.webkit.WebResourceResponse shouldInterceptRequest(WebView web, android.webkit.WebResourceRequest request) {
+                                    return assets.shouldInterceptRequest(request.getUrl());
+                                }
+                                @Override public boolean onRenderProcessGone(WebView web, android.webkit.RenderProcessGoneDetail detail) {
+                                    fail("PDF renderer stopped");return true;
+                                }
+                                @Override public void onPageFinished(WebView web, String url) {
+                                    if(finished || started)return;started=true;
+                                    String token=org.json.JSONObject.quote(nonce),document=org.json.JSONObject.quote(html),title=org.json.JSONObject.quote(pdfFile.getName());
+                                    web.evaluateJavascript("(function(){if(!window.zukaitReportPdf){ZukaitPdfCapture.failed("+token+");return;}zukaitReportPdf.generate("+document+","+title+").then(function(file){var reader=new FileReader();reader.onload=function(){ZukaitPdfCapture.generated("+token+",String(reader.result).split(',')[1]);};reader.onerror=function(){ZukaitPdfCapture.failed("+token+");};reader.readAsDataURL(file);}).catch(function(){ZukaitPdfCapture.failed("+token+");});})()", ignored -> {});
+                                }
+                            });
+                            view.postDelayed(() -> { if(!finished)fail("PDF generation timed out"); },70000);
+                            String shell="<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=794'><script src='vendor/pdf/html2canvas-1.4.1.min.js'></script><script src='vendor/pdf/jspdf-4.2.1.min.js'></script><script src='report_pdf_export.js'></script></head><body>Preparing PDF</body></html>";
+                            view.loadDataWithBaseURL("https://appassets.androidplatform.net/assets/",shell,"text/html","UTF-8",null);
+                        } catch (Exception e) { fail("PDF setup failed"); }
+                    }
+                }
+                new Export().begin();
+            });
+        }
+
+        private void verifyVisiblePdf(File file) throws java.io.IOException {
+            if (!file.isFile() || file.length() < 1000) throw new java.io.IOException("Empty PDF file");
+            try (ParcelFileDescriptor input = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
+                 android.graphics.pdf.PdfRenderer renderer = new android.graphics.pdf.PdfRenderer(input)) {
+                if (renderer.getPageCount() < 1) throw new java.io.IOException("PDF has no pages");
+                try (android.graphics.pdf.PdfRenderer.Page page = renderer.openPage(0)) {
+                    android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(794, 1123, android.graphics.Bitmap.Config.ARGB_8888);
+                    try {
+                        bitmap.eraseColor(android.graphics.Color.WHITE);
+                        page.render(bitmap, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                        int ink = 0;
+                        for (int y = 0; y < bitmap.getHeight(); y += 3) for (int x = 0; x < bitmap.getWidth(); x += 3) {
+                            int color = bitmap.getPixel(x, y);
+                            if (android.graphics.Color.alpha(color) > 0 && (android.graphics.Color.red(color) < 235 || android.graphics.Color.green(color) < 235 || android.graphics.Color.blue(color) < 235)) ink++;
+                        }
+                        if (ink < 20) throw new java.io.IOException("PDF contains no visible report content");
+                    } finally { bitmap.recycle(); }
+                }
+            }
+        }
+
+        @JavascriptInterface
+        public void openExternalUrl(String url) {
+            runOnUiThread(() -> {
+                try {
+                    Uri uri = Uri.parse(url == null ? "" : url.trim());
+                    String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+                    if (!("http".equals(scheme) || "https".equals(scheme) || "tel".equals(scheme) || "mailto".equals(scheme) || "whatsapp".equals(scheme))) {
+                        android.widget.Toast.makeText(MainActivity.this, "Unsupported link", android.widget.Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitLink", "Unable to open link", e);
+                    android.widget.Toast.makeText(MainActivity.this, "Unable to open link", android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void shareImageBase64(String filename, String base64) {
+            runOnUiThread(() -> {
+                try {
+                    String safeName = (filename == null || filename.trim().isEmpty()) ? "Zukait_Time_Details.png" : filename.trim();
+                    if (!safeName.toLowerCase().endsWith(".png")) safeName += ".png";
+                    safeName = safeName.replaceAll("[^A-Za-z0-9._-]", "_");
+                    String payload = base64 == null ? "" : base64.trim();
+                    int comma = payload.indexOf(',');
+                    if (comma >= 0) payload = payload.substring(comma + 1);
+                    byte[] data = Base64.decode(payload, Base64.DEFAULT);
+                    File reportDir = new File(getCacheDir(), "reports");
+                    if (!reportDir.exists()) reportDir.mkdirs();
+                    File imageFile = new File(reportDir, safeName);
+                    try (OutputStream out = new java.io.FileOutputStream(imageFile)) { out.write(data); }
+                    Uri uri = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", imageFile);
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("image/png");
+                    share.putExtra(Intent.EXTRA_STREAM, uri);
+                    share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(share, "Share Time Details"));
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitShare", "Unable to share image", e);
+                    android.widget.Toast.makeText(MainActivity.this, "Unable to share image", android.widget.Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void shareText(String title, String text) {
+            runOnUiThread(() -> {
+                try {
+                    Intent share = new Intent(Intent.ACTION_SEND);
+                    share.setType("text/plain");
+                    share.putExtra(Intent.EXTRA_SUBJECT, title == null ? "Zukait Time Track" : title);
+                    share.putExtra(Intent.EXTRA_TEXT, text == null ? "" : text);
+                    startActivity(Intent.createChooser(share, "Share"));
+                } catch (Exception e) {
+                    android.util.Log.e("ZukaitShare", "Unable to share text", e);
+                    android.widget.Toast.makeText(MainActivity.this, "Sharing failed", android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void checkForUpdates() {
+            checkForUpdatesNative();
+        }
+
+        @JavascriptInterface
+        public void openUpdatePage() {
+            runOnUiThread(() -> startUpdateDownloadNative());
+        }
+
+        @JavascriptInterface
+        public void startUpdateDownload() {
+            runOnUiThread(() -> startUpdateDownloadNative());
+        }
+
+        @JavascriptInterface
+        public void requestUpdateDownloadStatus() {
+            runOnUiThread(() -> {
+                restoreUpdateDownloadState();
+                reportUpdateDownloadState();
+            });
+        }
+
+        @JavascriptInterface
+        public void installDownloadedUpdate() {
+            runOnUiThread(() -> requestInstallAfterCloudSync());
+        }
+
+        @JavascriptInterface
+        public void completeUpdatePreInstallSync(boolean safeToInstall) {
+            runOnUiThread(() -> {
+                if (safeToInstall) installDownloadedUpdateNative();
+                else notifyUpdateDownloadToWeb("SYNC_REQUIRED", 100, 0, 0,
+                        "Update kept ready. Sync workshop changes before installing.");
+            });
+        }
+
+        @JavascriptInterface
+        public void startNativeVoiceRecognition() {
+            runOnUiThread(() -> {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    pendingNativeVoice = true;
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+                    return;
+                }
+                startNativeVoiceRecognitionInternal();
+            });
+        }
+
+        @JavascriptInterface
+        public void stopNativeVoiceRecognition() {
+            runOnUiThread(() -> {
+                if (speechRecognizer != null) speechRecognizer.stopListening();
+            });
+        }
+
+        @JavascriptInterface
+        public void startNativeVoiceNote() {
+            runOnUiThread(() -> {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    pendingNativeVoiceNote = true;
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+                    return;
+                }
+                startNativeVoiceNoteInternal();
+            });
+        }
+
+        @JavascriptInterface
+        public void stopNativeVoiceNote() {
+            runOnUiThread(() -> stopNativeVoiceNoteInternal(false));
+        }
+
+        @JavascriptInterface
+        public void cancelNativeVoiceNote() {
+            runOnUiThread(() -> stopNativeVoiceNoteInternal(true));
+        }
+
+        @JavascriptInterface
+        public void requestMicrophonePermission() {
+            runOnUiThread(() -> {
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    notifyMicrophonePermissionToWeb(true);
+                } else {
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+                }
+            });
+        }
+    }
+
+    private void startNativeVoiceNoteInternal() {
+        try {
+            stopNativeVoiceNoteInternal(true);
+            voiceNoteFile = new File(getCacheDir(), "voice_note_" + System.currentTimeMillis() + ".m4a");
+            voiceNoteRecorder = new MediaRecorder();
+            voiceNoteRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            voiceNoteRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            voiceNoteRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            voiceNoteRecorder.setAudioEncodingBitRate(64000);
+            voiceNoteRecorder.setAudioSamplingRate(44100);
+            voiceNoteRecorder.setOutputFile(voiceNoteFile.getAbsolutePath());
+            voiceNoteRecorder.prepare();
+            voiceNoteRecorder.start();
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "");
+        } catch (Exception e) {
+            releaseVoiceNoteRecorder();
+            if (voiceNoteFile != null) { try { voiceNoteFile.delete(); } catch (Exception ignored) { } voiceNoteFile = null; }
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "Microphone recorder could not start: " + e.getClass().getSimpleName());
+        }
+    }
+
+    private void stopNativeVoiceNoteInternal(boolean discard) {
+        if (voiceNoteRecorder == null) return;
+        try { voiceNoteRecorder.stop(); } catch (Exception ignored) { }
+        releaseVoiceNoteRecorder();
+        if (discard) {
+            if (voiceNoteFile != null) voiceNoteFile.delete();
+            voiceNoteFile = null;
+            return;
+        }
+        if (voiceNoteFile == null || !voiceNoteFile.exists() || voiceNoteFile.length() == 0) {
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "No voice audio was recorded. Please try again.");
+            return;
+        }
+        if (voiceNoteFile.length() > MAX_VOICE_NOTE_BYTES) {
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "Voice note is too long. Please record a shorter note.");
+            try { voiceNoteFile.delete(); } catch (Exception ignored) { }
+            voiceNoteFile = null;
+            return;
+        }
+        try (FileInputStream in = new FileInputStream(voiceNoteFile);
+             ByteArrayOutputStream out = new ByteArrayOutputStream((int) Math.min(voiceNoteFile.length(), MAX_VOICE_NOTE_BYTES))) {
+            byte[] buffer = new byte[8192];
+            int n;
+            while ((n = in.read(buffer)) > 0) out.write(buffer, 0, n);
+            String base64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+            notifyNativeVoiceNoteToWeb(base64, "audio/mp4", "");
+        } catch (Exception e) {
+            notifyNativeVoiceNoteToWeb("", "audio/mp4", "Voice note could not be prepared.");
+        } finally {
+            if (voiceNoteFile != null) { try { voiceNoteFile.delete(); } catch (Exception ignored) { } }
+            voiceNoteFile = null;
+        }
+    }
+
+    private void releaseVoiceNoteRecorder() {
+        if (voiceNoteRecorder != null) {
+            try { voiceNoteRecorder.reset(); } catch (Exception ignored) { }
+            try { voiceNoteRecorder.release(); } catch (Exception ignored) { }
+            voiceNoteRecorder = null;
+        }
+    }
+
+    private void notifyNativeVoiceNoteToWeb(String base64, String mime, String error) {
+        if (webView == null) return;
+        final String safeData = JSONObject.quote(base64 == null ? "" : base64);
+        final String safeMime = JSONObject.quote(mime == null ? "audio/mp4" : mime);
+        final String safeError = JSONObject.quote(error == null ? "" : error);
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v73OnNativeVoiceNote){window.v73OnNativeVoiceNote(" + safeData + "," + safeMime + "," + safeError + ");}",
+                null
+        ));
+    }
+
+    private void startNativeVoiceRecognitionInternal() {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            notifyVoiceResultToWeb("", "Voice recognition service is not available on this phone.");
+            return;
+        }
+
+        try {
+            if (speechRecognizer != null) {
+                speechRecognizer.destroy();
+                speechRecognizer = null;
+            }
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+            speechRecognizer.setRecognitionListener(new RecognitionListener() {
+                @Override public void onReadyForSpeech(Bundle params) { }
+                @Override public void onBeginningOfSpeech() { }
+                @Override public void onRmsChanged(float rmsdB) { }
+                @Override public void onBufferReceived(byte[] buffer) { }
+                @Override public void onEndOfSpeech() { }
+
+                @Override public void onError(int error) {
+                    String message;
+                    switch (error) {
+                        case SpeechRecognizer.ERROR_AUDIO:
+                            message = "Microphone audio error. Please try again."; break;
+                        case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                            message = "Microphone permission is not available to the app."; break;
+                        case SpeechRecognizer.ERROR_NETWORK:
+                        case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                            message = "Voice recognition needs a working network connection."; break;
+                        case SpeechRecognizer.ERROR_NO_MATCH:
+                            message = "No speech was recognized. Please try again."; break;
+                        case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                            message = "Voice recognition is busy. Please try again."; break;
+                        case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                            message = "No speech detected. Please try again."; break;
+                        default:
+                            message = "Voice recognition could not start. Please try again."; break;
+                    }
+                    notifyVoiceResultToWeb("", message);
+                }
+
+                @Override public void onResults(Bundle results) {
+                    ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    String text = (matches != null && !matches.isEmpty()) ? matches.get(0) : "";
+                    notifyVoiceResultToWeb(text, text.isEmpty() ? "No speech was recognized. Please try again." : "");
+                }
+
+                @Override public void onPartialResults(Bundle partialResults) { }
+                @Override public void onEvent(int eventType, Bundle params) { }
+            });
+
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
+            intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your message");
+            speechRecognizer.startListening(intent);
+        } catch (Exception e) {
+            notifyVoiceResultToWeb("", "Voice recognition could not start. Please try again.");
+        }
+    }
+
+    private void notifyVoiceResultToWeb(String text, String error) {
+        if (webView == null) return;
+        final String safeText = JSONObject.quote(text == null ? "" : text);
+        final String safeError = JSONObject.quote(error == null ? "" : error);
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v69OnVoiceResult){window.v69OnVoiceResult(" + safeText + "," + safeError + ");}",
+                null
+        ));
+    }
+
+    private String updateMetadataUrl() {
+        return "https://raw.githubusercontent.com/zukaitauto/zukait-time-track-android/architecture-v2/latest-version.json?ts=" + System.currentTimeMillis();
+    }
+
+    private void checkForUpdatesNative() {
+        new Thread(() -> {
+            int latestCode = 0;
+            String latestName = "";
+            boolean error = false;
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(updateMetadataUrl());
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
+                conn.setUseCaches(false);
+                conn.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0");
+                conn.setRequestProperty("Pragma", "no-cache");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    JSONObject json = new JSONObject(sb.toString());
+                    latestCode = json.optInt("versionCode", 0);
+                    latestName = json.optString("versionName", "");
+                    if (latestCode <= 0) error = true;
+                }
+            } catch (Exception ex) {
+                error = true;
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+            final int code = latestCode;
+            final String name = latestName;
+            final boolean failed = error;
+            runOnUiThread(() -> {
+                if (webView == null) return;
+                String safeName = name.replace("\\", "\\\\").replace("'", "\\'");
+                webView.evaluateJavascript(
+                        "if(window.v72UpdateCheckResult){window.v72UpdateCheckResult(" + code + ",'" + safeName + "'," + (failed ? "true" : "false") + ");}",
+                        null
+                );
+            });
+        }).start();
+    }
+
+    private void registerUpdateReceiver() {
+        updateReceiver = new BroadcastReceiver() {
+            @Override public void onReceive(Context context, Intent intent) {
+                long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                restoreUpdateDownloadState();
+                if (id != updateDownloadId) return;
+                reportUpdateDownloadState();
+            }
+        };
+        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+        if (Build.VERSION.SDK_INT >= 33) registerReceiver(updateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(updateReceiver, filter);
+    }
+
+    private android.content.SharedPreferences updatePrefs() {
+        return getSharedPreferences("zukait_update_state", MODE_PRIVATE);
+    }
+
+    private void persistUpdateDownloadState(long id, int targetCode) {
+        updateDownloadId = id;
+        updateTargetVersionCode = targetCode;
+        updatePrefs().edit()
+                .putLong("download_id", id)
+                .putInt("target_version_code", targetCode)
+                .apply();
+    }
+
+    private void removeDownloadedUpdate(long id) {
+        if (id < 0) return;
+        try {
+            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            if (dm != null) dm.remove(id);
+        } catch (Exception ignored) { }
+    }
+
+    private void clearInstalledUpdateDownloadIfNeeded() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId >= 0 && updateTargetVersionCode > 0 && installedVersionCode() >= updateTargetVersionCode) {
+            long completedId = updateDownloadId;
+            clearUpdateDownloadState();
+            removeDownloadedUpdate(completedId);
+        }
+    }
+
+    private void clearUpdateDownloadState() {
+        updateDownloadId = -1;
+        updateTargetVersionCode = 0;
+        updatePrefs().edit().remove("download_id").remove("target_version_code").apply();
+        if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
+    }
+
+    private void restoreUpdateDownloadState() {
+        if (updateDownloadId < 0) {
+            updateDownloadId = updatePrefs().getLong("download_id", -1);
+            updateTargetVersionCode = updatePrefs().getInt("target_version_code", 0);
+        }
+    }
+
+    private void resumeUpdateDownloadMonitoring() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId >= 0) {
+            reportUpdateDownloadState();
+            startUpdateProgressMonitor();
+        }
+    }
+
+    private void notifyUpdateDownloadToWeb(String status, int percent, long downloaded, long total, String message) {
+        if (webView == null) return;
+        final String safeStatus = JSONObject.quote(status == null ? "" : status);
+        final String safeMessage = JSONObject.quote(message == null ? "" : message);
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v77UpdateDownloadStatus){window.v77UpdateDownloadStatus(" +
+                        safeStatus + "," + percent + "," + downloaded + "," + total + "," + safeMessage + ");}",
+                null
+        ));
+    }
+
+    private int reportUpdateDownloadState() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId < 0) {
+            notifyUpdateDownloadToWeb("IDLE", 0, 0, 0, "");
+            return -1;
+        }
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        if (dm == null) return -1;
+        DownloadManager.Query q = new DownloadManager.Query().setFilterById(updateDownloadId);
+        try (android.database.Cursor c = dm.query(q)) {
+            if (c == null || !c.moveToFirst()) {
+                clearUpdateDownloadState();
+                notifyUpdateDownloadToWeb("IDLE", 0, 0, 0, "");
+                return -1;
+            }
+            int status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+            long downloaded = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+            long total = c.getLong(c.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+            int percent = total > 0 ? (int) Math.max(0, Math.min(100, downloaded * 100L / total)) : 0;
+            if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                notifyUpdateDownloadToWeb("COMPLETE", 100, downloaded, total, "Download complete. Ready to install.");
+            } else if (status == DownloadManager.STATUS_FAILED) {
+                int reason = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON));
+                clearUpdateDownloadState();
+                notifyUpdateDownloadToWeb("FAILED", percent, downloaded, total, "Download failed (" + reason + "). Please try again.");
+            } else if (status == DownloadManager.STATUS_PAUSED) {
+                notifyUpdateDownloadToWeb("PAUSED", percent, downloaded, total, "Download paused. Waiting to continue.");
+            } else if (status == DownloadManager.STATUS_PENDING) {
+                notifyUpdateDownloadToWeb("PENDING", percent, downloaded, total, "Preparing download...");
+            } else {
+                notifyUpdateDownloadToWeb("DOWNLOADING", percent, downloaded, total, "Downloading update...");
+            }
+            return status;
+        } catch (Exception e) {
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Unable to read download status.");
+            return -1;
+        }
+    }
+
+    private void startUpdateProgressMonitor() {
+        if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
+        updateProgressRunnable = new Runnable() {
+            @Override public void run() {
+                int status = reportUpdateDownloadState();
+                if (status == DownloadManager.STATUS_PENDING ||
+                        status == DownloadManager.STATUS_RUNNING ||
+                        status == DownloadManager.STATUS_PAUSED) {
+                    updateHandler.postDelayed(this, 700);
+                }
+            }
+        };
+        updateHandler.post(updateProgressRunnable);
+    }
+
+    private boolean hasExistingUpdateDownload() {
+        restoreUpdateDownloadState();
+        if (updateDownloadId < 0) return false;
+        int status = reportUpdateDownloadState();
+        if (status == DownloadManager.STATUS_SUCCESSFUL ||
+                status == DownloadManager.STATUS_PENDING ||
+                status == DownloadManager.STATUS_RUNNING ||
+                status == DownloadManager.STATUS_PAUSED) {
+            startUpdateProgressMonitor();
+            return true;
+        }
+        return false;
+    }
+
+    private void startUpdateDownloadNative() {
+        if (updateEnqueueInProgress) {
+            reportUpdateDownloadState();
+            return;
+        }
+        if (hasExistingUpdateDownload()) return;
+        updateEnqueueInProgress = true;
+        notifyUpdateDownloadToWeb("PENDING", 0, 0, 0, "Checking update...");
+        new Thread(() -> {
+            int latestCode = 0;
+            String latestName = "";
+            boolean error = false;
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(updateMetadataUrl());
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(10000);
+                conn.setUseCaches(false);
+                conn.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0");
+                conn.setRequestProperty("Pragma", "no-cache");
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    JSONObject json = new JSONObject(sb.toString());
+                    latestCode = json.optInt("versionCode", 0);
+                    latestName = json.optString("versionName", "");
+                    if (latestCode <= 0 || latestName.trim().isEmpty()) error = true;
+                }
+            } catch (Exception ex) {
+                error = true;
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+
+            final int publishedCode = latestCode;
+            final String publishedName = latestName;
+            final boolean failed = error;
+            runOnUiThread(() -> {
+                updateEnqueueInProgress = false;
+                if (failed) {
+                    notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Unable to verify the latest version. Please try again.");
+                    return;
+                }
+                if (publishedCode <= installedVersionCode()) {
+                    clearUpdateDownloadState();
+                    notifyUpdateDownloadToWeb("UP_TO_DATE", 100, 0, 0, "App is already up to date.");
+                    return;
+                }
+                if (hasExistingUpdateDownload()) return;
+                try {
+                    DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                    if (dm == null) {
+                        notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Download service is unavailable.");
+                        return;
+                    }
+                    String safeVersion = publishedName.replaceAll("[^A-Za-z0-9._-]", "");
+                    Uri uri = Uri.parse("https://github.com/zukaitauto/zukait-time-track-android/releases/download/release-" + safeVersion + "-architecture-v2/ZUKAIT_TIME_TRACK_LATEST.apk");
+                    DownloadManager.Request req = new DownloadManager.Request(uri)
+                            .setTitle("Zukait Time Track Update")
+                            .setDescription("Downloading update")
+                            .setMimeType("application/vnd.android.package-archive")
+                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
+                    long id = dm.enqueue(req);
+                    persistUpdateDownloadState(id, publishedCode);
+                    notifyUpdateDownloadToWeb("PENDING", 0, 0, 0, "Preparing download...");
+                    startUpdateProgressMonitor();
+                } catch (Exception e) {
+                    notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Unable to start download.");
+                }
+            });
+        }).start();
+    }
+
+    private void requestInstallAfterCloudSync() {
+        restoreUpdateDownloadState();
+        if (!downloadedUpdateIsReady()) {
+            reportUpdateDownloadState();
+            return;
+        }
+        if (webView == null) {
+            notifyUpdateDownloadToWeb("SYNC_REQUIRED", 100, 0, 0,
+                    "Update kept ready. Open the app and sync before installing.");
+            return;
+        }
+        notifyUpdateDownloadToWeb("SYNCING", 100, 0, 0,
+                "Saving workshop changes before update...");
+        // syncNow can resolve without loading when the session is missing or a
+        // pull is already running. Require confirmed, fresh workshop sync.
+        webView.evaluateJavascript(
+                "(async function(){try{" +
+                "if(window.zukaitAccountant&&typeof window.zukaitAccountant.prepareForUpdate==='function'){" +
+                "var financialSafe=await window.zukaitAccountant.prepareForUpdate();" +
+                "if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(financialSafe===true);return;}" +
+                "if(!window.zukaitCloud||!window.zukaitCloud.syncNow)throw new Error('SYNC_UNAVAILABLE');" +
+                "var startedAt=Date.now();" +
+                "await window.zukaitCloud.syncNow();" +
+                "var h=window.zukaitCloud.syncHealth;" +
+                "var ok=!!navigator.onLine&&!!h&&h.ready===true&&h.dirty===false&&h.pushing===false&&h.pulling===false&&h.pendingConflict===false&&h.lastError===''&&Number.isFinite(h.lastSuccessfulSyncAt)&&h.lastSuccessfulSyncAt>0&&h.lastSuccessfulSyncAt>=startedAt;" +
+                "if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(ok);" +
+                "}catch(e){if(window.AndroidBridge&&window.AndroidBridge.completeUpdatePreInstallSync)window.AndroidBridge.completeUpdatePreInstallSync(false);}})();",
+                null
+        );
+    }
+
+    private void installDownloadedUpdateNative() {
+        android.widget.Toast.makeText(this, "Update installer started", android.widget.Toast.LENGTH_SHORT).show();
+        notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Native installer started...");
+        restoreUpdateDownloadState();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                !getPackageManager().canRequestPackageInstalls()) {
+            try {
+                Intent permissionIntent = new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:" + getPackageName()));
+                pendingInstallAfterPermission = true;
+                updatePrefs().edit().putBoolean("pending_install_permission", true).apply();
+                startActivityForResult(permissionIntent, UNKNOWN_SOURCES_REQUEST);
+                notifyUpdateDownloadToWeb("PERMISSION_REQUIRED", 100, 0, 0,
+                        "Allow Install unknown apps for Zukait Time Track, then return to continue the update.");
+            } catch (Exception e) {
+                notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
+                        "Unable to open the Install unknown apps setting.");
+            }
+            return;
+        }
+        if (!downloadedUpdateIsReady()) {
+            reportUpdateDownloadState();
+            return;
+        }
+
+        // Use Android's normal package installer UI first. This is the most
+        // compatible path across Samsung, Vivo, Oppo, Xiaomi and other OEMs.
+        notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Opening Android installer...");
+        if (openDownloadedUpdateWithSystemInstaller()) return;
+
+        // Only fall back to PackageInstaller when the device has no activity
+        // capable of handling the standard APK install intent.
+        installDownloadedUpdateWithPackageInstaller();
+    }
+
+    private boolean downloadedUpdateIsReady() {
+        if (updateDownloadId < 0) {
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "No downloaded update is available.");
+            return false;
+        }
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        if (dm == null) return false;
+        DownloadManager.Query q = new DownloadManager.Query().setFilterById(updateDownloadId);
+        try (android.database.Cursor c = dm.query(q)) {
+            return c != null && c.moveToFirst() &&
+                    c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) ==
+                            DownloadManager.STATUS_SUCCESSFUL;
+        } catch (Exception e) {
+            notifyUpdateDownloadToWeb("FAILED", 0, 0, 0, "Downloaded update could not be verified.");
+            return false;
+        }
+    }
+
+    private boolean openDownloadedUpdateWithSystemInstaller() {
+        File cachedApk = null;
+        try {
+            DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            Uri source = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
+            if (source == null) throw new Exception("Downloaded APK URI unavailable");
+
+            File updateDir = new File(getCacheDir(), "updates");
+            if (!updateDir.exists() && !updateDir.mkdirs()) {
+                throw new java.io.IOException("Unable to create update cache");
+            }
+            cachedApk = new File(updateDir, "ZUKAIT_TIME_TRACK_UPDATE.apk");
+            try (java.io.InputStream in = getContentResolver().openInputStream(source);
+                 java.io.OutputStream out = new java.io.FileOutputStream(cachedApk, false)) {
+                if (in == null) throw new java.io.IOException("Downloaded APK stream unavailable");
+                byte[] buffer = new byte[65536];
+                int n;
+                while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                out.flush();
+            }
+            if (!cachedApk.exists() || cachedApk.length() == 0) {
+                throw new java.io.IOException("Cached APK is empty");
+            }
+
+            Uri apk = FileProvider.getUriForFile(
+                    this, getPackageName() + ".updateprovider", cachedApk);
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setDataAndType(apk, "application/vnd.android.package-archive");
+            install.setClipData(android.content.ClipData.newRawUri("Zukait Time Track Update", apk));
+            install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            // Android 11+ package visibility can hide the installer from
+            // resolveActivity even when startActivity is permitted. Let Android
+            // resolve the APK intent and grant its recipient the URI permission.
+            startActivity(install);
+            notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0,
+                    "Android installer opened. Tap Install to update.");
+            return true;
+        } catch (Exception error) {
+            android.util.Log.e("ZukaitUpdate", "System installer launch failed", error);
+            String detail = error.getClass().getSimpleName();
+            if (error.getMessage() != null && !error.getMessage().trim().isEmpty()) {
+                detail += ": " + error.getMessage();
+            }
+            notifyUpdateDownloadToWeb("INSTALL_DIAGNOSTIC", 100, 0, 0,
+                    "SYSTEM INSTALLER FAILED — " + detail);
+            android.widget.Toast.makeText(this,
+                    "Installer error: " + detail, android.widget.Toast.LENGTH_LONG).show();
+            if (cachedApk != null && cachedApk.exists() && cachedApk.length() == 0) cachedApk.delete();
+            return false;
+        }
+    }
+
+    private void installDownloadedUpdateWithPackageInstaller() {
+        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        Uri apk = dm == null ? null : dm.getUriForDownloadedFile(updateDownloadId);
+        if (apk == null) {
+            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0, "Downloaded update could not be opened.");
+            return;
+        }
+        PackageInstaller.Session session = null;
+        try {
+            PackageInstaller installer = getPackageManager().getPackageInstaller();
+            PackageInstaller.SessionParams params =
+                    new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+            params.setAppPackageName(getPackageName());
+            if (Build.VERSION.SDK_INT >= 31) {
+                params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
+            }
+            int sessionId = installer.createSession(params);
+            session = installer.openSession(sessionId);
+            try (java.io.InputStream in = getContentResolver().openInputStream(apk);
+                 java.io.OutputStream out = session.openWrite("zukait-update.apk", 0, -1)) {
+                if (in == null) throw new java.io.IOException("Downloaded APK stream unavailable");
+                byte[] buffer = new byte[65536];
+                int n;
+                while ((n = in.read(buffer)) != -1) out.write(buffer, 0, n);
+                session.fsync(out);
+            }
+            Intent callback = new Intent(this, MainActivity.class);
+            callback.setAction("com.zukait.timetrack.UPDATE_INSTALL_RESULT");
+            callback.putExtra("package_installer_session", sessionId);
+            android.app.PendingIntent pending = android.app.PendingIntent.getActivity(
+                    this, UPDATE_INSTALL_REQUEST, callback,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_MUTABLE);
+            session.commit(pending.getIntentSender());
+            notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Android is verifying the signed update...");
+        } catch (Exception e) {
+            android.util.Log.e("ZukaitUpdate", "PackageInstaller fallback failed", e);
+            String detail = e.getClass().getSimpleName();
+            if (e.getMessage() != null && !e.getMessage().trim().isEmpty()) {
+                detail += ": " + e.getMessage();
+            }
+            notifyUpdateDownloadToWeb("FAILED", 100, 0, 0,
+                    "PACKAGE INSTALLER FAILED — " + detail);
+            android.widget.Toast.makeText(this,
+                    "PackageInstaller error: " + detail, android.widget.Toast.LENGTH_LONG).show();
+        } finally {
+            if (session != null) try { session.close(); } catch (Exception ignored) { }
+        }
+    }
+
+    private void handleUpdateInstallResult(Intent intent) {
+        if (intent == null || !"com.zukait.timetrack.UPDATE_INSTALL_RESULT".equals(intent.getAction())) return;
+        int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+        String detail = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
+        if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+            Intent confirm = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+            if (confirm != null) {
+                try {
+                    confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(confirm);
+                    notifyUpdateDownloadToWeb("INSTALLING", 100, 0, 0, "Confirm the Android installation.");
+                    return;
+                } catch (Exception ignored) { }
+            }
+            notifyUpdateDownloadToWeb("INSTALL_DIAGNOSTIC", 100, 0, 0,
+                    "Android could not open installation confirmation. Open the downloaded APK from Downloads, or retry Install.");
+        } else if (status == PackageInstaller.STATUS_SUCCESS) {
+            clearInstalledUpdateDownloadIfNeeded();
+        } else {
+            android.util.Log.e("ZukaitUpdate", "Install status " + status + ": " + detail);
+            notifyUpdateDownloadToWeb("INSTALL_DIAGNOSTIC", 100, 0, 0,
+                    "Installation was not completed: " + (detail == null ? "Android status " + status : detail) + ". The downloaded update is retained; retry when ready.");
+        }
+        intent.setAction(null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleUpdateInstallResult(intent);
+    }
+
+    private void notifyMicrophonePermissionToWeb(boolean granted) {
+        if (webView == null) return;
+        webView.post(() -> webView.evaluateJavascript(
+                "if(window.v55OnMicrophonePermission){window.v55OnMicrophonePermission(" + (granted ? "true" : "false") + ");}",
+                null
+        ));
+    }
+
+    private void showNotification(String title, String message) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? new Notification.Builder(this, NOTIFICATION_CHANNEL)
+                : new Notification.Builder(this);
+
+        builder.setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle((title == null || title.isEmpty()) ? "Zukait Time Track" : title)
+                .setContentText(message == null ? "" : message)
+                .setStyle(new Notification.BigTextStyle().bigText(message == null ? "" : message))
+                .setAutoCancel(true)
+                .setPriority(Notification.PRIORITY_HIGH);
+
+        NotificationManager manager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify((int) (System.currentTimeMillis() & 0x0fffffff), builder.build());
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == EXPORT_FILE_REQUEST) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null && pendingExportData != null) {
+                try (OutputStream out = getContentResolver().openOutputStream(data.getData())) {
+                    if (out != null) out.write(pendingExportData);
+                    android.widget.Toast.makeText(this, "Export saved", android.widget.Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    android.widget.Toast.makeText(this, "Export could not be saved", android.widget.Toast.LENGTH_LONG).show();
+                }
+            }
+            pendingExportData = null;
+        }
+        if (requestCode == VIN_CAPTURE_REQUEST) {
+            final Uri captureUri = pendingVinCaptureUri;
+            final File captureFile = pendingVinCaptureFile;
+            pendingVinCaptureUri = null;
+            pendingVinCaptureFile = null;
+            if (resultCode != RESULT_OK || captureUri == null) {
+                if (captureFile != null) captureFile.delete();
+                deliverVinScanResult(null, resultCode == RESULT_CANCELED ? "cancelled" : "capture_failed", "PHOTO");
+            } else {
+                final com.google.mlkit.vision.text.TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+                try {
+                    InputImage image = InputImage.fromFilePath(MainActivity.this, captureUri);
+                    recognizer.process(image)
+                            .addOnSuccessListener(text -> deliverVinScanResult(text.getText(), null, "PHOTO"))
+                            .addOnFailureListener(e -> deliverVinScanResult(null, "ocr_failed", "PHOTO"))
+                            .addOnCompleteListener(task -> {
+                                recognizer.close();
+                                if (captureFile != null) captureFile.delete();
+                            });
+                } catch (Exception e) {
+                    recognizer.close();
+                    if (captureFile != null) captureFile.delete();
+                    deliverVinScanResult(null, "ocr_failed", "PHOTO");
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == MIC_REQUEST) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (pendingPermissionRequest != null) {
+                if (granted) {
+                    pendingPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                } else {
+                    pendingPermissionRequest.deny();
+                }
+                pendingPermissionRequest = null;
+            }
+            notifyMicrophonePermissionToWeb(granted);
+            if (pendingNativeVoiceNote) {
+                pendingNativeVoiceNote = false;
+                if (granted) startNativeVoiceNoteInternal();
+                else notifyNativeVoiceNoteToWeb("", "audio/mp4", "Microphone permission is disabled for Zukait Time Track.");
+            }
+            if (pendingNativeVoice) {
+                pendingNativeVoice = false;
+                if (granted) startNativeVoiceRecognitionInternal();
+                else notifyVoiceResultToWeb("", "Microphone permission is disabled for Zukait Time Track.");
+            }
+        }
+    }
+
+
+    // A custom JS dialog pauses WebView until its result is completed.
+    // Every exit path must resolve it exactly once, including lifecycle dismissal.
+    private final class PendingJsDialog {
+        final JsResult result;
+        final JsDialogCompletion completion = new JsDialogCompletion();
+        AlertDialog dialog;
+        PendingJsDialog(JsResult result) { this.result = result; }
+        void respond(Runnable response) {
+            completion.finish(() -> {
+                pendingJsDialogs.remove(this);
+                response.run();
+            });
+        }
+        void cancel() { respond(result::cancel); }
+    }
+
+    private void showJavaScriptDialog(JsResult result, String message, String defaultValue, boolean prompt, boolean canCancel) {
+        runOnUiThread(() -> {
+            final PendingJsDialog pending = new PendingJsDialog(result);
+            if (activityStopped || isFinishing() || isDestroyed()) { pending.cancel(); return; }
+            pendingJsDialogs.add(pending);
+            try {
+                final EditText input = prompt ? new EditText(MainActivity.this) : null;
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Zukait Time Track")
+                        .setMessage(message == null ? "" : message);
+                if (input != null) {
+                    input.setText(defaultValue == null ? "" : defaultValue);
+                    input.setSelectAllOnFocus(true);
+                    int pad = (int) (18 * getResources().getDisplayMetrics().density);
+                    input.setPadding(pad, pad / 2, pad, pad / 2);
+                    builder.setView(input);
+                }
+                builder.setPositiveButton("OK", (dialog, which) -> pending.respond(() -> {
+                    if (input != null) ((JsPromptResult) result).confirm(input.getText().toString());
+                    else result.confirm();
+                }));
+                if (canCancel) builder.setNegativeButton("Cancel", (dialog, which) -> pending.cancel());
+                builder.setOnCancelListener(dialog -> pending.cancel());
+                pending.dialog = builder.create();
+                pending.dialog.setOnDismissListener(dialog -> pending.cancel());
+                pending.dialog.show();
+            } catch (RuntimeException error) {
+                pending.cancel();
+                android.util.Log.w("ZukaitDialog", "Unable to display JavaScript dialog", error);
+            }
+        });
+    }
+
+    private void cancelJavaScriptDialogs() {
+        for (PendingJsDialog pending : new ArrayList<>(pendingJsDialogs)) {
+            pending.cancel();
+            if (pending.dialog != null) {
+                try { pending.dialog.dismiss(); } catch (RuntimeException ignored) { }
+            }
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        activityStopped = false;
+    }
+
+    @Override
+    protected void onStop() {
+        activityStopped = true;
+        cancelJavaScriptDialogs();
+        super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        clearInstalledUpdateDownloadIfNeeded();
+        restoreUpdateDownloadState();
+        boolean permissionReturn = updatePrefs().getBoolean("pending_install_permission", false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                getPackageManager().canRequestPackageInstalls() && updateDownloadId >= 0) {
+            reportUpdateDownloadState();
+            if (permissionReturn || pendingInstallAfterPermission) {
+                pendingInstallAfterPermission = false;
+                updatePrefs().edit().remove("pending_install_permission").apply();
+                updateHandler.postDelayed(this::requestInstallAfterCloudSync, 250);
+            }
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView != null && webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        if (webView != null) webView.saveState(outState);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        activityStopped = true;
+        cancelJavaScriptDialogs();
+        if (updateProgressRunnable != null) updateHandler.removeCallbacks(updateProgressRunnable);
+        if (updateReceiver != null) { try { unregisterReceiver(updateReceiver); } catch (Exception ignored) { } }
+        if (pendingPermissionRequest != null) {
+            try { pendingPermissionRequest.deny(); } catch (Exception ignored) { }
+            pendingPermissionRequest = null;
+        }
+        pendingNativeVoice = false;
+        pendingNativeVoiceNote = false;
+        if (speechRecognizer != null) { try { speechRecognizer.destroy(); } catch (Exception ignored) { } speechRecognizer = null; }
+        if (voiceNoteRecorder != null) stopNativeVoiceNoteInternal(true);
+        if (webView != null) {
+            try {
+                webView.stopLoading();
+                webView.setWebChromeClient(null);
+                webView.setWebViewClient(null);
+                webView.removeJavascriptInterface("AndroidBridge");
+                webView.loadUrl("about:blank");
+                webView.clearHistory();
+                webView.removeAllViews();
+                webView.destroy();
+            } catch (Exception ignored) { }
+            webView = null;
+        }
+        super.onDestroy();
+    }
+}

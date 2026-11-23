@@ -1,0 +1,878 @@
+:root{font-family:system-ui,-apple-system,sans-serif;color:#132c48;background:#edf5fc;font-size:15px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0,#dcf7ff,transparent 55%),radial-gradient(ellipse at 95% 25%,#eee7ff,transparent 60%),#edf5fc}main{max-width:1280px;margin:auto;padding:22px}header,.heading,.actions,.paging{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:12px}.mark{display:grid;place-items:center;width:42px;height:42px;background:linear-gradient(135deg,#32d7e7,#1858be);color:white;font-size:30px;font-weight:900;font-style:italic;border:2px solid white;border-radius:14px;box-shadow:0 5px 12px #167eab30}h1{font-size:clamp(20px,3vw,29px);margin:0}header p{color:#516b84;font-size:13px;margin:5px 0}h2{font-size:20px;margin:0 0 12px}button,input,select,textarea{font:inherit}button{min-height:42px;padding:9px 14px;border:1px solid #b7d1e4;border-radius:11px;background:#fff;color:#173b60;cursor:pointer;font-weight:650}button:hover{border-color:#168cbd}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #1383ce;outline-offset:2px}button:disabled{opacity:.5;cursor:default}button[type=submit],#refresh{background:#1461b0;color:#fff;border-color:#1461b0}input,select,textarea{width:100%;min-height:42px;border:1px solid #bfd2e1;border-radius:9px;padding:9px;background:#ffffffd9;color:#16334e}textarea{min-height:76px}label{display:grid;gap:6px;font-size:12px;font-weight:650;color:#415c76}#navigation{display:flex;gap:8px;overflow-x:auto;padding:12px 0}#navigation button{flex:0 0 auto;font-size:12px;background:#ffffffb8}#navigation button[aria-current=page]{background:#d7f4ef;border-color:#119b92;color:#06655f}.filters,.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end}.filters{padding:15px;background:#ffffffaa;border-radius:17px;border:1px solid #fff;margin-bottom:16px}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:20px}.summary button{display:grid;text-align:left;gap:8px;padding:17px;border-radius:20px;border:1px solid #c6daed;background:linear-gradient(140deg,#fff,#dfedff);box-shadow:inset 0 2px #fff,0 4px 0 #adcede40,0 10px 24px #21486812}.summary button:nth-child(2n){background:linear-gradient(140deg,#fff,#e6e0ff)}.summary button:nth-child(3n){background:linear-gradient(140deg,#fff,#d1f5e9)}.summary b{font-size:24px;font-variant-numeric:tabular-nums}.summary small{font-size:11px;font-weight:500;color:#516a83}.panel{background:#ffffffdf;border:1px solid #d4e3f0;border-radius:20px;padding:20px;margin:16px 0;box-shadow:0 7px 22px #1e426711}.notice{padding:12px;border:1px solid #d6e4ef;border-radius:10px;background:#f3f8fc;line-height:1.55;font-size:12px;color:#46617b;margin:12px 0}#message:not(:empty){padding:12px;border-radius:10px;background:#fff1ce;color:#68470b}.table-wrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;font-size:12px}th{text-align:left;background:#edf3fa;color:#294c70}td,th{padding:11px 9px;border-bottom:1px solid #e1e9f1;vertical-align:top;white-space:nowrap}td.money,th.money{text-align:right;font-variant-numeric:tabular-nums}td button{min-height:34px;font-size:11px;padding:5px 9px;margin:2px}.paging{margin-top:16px;font-size:12px}.detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.detail-value{background:#f3f8fd;padding:13px;border-radius:11px;overflow-wrap:anywhere}.detail-value small{display:block;color:#536b83;font-size:12px;margin-bottom:7px}.detail-value strong{font-size:18px}.detail-value button{display:block;margin-top:9px;font-size:11px;min-height:32px}.actions{justify-content:flex-start}#correction label{margin:12px 0}.pending-label{color:#9c6405}footer{font-size:12px;color:#536b83;padding:10px 0 22px}#report-meta{font-size:12px;color:#536b83}.pending-card{border-left:4px solid #d4a43d!important}[hidden]{display:none!important}@media(max-width:750px){main{padding:12px}.summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.summary button{padding:13px}.summary b{font-size:20px}.filters,.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:14px}.detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.heading .actions{gap:6px}.actions button{font-size:12px;padding:8px 10px}h2{font-size:18px}}@media(max-width:360px){.detail-grid{grid-template-columns:1fr}.summary b{font-size:17px}}
+
+/* Allow native date/month fields and flex/grid children to shrink on narrow phones. */
+main,main *{min-width:0}.brand>div{overflow-wrap:anywhere}.summary b{overflow-wrap:anywhere}.filters input,.form-grid input{max-width:100%}
+
+/* Reception-style Accounts home: one entry card per module. */
+.home-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:26px 0 20px}.eyebrow{font-size:11px;letter-spacing:.15em;font-weight:800;color:#35718d}.home-heading h2{font-size:clamp(23px,4vw,32px);margin:7px 0}.home-heading p{color:#526d82;font-size:14px;margin:0;line-height:1.5}.secure-badge{white-space:nowrap;color:#146753;background:#e1f6ed;border:1px solid #add8c7;border-radius:30px;padding:8px 12px;font-size:11px;font-weight:750}.module-heading{display:flex;align-items:center;justify-content:space-between;margin:26px 0 12px}.module-heading h2{margin:0}.module-heading>span{font-size:12px;color:#5a7287}#navigation{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;overflow:visible;padding:0 0 22px}#navigation .module-card{--tint:#e0efff;--accent:#2863a4;display:flex;position:relative;align-items:flex-start;gap:12px;text-align:left;white-space:normal;min-height:152px;padding:20px 16px;background:linear-gradient(135deg,#ffffffed,var(--tint));border:1px solid #ffffff;border-bottom:4px solid color-mix(in srgb,var(--accent) 36%,white);border-radius:23px;box-shadow:inset 0 2px 1px #fff,0 8px 22px #173d5c10;transition:transform .16s,box-shadow .16s;color:#18334d}#navigation .module-card:hover{transform:translateY(-3px);box-shadow:inset 0 2px 1px #fff,0 12px 25px #173d5c20;border-color:var(--accent)}.module-icon{display:grid;place-items:center;flex-shrink:0;width:42px;height:42px;border-radius:14px;background:#ffffffd9;color:var(--accent);font-size:26px;border:1px solid #fff;box-shadow:0 4px 9px #244c6610}.module-copy{display:grid;gap:9px;padding-top:2px}.module-copy strong{font-size:15px;line-height:1.4}.module-copy small{font-size:12px;font-weight:450;line-height:1.5;color:#476177}.module-arrow{align-self:center;margin-left:auto;font-size:25px;color:var(--accent)}#navigation .tone-teal{--tint:#d6f5ed;--accent:#117f72}#navigation .tone-violet{--tint:#ede3ff;--accent:#7750a8}#navigation .tone-sky{--tint:#d9f4fc;--accent:#247a98}#navigation .tone-amber{--tint:#fff0cf;--accent:#95641c}#navigation .tone-green{--tint:#dcf4de;--accent:#2b7b48}#navigation .tone-indigo{--tint:#e1e7ff;--accent:#4d60a3}#navigation .tone-rose{--tint:#ffe3e7;--accent:#a5425f}#navigation .tone-purple{--tint:#f2e2fa;--accent:#88519c}.workspace-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 16px}.workspace-bar>span{font-size:13px;color:#496981;font-weight:700}.workspace-bar button{background:#e1f4f0;border-color:#b7ddd2;color:#176754}@media(max-width:900px){#navigation{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.home-heading{align-items:flex-start}.secure-badge{font-size:10px;padding:7px 9px}.home-heading p{font-size:12px}#navigation{gap:12px}#navigation .module-card{flex-direction:column;gap:12px;padding:15px 13px;min-height:177px;border-radius:20px}.module-copy strong{font-size:13px}.module-copy small{font-size:11px}.module-arrow{position:absolute;top:20px;right:14px;font-size:23px}.module-icon{width:38px;height:38px;font-size:24px}.workspace-bar{align-items:flex-start;flex-direction:column}.home-heading h2{font-size:23px}}@media(prefers-reduced-motion:reduce){#navigation .module-card{transition:none}#navigation .module-card:hover{transform:none}}
+/* Let the home status badge wrap instead of squeezing text off narrow screens. */
+.home-heading{flex-wrap:wrap}.home-heading>div{flex:1 1 220px}.secure-badge{flex-shrink:0}
+
+/* Shared role-header pattern: identity, network badge and account menu. */
+header{background:#ffffffcc;border:1px solid #fff;border-radius:22px;padding:17px;box-shadow:0 8px 22px #21486810}.account-network{color:#17634d;background:#e5f6ec;border:1px solid #c3dfd1;border-radius:30px;padding:8px 10px;font-size:11px;font-weight:750;white-space:nowrap}.account-network.offline{background:#fff0da;color:#875a16;border-color:#e9d3ac}.account-menu-button{font-size:20px;background:#eaf0f7;min-width:44px}#account-menu{width:min(560px,calc(100vw - 24px));max-height:90vh;overflow:auto;border:1px solid #d5e5ee;border-radius:24px;padding:22px;background:linear-gradient(145deg,#fff,#f0f7fc);color:#18334d;box-shadow:0 22px 70px #132c4840}#account-menu::backdrop{background:#142c4559;backdrop-filter:blur(4px)}#account-menu h2{margin:5px 0}#account-menu-identity{font-size:13px;color:#536d82}.account-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.account-menu-grid button{display:grid;text-align:left;gap:7px;background:linear-gradient(135deg,#fff,#e4f1fa);padding:15px;border:1px solid #d2e3ed;border-radius:16px}.account-menu-grid button>span{font-size:22px;color:#2c7596}.account-menu-grid small{font-size:11px;color:#526d82;font-weight:450;line-height:1.4}.account-menu-grid .account-menu-danger{background:linear-gradient(135deg,#fff,#ffe7e9);color:#963e51}#account-password-form label{margin:12px 0}#account-password-status{font-size:13px;line-height:1.5}#account-menu-close{font-size:22px;min-width:42px}@media(max-width:550px){header{padding:13px;gap:13px}header .brand{flex:1 1 200px}header .actions{gap:8px}#account-menu{padding:16px}.account-menu-grid button{padding:12px}.account-menu-grid b{font-size:13px}}
+
+.expense-breakdowns{display:grid;gap:12px;margin:20px 0}.expense-breakdown{border:1px solid #cce5dc;border-radius:15px;background:#f0faf6;overflow:hidden}.expense-breakdown summary{display:flex;align-items:center;gap:12px;justify-content:space-between;cursor:pointer;padding:16px;font-weight:750;list-style:none}.expense-breakdown summary::-webkit-details-marker{display:none}.expense-breakdown summary small{display:block;font-size:11px;font-weight:500;color:#547582;margin-top:5px}.expense-breakdown summary strong{font-size:16px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.expense-lines{background:#fff;padding:12px}.expense-parts{border-color:#cbddeb;background:#eef6fd}.expense-paint{border-color:#ded0ef;background:#f6f0fc}.expense-breakdown summary:focus-visible{outline:3px solid #1383ce;outline-offset:-3px}@media(max-width:550px){.expense-breakdown summary{padding:13px;gap:8px}.expense-breakdown summary strong{font-size:14px}.expense-lines{padding:9px}}
+
+
+/* Accounts overview refresh: compact, restrained and high contrast.
+   Scoped to the home view so ledgers, entry forms and exports retain their layout. */
+#accounts-home .home-heading{
+  margin:12px 0 16px;padding:20px 23px;gap:14px;
+  background:#fff;border:1px solid #d9e5ef;border-radius:19px;
+  box-shadow:0 5px 18px #1834510b;
+}
+#accounts-home .home-heading h2{
+  font-size:clamp(23px,2.7vw,31px);letter-spacing:-.035em;color:#143550;
+  margin:4px 0 5px;
+}
+#accounts-home .home-heading p{font-size:13px;color:#527085;line-height:1.4}
+#accounts-home .eyebrow{color:#087a88;font-size:10px}
+#accounts-home .secure-badge{
+  color:#16634d;background:#e8f6ed;border:1px solid #c5e3d1;
+  box-shadow:none;font-size:11px;
+}
+#accounts-home .summary{gap:11px;margin-bottom:12px}
+#accounts-home .summary button.account-kpi{
+  --kpi-accent:#256c8d;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  gap:7px;position:relative;min-height:121px;
+  padding:15px 18px 13px;border-radius:15px;
+  background:#fff!important;border:1px solid #d7e3eb!important;
+  border-left:4px solid var(--kpi-accent)!important;
+  box-shadow:0 4px 12px #16324b0b!important;
+  color:#173852;text-align:left;
+  transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+}
+#accounts-home .summary button.account-kpi:hover{
+  border-color:var(--kpi-accent)!important;transform:translateY(-1px);
+  box-shadow:0 8px 20px #14365018!important;
+}
+#accounts-home .account-kpi-top{
+  display:flex;gap:6px;align-items:center;justify-content:space-between;
+  color:#456078;font-size:12px;font-weight:750;
+}
+#accounts-home .account-kpi-top>span:last-child{font-size:16px;color:var(--kpi-accent)}
+#accounts-home .summary button.account-kpi b{
+  font-size:clamp(19px,2.1vw,27px);line-height:1.1;
+  letter-spacing:-.025em;font-weight:850;color:#133553;
+}
+#accounts-home .summary button.account-kpi small{
+  color:#566e83;font-size:11px;line-height:1.35;
+  font-weight:600;min-height:16px;
+}
+#accounts-home .summary button.account-kpi .account-kpi-pending{color:#965d11}
+#accounts-home .account-kpi-dot{
+  display:inline-block;margin-right:6px;width:7px;height:7px;
+  border-radius:50%;background:#d38a1b;vertical-align:middle;
+}
+#accounts-home .account-kpi-category{
+  position:absolute;bottom:14px;right:17px;font-size:10px;
+  font-weight:700;letter-spacing:.015em;color:#8595a3;
+}
+#accounts-home .account-kpi-cash_invoice_current_month{--kpi-accent:#0f8579!important}
+#accounts-home .account-kpi-cash_out{--kpi-accent:#517693!important}
+#accounts-home .account-kpi-lpo_collected{--kpi-accent:#18847b!important}
+#accounts-home .account-kpi-outstanding{--kpi-accent:#c27c1d!important}
+#accounts-home .account-kpi-total_expenses{--kpi-accent:#55729b!important}
+#accounts-home .account-kpi-estimated_gross_profit{--kpi-accent:#6c6bb0!important}
+#accounts-home .accounts-home-disclaimer{
+  color:#61768a;font-size:11px;line-height:1.45;
+  margin:2px 2px 18px;
+}
+#accounts-home .module-heading{margin:13px 0 10px}
+#accounts-home .module-heading h2{font-size:19px;color:#173852}
+#accounts-home .module-heading>span{font-size:11px;color:#73879a}
+#accounts-home #navigation{
+  gap:10px;padding:0 0 14px;
+}
+#accounts-home #navigation .module-card{
+  min-height:99px;padding:15px;align-items:center;gap:13px;
+  border:1px solid #d9e5ee!important;border-radius:15px;
+  background:#fff!important;color:#173852!important;
+  box-shadow:0 4px 14px #17344c0b!important;
+  transition:border-color .14s ease,transform .14s ease,box-shadow .14s ease;
+}
+#accounts-home #navigation .module-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--accent)!important;
+  box-shadow:0 9px 20px #18345018!important;
+}
+#accounts-home #navigation .module-icon{
+  width:44px;height:44px;border-radius:12px;flex:0 0 44px;
+  background:color-mix(in srgb,var(--accent) 10%,white);
+  border:1px solid color-mix(in srgb,var(--accent) 16%,white);
+  color:var(--accent);box-shadow:none;
+  font-size:23px;
+}
+#accounts-home #navigation .module-copy{
+  padding:0;gap:5px;min-width:0;flex:1;
+}
+#accounts-home #navigation .module-copy strong{
+  font-size:13px;font-weight:780;line-height:1.3;color:#1a3853;
+}
+#accounts-home #navigation .module-copy small{
+  color:#64798e;font-size:11px;line-height:1.4;
+}
+#accounts-home #navigation .module-arrow{
+  font-size:21px;align-self:center;flex:0 0 auto;margin:0 0 0 auto;
+  color:var(--accent);
+}
+#accounts-home #navigation .tone-blue,
+#accounts-home #navigation .tone-indigo,
+#accounts-home #navigation .tone-purple{--accent:#3c719e}
+#accounts-home #navigation .tone-teal,
+#accounts-home #navigation .tone-sky,
+#accounts-home #navigation .tone-green{--accent:#168579}
+#accounts-home #navigation .tone-violet,
+#accounts-home #navigation .tone-rose{--accent:#7866a5}
+#accounts-home #navigation .tone-amber{--accent:#a17b37}
+@media(max-width:900px){
+  #accounts-home .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:550px){
+  #accounts-home .home-heading{padding:15px 16px;border-radius:14px}
+  #accounts-home .home-heading h2{font-size:24px}
+  #accounts-home .summary{gap:8px}
+  #accounts-home .summary button.account-kpi{
+    min-height:116px;padding:12px 11px 13px;gap:7px;border-radius:12px;
+  }
+  #accounts-home .summary button.account-kpi b{
+    font-size:clamp(16px,4.3vw,21px);overflow-wrap:anywhere;
+  }
+  #accounts-home .account-kpi-top{font-size:11px}
+  #accounts-home .account-kpi-category{display:none}
+  #accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #accounts-home #navigation .module-card{
+    min-height:76px;padding:11px 12px;flex-direction:row;
+    gap:11px;border-radius:13px;align-items:center;
+  }
+  #accounts-home #navigation .module-icon{
+    width:40px;height:40px;flex-basis:40px;font-size:21px;
+  }
+  #accounts-home #navigation .module-copy strong{font-size:13px}
+  #accounts-home #navigation .module-copy small{font-size:11px}
+  #accounts-home #navigation .module-arrow{
+    position:static;font-size:20px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #accounts-home .summary button.account-kpi,
+  #accounts-home #navigation .module-card{transition:none;transform:none!important}
+}
+
+
+/* Cash Invoice Register — restrained financial summary and compact modal. */
+#accounts-workspace .cash-invoice-total{
+ display:flex;align-items:center;justify-content:space-between;gap:18px;
+ padding:18px 22px;margin:13px 0 16px;
+ border:1px solid #b8dbd3;border-left:5px solid #178073;border-radius:15px;
+ background:#f0faf6;box-shadow:0 5px 16px #1a4a420a;
+}
+#accounts-workspace .cash-invoice-total>div:first-child{display:grid;gap:5px}
+#accounts-workspace .cash-invoice-total span{
+ font-size:12px;font-weight:750;color:#285c54;
+}
+#accounts-workspace .cash-invoice-total strong{
+ font-size:clamp(22px,2.7vw,32px);letter-spacing:-.035em;line-height:1.2;
+ color:#135a52;font-variant-numeric:tabular-nums;
+}
+#accounts-workspace .cash-invoice-total small{
+ font-size:11px;color:#5e7975;line-height:1.4;
+}
+#accounts-workspace .cash-invoice-total-count{text-align:right;display:grid;gap:6px}
+#accounts-workspace .cash-invoice-total-count b{font-size:13px;color:#1e554d}
+#accounts-workspace #notes.notice{
+ font-size:12px;line-height:1.5;padding:10px 13px;margin:9px 0;
+ background:#f5f9fc;color:#4c6680;
+}
+#accounts-workspace #cash-entry,
+#accounts-workspace #cash-ledger-toggle{font-size:12px}
+#accounts-workspace #cash-entry{
+ background:#166c68;border-color:#166c68;color:#fff;
+}
+#accounts-workspace #rows [data-job]{
+ background:#e9f5f3;border-color:#bcded8;color:#146960;
+}
+.cash-entry-dialog{
+ width:min(760px,calc(100vw - 26px));max-height:90dvh;
+ padding:0;border:1px solid #c6dbe6;border-radius:20px;
+ box-shadow:0 25px 75px #102e4259;color:#173852;
+ overflow:auto;background:white;
+}
+.cash-entry-dialog::backdrop{background:#0e2b3d80;backdrop-filter:blur(3px)}
+.cash-entry-dialog .cash-entry-form{
+ display:block;margin:0;box-shadow:none;border:none;border-radius:20px;
+ padding:23px;
+}
+.cash-entry-dialog h2{font-size:21px;margin:0 0 15px;color:#143752}
+.cash-entry-dialog .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cash-entry-dialog .actions{padding-top:17px;gap:10px}
+.cash-entry-dialog .actions button:first-child{
+ background:#116a68;border-color:#116a68;color:#fff;
+}
+@media(max-width:650px){
+ #accounts-workspace .cash-invoice-total{padding:14px;gap:10px;flex-wrap:wrap}
+ #accounts-workspace .cash-invoice-total-count{text-align:left}
+ .cash-entry-dialog{width:calc(100vw - 16px);max-height:94dvh;border-radius:13px}
+ .cash-entry-dialog .cash-entry-form{padding:15px}
+ .cash-entry-dialog .form-grid{grid-template-columns:1fr}
+}
+
+
+/* Accounts redesign: accessible action-first daily financial navigation. */
+#accounts-home .accounts-flow{margin:8px 0 22px}
+#accounts-home .accounts-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#accounts-home .accounts-shortcut{--shortcut:#0c776c;--soft:#e6f6f1;display:flex;align-items:center;gap:12px;text-align:left;min-height:96px;padding:18px;border:1px solid #d3e3e9;border-radius:17px;background:linear-gradient(135deg,#fff,var(--soft));color:#173952;box-shadow:0 5px 16px #1739520d}
+#accounts-home .accounts-shortcut:hover{border-color:var(--shortcut);box-shadow:0 8px 20px #1739521c}
+#accounts-home .accounts-shortcut:focus-visible{outline:3px solid #1383ce;outline-offset:3px}
+#accounts-home .shortcut-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;background:#fff;border:1px solid color-mix(in srgb,var(--shortcut) 18%,white);border-radius:13px;font-size:25px;color:var(--shortcut)}
+#accounts-home .shortcut-copy{display:grid;gap:5px;min-width:0;flex:1}
+#accounts-home .shortcut-copy strong{font-size:15px;line-height:1.25;color:#173952}
+#accounts-home .shortcut-copy small{font-size:11px;line-height:1.4;font-weight:550;color:#557186}
+#accounts-home .shortcut-arrow{color:var(--shortcut);font-size:19px;align-self:flex-start}
+#accounts-home .shortcut-out{--shortcut:#32669b;--soft:#e8f0ff}
+#accounts-home .shortcut-pending{--shortcut:#956b25;--soft:#fff1d8}
+@media(max-width:900px){#accounts-home .accounts-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){#accounts-home .accounts-flow{margin:6px 0 17px}#accounts-home .accounts-shortcuts{grid-template-columns:1fr;gap:8px}#accounts-home .accounts-shortcut{min-height:76px;padding:12px 14px;border-radius:13px}#accounts-home .shortcut-icon{width:40px;height:40px;flex-basis:40px;font-size:23px}#accounts-home .shortcut-copy strong{font-size:14px}}
+@media(prefers-reduced-motion:reduce){#accounts-home .accounts-shortcut{transition:none}}
+
+
+/* Five approved Accounts sections: report tables stay horizontally scrollable. */
+#accounts-home #navigation .module-card{min-height:118px}
+#accounts-workspace .filters label[hidden]{display:none!important}
+#accounts-workspace .filters{grid-template-columns:repeat(4,minmax(0,1fr))}
+#accounts-workspace .accounts-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+#accounts-workspace .accounts-kpi{border:1px solid #dae6f0;border-radius:12px;background:#f5f9ff;padding:14px;min-width:0}
+#accounts-workspace .accounts-kpi small{display:block;color:#4e6980;font-size:11px;margin-bottom:6px}
+#accounts-workspace .accounts-kpi b{display:block;color:#183e5c;font-size:clamp(16px,1.9vw,24px);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#accounts-workspace .accounts-kpi .positive{color:#14714e}
+#accounts-workspace .accounts-kpi .negative{color:#aa3941}
+#accounts-workspace .finance-report{width:100%;overflow:auto;overscroll-behavior-inline:contain;border:1px solid #d9e6ef;border-radius:12px}
+#accounts-workspace .finance-report table{min-width:1250px;width:max-content;min-width:max(100%,1250px)}
+#accounts-workspace .finance-report th{position:sticky;top:0;background:#e8f2fa;z-index:1}
+#accounts-workspace .finance-report td{font-variant-numeric:tabular-nums}
+#accounts-workspace .finance-report .number{text-align:right}
+#accounts-workspace .finance-report .expense-link{font-size:12px;padding:5px 9px;min-height:32px;border:1px solid #badce9;background:#f0faff;color:#17516d;text-decoration:underline}
+#accounts-workspace .finance-report .jc-link{font-size:12px;color:#124c83;text-decoration:underline}
+#accounts-workspace .finance-report .profit{font-weight:800;color:#16734d}
+#accounts-workspace .finance-report .loss{font-weight:800;color:#af374b}
+#accounts-workspace .finance-report .pending{font-weight:750;color:#936714}
+#accounts-workspace .finance-report tr:hover td{background:#f3f9ff}
+#accounts-workspace .expense-breakdowns{display:grid;gap:12px}
+#accounts-workspace .expense-breakdown{background:#f3f8fe;border-color:#c7ddec}
+#accounts-workspace .expense-breakdown summary strong{font-variant-numeric:tabular-nums}
+#accounts-workspace .detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#accounts-workspace #detail h3{font-size:16px;margin:15px 0 8px}
+#accounts-workspace .readonly-leave-notice{font-weight:650;color:#226250}
+@media(max-width:900px){#accounts-workspace .accounts-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#accounts-workspace .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){#accounts-workspace .filters{grid-template-columns:1fr 1fr;gap:8px;padding:10px}#accounts-workspace .accounts-kpis{gap:7px}#accounts-workspace .accounts-kpi{padding:10px}#accounts-workspace .accounts-kpi b{font-size:17px}#accounts-workspace .panel{padding:12px}#accounts-home #navigation .module-card{min-height:78px}}
+
+
+/* Shared Cash In and Insurance Invoiced modern visual pattern: fit every column without horizontal scrolling. */
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) {
+ background:radial-gradient(circle at 0 15%,#e0f8ff,transparent 40%),radial-gradient(circle at 100% 10%,#e8e7ff,transparent 50%),#edf4fd;
+}
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) main {width:100%;max-width:1760px;padding:14px clamp(12px,1.4vw,26px)}
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header {
+ padding:15px 20px;background:linear-gradient(107deg,#0a3678 0%,#0765a7 54%,#008b84 100%);
+ border:1px solid #0a7d9a;border-radius:18px;box-shadow:0 8px 24px #12487c23;color:#fff;
+}
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header h1,
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header p {color:#fff}
+body:has(#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]):not([hidden])) header button {border-color:#c7e4f6;background:#fffffff2;color:#0b3973}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .workspace-bar {margin:16px 0 10px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters {display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;background:#ffffffed;border:1px solid #d7e6f7;box-shadow:0 5px 19px #2b528712;padding:14px 18px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label {flex:1 1 154px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label:first-child {flex:1.4 1 240px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label[hidden] {display:none!important}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>#refresh {background:linear-gradient(130deg,#1973d0,#064eac);border-color:#1262bc;color:white;min-width:130px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>#clear {min-width:87px;background:#fff;color:#184d88;border-color:#a8c5e9}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"])>.panel {border:1px solid #d3e3f6;background:#ffffffeb;border-radius:19px;box-shadow:0 8px 26px #154a7814;padding:clamp(12px,1.3vw,20px)}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #title {font-size:clamp(20px,2vw,27px);color:#093b75}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .heading .actions button {border-radius:10px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #cash-entry {background:linear-gradient(150deg,#0b9c4f,#08763d);color:white;border-color:#07723d;font-weight:800}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #cash-invoice-total {
+ background:linear-gradient(100deg,#e3ffed 0%,#f1fff7 43%,#f0f6ff 100%);
+ border:1px solid #b4e4c9;border-left:6px solid #0b923b;
+ border-radius:17px;box-shadow:0 4px 14px #037a5320;padding:19px 24px;
+}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #cash-invoice-total-amount {font-size:clamp(24px,3.1vw,36px);color:#0d573e;letter-spacing:-.035em}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .cash-invoice-total-count b {color:#0e674b}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #accounts-kpis {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:13px 0}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi {position:relative;padding:15px 13px 15px 58px;min-height:90px;border-radius:16px;background:linear-gradient(120deg,#f0f8ff,#e0f0ff);border:1px solid #d4e5fb}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(2) {background:linear-gradient(120deg,#edfff6,#dff7e9);border-color:#cbe9d8}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(3) {background:linear-gradient(120deg,#faf4ff,#eee4ff);border-color:#e5d7f9}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(4) {background:linear-gradient(120deg,#fff8eb,#fff0da);border-color:#f4e2c4}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi::before {
+ content:"◆";position:absolute;top:19px;left:14px;width:34px;height:34px;border-radius:12px;
+ display:grid;place-items:center;background:#d5ebff;color:#0b6fc8;font-size:20px;
+}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(2)::before {content:"▥";color:#0c8848;background:#cef3dc}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(3)::before {content:"%";color:#6842bd;background:#e6d6ff}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi:nth-child(4)::before {content:"◷";color:#b2730a;background:#ffebc5}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi b {font-size:clamp(16px,1.7vw,25px);line-height:1.1;color:#0c3769}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi small {font-size:11px;font-weight:700;color:#3e5c79}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) #notes {background:#edf5ff;border-color:#d3e2ff;color:#234f80}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report {overflow:visible;border:1px solid #bad0e6;border-radius:12px}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report table {width:100%!important;min-width:0!important;max-width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:clamp(9px,.75vw,12px)}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th {
+ background:linear-gradient(180deg,#1165ba,#073f87);color:#fff;font-size:clamp(9px,.72vw,12px);font-weight:750;
+ padding:10px 4px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle;text-align:center;border-right:1px solid #ffffff2c;
+}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td {
+ padding:9px 3px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle;text-align:center;border-right:1px solid #d9e6f2;
+ font-variant-numeric:tabular-nums;
+}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tbody tr:nth-child(even) td {background:#f1f7fe}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tbody tr:hover td {background:#e5f3ff}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(1) {width:3%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(2) {width:6%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(3) {width:6%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(4) {width:12%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(5) {width:8%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(6) {width:7%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(7) {width:9%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(8) {width:7%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(9) {width:7%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(10) {width:9%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(11) {width:10%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(12) {width:10%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report th:nth-child(13) {width:6%}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .jc-link {
+ color:#075bb8;background:transparent;border:0;text-decoration:underline;font-size:inherit;font-weight:800;
+ padding:2px;min-height:28px;white-space:normal;
+}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .expense-link {
+ background:#e1f8ec;border:1px solid #b7e3cc;color:#0c6744;border-radius:8px;
+ font-size:inherit;font-weight:750;min-height:29px;padding:5px 3px;text-decoration:underline;max-width:100%;
+ white-space:normal;overflow-wrap:anywhere;
+}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .profit {color:#0c753d;font-weight:850}
+#accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .loss {color:#b12d48;font-weight:850}
+
+/* Detail window replaces automatic page scrolling, with native dialog focus trapping. */
+html.financial-dialog-open {overflow:hidden}
+.financial-detail-dialog {
+ position:fixed;inset:0;margin:auto;z-index:1050;width:min(1050px,calc(100vw - 24px));max-width:1050px;
+ max-height:min(88vh,940px);padding:0;border:1px solid #c2dbea;border-radius:21px;
+ background:#fff;box-shadow:0 28px 85px #0d284c63;overflow-y:auto;overscroll-behavior:contain;
+}
+.financial-detail-dialog::backdrop {background:#08234299;backdrop-filter:blur(3px)}
+.financial-detail-dialog #detail.panel {margin:0;border:0;box-shadow:none;background:#fff;padding:clamp(14px,2vw,26px)}
+.financial-detail-dialog #financial-detail-title {color:#0c4380;font-size:clamp(17px,2vw,23px)}
+.financial-detail-dialog #close-detail {background:#e8f3ff;color:#0f568e;border-color:#b2d5ee}
+.financial-detail-dialog .detail-value {background:#eff7ff;border:1px solid #d7e8f5}
+.financial-detail-dialog .expense-breakdown[open] {background:#e8fff4;border-color:#a8dfcb}
+.financial-detail-dialog .expense-breakdown summary {cursor:pointer}
+.financial-detail-dialog .expense-lines {overflow:auto;max-width:100%}
+@media(max-width:1100px) {
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report table {display:block}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report thead {display:none}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tbody {display:grid;gap:12px;padding:10px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tr {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 8px;background:#fff;border:1px solid #cbdff0;border-radius:14px;overflow:hidden}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td {
+   display:flex;flex-direction:column;justify-content:center;gap:5px;align-items:flex-start;
+   padding:10px 9px;border-right:0;border-bottom:1px solid #e1ebf4;text-align:left;font-size:12px;
+ }
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td::before {content:attr(data-label);font-size:10px;font-weight:800;color:#52708f;line-height:1.2}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(4) {grid-column:span 3}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(12) {background:#ecfcf2}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report .expense-link {font-size:12px;padding:5px 7px}
+}
+@media(max-width:740px) {
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report tr {grid-template-columns:repeat(2,minmax(0,1fr))}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(4) {grid-column:span 2}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .finance-report td:nth-child(12) {grid-column:span 1}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .filters>label {flex:1 1 130px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi {padding-left:13px;padding-top:46px}
+ #accounts-workspace:is([data-report="cash"],[data-report="insurance_invoiced"]) .accounts-kpi::before {top:9px;left:11px;width:27px;height:27px}
+ .financial-detail-dialog {width:calc(100vw - 12px);max-height:93vh;border-radius:14px}
+}
+
+
+/* Option 5 Profit / Loss: display-only labour inclusion switch. */
+#accounts-workspace .profit-labour-toggle {
+ display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+ margin:4px 0 13px;padding:12px 14px;
+ background:linear-gradient(110deg,#f0f8ff,#e9f3ff 52%,#edf9f4);
+ border:1px solid #bed7ee;border-radius:13px;
+}
+#accounts-workspace .profit-labour-toggle[hidden] {display:none!important}
+#accounts-workspace .profit-labour-label {font-size:13px;font-weight:800;color:#154a7b;margin-right:5px}
+#accounts-workspace .profit-labour-toggle button {
+ border:1px solid #a7c7e7;border-radius:9px;background:#fff;color:#13517f;
+ font-size:13px;font-weight:800;min-height:39px;padding:8px 18px;white-space:normal;
+}
+#accounts-workspace .profit-labour-toggle button[aria-pressed="true"] {
+ background:linear-gradient(135deg,#0873c1,#074c98);border-color:#125caa;
+ color:white;box-shadow:0 4px 12px #155cb32b;
+}
+#accounts-workspace .profit-labour-toggle button[data-labour-mode="without"][aria-pressed="true"] {
+ background:linear-gradient(135deg,#087f64,#076a4b);border-color:#0c7255;
+}
+#accounts-workspace .profit-labour-help {font-size:11px;color:#466884;flex:1 1 235px;line-height:1.45}
+#accounts-workspace[data-report="profit"] .finance-report:has(th) {border-color:#c6d9ef}
+#accounts-workspace[data-report="profit"] .finance-report th {background:#e6f1fc;color:#153e66}
+@media(max-width:650px){
+ #accounts-workspace .profit-labour-toggle {gap:7px;padding:10px}
+ #accounts-workspace .profit-labour-label {width:100%}
+ #accounts-workspace .profit-labour-toggle button {flex:1 1 130px}
+ #accounts-workspace .profit-labour-help {flex-basis:100%}
+}
+
+
+/* Insurance Invoiced has 14 columns, one more than Cash In. All fit at desktop widths. */
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(1) {width:3%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(2) {width:7%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(3) {width:5%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(4) {width:12%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(5) {width:10%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(6) {width:7%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(7) {width:6%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(8) {width:8%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(9) {width:6%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(10) {width:6%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(11) {width:9%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(12) {width:9%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(13) {width:8%}
+#accounts-workspace[data-report="insurance_invoiced"] .finance-report th:nth-child(14) {width:4%}
+@media(max-width:1100px) {
+ #accounts-workspace[data-report="insurance_invoiced"] .finance-report td:nth-child(12) {background:transparent}
+ #accounts-workspace[data-report="insurance_invoiced"] .finance-report td:nth-child(13) {background:#ecfcf2}
+}
+
+
+/* V393 Accounts visual refresh: approved 2-column cards and Financial 360.
+   Visual-only. Existing navigation, dialogs, exports and financial APIs remain. */
+#accounts-home .home-heading{
+  position:relative;isolation:isolate;overflow:hidden;min-height:142px;
+  padding:clamp(16px,2.5vw,26px);gap:12px;
+  background:linear-gradient(115deg,#ffffff 0%,#f8fcff 58%,#e6f5ff 100%);
+  border:1px solid #d6e9f6;border-radius:23px;box-shadow:0 12px 30px #0d3e7420;
+}
+#accounts-home .home-heading::after{
+  content:"";position:absolute;z-index:-1;inset:auto -35px -72px auto;
+  width:min(42%,250px);height:180px;transform:rotate(-23deg);
+  background:linear-gradient(140deg,#8ee9e340,#2b8cce30 50%,#b5ecff2d);
+  border-radius:54% 46% 40% 50%;pointer-events:none;
+}
+#accounts-home .home-heading>div{position:relative;z-index:1}
+#accounts-home .home-heading h2{
+  font-size:clamp(24px,3.1vw,34px);color:#082855;
+  letter-spacing:-.04em;font-weight:850;
+}
+#accounts-home .home-heading p{max-width:410px;color:#51667f;line-height:1.5}
+#accounts-home .eyebrow{letter-spacing:.18em;color:#147a9c}
+#accounts-home .secure-badge{
+  position:relative;z-index:1;align-self:flex-start;color:#08704b;
+  background:linear-gradient(125deg,#eefff5,#d9f7ed);
+  border:1px solid #b6ebd4;font-weight:800;
+}
+#accounts-home .module-heading{margin:24px 0 15px}
+#accounts-home .module-heading h2{font-size:clamp(19px,2.4vw,24px);font-weight:850;color:#102b54}
+#accounts-home #navigation{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:0 0 20px;
+}
+#accounts-home #navigation .module-card{
+  --accent:#126db0;--tile:#ecf7ff;
+  position:relative;isolation:isolate;overflow:hidden;
+  display:flex;flex-direction:row;align-items:center;
+  min-width:0;min-height:152px;gap:15px;padding:22px 20px 22px 27px;
+  background:linear-gradient(128deg,#fff 8%,var(--tile) 100%)!important;
+  border:1px solid color-mix(in srgb,var(--accent) 26%,#e6f1fa)!important;
+  border-radius:22px;box-shadow:0 9px 26px #16436b16!important;
+  color:#102b54!important;text-align:left;
+}
+#accounts-home #navigation .module-card::before{
+  content:"";position:absolute;left:11px;top:19px;bottom:19px;width:5px;
+  border-radius:8px;background:var(--accent);opacity:.9;
+}
+#accounts-home #navigation .module-card::after{
+  content:"";position:absolute;z-index:-1;right:-26px;bottom:-44px;
+  width:185px;height:105px;border-radius:55% 40% 0 0;transform:rotate(-17deg);
+  background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--accent) 19%,transparent));
+  pointer-events:none;
+}
+#accounts-home #navigation .module-card:focus-visible{
+  outline:3px solid #0f65b2;outline-offset:3px;
+}
+#accounts-home #navigation .module-icon{
+  display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;
+  border-radius:17px;color:var(--accent);
+  background:linear-gradient(135deg,#f7fcff,color-mix(in srgb,var(--accent) 17%,white));
+  border:1px solid #ffffffcf;
+}
+#accounts-home #navigation .module-icon svg{height:28px;width:28px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#accounts-home #navigation .module-copy{display:grid;flex:1;gap:9px;position:relative;z-index:1}
+#accounts-home #navigation .module-copy strong{
+  font-size:clamp(15px,1.7vw,20px);line-height:1.26;font-weight:850;color:#0a2348;
+}
+#accounts-home #navigation .module-copy small{font-size:clamp(11px,1.1vw,13px);color:#48617d;line-height:1.45}
+#accounts-home #navigation .module-arrow{color:#0b2a4f;font-size:23px;font-weight:900}
+#accounts-home #navigation .tone-blue{--accent:#0e79ba;--tile:#dcf2ff}
+#accounts-home #navigation .tone-green{--accent:#11956a;--tile:#dff8ef}
+#accounts-home #navigation .tone-indigo{--accent:#4f71d2;--tile:#e8ecff}
+#accounts-home #navigation .tone-amber{--accent:#17a67a;--tile:#e2faf0}
+#accounts-home #navigation .tone-teal{--accent:#00a4a5;--tile:#dff8fc}
+#accounts-home #navigation .module-card:last-child{grid-column:1/-1;min-height:120px}
+@media(max-width:650px){
+  #accounts-home #navigation{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  #accounts-home #navigation .module-card{
+    display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;
+    padding:15px 13px 15px 18px;min-height:190px;gap:10px;border-radius:17px;
+  }
+  #accounts-home #navigation .module-card::before{left:7px;top:14px;bottom:14px;width:4px}
+  #accounts-home #navigation .module-icon{width:43px;height:43px;flex-basis:43px;border-radius:13px}
+  #accounts-home #navigation .module-icon svg{width:24px;height:24px}
+  #accounts-home #navigation .module-copy{gap:5px;flex:none;padding-right:1px}
+  #accounts-home #navigation .module-copy strong{font-size:clamp(12px,3.6vw,15px)}
+  #accounts-home #navigation .module-copy small{font-size:clamp(10px,2.8vw,12px)}
+  #accounts-home #navigation .module-arrow{position:absolute;right:11px;top:23px;font-size:22px}
+  #accounts-home #navigation .module-card:last-child{
+    grid-column:1/-1;min-height:100px;flex-direction:row;align-items:center;gap:14px;padding:17px 16px 17px 22px;
+  }
+  #accounts-home #navigation .module-card:last-child .module-copy{padding-right:20px}
+  #accounts-home #navigation .module-card:last-child .module-arrow{top:auto;right:14px}
+}
+@media(max-width:360px){
+  #accounts-home #navigation{gap:8px}
+  #accounts-home #navigation .module-card{padding:13px 9px 14px 16px;min-height:200px}
+  #accounts-home #navigation .module-copy small{font-size:10px}
+  #accounts-home .home-heading{padding:15px}
+}
+
+/* Job Card 360°: focused search, readable result cards, no verbose notes. */
+#accounts-workspace[data-report="jobs"] .filters{
+  grid-template-columns:minmax(0,2fr) auto auto;align-items:end;
+  background:#fff;border:1px solid #d3e5f4;border-radius:19px;
+  padding:clamp(12px,2vw,19px);box-shadow:0 8px 25px #204a7418;
+}
+#accounts-workspace[data-report="jobs"] .filters>label:first-child{font-size:13px;color:#3c5572}
+#accounts-workspace[data-report="jobs"] #refresh{
+  background:linear-gradient(120deg,#117bc9,#084f9b);border-color:#145c9f;
+  color:#fff;font-weight:800;box-shadow:0 4px 12px #155da522;
+}
+#accounts-workspace[data-report="jobs"] #clear{color:#194e80;background:#edf4fa;border-color:#c3d7e7}
+#accounts-workspace[data-report="jobs"]>.panel{
+  background:#fff;border:1px solid #d2e6f5;border-radius:24px;
+  box-shadow:0 10px 30px #133d6818;padding:clamp(14px,2.5vw,24px);
+}
+#accounts-workspace[data-report="jobs"]>.panel>.heading{
+  position:relative;border-bottom:1px solid #dbe9f5;padding:4px 2px 17px;margin-bottom:16px;
+}
+#accounts-workspace[data-report="jobs"] #title{font-size:clamp(22px,2.9vw,30px);font-weight:850;color:#0b2c58}
+#accounts-workspace[data-report="jobs"] #report-meta{color:#57708c}
+#accounts-workspace[data-report="jobs"] .heading .actions button{
+  border-radius:12px;background:linear-gradient(135deg,#fff,#eef7ff);
+  border-color:#c6dced;color:#154e81;min-height:42px;
+}
+#accounts-workspace[data-report="jobs"] #notes:empty{display:none}
+#accounts-workspace[data-report="jobs"] .jc360-results{display:grid;gap:14px}
+#accounts-workspace[data-report="jobs"] .jc360-result-card{
+  position:relative;overflow:hidden;background:linear-gradient(130deg,#fff,#f4faff);
+  border:1px solid #d3e4f3;border-radius:20px;padding:18px;
+  box-shadow:0 5px 16px #164b8311;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-card::before{
+  content:"";position:absolute;top:19px;left:0;width:5px;height:43px;
+  background:linear-gradient(#13bcc3,#087aa7);border-radius:0 5px 5px 0;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-header{
+  display:flex;align-items:flex-start;gap:10px;justify-content:space-between;
+  padding:0 0 14px 2px;flex-wrap:wrap;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-header strong{
+  display:block;font-size:19px;font-weight:850;color:#0b2d57;
+}
+#accounts-workspace[data-report="jobs"] .jc360-result-header small{
+  display:block;margin-top:5px;font-size:12px;line-height:1.35;color:#516b87;overflow-wrap:anywhere;
+}
+#accounts-workspace[data-report="jobs"] .jc360-job-type{
+  font-size:10px;font-weight:850;letter-spacing:.04em;text-transform:uppercase;
+  border-radius:30px;background:#e3f5ef;border:1px solid #c4e8db;
+  color:#126b57;padding:7px 11px;max-width:100%;overflow-wrap:anywhere;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metrics{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric{
+  min-width:0;padding:17px;border:1px solid #d7eafa;border-radius:17px;
+  background:linear-gradient(115deg,#f4faff,#dff2ff);
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric.is-profit{
+  background:linear-gradient(110deg,#f1fdfa,#def8ef);border-color:#caebde;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric small{
+  display:block;color:#36597e;font-size:12px;font-weight:700;margin-bottom:7px;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric strong{
+  font-size:clamp(16px,3.1vw,26px);line-height:1.25;letter-spacing:-.025em;
+  color:#082c55;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+}
+#accounts-workspace[data-report="jobs"] .jc360-metric.is-profit strong{color:#087957}
+#accounts-workspace[data-report="jobs"] .jc360-result-card .jc360-open{
+  margin-top:14px;width:100%;min-height:47px;
+  color:#fff;background:linear-gradient(110deg,#0d75bd,#0850a0);border:1px solid #0d59aa;
+  border-radius:14px;font-size:14px;font-weight:850;
+}
+#accounts-workspace[data-report="jobs"] .paging{margin-top:19px}
+@media(max-width:650px){
+  #accounts-workspace[data-report="jobs"] .filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px}
+  #accounts-workspace[data-report="jobs"] .filters>label:first-child{grid-column:1/-1}
+  #accounts-workspace[data-report="jobs"] #refresh,#accounts-workspace[data-report="jobs"] #clear{width:100%;min-height:45px}
+  #accounts-workspace[data-report="jobs"] .jc360-result-card{padding:15px}
+  #accounts-workspace[data-report="jobs"] .jc360-metric{padding:12px}
+  #accounts-workspace[data-report="jobs"] .jc360-metric strong{font-size:clamp(15px,4.5vw,21px)}
+}
+
+/* Financial 360° modal: two-column information tiles and compact expense accordions. */
+.financial-detail-dialog{
+  border:1px solid #b8d7eb;border-radius:24px;
+  background:#f9fcff;box-shadow:0 28px 86px #051e426b;
+}
+.financial-detail-dialog #detail.panel{
+  background:linear-gradient(180deg,#fff,#f7fbff);padding:clamp(13px,2.8vw,28px);
+}
+.financial-detail-dialog #detail>.heading{
+  border-bottom:1px solid #d4e4f1;padding-bottom:14px;margin-bottom:18px;gap:12px;
+}
+.financial-detail-dialog #financial-detail-title{
+  position:relative;padding-left:14px;color:#092956;
+  font-size:clamp(19px,2.6vw,27px);font-weight:850;letter-spacing:-.035em;
+}
+.financial-detail-dialog #financial-detail-title::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:6px;background:#0bb4bd;
+}
+.financial-detail-dialog .detail-actions{gap:7px}
+.financial-detail-dialog .detail-actions button{
+  background:linear-gradient(125deg,#fff,#ecf7fe);border-color:#c1dcf0;
+  color:#11528d;min-height:41px;border-radius:11px;
+}
+.financial-detail-dialog #close-detail{
+  background:linear-gradient(120deg,#167cc7,#07509d);border-color:#0b64b4;color:#fff;font-weight:800;
+}
+.financial-detail-dialog .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.financial-detail-dialog .detail-value{
+  min-width:0;position:relative;padding:clamp(12px,1.8vw,18px);
+  border:1px solid #d5e7f7;border-radius:17px;
+  background:linear-gradient(125deg,#f5faff,#e5f3ff);
+}
+.financial-detail-dialog .detail-value.is-money{
+  background:linear-gradient(125deg,#eff9ff,#def1fe);
+}
+.financial-detail-dialog .detail-value.is-positive{
+  background:linear-gradient(125deg,#f0fcf8,#d9f5ec);border-color:#d0eadd;
+}
+.financial-detail-dialog .detail-value.is-loss{
+  background:linear-gradient(125deg,#fff8f7,#ffebea);border-color:#f1ccca;
+}
+.financial-detail-dialog .detail-value.is-status{
+  background:linear-gradient(125deg,#fff9ed,#fff0ce);border-color:#efdcab;
+}
+.financial-detail-dialog .detail-value small{font-size:clamp(11px,1.15vw,13px);line-height:1.4;color:#455f7d;margin-bottom:6px}
+.financial-detail-dialog .detail-value strong{
+  display:block;font-size:clamp(15px,2vw,23px);font-weight:850;line-height:1.3;
+  color:#112c4d;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;
+}
+.financial-detail-dialog .detail-value.is-positive strong{color:#057957}
+.financial-detail-dialog .detail-value.is-loss strong{color:#b12f46}
+.financial-detail-dialog #detail h3{
+  margin:23px 0 13px;font-size:clamp(15px,1.7vw,19px);color:#112e52;
+}
+.financial-detail-dialog .expense-breakdowns{display:grid;gap:10px;margin:12px 0}
+.financial-detail-dialog .expense-breakdown{
+  border:1px solid #d3e5f2;border-radius:17px;
+  background:#fff;box-shadow:0 4px 13px #174c7810;
+}
+.financial-detail-dialog .expense-breakdown summary{
+  display:flex;justify-content:space-between;gap:9px;padding:14px;align-items:center;color:#0d2c51;
+}
+.financial-detail-dialog .expense-breakdown .expense-label{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.financial-detail-dialog .expense-glyph{
+  display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;
+  border-radius:12px;background:#e0f2fc;color:#0b73b2;font-size:20px;
+}
+.financial-detail-dialog .expense-amount{
+  background:#e7f4ff;padding:9px 11px;border-radius:11px;color:#123a68;
+  font-size:clamp(12px,1.6vw,17px);white-space:nowrap;
+}
+.financial-detail-dialog .expense-chevron{font-size:19px;color:#3c587a}
+.financial-detail-dialog .expense-breakdown[open]{
+  background:#f6fcff;border-color:#8acbdc;
+}
+.financial-detail-dialog .expense-lines{background:#fff;border-top:1px solid #d6e6f0}
+.financial-detail-dialog .financial-status-note{
+  margin:16px 0 2px;padding:10px 12px;background:#fff8e9;
+  border:1px solid #efd9a7;border-radius:12px;color:#6e4c0a;font-size:12px;
+}
+@media(max-width:650px){
+  .financial-detail-dialog{width:calc(100vw - 12px);max-height:94dvh;border-radius:18px}
+  .financial-detail-dialog #detail.panel{padding:13px}
+  .financial-detail-dialog .detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .financial-detail-dialog .detail-value{padding:12px 10px;border-radius:13px}
+  .financial-detail-dialog .detail-value strong{font-size:clamp(14px,3.8vw,18px)}
+  .financial-detail-dialog .detail-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:6px}
+  .financial-detail-dialog .detail-actions button{min-height:40px;padding:8px 4px;font-size:11px;white-space:normal;overflow-wrap:anywhere}
+  .financial-detail-dialog .expense-breakdown summary{padding:11px;gap:7px}
+  .financial-detail-dialog .expense-label{font-size:clamp(12px,3.4vw,14px)}
+  .financial-detail-dialog .expense-glyph{flex-basis:32px;width:32px;height:32px;font-size:17px}
+  .financial-detail-dialog .expense-amount{padding:7px;font-size:clamp(12px,3.4vw,15px)}
+}
+
+
+/* Accountant V398 candidate: equal eight-card grid and focused expense reporting. */
+#accounts-home #navigation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#accounts-home #navigation .module-card:last-child{grid-column:auto;min-height:152px}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows .table-wrap{overflow-x:auto}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows table{font-size:13px}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows td,
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows th{padding:14px 12px;color:#183851}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows td.money{font-weight:850;color:#075c70;font-variant-numeric:tabular-nums}
+#accounts-workspace:is([data-report="paint"],[data-report="parts"],[data-report="consumables"]) #rows .jc-link{font-size:13px;font-weight:850}
+.expense-focused-total{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0;padding:16px;background:#eaf8f2;border:1px solid #b5dfcc;border-radius:13px}
+.expense-focused-total span{font-weight:750;color:#175c4d}
+.expense-focused-total strong{font-size:21px;color:#065a4a;font-variant-numeric:tabular-nums}
+.expense-focused-total small{color:#82590f;font-weight:650}
+.expense-vehicle{color:#355e7c;font-weight:750;margin:6px 0}
+#accounts-workspace[data-report="profit"] .finance-report{overflow-x:visible;max-width:100%}
+body:has(#accounts-workspace[data-report="profit"]:not([hidden])) main{max-width:none;width:100%}
+@media(min-width:901px){
+ #accounts-workspace[data-report="profit"] .finance-report table{display:table;width:100%;min-width:0;table-layout:fixed;font-size:clamp(9px,.76vw,12px)}
+ #accounts-workspace[data-report="profit"] .finance-report th,
+ #accounts-workspace[data-report="profit"] .finance-report td{padding:10px 3px;white-space:normal;overflow-wrap:anywhere;line-height:1.35}
+ #accounts-workspace[data-report="profit"] .finance-report .expense-link,
+ #accounts-workspace[data-report="profit"] .finance-report .jc-link{max-width:100%;min-width:0;font-size:inherit;padding:5px 2px;white-space:normal;overflow-wrap:anywhere}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(1){width:3%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(2){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(3){width:5%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(4){width:12%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(5){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(6){width:10%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(7){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(8){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(9){width:8%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(10){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(11){width:6%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(12){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(13){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(14){width:7%}
+ #accounts-workspace[data-report="profit"] .finance-report th:nth-child(15){width:4%}
+}
+@media(max-width:900px){
+ #accounts-workspace[data-report="profit"] .finance-report{overflow:visible}
+ #accounts-workspace[data-report="profit"] .finance-report table{display:block}
+ #accounts-workspace[data-report="profit"] .finance-report thead{display:none}
+ #accounts-workspace[data-report="profit"] .finance-report tbody{display:grid;gap:12px}
+ #accounts-workspace[data-report="profit"] .finance-report tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #cbddeb;border-radius:14px;overflow:hidden;background:#fff}
+ #accounts-workspace[data-report="profit"] .finance-report td{display:flex;flex-direction:column;gap:5px;white-space:normal;min-width:0;overflow-wrap:anywhere;padding:12px;border-bottom:1px solid #e4ecf4}
+ #accounts-workspace[data-report="profit"] .finance-report td:before{content:attr(data-label);font-size:11px;color:#546d84;font-weight:800}
+ #accounts-workspace[data-report="profit"] .finance-report td:nth-child(4){grid-column:1/-1}
+}
+@media(max-width:550px){
+ #accounts-home #navigation{gap:10px}
+ #accounts-home #navigation .module-card:last-child{min-height:177px}
+ #accounts-workspace[data-report="profit"] .finance-report tr{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* Profit/Loss must override the legacy 1250px table minimum on every device. */
+#accounts-workspace[data-report="profit"] .finance-report table{min-width:0!important;width:100%!important;max-width:100%!important}
+#accounts-workspace[data-report="profit"] .finance-report tbody{min-width:0;max-width:100%}
+@media(max-width:900px){
+ #accounts-workspace[data-report="profit"] .finance-report tr{width:100%;max-width:100%;min-width:0}
+ #accounts-workspace[data-report="profit"] .finance-report td{max-width:100%;box-sizing:border-box}
+}
+
+/* V398 Accountant audited Leave Management */
+.leave-management-form{display:grid;gap:15px;margin:15px 0 2px;color:#193b60}
+.leave-management-form>label{display:grid;gap:7px;font-weight:750}
+.leave-management-form :is(input,select,textarea){width:100%;min-width:0;box-sizing:border-box;border:1px solid #bfd4e4;border-radius:10px;padding:11px;background:#fff;color:#143753;font-size:14px}
+.leave-management-form :is(input,select,textarea):focus-visible{outline:3px solid #84d0f0}
+.leave-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.leave-form-grid label{display:grid;gap:6px;font-weight:700;min-width:0}
+.leave-management-form .leave-after-work{display:flex;flex-direction:row;align-items:center;gap:9px;font-size:13px}
+.leave-after-work input{flex:none;width:18px;height:18px}
+.leave-management-form .detail-actions{display:flex;flex-wrap:wrap;gap:8px}
+#accounts-workspace[data-report="leave"] #rows :is([data-leave-edit],[data-leave-cancel]){font-weight:800;min-height:36px;margin:2px;padding:6px 10px;border-radius:8px}
+#accounts-workspace[data-report="leave"] #rows [data-leave-cancel]{border-color:#e9b7b3;color:#9e2940;background:#fff2f1}
+@media(max-width:550px){.leave-form-grid{grid-template-columns:1fr}.leave-management-form .detail-actions button{flex:1 1 130px}}
+
+/* Profit / Loss pending-cost drilldown (read-only). */
+#accounts-workspace .accounts-kpi-open{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;border-color:#c8ddc7;background:#f3faf0;}
+#accounts-workspace .accounts-kpi-open:hover:not(:disabled){border-color:#639e73;box-shadow:0 5px 18px #16492b18}
+#accounts-workspace .accounts-kpi-open:focus-visible,#accounts-workspace .pending-cost-job:focus-visible{outline:3px solid #1679bf;outline-offset:2px}
+#accounts-workspace .accounts-kpi-open:disabled{cursor:default;opacity:.8}
+#accounts-workspace .accounts-kpi-hint{display:block;color:#166b52;font-size:11px;font-weight:750;margin-top:7px}
+#accounts-workspace .pending-cost-view{margin-top:16px}
+#accounts-workspace .pending-cost-heading{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+#accounts-workspace .pending-cost-heading h3{margin:0;color:#194568;font-size:18px}
+#accounts-workspace .pending-cost-heading p{margin:4px 0 0;color:#57718b;font-size:12px}
+#accounts-workspace .pending-cost-heading button{min-height:39px;background:#e8f2fc;color:#174e79;border:1px solid #bed5eb;border-radius:9px;padding:8px 12px;font-weight:750}
+#accounts-workspace .pending-cost-list{display:grid;gap:9px}
+#accounts-workspace #rows .pending-cost-job{display:grid;grid-template-columns:minmax(140px,1fr) minmax(160px,2fr);gap:5px 14px;text-align:left;align-items:center;padding:14px 16px;min-width:0;width:100%;background:#fffaf0;color:#213b50;border:1px solid #ead5a7;border-radius:12px;cursor:pointer}
+#accounts-workspace #rows .pending-cost-job:hover{background:#fff4dd;border-color:#c19a55}
+#accounts-workspace .pending-cost-job-title{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#accounts-workspace .pending-cost-job-title strong{font-size:15px;color:#154d7b}
+#accounts-workspace .pending-cost-job-title>span{font-size:11px;background:#f3e5c2;padding:3px 7px;border-radius:8px}
+#accounts-workspace .pending-cost-vehicle{font-size:13px;font-weight:700;overflow-wrap:anywhere}
+#accounts-workspace .pending-cost-reason{font-size:11px;color:#795521;overflow-wrap:anywhere}
+#accounts-workspace .pending-cost-job-link{font-size:12px;font-weight:800;color:#126d63;justify-self:end}
+@media(max-width:650px){#accounts-workspace #rows .pending-cost-job{grid-template-columns:1fr;gap:7px;padding:12px}#accounts-workspace .pending-cost-job-link{justify-self:start}}
+
+
+/* Profit / Loss: full filtered-period Total Job Cost category drilldown. */
+#accounts-workspace .accounts-kpi-cost-open{
+ display:block;text-align:left;width:100%;cursor:pointer;font:inherit;
+ border-color:#b8d0f0;background:linear-gradient(135deg,#eef5ff,#fff);
+}
+#accounts-workspace .accounts-kpi-cost-open:hover:not(:disabled){
+ border-color:#3b7bd5;box-shadow:0 6px 18px #1756a71e;
+}
+#accounts-workspace .accounts-kpi-cost-open:focus-visible{outline:3px solid #1765c7;outline-offset:2px}
+#accounts-workspace .accounts-kpi-cost-open .accounts-kpi-hint{color:#155ca6}
+#accounts-workspace .accounts-kpi-cost-open:disabled{opacity:.8;cursor:progress}
+.financial-detail-dialog .total-cost-subtitle{font-size:12px;color:#536e89;margin:6px 0 0}
+.financial-detail-dialog .total-cost-overview{
+ background:linear-gradient(120deg,#e9f3ff,#f5fbff);
+ border:1px solid #bcd5f3;border-radius:16px;padding:16px 18px;margin:18px 0;
+}
+.financial-detail-dialog .total-cost-overview small{display:block;color:#315879;font-size:13px;font-weight:750}
+.financial-detail-dialog .total-cost-overview strong{
+ display:block;color:#14497e;font-size:clamp(25px,4vw,36px);font-variant-numeric:tabular-nums;
+ letter-spacing:-.5px;margin-top:6px;overflow-wrap:anywhere;
+}
+.financial-detail-dialog .total-cost-overview p{font-size:12px;color:#79521c;margin:9px 0 0}
+.financial-detail-dialog .total-cost-categories{display:grid;gap:9px}
+.financial-detail-dialog .total-cost-category{
+ display:flex;gap:12px;align-items:center;padding:12px 14px;min-width:0;
+ border:1px solid #d7e5f2;background:#f6faff;border-radius:13px;
+}
+.financial-detail-dialog .total-cost-category.total-cost-parts{border-left:5px solid #3c65bc}
+.financial-detail-dialog .total-cost-category.total-cost-paint{border-left:5px solid #8b52bc}
+.financial-detail-dialog .total-cost-category.total-cost-consumables{border-left:5px solid #0b8b8b}
+.financial-detail-dialog .total-cost-category.total-cost-labour{border-left:5px solid #cb8639}
+.financial-detail-dialog .total-cost-category.total-cost-sublet{border-left:5px solid #416888}
+.financial-detail-dialog .total-cost-category.is-excluded{background:#f2f5f8;border-color:#dae2e9}
+.financial-detail-dialog .total-cost-icon{
+ flex:0 0 33px;width:33px;height:33px;border-radius:9px;
+ background:#fff;color:#234f79;display:grid;place-items:center;font-size:19px;
+}
+.financial-detail-dialog .total-cost-label{flex:1;min-width:0}
+.financial-detail-dialog .total-cost-label strong{display:block;font-size:14px;color:#1d4368}
+.financial-detail-dialog .total-cost-label small{display:block;color:#576f88;font-size:11px;line-height:1.45}
+.financial-detail-dialog .total-cost-category b{
+ flex-shrink:0;color:#214767;font-size:16px;text-align:right;font-variant-numeric:tabular-nums;
+ overflow-wrap:anywhere;
+}
+.financial-detail-dialog .total-cost-category.is-excluded b{color:#6c7987}
+.financial-detail-dialog .total-cost-footnote{
+ color:#4b647e;font-size:12px;line-height:1.5;margin:12px 2px 3px;
+}
+@media(max-width:600px){
+ .financial-detail-dialog .total-cost-category{padding:11px;gap:9px}
+ .financial-detail-dialog .total-cost-category b{font-size:13px;max-width:39%;white-space:normal}
+ .financial-detail-dialog .total-cost-icon{flex-basis:30px;width:30px;height:30px}
+ .financial-detail-dialog .total-cost-label strong{font-size:13px}
+ .financial-detail-dialog .total-cost-label small{font-size:10px}
+}

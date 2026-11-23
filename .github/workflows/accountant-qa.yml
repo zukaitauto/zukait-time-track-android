@@ -1,0 +1,92 @@
+name: Accountant isolated acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/manager_profit_performance.js'
+      - 'app/src/main/assets/offline_test.html'
+      - 'tests/manager-profit-*'
+      - 'app/src/main/assets/accountant*'
+      - 'app/build.gradle'
+      - 'scripts/verify-accountant-release.cjs'
+      - 'tests/reception-pages-publication-safety.mjs'
+      - 'supabase/functions/workshop-api/accountant/**'
+      - 'supabase/functions/workshop-api/index.ts'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'tests/id001-assignment-uniqueness.mjs'
+      - 'tests/cloud-permission-retry-barrier.mjs'
+      - 'tests/reception-api.mjs'
+      - 'supabase/functions/staff-auth/index.ts'
+      - 'supabase/migrations/*accountant*'
+      - 'tests/accountant*'
+      - 'app/src/main/assets/v2/features/notifications/**'
+      - 'tests/v2-notification-center.mjs'
+      - 'tests/notification-*.mjs'
+      - '.github/workflows/accountant-qa.yml'
+      - '.github/workflows/build-signed-acceptance.yml'
+      - 'release-request.json'
+      - 'app/src/main/assets/consumables_ui.js'
+permissions:
+  contents: read
+jobs:
+  isolated-web:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm ci --ignore-scripts --include=dev
+      - run: npx playwright install chromium
+      - run: bash scripts/ci-validate-js.sh
+      - run: bash scripts/ci-full-regression.sh
+      - run: npm run test:reception
+      - run: node tests/accountant-responsive.mjs
+      - run: ACCOUNTANT_TEST_ROLE=Manager node tests/accountant-responsive.mjs
+      - name: Verify live Accountant endpoints reject unauthenticated requests
+        run: |
+          set -euo pipefail
+          BASE='https://pjknotnjkufadqavcmii.supabase.co/functions/v1'
+          KEY='sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A'
+          for ACTION in accountant_dashboard accountant_report load; do
+            STATUS=$(curl --silent --show-error --max-time 25 --output /tmp/accountant-denied.json --write-out '%{http_code}' --request POST --header "Content-Type: application/json" --header "apikey: $KEY" --header 'x-zukait-session: NONEXISTENT_ACCOUNTANT_RELEASE_TEST' --data "{\"action\":\"$ACTION\"}" "$BASE/workshop-api")
+            test "$STATUS" = '401'
+          done
+          STATUS=$(curl --silent --show-error --max-time 25 --output /tmp/accountant-auth-denied.json --write-out '%{http_code}' --request POST --header "Content-Type: application/json" --header "apikey: $KEY" --data '{"action":"manager_accountant","session_token":"NONEXISTENT_ACCOUNTANT_RELEASE_TEST","command":{"operation":"LIST"}}' "$BASE/staff-auth")
+          test "$STATUS" = '403'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accountant-browser-evidence
+          path: artifacts/accountant/
+  android-package:
+    if: github.ref == 'refs/heads/architecture-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install required Android packages
+        run: |
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
+      - run: gradle --no-daemon :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: accountant-debug-compile-only
+          path: app/build/outputs/apk/debug/*.apk
+
+# V374: revalidate current candidate after physical Android QA and direct arrival fix.

@@ -1,0 +1,17 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+const paths=fs.readFileSync('app/src/main/assets/v2/core/data_paths.js','utf8');
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(cloud,/action:'v2_event_history'/);
+assert.match(cloud,/Math\.max\(1,Math\.min\(Number\(limit\)\|\|100,500\)\)/);
+assert.match(cloud,/entity_id:filters\.entityId\|\|filters\.entity_id\|\|null/);
+assert.match(cloud,/event_type:filters\.eventType\|\|filters\.event_type\|\|null/);
+assert.match(cloud,/window\.zukaitServerHistory=\{page:v2EventPage\}/);
+assert.match(cloud,/window\.zukaitServerRecent=\{page:opts=>v2EventPage/);
+assert.match(paths,/source&&typeof source\.page==='function'/);
+assert.doesNotMatch(paths,/state\.jobs|state\.assign|state\.sessions/);
+assert.match(api,/action === "v2_event_history"/);
+assert.match(api,/Math\.max\(1, Math\.min\([^\n]+500\)\)/);
+assert.match(api,/admin\.rpc\("zukait_v2_event_page"/);
+assert.match(api,/next_cursor: nextCursor/);
+console.log('V2 server data adapter contract: ok');

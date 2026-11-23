@@ -1,0 +1,134 @@
+# Synthetic-only compact history qualification. No Supabase credentials or
+# production network requests. Postgres service is a disposable GitHub runner.
+name: Compact history PostgreSQL 17 qualification
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - '.github/workflows/compact-history-pg17.yml'
+      - 'tests/compact-history-isolated.mjs'
+      - 'tests/workshop-forward-lz4-isolated.mjs'
+      - 'tests/compact-history-storage-benchmark-native.mjs'
+      - 'supabase/tests/workshop_forward_lz4_isolated_qa.sql'
+      - 'tests/history-reader-rollout.mjs'
+      - 'tests/compact-history-rollout-gate.mjs'
+      - 'tests/coherent-recovery-pg17.mjs'
+      - 'scripts/backup-zukait-coherent-app-snapshot.ps1'
+      - 'scripts/backup-zukait-two-part.ps1'
+      - 'scripts/restore-zukait-two-part-isolated.ps1'
+      - 'tests/two-part-history-compression.ps1'
+      - 'scripts/check-compact-history-rollout.mjs'
+      - 'docs/storage/COMPACT_HISTORY_RELEASE_EVIDENCE_20261116.json'
+      - 'tests/stage-v124-history-reader-safety.mjs'
+      - 'scripts/prepare-history-reader-candidate.mjs'
+      - 'scripts/history-reader-patch-core.mjs'
+      - 'scripts/history-reader-v128-lock.json'
+      - 'tests/history-reader-v128-safe-stage.mjs'
+      - 'scripts/stage-v124-history-reader-offline.mjs'
+      - 'supabase/migrations/*workshop*history*.sql'
+      - 'supabase/tests/workshop_*history*qa.sql'
+      - 'tests/fixtures/reception-postgres17-baseline.sql'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-history-qualification:
+    name: Test PGlite and disposable PostgreSQL 17
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: synthetic_ci_only_password
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout architecture-v2 source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install pinned test dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify legacy-default compatibility reader
+        run: node tests/history-reader-rollout.mjs
+      - name: Verify v128 exact-source staging fail-closed and 49 unchanged modules
+        run: node tests/history-reader-v128-safe-stage.mjs
+      - name: Verify rollout HOLD and source/approval gates
+        run: node tests/compact-history-rollout-gate.mjs
+      - name: Verify fail-closed offline backup staging
+        run: node tests/stage-v124-history-reader-safety.mjs
+      - name: Run all 12 synthetic compact history groups in PGlite
+        run: node tests/compact-history-isolated.mjs
+      - name: Run all 12 synthetic compact history groups in PostgreSQL 17
+        env:
+          ZUKAIT_COMPACT_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGUSER: 'postgres'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/compact-history-isolated.mjs
+      - name: Verify forward LZ4 compression preserves old PGLZ records
+        env:
+          ZUKAIT_LZ4_QA_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/workshop-forward-lz4-isolated.mjs
+      - name: Compare 24 identical synthetic saves in legacy dual and compact modes
+        env:
+          ZUKAIT_COMPACT_BENCHMARK_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/compact-history-storage-benchmark-native.mjs
+      - name: Parse encrypted Windows coherent backup script without running it
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'scripts/backup-zukait-coherent-app-snapshot.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PASS: Windows operator backup script parsed. No production backup performed.'
+      - name: Parse two-part Windows backup and isolated restore scripts (no execution)
+        shell: pwsh
+        run: |
+          foreach ($name in @('scripts/backup-zukait-two-part.ps1', 'scripts/restore-zukait-two-part-isolated.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $name), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              exit 1
+            }
+            Write-Host "PASS: parsed $name without connecting to production."
+          }
+      - name: Regression test binary-safe history compressor with no production access
+        shell: pwsh
+        run: ./tests/two-part-history-compression.ps1
+      - name: Prove coherent public Mechanical Vehicle backup and isolated PG17 restore
+        env:
+          ZUKAIT_RECOVERY_NATIVE: '1'
+          PGHOST: '127.0.0.1'
+          PGPORT: '5432'
+          PGPASSWORD: synthetic_ci_only_password
+        run: node tests/coherent-recovery-pg17.mjs
+      - name: Qualify staging only, not a production cutover
+        run: |
+          echo 'PASS: synthetic-only history qualification completed'
+          echo 'No production database connection, storage rewrite, migration or deployment'

@@ -1,0 +1,17 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const sql=fs.readFileSync(new URL('../supabase/ARCHITECTURE_V2_ID001_PRELIMINARY_LINKS.sql',import.meta.url),'utf8');
+const api=fs.readFileSync(new URL('../supabase/functions/workshop-api/index.ts',import.meta.url),'utf8');
+const bounded=fs.readFileSync(new URL('../supabase/ARCHITECTURE_V2_BOUNDED_HISTORY.sql',import.meta.url),'utf8');
+assert.match(sql,/session_id text primary key/i,'session ID must be the unique authority key');
+assert.match(sql,/for update/i,'link/reverse projection must lock the session row');
+assert.match(sql,/preliminary_session_already_linked/i,'second active link must be rejected');
+assert.match(sql,/preliminary_link_not_active/i,'stale/second reversal must be rejected');
+assert.match(sql,/preliminary_reversal_reason_required/i,'reversal reason must be mandatory');
+assert.match(bounded,/ID001_PRELIMINARY_LINKED/);
+assert.match(bounded,/ID001_PRELIMINARY_REVERSED/);
+assert.match(bounded,/zukait_v2_apply_preliminary_link_event/,'events must project inside v2_commit_event transaction');
+assert.match(api,/eventType==="ID001_PRELIMINARY_LINKED".*Manager","Supervisor/s,'only Manager/Supervisor may link');
+assert.match(api,/eventType==="ID001_PRELIMINARY_REVERSED".*callerRole!=="Manager"/s,'only Manager may reverse');
+assert.match(api,/preliminary_session_already_linked.*409/s,'duplicate link must surface as HTTP 409');
+assert.match(api,/preliminary_link_not_active.*409/s,'stale reversal must surface as HTTP 409');
+console.log('ID001 preliminary server authority tests passed');

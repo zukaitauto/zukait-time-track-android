@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const src=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const integrity=src.slice(src.indexOf('/* V79 WORK SESSION INTEGRITY AUTHORITY'),src.indexOf('/* V80',src.indexOf('/* V79 WORK SESSION INTEGRITY AUTHORITY')));
+assert.match(integrity,/window\.totalForAssignment=function\(a\)/);
+assert.match(integrity,/assignmentSessionsV79\(a\)\.reduce/,'Actual must accumulate every session for the assignment');
+const employee=src.slice(src.indexOf('// Final screenshot-style Employee dashboard'),src.indexOf('employeeClockTimer=setInterval',src.indexOf('// Final screenshot-style Employee dashboard')));
+assert.match(employee,/const actual=a=>\{try\{return Math\.max\(0,totalForAssignment\(a\)\|\|0\)/,'Employee display must use accumulated assignment actual');
+assert.match(employee,/Actual Worked<b>'\+fm\(worked\)/,'Paused/allotted card must keep previous worked time visible');
+assert.match(employee,/Remaining<b>'\+fm\(remaining\)/);
+console.log('Employee previous worked time visibility regression passed');

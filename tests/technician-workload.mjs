@@ -1,0 +1,117 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+
+const source=fs.readFileSync('app/src/main/assets/technician_workload.js','utf8');
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+assert.ok(html.indexOf('technician_workload.js')>html.indexOf('live_status_authority.js'));
+assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/for source in parser.sources:/,'PC deployment must copy all script assets');
+const elements=new Map(),intervals=new Map();let serial=0,title='';
+const element=()=>({innerHTML:'',isConnected:true,dataset:{},classList:{add(){}},focus(){},contains(){return true;}});
+const modal=element();elements.set('modal',modal);
+const state={jobs:[],assign:[],sessions:[]};
+const users=['Denter','Painter','Mechanic'].map((department,i)=>({id:String(i+1),name:i?'Employee '+i:'AKHIL <test>',role:'Employee',department}));
+let live={status:'Working',session:{emp:'1',job:'LC-1003',assignmentId:'a'}};
+const context={state,users,me:{role:'Supervisor'},document:{hidden:false,head:{appendChild(){}},createElement:element,querySelector:selector=>selector==='#modal .v150-supervisor-modal-close'?element():null,getElementById:id=>elements.get(id)},
+  setInterval(fn){intervals.set(++serial,fn);return serial;},clearInterval(id){intervals.delete(id);},
+  fmt:n=>String(n)+'m',totalForAssignment:a=>a.worked||0,empStatus:a=>a.testStatus||'New',
+  v84TechState:()=>live,
+  zukaitStaffRoster:{filter:team=>team.filter(u=>u.id!=='inactive')},
+  showSupervisorModal(t,body){title=t;for(const [id,e] of elements)if(id!=='modal'){e.isConnected=false;elements.delete(id);}
+    for(const match of body.matchAll(/id="([^"]+)"/g))elements.set(match[1],element());
+    const id=body.includes('twDepartment')?'twDepartment':'twWorkload';elements.get(id).innerHTML=body;
+  }};
+context.window=context;vm.createContext(context);vm.runInContext(source,context);
+users.push({id:'inactive',name:'Former painter',role:'Employee',department:'Painter'});
+context.openTechnicianDepartment('Painter');
+assert.doesNotMatch(elements.get('twDepartment').innerHTML,/Former painter/,'Deactivated technicians must not appear in active department list');
+assert.match(elements.get('twDepartment').innerHTML,/Employee 1/,'Active technicians stay visible');
+users.pop(); // Historical workload scenarios below exercise active staff only.
+
+const tick=()=>[...intervals.values()].forEach(fn=>fn());
+const body=()=>elements.get('twWorkload').innerHTML;
+for(const viewerRole of ['Supervisor','Manager']){
+context.me.role=viewerRole;
+for(const emp of users){
+  state.jobs=[{no:'LC-1003',vehicle:'Toyota Avalon',year:2005,reg:'123 <AB>'},{no:'JC2',vehicle:'Nissan'},{no:'JC3'},{no:'JC4'},{no:'JC5',delivered:true},{no:'JC6',archived:true},{no:'ID001'}];
+  state.assign=[{id:'a',emp:emp.id,job:'LC-1003',suggested:180,worked:80},{id:'b',emp:emp.id,job:'JC2',suggested:60,worked:75,testStatus:'Paused'},
+    {id:'c',emp:emp.id,job:'JC3',suggested:90},{id:'d',emp:emp.id,job:'JC4',completed:true},
+    {id:'e',emp:emp.id,job:'JC4',cancelled:true},{id:'f',emp:emp.id,job:'JC5'},{id:'g',emp:emp.id,job:'JC6'},
+    {id:'h',emp:emp.id,job:'ID001'},{id:'i',emp:'someone-else',job:'JC4'},
+    {id:'history',emp:emp.id,job:'LC-1003',completed:true,worked:999}];
+  live={status:'Working',session:{emp:emp.id,job:'LC-1003',assignmentId:'a'}};
+  const before=JSON.stringify(state);
+  context.openTechnicianDepartment(emp.department);
+  assert.match(elements.get('twDepartment').innerHTML,/Total 3 JC/);
+  assert.match(elements.get('twDepartment').innerHTML,/LC-1003 · Toyota Avalon 2005/);
+  const row={dataset:{twEmp:emp.id}};
+  elements.get('twDepartment').onclick({target:{closest:()=>row}});
+  assert.match(body(),/Present Jobs: 3/);
+  assert.match(body(),/123 &lt;AB&gt;/);
+  assert.match(body(),/Working/);assert.match(body(),/Paused/);assert.match(body(),/Not Started/);
+  assert.match(body(),/100m/);assert.match(body(),/0m/);assert.doesNotMatch(body(),/999m|JC4|JC5|JC6|ID001/);
+  assert.equal(intervals.size,1);
+  assert.equal(JSON.stringify(state),before,'view must not mutate assignments, sessions or jobs');
+  // A finish received while the page stays open removes only this employee's completed work.
+  state.assign[0].completed=true;live={status:'Available',session:null};tick();
+  assert.match(body(),/Present Jobs: 2/);assert.doesNotMatch(body(),/LC-1003/);
+  elements.get('twBack').onclick();assert.match(elements.get('twDepartment').innerHTML,/Total 2 JC/);
+  context.openTechnicianWorkload(emp.id);
+  state.assign.forEach(a=>{if(a.emp===emp.id)a.completed=true;});tick();
+  assert.match(body(),/No unfinished job cards assigned/);
+  // Remote reassignment appears without reopening; duplicate open rows count as one JC.
+  state.assign.push({id:'new',emp:emp.id,job:'JC3'},{id:'duplicate',emp:emp.id,job:'JC3'});tick();
+  assert.match(body(),/Present Jobs: 1/);
+  live={status:'Syncing',session:null};tick();assert.match(body(),/Syncing/);
+  const current=elements.get('twWorkload');current.isConnected=false;tick();assert.equal(intervals.size,0,'closing view stops its timer');
+}
+}
+context.me.role='Employee';title='unchanged';context.openTechnicianWorkload('1');assert.equal(title,'unchanged');
+assert.doesNotMatch(source,/\bsave\s*\(|\bcommitEvent\s*\(|\bsyncNow\s*\(|MutationObserver/);
+console.log('Technician workload: all departments, row navigation, unique unfinished JCs, times, escaping, realtime finish/reassignment, read-only state and timer cleanup passed');
+assert.match(source,/id="twTimeShare"/,'Time Details must expose a Share Card button');
+assert.match(source,/shareTimeDetailsCard\(emp,dateFilter,jobFilter\)/,'share must use the currently selected employee/date/job filters');
+assert.match(source,/timeDetailRows\(emp,dateFilter,jobFilter\)/,'share card must use the same authoritative event rows as the visible table');
+assert.match(source,/toDataURL\('image\/png'\)/,'Time Details share output must be a PNG card');
+assert.match(source,/bridge\.shareImageBase64\(filename,url\)/,'Android must receive the generated PNG card through the native share bridge');
+const nativeSource=fs.readFileSync('app/src/main/java/com/zukait/timetrack/MainActivity.java','utf8');
+assert.match(nativeSource,/public void shareImageBase64\(String filename, String base64\)/,'native bridge must expose PNG image sharing');
+assert.match(nativeSource,/share\.setType\("image\/png"\)/,'native Time Details card must share as image/png');
+
+
+// Production login updates lexical `me`, not necessarily window.me.
+// Exercise the actual dashboard entry point with those identities separated.
+const production={...context,window:{v84TechState:()=>({status:'Available',session:null})}};
+delete production.me;
+vm.createContext(production);
+vm.runInContext("let me={role:'Supervisor'};",production);
+vm.runInContext(source,production);
+const updates=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+vm.runInContext(updates.match(/window\.v84OpenDept=function\(dept\)\{[^\n]+/)[0],production);
+for(const employee of users){
+  title='not opened';
+  production.window.v84OpenDept(employee.department);
+  assert.notEqual(title,'not opened',employee.department+' must open with the production lexical session');
+  production.window.openTechnicianWorkload(employee.id);
+  assert.ok(elements.get('twWorkload'),'employee workload must open with the same session');
+  tick();assert.equal(intervals.size,1,'live refresh must retain the lexical Supervisor session');
+}
+production.window.me={role:'Supervisor'};
+vm.runInContext('me=null;',production);
+title='closed';production.window.v84OpenDept('Denter');assert.equal(title,'closed','stale window identity must not reopen after logout');
+tick();assert.equal(intervals.size,0);
+console.log('Production lexical login: Denting, Painting, Mechanical, workload and logout guards passed');
+
+const stable=fs.readFileSync('app/src/main/assets/supervisor_stable.js','utf8');
+const boardCode=stable.slice(stable.indexOf('function techBoard(st)'),stable.indexOf('let voiceRecognition'));
+let viewer='Manager',staffRows=[{emp:'1',status:'Working'},{emp:'2',status:'Paused'}],host=null,appendCount=0;
+const managerRoot={querySelector:()=>host,appendChild(node){host=node;appendCount++;}};
+const boardContext={users,window:{},U:()=>users,staff:()=>staffRows,role:()=>viewer,document:{getElementById:()=>managerRoot,createElement:()=>({innerHTML:''})}};
+vm.createContext(boardContext);vm.runInContext(boardCode,boardContext);
+const managerHTML=boardContext.window.zukaitTechnicianBoardHTML();viewer='Supervisor';assert.equal(boardContext.window.zukaitTechnicianBoardHTML(),managerHTML,'both dashboards must share identical board markup and counts');
+assert.match(managerHTML,/v237-spray-gun/);assert.match(managerHTML,/openTechnicianDepartment/);assert.match(managerHTML,/1 <em>\/ 1/);
+viewer='Manager';boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.equal(host.innerHTML,managerHTML);boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.equal(appendCount,1,'repeated composition must keep a single board');
+staffRows=[];boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.doesNotMatch(host.innerHTML,/1 <em>\/ 1/,'new live projection must update working counts');
+viewer='Employee';staffRows=[{emp:'1',status:'Working'}];const saved=host.innerHTML;boardContext.window.zukaitRefreshManagerTechnicianBoard();assert.equal(host.innerHTML,saved,'other roles cannot inject manager board');
+assert.match(html,/zukaitRefreshManagerTechnicianBoard/);assert.match(html,/addEventListener\('zukait-live-status'/);
+console.log('Shared Manager board: identical renderer, spray gun, department routes, live counts, single board and role isolation passed');

@@ -1,0 +1,24 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const s=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const start=s.indexOf('V123 MANAGER WORKSHOP PERFORMANCE');
+const end=s.indexOf('V106 ID001 FINAL AUTHORITY',start);
+assert.ok(start>=0&&end>start,'Manager Workshop Performance block must exist');
+const b=s.slice(start,end);
+assert.match(b,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'Workshop Performance must stay three-column');
+assert.match(b,/backdrop-filter:blur\(14px\) saturate\(145%\)/,'performance cards must use liquid-glass treatment');
+assert.match(b,/card\('purchase','Purchase Cost'/,'Combined Purchase Cost card must exist');
+assert.match(b,/const p=Number\(x\.purchaseAmount\)/,'Spare Parts Expense must use the saved final purchase amount');
+assert.match(b,/p\*q/,'Spare Parts Expense must multiply unit price by quantity');
+assert.match(b,/No purchase costs yet/);
+assert.match(b,/zukaitV2\.sparePartsMain\.openList/,'clicking a purchase JC must open its Parts List');
+assert.match(b,/c\.actuals/,'Consumables Expense must use finalized actual records');
+assert.match(b,/!x\.voided&&x\.locked/,'Consumables Expense must exclude voided/unfinalized records');
+assert.match(b,/consSelectTotalJC/,'clicking a consumables JC must drill into its consumables detail');
+assert.match(b,/No\.<\/b><b>Job Card<\/b><b>Vehicle<\/b><b>Purchase/,'spare parts drilldown columns must match requested format');
+assert.doesNotMatch(b,/card\('consumables','Consumables Expense'/,'V123 must not render the duplicate Consumables Expense card; V145 owns it');
+const v145=s.slice(s.indexOf('V145 MANAGER WORKSHOP PERFORMANCE'));
+assert.match(v145,/grid\.querySelector\('\.v145-consumables'\)/,'Consumables Expense card must be reused on each render');
+assert.match(v145,/a&&!a\.voided&&a\.locked/,'Consumables Expense must count finalized, non-voided records');
+assert.match(v145,/Paint.*Paint Materials.*Total Consumables.*Job Cards/,'Consumables detail must show its breakdown');
+console.log('Manager Workshop Performance spare-parts/consumables regression passed');
+

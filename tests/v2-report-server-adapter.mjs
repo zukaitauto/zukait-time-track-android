@@ -1,0 +1,11 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+const service=fs.readFileSync('app/src/main/assets/v2/features/reports/service.js','utf8');
+const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+const sql=fs.readFileSync('supabase/ARCHITECTURE_V2_REPORTING.sql','utf8');
+assert.match(cloud,/action:'v2_report_page'/);assert.match(cloud,/action:'v2_search_jobcards'/);assert.match(cloud,/window\.zukaitServerReports=\{page:v2ReportPage,searchJobCards:v2SearchJobCards\}/);
+assert.match(cloud,/Math\.max\(1,Math\.min\(Number\(limit\)\|\|100,500\)\)/);assert.match(service,/MAX_PAGE=500/);assert.match(service,/fullHistoryScan:false/);
+assert.match(api,/action === "v2_report_page"/);assert.match(api,/action === "v2_search_jobcards"/);assert.match(api,/unsupported_report/);assert.match(api,/admin\.rpc\("zukait_v2_report_page"/);
+assert.match(sql,/security invoker/i);assert.match(sql,/grant execute[^;]+service_role/is);assert.match(sql,/revoke all[^;]+anon,authenticated/is);assert.match(sql,/limit greatest\(1,least\(coalesce\(p_limit,100\),500\)\)/i);
+assert.doesNotMatch(service,/state\.jobs|state\.assign|state\.sessions/);
+console.log('V2 report server adapter/security contract: ok');

@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const v67=fs.readFileSync('app/src/main/assets/v67_updates.js','utf8');
+const v74=fs.readFileSync('app/src/main/assets/v74_updates.js','utf8');
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
+const start=v67.indexOf('function renderManager67()'),end=v67.indexOf('const css=',start),base=v67.slice(start,end);
+for(const label of ['Employee Requests','Attention','Ready for Delivery','Workshop Control Center','Actual Worked Hours','Job / Production Tools','Admin','Consumables','Spare Parts']) assert.ok(base.includes(label),'Missing Manager base section: '+label);
+const ss=v74.indexOf('function settle(){',v74.indexOf('V156 FINAL MANAGER UI AUTHORITY')),se=v74.indexOf('window.v156SettleManagerUI=settle',ss),settle=v74.slice(ss,se);
+for(const hook of ['v135ApplyManagerMenu','v123ApplyManagerPerformance','v145ApplyConsumablesPerformance','v134ApplyManagerCapacity','v753InjectDashboardID001Button','zukaitEstimate?.ensureDashboardCards','v154ApplyManagerWorkshopControl','v144BindManagerConsumables','v184ApplyManagerOutputNavigation']) assert.ok(settle.includes(hook),'Missing synchronous Manager hook: '+hook);
+for(const exportName of ['v74ApplyManagerFinal=polish','v134ApplyManagerCapacity=apply','v135ApplyManagerMenu=apply','v753InjectDashboardID001Button=injectDashboardID001Button']) assert.ok(v74.includes(exportName),'Missing Manager export: '+exportName);
+assert.match(html,/v74_updates\.js\?v=200/);
+assert.match(html,/V199 LAST-LOADED MANAGER COMPOSITION AUTHORITY/);
+assert.match(html,/v74ApplyManagerFinal/);
+assert.match(html,/v156SettleManagerUI/);
+console.log('Manager complete composition contract passed');

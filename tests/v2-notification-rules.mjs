@@ -1,0 +1,10 @@
+import fs from'node:fs';import assert from'node:assert/strict';import vm from'node:vm';const code=fs.readFileSync('app/src/main/assets/v2/features/notifications/rules.js','utf8');const s={window:{},Date};vm.createContext(s);vm.runInContext(code,s);const n=s.window.zukaitV2.notifications;
+assert.equal(n.completionRisk({id:'J1',workflowStage:'DENTING',ageDays:24}),null);
+assert.equal(n.completionRisk({id:'J1',workflowStage:'DENTING',ageDays:30}).severity,'urgent');
+assert.equal(n.completionRisk({id:'J1',workflowStage:'DELIVERED',ageDays:40}),null);
+assert.equal(n.partsDelay({id:'P1',status:'ORDERED',pendingDays:7}).severity,'urgent');
+assert.equal(n.partsDelay({id:'P1',status:'RECEIVED',pendingDays:9}),null);
+assert.equal(n.materialVariance({id:'M1',suggested:10,actual:11}),null);
+assert.equal(n.materialVariance({id:'M1',suggested:10,actual:13}).type,'MATERIAL_VARIANCE');
+assert.equal(n.dutyEnd({id:'A1',jobCard:'JC1',active:true},{boundary:'13:00'}).action,'CONFIRM_DUTY_END');assert.equal(n.dutyEnd({id:'A1',active:true},{boundary:'14:00'}),null);assert.equal(n.additionalTime({id:'AT1',jobCard:'JC1',status:'PENDING'}).action,'REVIEW_ADDITIONAL_TIME');assert.equal(n.additionalTime({id:'AT1',status:'APPROVED'}),null);assert.equal(n.repeatWork({id:'R1',job:'JC1'}).action,'OPEN_REPEAT_WORK');assert.equal(n.repeatWork({id:'R1',completed:true}),null);assert.equal(n.qcReady({id:'J2',jobCard:'JC2',workflowStage:'QC'}).action,'OPEN_QC');assert.equal(n.qcReady({id:'J2',jobCard:'JC2',workflowStage:'READY_FOR_DELIVERY'}).action,'OPEN_READY_FOR_DELIVERY');assert.equal(n.qcReady({id:'J2',workflowStage:'PAINTING'}),null);const dn=n.denterNotice({id:'P9',jobCard:'JC9',status:'RECEIVED'});assert.equal(dn.type,'SPARE_PART_DENTER_NOTICE');assert.equal(dn.targetRole,'Supervisor');assert.equal(dn.action,'OPEN_SPARE_PART');assert.equal(n.dedupe([dn,{...dn}]).length,1);const a=n.build('QC_READY',{entityId:'J1',status:'READY'});const b={...a};assert.equal(n.dedupe([a,b]).length,1);
+console.log('V2 notification rules: ok');

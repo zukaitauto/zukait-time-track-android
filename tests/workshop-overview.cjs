@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(process.argv[2]||'app/src/main/assets/workshop_overview.js','utf8');
+const sandbox={window:{},document:{addEventListener(){},createElement(){return{}},head:{appendChild(){}},body:{}},MutationObserver:class{observe(){}},setTimeout(){},setInterval(){}};
+vm.runInNewContext(source,sandbox);
+const api=sandbox.window.zukaitWorkshopOverview;
+const jobs=[{no:'JC01',reg:'1234 AB',createdAt:2},{no:'JC02',reg:'2222 AA',createdAt:1},{no:'JC03',delivered:true},{no:'ID001'},{no:'JC04',archived:true},{no:'JC05',status:'Closed'},{no:'JC06',createdAt:3}];
+assert.equal(JSON.stringify(api.unassigned(jobs,[{job:'JC02',completed:true},{job:'JC06',cancelled:true}]).map(j=>j.no)),JSON.stringify(['JC01','JC06']));
+assert.equal(api.search(jobs,'1234-ab')[0].no,'JC01');
+assert.equal(api.search(jobs,'jc 02')[0].no,'JC02');
+assert.equal(api.search(jobs,'not-found').length,0);
+assert.equal(api.unassigned([{no:'JC01'}],[{job:'jc01'}]).length,0);
+assert.equal(api.unassigned([{no:'JC01'}],[{job:'JC01',cancelled:true}]).length,1);
+console.log('PASS: queue excludes completed assignments, closed/delivered/archived cards and ID001; cancelled assignments re-enter queue; normalized registration and Job Card lookup.');

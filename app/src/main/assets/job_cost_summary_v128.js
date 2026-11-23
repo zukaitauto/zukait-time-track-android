@@ -1,0 +1,69 @@
+(function(){
+'use strict';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>Number.isFinite(Number(v))?Number(v):0;
+function job(no){return (state.jobs||[]).find(j=>j&&String(j.no)===String(no))||null}
+function assignmentActual(a){
+ const ss=(state.sessions||[]).filter(s=>s&&s.emp===a.emp&&s.job===a.job&&!s.preliminaryLinkedJob);
+ return ss.reduce((n,s)=>{const end=s.end||Date.now();return n+Math.max(0,(end-num(s.start))/60000)},0);
+}
+function labourValue(a,rate){
+ if(typeof labourCost==='function'){const v=Number(labourCost(a));if(Number.isFinite(v))return v}
+ return assignmentActual(a)/60*rate;
+}
+function consumablesStatus(no){
+ const c=state.consumables||{},issues=(c.issues||[]).filter(x=>x&&!x.voided&&x.jobCard===no),actuals=(c.actuals||[]).filter(x=>x&&!x.voided&&x.locked&&x.jobCard===no);
+ if(actuals.length)return 'Completed';
+ if(issues.length)return 'Actual Pending';
+ return 'Not Started';
+}
+function paintStatus(no){
+ const p=state.paintPurchasing||{},orders=(p.orders||[]).filter(x=>x&&!x.voided&&x.jobCard===no).sort((a,b)=>num(b.createdAt)-num(a.createdAt));
+ if(!orders.length)return 'No PO';
+ const o=orders[0];if((o.returns||[]).some(x=>x&&!x.voided))return 'Returned / Adjusted';if(o.nilPaintPurchase)return 'NIL – No Purchase Required';if(o.receivedAt)return 'Received / Costed';return 'PO Created';
+}
+function data(no){
+ const master=window.zukaitJobCardMaster?.costs?.(no),j=job(no);if(master&&j)return {...master,job:j,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no)};
+ if(!j)return null;
+ const rate=num(state.labourRate||2.5),aa=(state.assign||[]).filter(a=>a&&a.job===no&&!a.cancelled);
+ const regular=aa.reduce((n,a)=>n+labourValue(a,rate),0);
+ const preliminary=(state.sessions||[]).filter(s=>s&&String(s.preliminaryLinkedJob||'')===String(no)&&s.end).reduce((n,s)=>n+Math.max(0,(num(s.end)-num(s.start))/60000)/60*rate,0);
+ const labour=Math.round((regular+preliminary)*1000)/1000;
+ const c=state.consumables||{},materials=Math.round((c.actuals||[]).filter(x=>x&&!x.voided&&x.locked&&x.jobCard===no).reduce((n,x)=>n+num(x.totalCost),0)*1000)/1000;
+ const paintRow=window.zukaitPaintOrderRules?.costForJob(state.paintPurchasing?.orders||[],no)||((state.paintPurchasing?.orders||[]).some(o=>String(o?.jobCard||'').trim().toUpperCase()===String(no).trim().toUpperCase())&&(!!window.zukaitPaintOrderRules?.costForJob||!(state.paintPurchasing?.orders||[]).some(o=>String(o?.jobCard||'').trim().toUpperCase()===String(no).trim().toUpperCase()&&(o.receivedAt||o.nilPaintPurchase)))?{netPaintCost:0}:(state.paintCosting&&state.paintCosting[no])),paint=Math.round(num(paintRow?.netPaintCost??j.paintCost)*1000)/1000;
+ const consumables=Math.round((materials+paint)*1000)/1000;
+ let parts=0;
+ try{const rows=window.zukaitV2?.sparePartsMain?.reportRows?.()||[],chargeable=new Set(['RECEIVED','SUPERVISOR_VERIFIED','DENTER_CHECKED','SUPERVISOR_CONFIRMED','FITTED','CUSTOMER_SETTLEMENT']);parts=Math.round(rows.filter(x=>String(x?.jobCard||'')===String(no)&&chargeable.has(String(x?.status||'').toUpperCase())).reduce((n,x)=>n+num(x.amount),0)*1000)/1000}catch(_){}
+ const sublet=(state.sublets||[]).filter(x=>x&&String(x.jobCard).trim().toUpperCase()===String(no).trim().toUpperCase()).reduce((n,x)=>n+(Number.isSafeInteger(x.amountMills)&&x.amountMills>0?x.amountMills:0),0)/1000;
+ return {job:j,labour,materials,paint,consumables,parts,sublet,purchase:Math.round((parts+sublet)*1000)/1000,total:Math.round((labour+consumables+parts+sublet)*1000)/1000,consumablesStatus:consumablesStatus(no),paintStatus:paintStatus(no),rate,labourHours:rate>0?Math.round((labour/rate)*1000)/1000:0};
+}
+window.v128JobCostData=data;
+function pill(label,value,cls){return '<div class="v128-status '+(cls||'')+'"><small>'+esc(label)+'</small><b>'+esc(value)+'</b></div>'}
+function costPill(label,value,cls,action,no){return '<button type="button" class="v128-status '+cls+'" data-workshop-action="'+action+'" data-job="'+esc(no)+'"><small>'+esc(label)+' <span aria-hidden="true">›</span></small><b>'+esc(value)+'</b></button>'}
+function preliminaryHtml(no){
+ const rows=(state.sessions||[]).filter(s=>s&&String(s.preliminaryLinkedJob||'')===String(no)&&s.end);
+ if(!rows.length)return '';
+ return '<div class="v128-prelim"><b>Transferred Preliminary Work</b>'+rows.map(s=>{const mins=Math.max(0,Math.round((num(s.end)-num(s.start))/60000)),name=(state.users||[]).find(u=>u&&u.id===s.emp)?.name||s.emp||'Technician';return '<div class="v128-prelim-row"><span>'+esc(name)+' · '+mins+' min</span><button type="button" onclick="v128ReversePreliminary(\''+esc(s.id)+'\')">Reverse to ID001</button></div>'}).join('')+'</div>';
+}
+window.v128ReversePreliminary=async function(sessionId){if(typeof me==='undefined'||me?.role!=='Manager')return alert('Manager access required.');if(!confirm('Reverse this transferred preliminary work back to ID001? The Job Card labour and cost will be recalculated.'))return;const reason=prompt('Reason for reversing this preliminary work to ID001:','');if(reason===null)return;const why=String(reason).trim();if(!why)return alert('Enter a reversal reason.');if(typeof window.v143ReversePreliminaryWork!=='function')return alert('Preliminary reversal is unavailable.');return window.v143ReversePreliminaryWork(sessionId,why)};
+function managerHtml(no){
+ const d=data(no);if(!d)return'';
+ return '<section class="v128-job-cost"><div class="v128-cost-head"><div><b>Total Job Card Cost</b><small>Actual recorded cost · Parts + Sublet + Consumables + Labour</small></div></div><div class="v128-status-grid">'+pill('CONSUMABLES',d.consumablesStatus,'materials')+pill('PAINT',d.paintStatus,'paint')+'</div><div class="v128-cost-grid">'+costPill('PURCHASE COST','OMR '+(d.purchase??d.parts).toFixed(3),'parts','cost-parts',no)+costPill('CONSUMABLES COST','OMR '+d.consumables.toFixed(3),'materials','cost-materials-paint',no)+costPill('LABOUR COST','OMR '+d.labour.toFixed(3),'labour','cost-labour',no)+costPill('TOTAL JOB COST','OMR '+d.total.toFixed(3),'total','cost-total',no)+'</div>'+preliminaryHtml(no)+'</section>';
+}
+function supervisorHtml(no){
+ const d=data(no);if(!d)return'';
+ return '<section class="v128-job-cost v128-supervisor-status"><div class="v128-cost-head"><div><b>Materials Status</b><small>Job Card consumables and paint progress</small></div></div><div class="v128-status-grid">'+pill('CONSUMABLES',d.consumablesStatus,'materials')+pill('PAINT',d.paintStatus,'paint')+'</div></section>';
+}
+function scope(){return document.querySelector('#modal .modal-content,#modalContent,.modal-content')||document.getElementById('modal')}
+function inject(no,manager){
+ const s=scope();if(!s||s.querySelector?.('.v128-job-cost'))return;const html=manager?managerHtml(no):supervisorHtml(no);if(!html)return;
+ const box=document.createElement('div');box.innerHTML=html;const node=box.firstElementChild||box;
+ const head=s.querySelector?.('.section-title');if(head&&head.insertAdjacentElement)head.insertAdjacentElement('afterend',node);else if(s.prepend)s.prepend(node);else if(s.appendChild)s.appendChild(node);
+}
+function wrap(name,manager){
+ const old=window[name];if(typeof old!=='function'||old.__v128CostWrapped)return;
+ const fn=function(no){const r=old.apply(this,arguments);setTimeout(()=>inject(no,manager),0);return r};fn.__v128CostWrapped=true;window[name]=fn;
+}
+wrap('openManagerJobDetails',true);wrap('openSupervisorJob',false);
+const css=document.createElement('style');css.id='v128JobCostStyle';css.textContent='.v128-job-cost{margin:10px 0;padding:12px;border:1px solid #dbe3ee;border-radius:14px;background:#fff}.v128-cost-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.v128-cost-head b,.v128-cost-head small{display:block}.v128-cost-head b{font-size:13px}.v128-cost-head small{font-size:8px;color:#64748b;margin-top:2px}.v128-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.v128-cost-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:7px}.v128-status{padding:9px;border-radius:10px;border:1px solid #dbe3ee;background:#f8fafc;min-width:0}.v128-status small,.v128-status b{display:block}.v128-status small{font-size:7px;font-weight:900;color:#64748b}.v128-status b{font-size:12px;margin-top:3px;overflow-wrap:anywhere}.v128-status.parts{background:#fff7ed;border-color:#fed7aa}.v128-status.labour{background:#eff6ff;border-color:#bfdbfe}.v128-status.materials{background:#f0fdf4;border-color:#bbf7d0}.v128-status.paint{background:#fff7fb;border-color:#fbcfe8}.v128-status.total{background:#f5f3ff;border-color:#ddd6fe}.v128-status.total b{font-size:15px}.v128-cost-source{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:8px;padding:8px;border-radius:9px;background:#f8fafc;color:#475569;font-size:8px}.v128-cost-source b{grid-column:1/-1;color:#334155;font-size:9px}.v128-prelim{margin-top:9px;padding:9px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff}.v128-prelim> b{font-size:10px}.v128-prelim-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;font-size:9px}.v128-prelim-row button{border:0;border-radius:8px;padding:7px 9px;background:#b45309;color:#fff;font-weight:800;font-size:8px}@media(max-width:650px){.v128-cost-source{grid-template-columns:1fr}.v128-cost-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}.v128-cost-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.v128-cost-grid .v128-status{display:block;width:100%;text-align:left;min-height:78px;cursor:pointer;box-sizing:border-box;border-radius:13px;box-shadow:0 3px 0 #17324b12}.v128-cost-grid .v128-status small{font-size:11px}.v128-cost-grid .v128-status b{font-size:17px}.v128-cost-grid .v128-status small>span{float:right}.v128-cost-grid .v128-status:focus-visible{outline:3px solid #2585b6;outline-offset:3px}';document.head.appendChild(css);
+})();

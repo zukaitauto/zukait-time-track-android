@@ -1,0 +1,29 @@
+name: Manager financial report layout
+on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/manager_profit_performance.js'
+      - 'tests/manager-profit-responsive.mjs'
+      - '.github/workflows/manager-profit-layout.yml'
+permissions:
+  contents: read
+jobs:
+  browsers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/manager-profit-responsive.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manager-profit-layout
+          path: artifacts/reception/manager-profit-*.png
+          if-no-files-found: ignore

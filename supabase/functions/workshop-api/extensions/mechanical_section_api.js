@@ -1,0 +1,43 @@
+import {workedMinutes} from '../time_management_rules.js';
+import {mechanicalRoute} from './mechanical_route.js';
+export async function mechanicalSectionApi(admin,actor,body,options){
+ const fail=(code,status)=>({status,body:{ok:false,code}});
+ if(options.enabled!==true)return fail('extension_disabled',403);
+ if(!(actor?.role==='Manager'||actor?.id==='SUP003'&&['Supervisor','Mechanical Supervisor'].includes(actor.role)))return fail('mechanical_forbidden',403);
+ if(!body.command||typeof body.command!=='object'||Array.isArray(body.command)||Object.keys(body).some(k=>!['action','command'].includes(k))||JSON.stringify(body.command).length>70000)return fail('invalid_mechanical_section',400);
+ try{
+  if(body.command.operation==='VEHICLE_LOOKUP'){
+   const {registration}=body.command;
+   if(typeof registration!=='string'||!registration.trim()||registration.length>80||
+      Object.keys(body.command).some(k=>!['operation','registration'].includes(k)))return fail('invalid_registration',400);
+   const {data,error}=await admin.rpc('zukait_vehicle_lookup',{p_registration:registration});
+   if(error)throw error;
+   const fresh=await options.verifySession();
+   if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
+   return {status:200,body:{ok:true,...data}};
+  }
+  // Independent checklist intake has its own guarded database RPC.
+  // It never creates or changes a workshop Job Card.
+  if(body.command.operation==='CREATE_LINKED_JOB'){
+   const {data,error}=await admin.rpc('zukait_mechanical_link_approved',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});
+   if(error)throw error;
+   const fresh=await options.verifySession();
+   if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
+   return {status:200,body:{...data,request_id:body.command.request_id}};
+  }
+  if(['CREATE','LIST','APPROVE'].includes(body.command.operation)){
+   const {data,error}=await admin.rpc('zukait_mechanical_prejob',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});
+   if(error)throw error;
+   const fresh=await options.verifySession();
+   if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
+   return {status:200,body:data};
+  }
+  const {data,error}=await admin.rpc('zukait_mechanical_section',{p_actor:actor.id,p_session_hash:options.sessionHash,p_command:body.command});if(error)throw error;
+  if(body.command.operation!=='READ')return {status:200,body:data};
+  const result={...data,jobNumbering:'MJC',assign:(data.assign||[]).map(a=>({id:a.id,job:a.job,emp:a.emp,suggested:a.suggested,completed:a.completed,cancelled:a.cancelled,handedOverToAssignmentId:a.handedOverToAssignmentId,workedMinutes:workedMinutes(data,a)}))};
+  delete result.sessions;delete result.workshopHolidays;
+  if(options.qcEnabled===true&&['qc','ready'].includes(body.command.view)){const qc=await mechanicalRoute(admin,actor,{action:'mechanical_qc_overview'},options);if(qc.status!==200)return qc;const jobs=new Set(result.jobs.map(j=>String(j.no))),rows=qc.body.rows.filter(r=>jobs.has(String(r.jobCard)));result.qc={ok:true,rows};}
+  const fresh=await options.verifySession();if(!fresh||fresh.id!==actor.id||fresh.role!==actor.role)return fail('invalid_session',401);
+  return {status:200,body:result};
+ }catch(error){const code=String(error?.message||'');const known=/^(mechanical_|invalid_mechanical_|reception_|job_number_|time_|estimate_draft_deleted)/.test(code);return fail(known?code:'mechanical_section_unavailable',code==='mechanical_invalid_session'?401:/forbidden/.test(code)?403:known?409:503);}
+}
