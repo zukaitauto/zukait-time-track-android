@@ -216,18 +216,21 @@ function render(){
    if(!manager()){draw('<p class="zs-warning">Only Manager can review older materials.</p>');return}
    draw('<h3>Older Materials — One-time Setup</h3>'+ 
      '<button type="button" class="zs-btn secondary" onclick="zukStockNav(\'add\',true)">← Return to Add Stock</button>'+
-     '<p class="zs-muted">The existing Material Master is unchanged. Choose the department for the material (shared by all its brands). Each brand keeps its own stock. A new brand starts at ZERO; prices and job costs are unchanged.</p>'+
+     '<p class="zs-muted">Already-linked materials need no further linking. For an unlinked material, choose the department used by all its brands. Each brand has a separate stock balance; linking does not prove or set a physical quantity. Verify opening stock separately. Master prices and Job Card costs are unchanged.</p>'+
      (view.legacyItems.length?view.legacyItems.map((x,i)=>{
        const paint=x.category==='Paint';
        const dept=String(x.department||'Unassigned');
        const options=paint?['Painting']:['Mechanical','Painting','Both'];
        return '<div class="zs-card"><div class="zs-row"><b>'+esc(x.name)+' — '+esc(x.brand)+'</b>'+
          '<span class="zs-muted">'+esc(x.unit)+' · '+esc(x.category)+'</span></div>'+
-         '<p class="zs-muted">Current: '+esc(dept)+(x.linked?' · Stock entry exists':' · Not linked')+'</p>'+
-         '<div class="zs-two"><div><label>Used in department</label>'+
-         '<select id="zs-legacy-origin-'+i+'"><option value="">Choose department</option>'+
-         options.map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></div>'+
-         '<div style="display:flex;align-items:end"><button class="zs-btn" type="button" onclick="zukStockLegacyLink('+i+')"'+(view.busy?' disabled':'')+'>Link Material</button></div></div></div>';
+         '<p class="zs-muted">Current: '+esc(dept)+'</p>'+
+         (x.linked?
+          '<p class="zs-muted" role="status" style="color:#146239;font-weight:750">✓ Already linked to Stock — no setup needed. Check Stock Balance for verified quantities.</p>':
+          '<p class="zs-warning">Not linked to Stock. Link this material and brand before entering an opening count.</p>'+
+          '<div class="zs-two"><div><label for="zs-legacy-origin-'+i+'">Used in department</label>'+
+          '<select id="zs-legacy-origin-'+i+'"><option value="">Choose department</option>'+
+          options.map(y=>'<option value="'+y+'">'+y+'</option>').join('')+'</select></div>'+
+          '<div style="display:flex;align-items:end"><button class="zs-btn" type="button" onclick="zukStockLegacyLink('+i+')"'+(view.busy?' disabled':'')+'>Link Material</button></div></div>')+'</div>';
      }).join(''):'<div class="zs-card">No older priced material/brand pairs on this page.</div>')+
      '<div class="zs-row">'+
      (view.legacyPage>0?'<button class="zs-btn secondary" onclick="zukStockLegacyPage('+(view.legacyPage-1)+')">Previous</button>':'')+
@@ -349,7 +352,7 @@ window.zukStockLegacyReview=()=>loadLegacy(0);
 window.zukStockLegacyPage=page=>loadLegacy(page);
 window.zukStockLegacyLink=async(index)=>{
  if(!manager()||view.busy||view.loading)return;
- const x=view.legacyItems[index];if(!x)return;
+ const x=view.legacyItems[index];if(!x||x.linked===true)return;
  const origin=document.getElementById('zs-legacy-origin-'+index)?.value;
  if(!['Mechanical','Painting','Both'].includes(origin)){
    view.error='Choose Mechanical, Painting or Both.';render();return;
