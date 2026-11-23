@@ -128,6 +128,17 @@ begin
      (pg_catalog.trunc(v_line.new_qty)<>v_line.new_qty or
       pg_catalog.trunc(v_line.old_qty)<>v_line.old_qty) then
    raise exception 'PIECE_WHOLE_REQUIRED' using errcode='22023';end if;
+  -- Do not double-charge a Job Card that already has an explicit Stock
+  -- reservation. Separate reservation lot finalisation must be approved and
+  -- integrated before activating both workflows together.
+  if exists (
+    select 1 from public.zukait_stock_reservations r
+    where r.job_card=v_line.jc and r.material_id=v_line.mid
+      and r.brand_id=v_line.bid and r.status='reserved'
+      and r.reserved_qty>0
+  ) then
+    raise exception 'PAINT_RESERVATION_FINALISATION_REQUIRED' using errcode='23514';
+  end if;
   select a.* into v_applied from public.zukait_stock_paint_applied a
    where a.job_card=v_line.jc and a.material_id=v_line.mid
      and a.brand_id=v_line.bid for update;
