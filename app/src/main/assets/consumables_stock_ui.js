@@ -97,12 +97,13 @@ const css='<style>'+
 function draw(body) {
   const live=liveStockReady();
   if(!live&&typeof window.openModal!=='function')return;
-  const names=[['balance','📦 Stock Balance'],['add','➕ Add Stock'],['history','🕘 Stock History'],
-     ['adjust','⚖️ Stock Adjustment'],['reports','📊 Stock Reports']];
-  const nav=names.map(([key,name])=>'<button type="button" class="'+(view.page===key?'zs-active':'')+
-    '" onclick="zukStockNav(\''+key+'\')">'+name+'</button>').join('');
+  // Live Stock screens are independent views; keep legacy nav only for isolated QA.
+  const nav=live?'':[['balance','Stock Balance'],['add','Add Stock'],['history','Stock History'],
+    ['adjust','Stock Adjustment'],['reports','Stock Reports']]
+    .map(([key,name])=>'<button type="button" class="'+(view.page===key?'zs-active':'')+
+      '" onclick="zukStockNav(\''+key+'\')">'+name+'</button>').join('');
   const header='<div class="zs"><div class="zs-row">'+
-    (live?'<button class="zs-btn secondary" onclick="zukStockLiveHome()">← Stock Management</button>':
+    (live?'<button class="zs-btn secondary" onclick="zukStockLiveHome()">← '+esc(departmentTitle())+'</button>':
       '<button class="zs-btn secondary" onclick="openConsumablesModule()">← Consumables</button>')+
     (live?'<button class="zs-btn secondary" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button>':
       '<button class="zs-btn secondary" onclick="closeModal()">✕ Close</button>')+'</div>'+
@@ -112,7 +113,7 @@ function draw(body) {
       [['','All departments'],['Painting','Paint Consumables'],['Mechanical','Mechanical Consumables']])
       .map(([value,name])=>'<option value="'+value+'"'+(value===department?' selected':'')+'>'+name+'</option>').join('')+'</select>'+
     (department?'<p class="zs-muted">Shared items use the same stock balance in both departments.</p>':'')+
-    '<div class="zs-nav">'+nav+'</div>';
+    (live?'':'<div class="zs-nav">'+nav+'</div>');
   const message=view.error?'<div class="zs-warning">'+esc(view.error)+'</div>':'';
   const markup=css+header+message+(body||'')+'</div>';
   if(live){renderStockScreen(previewHomeCss+markup,view.page);return;}
@@ -186,10 +187,11 @@ function render(){
  if(view.page==='add'){
     const c=catalog(),row=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected),
      selected=row||view.items[0];
-    if(department&&!view.items.length){draw('<p class="zs-card">No stock items assigned to this department. A Manager can link items from the Stock Balance screen.</p>');return}
+    const noAssignedItems=department&&!view.items.length;
     const pairOptions=view.items.map(x=>'<option value="'+esc(label(x))+'"></option>').join(''),
      pairName=selected?label(selected):'';
     draw('<h3>Add / Open Stock</h3>'+
+     (noAssignedItems?'<p class="zs-warning">No linked material and brand pairs in this department. Ask the Manager to review older materials in Stock Balance. Stock cannot be saved until a valid pair is linked.</p>':'')+
      '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
      (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
      '<label>Search Material + Brand</label><input id="zs-material-brand-search" list="zs-material-brand-options" autocomplete="off" value="'+esc(pairName)+'" oninput="zukStockResolvePair()">'+
@@ -204,7 +206,7 @@ function render(){
      '<label><input id="zs-count-confirmed" type="checkbox" style="width:auto" /> I have physically counted this material and brand</label>'+
      '<label>Count reference / reason</label><textarea id="zs-opening-note" rows="2" maxlength="180" placeholder="e.g. Verified opening count, 21 Nov"></textarea></div>'+
      '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
-     '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy?' disabled':'')+'>Save Purchased Stock</button>');
+     '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy||noAssignedItems?' disabled':'')+'>Save Purchased Stock</button>');
     return;
   }
   if(view.page==='history'){
@@ -722,7 +724,7 @@ function showLiveHome(){
  const content=choosing?departmentMenu():
   '<div class="zs-home-hero"><h3>'+esc(departmentTitle())+'</h3>'+
   '<p class="zs-preview-note">Live department-filtered inventory. Shared materials use one physical balance.</p></div>'+
-  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+tiles+'</div>'+stockMasterActions();
+  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+tiles+'</div>';
  const markup=css+previewCss+previewHomeCss+
   '<section class="zs zs-preview" data-stock-view="home">'+
   '<header class="zs-screen-toolbar">'+
@@ -758,7 +760,7 @@ function previewHome(){
     '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
     '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
     '<span class="zs-home-chevron" aria-hidden="true">›</span></button>'
-  ).join('')+'</div>'+stockMasterActions();
+  ).join('')+'</div>';
 }
 // This is a real full-screen in-app page, not a modal. The Stock menu and
 // each selected detail screen are mutually exclusive, with explicit Back.
