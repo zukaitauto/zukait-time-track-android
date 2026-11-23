@@ -98,14 +98,14 @@ try {
  approx((await stock()).physical,7);
 
  // Fractional Piece must not be stored nor rounded by NUMERIC(18,4).
- await assert.rejects(()=>call(await live(),data(
+ await assert.rejects(()=>call(revBefore,data(
    actual('JC12500','clear',3),actual('JC12501','tape',1.5)
   )),/PIECE_WHOLE_REQUIRED/);
  assert.equal(await live(),revBefore);
  approx((await stock('tape')).physical,5);
 
  // A multi-line save is all-or-nothing, including its first valid line.
- await assert.rejects(()=>call(await live(),data(
+ await assert.rejects(()=>call(revBefore,data(
    actual('JC12500','clear',4),actual('JC12501','tape',90)
   )),/INSUFFICIENT_STOCK/);
  assert.equal(await live(),revBefore);
