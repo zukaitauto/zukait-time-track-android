@@ -656,8 +656,14 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-preview .zs-home-tile:hover{box-shadow:0 10px 26px #1e42644d!important;transform:translateY(-2px)}'+
  '#zs-stock-screen .zs-preview .zs-home-tile:focus-visible{outline:3px solid #152b45!important;outline-offset:3px}'+
  '@media(max-width:600px){#zs-stock-screen .zs-screen-brand{order:3;flex:1 0 100%;text-align:center;padding:5px 0 0;font-size:16px!important}#zs-stock-screen .zs-preview .zs-home-info strong{font-size:16px!important;line-height:1.24!important;overflow-wrap:anywhere}#zs-stock-screen .zs-preview .zs-home-info small{font-size:11px!important;line-height:1.4!important}#zs-stock-screen .zs-preview .zs-home-chevron{right:9px;bottom:7px}}'+
-  '#zs-stock-screen .zs-manager-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0 8px}'+
- '#zs-stock-screen .zs-manager-actions button{background:#e6f1ff!important;border:2px solid #2563b7!important;color:#123b69!important;font-size:14px!important;font-weight:800!important;width:100%;min-height:50px;white-space:normal;overflow-wrap:anywhere}'+
+  '#zs-stock-screen .zs-manager-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 8px}'+
+ '#zs-stock-screen .zs-manager-actions button{display:flex;flex-direction:column;align-items:flex-start;gap:7px;text-align:left;border:1px solid transparent!important;border-radius:15px;padding:16px;color:#fff!important;font-size:17px!important;font-weight:800!important;min-height:116px;min-width:0;width:100%;white-space:normal;overflow-wrap:anywhere;box-shadow:0 6px 16px #14385a26}'+
+ '#zs-stock-screen .zs-manager-actions .zs-create-item{background:linear-gradient(135deg,#7740d2,#55229a)!important}'+
+ '#zs-stock-screen .zs-manager-actions .zs-materials-btn{background:linear-gradient(135deg,#087e92,#085a77)!important}'+
+ '#zs-stock-screen .zs-manager-actions .zs-action-icon{font-size:21px;line-height:1.2;background:#ffffffeb;border-radius:9px;padding:5px;color:#17395a}'+
+ '#zs-stock-screen .zs-manager-actions button small{font-size:12px;line-height:1.35;color:#f4faff!important;font-weight:600}'+
+ '#zs-stock-screen .zs-manager-actions button:focus-visible{outline:3px solid #174db2;outline-offset:3px}'+
+ '@media(max-width:600px){#zs-stock-screen .zs-manager-actions{gap:9px}#zs-stock-screen .zs-manager-actions button{padding:12px;min-height:116px;font-size:15px!important}#zs-stock-screen .zs-manager-actions button small{font-size:11px}}'+
   '#zs-stock-screen .zs-department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}'+
   '#zs-stock-screen .zs-department-card{min-height:160px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:12px;text-align:left;border:1px solid #235d94;border-radius:15px;padding:16px;color:#fff;background:linear-gradient(135deg,#255ce1,#173f90);font-weight:750;cursor:pointer;min-width:0}'+
   '#zs-stock-screen .zs-department-card.mechanical{background:linear-gradient(135deg,#117c73,#09534d);border-color:#09534d}'+
@@ -699,11 +705,17 @@ function departmentTitle(){
 // ledger balance; unassigned legacy materials are never auto-classified.
 // Material/Brand changes use the existing audited Manager Material Master.
 // Stock quantities are separate; the preview cannot create balances.
+// Catalog setup belongs on the first Stock screen, not inside the five-card Stock menu.
 const stockMasterActions=()=>manager()?
- '<div class="zs-manager-actions" aria-label="Stock catalog management">'+
- '<button type="button" class="zs-ghost zs-materials-btn" onclick="zukStockOpenMaterials()">▤ Materials &amp; Brands</button>'+
- '<button type="button" class="zs-ghost zs-create-item" onclick="zukStockCreateItem()">＋ Create New Item</button></div>'+
- '<p class="zs-preview-note">Existing materials belong to Paint. New items: Paint, Mechanical or Shared. Stock count is separate.</p>':'';
+ '<div class="zs-home-hero"><h3>Material Setup</h3>'+
+ '<p class="zs-preview-note">Create materials and manage brand prices separately. Stock counts remain under Add Stock.</p></div>'+
+ '<div class="zs-manager-actions" aria-label="Manager material setup">'+
+ '<button type="button" class="zs-create-item" onclick="zukStockCreateItem()">'+
+ '<span class="zs-action-icon" aria-hidden="true">＋</span><strong>Create Material</strong>'+
+ '<small>New material, unit and department</small></button>'+
+ '<button type="button" class="zs-materials-btn" onclick="zukStockOpenMaterials()">'+
+ '<span class="zs-action-icon" aria-hidden="true">▤</span><strong>Brand &amp; Price</strong>'+
+ '<small>Assign brands and set effective-dated prices</small></button></div>':'';
 function departmentMenu(){
  return '<div class="zs-home-hero"><h3>Consumables Stock Management</h3>'+
   '<p class="zs-preview-note">Choose a department to open its stock screens.</p></div>'+
@@ -711,7 +723,7 @@ function departmentMenu(){
   '<button type="button" class="zs-department-card painting" data-department="Painting" onclick="zukStockSelectDepartment(this.dataset.department)">'+
   '<span aria-hidden="true">🎨</span><strong>Paint Consumables</strong><small>Painting materials and shared stock</small></button>'+
   '<button type="button" class="zs-department-card mechanical" data-department="Mechanical" onclick="zukStockSelectDepartment(this.dataset.department)">'+
-  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>';
+  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>'+stockMasterActions();
 }
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
@@ -739,12 +751,12 @@ function showLiveHome(){
 window.zukStockOpenMaterials=()=>{
  if(!manager())return;
  window.zukStockPreviewExit('dashboard');
- window.consOpenMaster?.(department||'');
+ window.consOpenMaster?.(department||'','price');
 };
 window.zukStockCreateItem=()=>{
  if(!manager())return;
  window.zukStockPreviewExit('dashboard');
- window.consOpenMaster?.(department||'');
+ window.consOpenMaster?.(department||'','create');
 };
 window.zukStockLiveHome=()=>showLiveHome();
 window.zukStockLiveNavigate=page=>{
