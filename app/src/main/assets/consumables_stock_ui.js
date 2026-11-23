@@ -711,7 +711,7 @@ function departmentMenu(){
   '<button type="button" class="zs-department-card painting" data-department="Painting" onclick="zukStockSelectDepartment(this.dataset.department)">'+
   '<span aria-hidden="true">🎨</span><strong>Paint Consumables</strong><small>Painting materials and shared stock</small></button>'+
   '<button type="button" class="zs-department-card mechanical" data-department="Mechanical" onclick="zukStockSelectDepartment(this.dataset.department)">'+
-  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>'+stockMasterActions();
+  '<span aria-hidden="true">⚙️</span><strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock</small></button></div>';
 }
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
