@@ -3,10 +3,10 @@
   "versionCode": 376,
   "releaseScope": "phase1-compatible-ui",
   "approvedForStaff": false,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
-  "ownerRequestedProceed": true,
-  "releaseHeldByOwner": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedProceed": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
@@ -19,6 +19,10 @@
     "releaseTag": "release-V412-architecture-v2",
     "sourceCommit": "ac0a09804450a44dce109d534e6b1ec9fc371059"
   },
-  "sourceCommit": "",
-  "backupDeferredByOwner": true
+  "sourceCommit": null,
+  "backupDeferredByOwner": true,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "approvedAt": null,
+  "publishNonce": null
 }
