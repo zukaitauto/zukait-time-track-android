@@ -6,6 +6,7 @@ const master={materials:[
  {id:'p1',name:'Clear',unit:'Liter',department:'Painting',active:true},
  {id:'p2',name:'Thinner',unit:'Liter',active:true}, // historic unassigned => Paint
  {id:'p3',name:'Unpriced Primer',unit:'Liter',department:'Painting',active:true},
+ {id:'future',name:'Future Clear',unit:'Liter',department:'Painting',active:true},
  {id:'both',name:'Shared Cleaner',unit:'Liter',department:'Both',active:true},
  {id:'mech',name:'Brake Fluid',unit:'Liter',department:'Mechanical',active:true}
 ],brands:[{id:'a',name:'Alpha',active:true},{id:'b',name:'Bravo',active:true}],
@@ -14,6 +15,7 @@ prices:[
  {materialId:'p2',brandId:'b',pricePerUnit:3,voided:false},
  {materialId:'p2',brandId:'b',pricePerUnit:4,voided:false}, // one pair, multiple periods
  {materialId:'both',brandId:'a',pricePerUnit:5,voided:false},
+ {materialId:'future',brandId:'a',pricePerUnit:9,voided:false,effectiveFrom:4102444800000},
  {materialId:'mech',brandId:'a',pricePerUnit:7,voided:false}
 ]};
 function fixture(role='Manager',paged=false){
@@ -49,10 +51,12 @@ assert.match(shown,/Not linked/);
 assert.match(shown,/Stock quantity not recorded/,'Unlinked quantity must not be fabricated as zero');
 assert.match(shown,/Brand &amp; Price needed/,'Unpriced material has separate status');
 assert.match(shown,/Unpriced Primer/);
+assert.match(shown,/Future Clear/,'future-only price is not effective today');
+assert.doesNotMatch(shown,/Future Clear — Alpha/,'future price is not a valid current catalog pair');
 assert.doesNotMatch(shown,/Brake Fluid/,'Mechanical-only item must not leak into Painting');
 assert.equal((shown.match(/data-balance-kind="unlinked"/g)||[]).length,2);
 assert.equal((shown.match(/data-balance-kind="linked"/g)||[]).length,1);
-assert.equal((shown.match(/data-balance-kind="unpriced"/g)||[]).length,1);
+assert.equal((shown.match(/data-balance-kind="unpriced"/g)||[]).length,2);
 assert.match(shown,/Needs linking<\/div><b>2<\/b>/);
 assert.match(shown,/Review &amp; Link/);
 assert.deepEqual(requestsToStrings(manager.requests),['LIST:Painting:0']);
@@ -69,6 +73,7 @@ assert.doesNotMatch(mechanical.html(),/Clear — Alpha|Thinner — Bravo/);
 const paged=fixture('Manager',true);
 await paged.win.openStockManagement('Painting');
 assert.match(paged.html(),/Link status not checked/);
+assert.match(paged.html(),/loaded pages only/,'partial totals must be marked as partial');
 assert.doesNotMatch(paged.html(),/class="zs-btn secondary zs-link-action"/,
  'Incomplete ledger pages must not assert a Master pair is unlinked');
 await paged.win.zukStockMore();
