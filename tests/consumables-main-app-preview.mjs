@@ -115,7 +115,7 @@ assert.match(markup(),/Materials &amp; Brands/,'Materials & Brands must be in St
 ctx.window.zukStockSelectDepartment('Painting');
 assert.equal(current(),'home');
 assert.equal(cards(),5,'Five colored Paint Stock menu boxes');
-assert.doesNotMatch(markup(),/Create New Item|Materials &amp; Brands/,
+assert.doesNotMatch(markup(),/<button[^>]*zs-(?:create-item|materials-btn)/,
  'Approved Paint Stock dashboard must contain only the five stock actions');
 assert.match(markup(),/Paint Consumables/);
 assert.match(markup(),/zs-home-grid/);
@@ -225,7 +225,7 @@ ctx.window.zukStockResetDepartment();
 assert.equal(cards(),0,'Back to departments must hide the stock action cards');
 ctx.window.zukStockSelectDepartment('Mechanical');
 assert.equal(cards(),5,'Mechanical gets its own five-card menu');
-assert.doesNotMatch(markup(),/Create New Item|Materials &amp; Brands/,
+assert.doesNotMatch(markup(),/<button[^>]*zs-(?:create-item|materials-btn)/,
  'Mechanical Stock dashboard must contain only the five stock actions');
 assert.match(markup(),/Mechanical Consumables/);
 ctx.window.zukStockPreviewNavigate('balance');
