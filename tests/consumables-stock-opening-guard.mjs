@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 const screen=readFileSync('app/src/main/assets/consumables_stock_ui.js','utf8');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-function fixture(role='Manager'){
+function fixture(role='Manager',linked=true){
  const calls=[],fields=new Map(),m=id=>{
   if(!fields.has(id))fields.set(id,{value:'',checked:false,textContent:'',style:{}});
   return fields.get(id);
@@ -20,8 +20,10 @@ function fixture(role='Manager'){
    zukaitCloud:{async stockRequest(req){
     calls.push(req);
     if(req.operation==='LIST')
-     return {ok:true,items:[{material_id:'oil',brand_id:'b',physical:0,reserved:0,
-       unit:'Liter',stock_value:0,minimum:0}],hasMore:false};
+     return {ok:true,items:linked?[{material_id:'oil',brand_id:'b',physical:0,reserved:0,
+       unit:'Liter',stock_value:0,minimum:0}]:[],hasMore:false};
+    if(req.operation==='LEGACY_PREVIEW')
+     return {ok:true,preview:{readOnly:true,items:[],hasMore:false}};
     if(req.operation==='WRITE')
      return {ok:true,receipt:{final:true,requestId:req.requestId}};
     throw Error('unrecognized stock operation');
@@ -86,4 +88,27 @@ sup.m('zs-entrytype').value='OPENING';
 sup.w.zukStockSavePurchase();await tick();
 assert.equal(sup.calls.filter(x=>x.command==='OPENING').length,0,
  'Supervisor cannot elevate their purchase to an opening stock request');
-console.log('Opening stock UI: blank count/price, Manager-only count confirmation and note, one write only PASS');
+const empty=fixture('Manager',false);
+await empty.w.openStockManagement('Painting');
+await empty.w.zukStockNav('add');
+assert.match(empty.html(),/No linked material and brand pairs/);
+assert.match(empty.html(),/Review &amp; Link Existing Materials/,
+ 'Manager gets direct audited link shortcut when there is no Stock catalog');
+assert.match(empty.html(),/disabled placeholder="Link a material \+ brand first"/,
+ 'Empty catalog must not display a usable material search field');
+empty.m('zs-material-brand-search').value='Clear';
+empty.w.zukStockSavePurchase();
+await tick();
+assert.equal(empty.calls.filter(x=>x.operation==='WRITE').length,0,
+ 'Typing a legacy material cannot create unlinked inventory');
+await empty.w.zukStockLegacyReview();
+assert.equal(empty.calls.at(-1).operation,'LEGACY_PREVIEW');
+assert.match(empty.html(),/Return to Add Stock/);
+assert.equal(empty.calls.filter(x=>x.operation==='MASTER_LINK').length,0,
+ 'Opening review is read-only; linking must require a separate explicit action');
+const emptySupervisor=fixture('Supervisor',false);
+await emptySupervisor.w.openStockManagement('Painting');
+await emptySupervisor.w.zukStockNav('add');
+assert.doesNotMatch(emptySupervisor.html(),/Review &amp; Link Existing Materials/,
+ 'Supervisor cannot see Manager-only master link action');
+console.log('Opening stock UI: Manager empty-catalog review route, no fabricated links or writes, role safety, physical count guard PASS');
