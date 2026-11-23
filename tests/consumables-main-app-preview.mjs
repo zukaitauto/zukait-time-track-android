@@ -20,6 +20,8 @@ assert.ok(stock.includes('.zs-home-info small{color:#f4f7ff!important'),
  'Stock descriptions must use light text on colored cards');
 assert.ok(stock.includes('@media(max-width:600px){#zs-stock-screen .zs-preview .zs-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))'),
  'Phone-sized stock tiles must remain two columns, not one');
+assert.ok(stock.includes("const nav=live?'':"),
+ 'Live Stock detail pages must not contain the obsolete five-tab navigation');
 assert.ok(stock.includes('.zs-department-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'),
  'Paint and Mechanical entry options must appear side by side');
 for(const [screen,color] of [['history','#62418a'],['adjust','#875521'],['reports','#25685f']]){
@@ -113,7 +115,8 @@ assert.match(markup(),/Materials &amp; Brands/,'Materials & Brands must be in St
 ctx.window.zukStockSelectDepartment('Painting');
 assert.equal(current(),'home');
 assert.equal(cards(),5,'Five colored Paint Stock menu boxes');
-assert.match(markup(),/Create New Item/,'Paint Stock menu must expose Create New Item');
+assert.doesNotMatch(markup(),/Create New Item|Materials &amp; Brands/,
+ 'Approved Paint Stock dashboard must contain only the five stock actions');
 assert.match(markup(),/Paint Consumables/);
 assert.match(markup(),/zs-home-grid/);
 assert.match(markup(),/Consumables Stock Management/);
@@ -222,6 +225,8 @@ ctx.window.zukStockResetDepartment();
 assert.equal(cards(),0,'Back to departments must hide the stock action cards');
 ctx.window.zukStockSelectDepartment('Mechanical');
 assert.equal(cards(),5,'Mechanical gets its own five-card menu');
+assert.doesNotMatch(markup(),/Create New Item|Materials &amp; Brands/,
+ 'Mechanical Stock dashboard must contain only the five stock actions');
 assert.match(markup(),/Mechanical Consumables/);
 ctx.window.zukStockPreviewNavigate('balance');
 assert.match(markup(),/Mechanical Consumables · Stock Balance/);
