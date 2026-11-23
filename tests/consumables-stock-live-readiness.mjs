@@ -145,10 +145,10 @@ assert.equal(approved.requests.at(-1).department,'Mechanical',
   'Mechanical inventory queries must be independently scoped');
 assert.doesNotMatch(approved.screen().innerHTML,/id="zs-department"/,
  'Mechanical Stock detail must not show a Painting department switch');
-assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST']);
+assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST','LIST']);
 live=false;approved.changeSession('session-two');
 await approved.window.openStockManagement();
-assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST','STATUS'],
+assert.deepEqual(approved.requests.map(x=>x.operation),['STATUS','LIST','LIST','LIST','STATUS'],
   'Another staff session must require a fresh server check');
 assert.match(approved.screen().innerHTML,/UI PREVIEW ONLY/);
 assert.match(approved.screen().innerHTML,/zs-department-grid/);
