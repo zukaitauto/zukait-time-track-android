@@ -50,7 +50,7 @@ try{
       fonts:ctrls.filter(x=>x.matches('input')).map(x=>parseFloat(getComputedStyle(x).fontSize)),
       overflowing:ctrls.some(x=>{const b=x.getBoundingClientRect();return b.right>m.right+1||b.left<m.left-1}),
       create:visible('cmNewMaterial'),category:visible('cmNewCategory'),price:visible('cmPrice'),
-      priceForm:visible('cmMaterial'),date:visible('cmDate'),tableVisible:visible('cmList'),
+      priceForm:visible('cmMaterial'),date:visible('cmDate'),tableVisible:getComputedStyle(document.getElementById('cmList')).display!=='none',
       titleText:root.querySelector('.cons-master-intro h2')?.textContent||'',
       headingStacked:sections.every(x=>{const h=x.querySelector('h3').getBoundingClientRect(),p=x.querySelector('.notice').getBoundingClientRect();return p.top>=h.bottom-1;})};
    });
