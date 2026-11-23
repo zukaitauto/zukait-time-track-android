@@ -2154,7 +2154,7 @@ Deno.serve(async (req: Request) => {
       // Default OFF: only the explicitly approved, migration-verified rollout
       // may atomically commit Paint Actual Materials with inventory movements.
       // Do not let a partial Stock deployment break ordinary workshop saves.
-      const paintAtomic = Deno.env.get('ZUKAIT_STOCK_PAINT_ATOMIC_ENABLED')==='true';
+      const paintAtomic = typeof Deno !== 'undefined' && Deno.env.get('ZUKAIT_STOCK_PAINT_ATOMIC_ENABLED')==='true';
       if(paintAtomic && (
         Deno.env.get('ZUKAIT_STOCK_ENABLED')!=='true' ||
         Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')!=='true' ||
