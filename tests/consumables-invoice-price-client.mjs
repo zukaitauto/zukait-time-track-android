@@ -13,7 +13,7 @@ ctx.consPurchasePriceReview(0);assert.match(ctx.html,/APPLY REVIEWED PRICES/);
 accept=false;await ctx.consPurchaseApplyPrices();assert.equal(calls.length,0);assert.equal(storage.size,0);
 accept=true;await ctx.consPurchaseApplyPrices();assert.equal(calls.length,1);assert.equal(storage.size,1);assert.equal(elements.cpPriceApply.disabled,false);
 ctx.consPurchasePriceReview(0);assert.match(ctx.html,/RETRY PRICE APPLICATION/);fail=false;await ctx.consPurchaseApplyPrices();
-assert.equal(calls.length,2);assert.deepEqual(calls[0],calls[1]);assert.equal(storage.size,0);assert.match(elements.cpPriceStatus.textContent,/Prices saved/);
+assert.equal(calls.length,2);assert.equal(JSON.stringify(calls[0]),JSON.stringify(calls[1]));assert.equal(storage.size,0);assert.match(elements.cpPriceStatus.textContent,/Prices saved/);
 role='Supervisor';await ctx.consPurchaseApplyPrices();assert.equal(calls.length,2);
 role='Manager';ctx.consPurchasePriceReview(0);owner='m2';await ctx.consPurchaseApplyPrices();assert.equal(calls.length,2);
 console.log('Manager price button: consent, durable retry, confirmation, account and role guards PASS');
