@@ -15,6 +15,9 @@ jobs:
   android:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -25,7 +28,13 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Verify Android SDK
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build exact PR candidate without release credentials
         run: gradle --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
       - name: Verify packaged invoice assets
