@@ -87,7 +87,7 @@ try{
  await page.locator('#cpSearch').fill('KARUSHI Disc');await page.locator('#cpResults button').click();
  await page.locator('#cpQty').fill('10');await page.locator('#cpMethod').selectOption('total');await page.locator('#cpAmount').fill('1.500');
  assert.equal(await page.locator('#cpUnit').inputValue(),'0.150');
- await page.getByRole('button',{name:'＋ ADD ITEM'}).click();
+ await page.locator('#cpLineEditor button.cp-add').click();
  await waitText('#cpTotal','1.500');
  dropResponse=true;await page.locator('#cpFinish').click();await waitText('#cpSaveStatus','NETWORK_INTERRUPTED');
  assert.deepEqual(await balance(),[10,1.5]);assert.equal((await snapshot()).data.consumables.actuals[0].totalCost,.4);
