@@ -211,10 +211,9 @@
     if(!materialId||!brandId||!['Liter','kg','Piece'].includes(unit))throw Error('INVALID_STOCK_IDENTITY');
     const decimal=(value,maxDigits,maxDecimals,label)=>{
       const raw=String(value??'').trim();
-      if(!new RegExp('^\\\\d{1,'+maxDigits+'}(?:\\\\.\\\\d{1,'+maxDecimals+'})?
-});
-).test(raw))throw Error('INVALID_'+label);
+      if(!/^\d+(?:\.\d+)?$/.test(raw))throw Error('INVALID_'+label);
       const [whole,fraction='']=raw.split('.');
+      if(whole.length>maxDigits||fraction.length>maxDecimals)throw Error('INVALID_'+label);
       const n=BigInt(whole)*10n**BigInt(maxDecimals)+BigInt(fraction.padEnd(maxDecimals,'0'));
       if(n<=0n)throw Error('INVALID_'+label);
       return n;
