@@ -5,6 +5,7 @@ on:
     paths:
       - 'app/src/main/assets/consumables_stock_ui.js'
       - 'tests/consumables-stock-search-toolbar-mobile.mjs'
+      - 'tests/consumables-stock-opening-guard.mjs'
       - '.github/workflows/stock-search-toolbar-pr.yml'
   workflow_dispatch:
 permissions:
