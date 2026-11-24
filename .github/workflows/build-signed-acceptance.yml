@@ -29,6 +29,13 @@ on:
       - tests/hidden-read-traffic.mjs
       - scripts/ci-full-regression.sh
       - tests/time-management.mjs
+      - tests/manager-time-management.mjs
+      - tests/historical-missing-time.mjs
+      - tests/continue-working.mjs
+      - tests/history-reader-rollout.mjs
+      - tests/workshop-save-pressure.mjs
+      - tests/consumables-invoice-*.mjs
+      - tests/consumables-purchase-browser-acceptance.mjs
       - tests/manager-profit-*
       - tests/v377-performance-browser.mjs
       - tests/v377-workshop-efficiency-month-filter.mjs
@@ -136,6 +143,13 @@ jobs:
           node tests/v377-performance-browser.mjs
           node tests/v377-workshop-efficiency-month-filter.mjs
           node tests/v377-workshop-performance-ui.mjs
+      - name: Verify purchase invoice lifecycle on exact signed source
+        run: |
+          node tests/consumables-stock-api.mjs
+          node tests/consumables-invoice-price-review.mjs
+          node tests/consumables-invoice-price-authority.mjs
+          node tests/consumables-invoice-ledger-reconcile.mjs
+          node tests/consumables-purchase-browser-acceptance.mjs
       - name: Archive V377 popup visual QA snapshots
         if: always()
         uses: actions/upload-artifact@v4
