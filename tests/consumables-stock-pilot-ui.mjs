@@ -15,7 +15,7 @@ const window={
     calls.push(command);
     if(command.operation==='LIST')return {ok:true,items:[{
       material_id:'oil',brand_id:'brand',unit:'Liter',physical:10,reserved:3,
-      stock_value:25,minimum:8
+      stock_value:25,minimum:8,initialised:true
     }]};
     if(command.operation==='HISTORY')return {ok:true,history:[]};
     if(command.operation==='REPORTS')return {ok:true,report:{valuation:90,items:104,low:2,out:1}};

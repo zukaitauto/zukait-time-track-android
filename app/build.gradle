@@ -22,8 +22,8 @@ android {
         targetSdk 35
         // V351: Verify visible receipt recovery actions and explicit Pause / Finished corrections.
         // Manager worked hours use the Saturday–Thursday workshop week in Oman.
-        versionCode 379
-        versionName "V416" // Approved pastel Stock home, separated mobile Material and Brand Price forms; UI-only
+        versionCode 380
+        versionName "V417" // Stock search, tap targets, duplicate-name IDs and safe count-state display; UI-only testing
         // V396 final acceptance source: modern Mechanical dashboard, source-pinned web/APK, unchanged secure Mechanical, Reception and financial APIs.
         // V395 exact-source verification: concise Profit/Loss UI, unchanged Accountant backend and release gate.
         // V394 acceptance source: verified 320–1280px Accounts layout, current notification cache and protected API cost checks.
