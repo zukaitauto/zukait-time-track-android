@@ -244,6 +244,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   if(operation==='WRITE') {
     if(!writesEnabled)return bad('stock_write_not_enabled',423);
     const command=String(body.command||'').toUpperCase();
+    if(invoiceEnabled&&command==='PURCHASE')return bad('purchase_invoice_required',409);
     if(!allowedCommands.has(command))return bad('stock_unknown_command');
     if(managerActions.has(command)&&user.role!=='Manager')return bad('manager_only',403);
     if(command==='MECHANICAL_ISSUE'||command==='MECHANICAL_RETURN') {

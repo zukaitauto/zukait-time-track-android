@@ -36,6 +36,29 @@ window.openConsumablesModule=function(){
    until a single authenticated invoice transaction and read endpoint exist. */
 let consPurchaseDraft=null,consPurchaseBusy=false,consPurchasePending=null,consPurchaseHistorySeq=0;
 let consPurchaseHistoryRows=[],consPurchaseEditing=null;const consPurchaseCorrectionPending=new Map();
+let consPurchaseOwner='';
+const consPurchaseOwnerId=()=>String(typeof me!=='undefined'?me?.id||'':'');
+const consPurchaseStorageKey=id=>'zukait-purchase-pending-v1:'+id;
+function consPurchaseRestore(){
+ const owner=consPurchaseOwnerId();if(!owner)return false;
+ if(owner!==consPurchaseOwner){
+  consPurchaseOwner=owner;consPurchaseDraft=null;consPurchasePending=null;consPurchaseEditing=null;consPurchaseHistoryRows=[];consPurchaseCorrectionPending.clear();consPurchaseHistorySeq++;
+  try{const saved=JSON.parse(window.localStorage?.getItem(consPurchaseStorageKey(owner))||'null');
+   if(saved?.owner===owner&&saved?.pending?.id&&saved?.draft){consPurchaseDraft=saved.draft;consPurchasePending=saved.pending;}
+  }catch(_){}
+ }
+ return true;
+}
+function consPurchasePersist(){
+ if(!consPurchaseOwner||consPurchaseOwner!==consPurchaseOwnerId())throw Error('Staff session changed.');
+ if(!consPurchasePending||!consPurchaseDraft)return;
+ // Fail closed if storage is unavailable; do not send a transaction whose retry ID would be lost.
+ window.localStorage.setItem(consPurchaseStorageKey(consPurchaseOwner),JSON.stringify({owner:consPurchaseOwner,pending:consPurchasePending,draft:consPurchaseDraft}));
+}
+function consPurchaseClearPending(owner){
+ try{window.localStorage?.removeItem(consPurchaseStorageKey(owner));}catch(_){}
+ if(consPurchaseOwner===owner)consPurchasePending=null;
+}
 const consPurchaseApi=body=>window.zukaitCloud?.stockRequest?.(body)||Promise.reject(Error('Stock server unavailable'));
 const consPurchaseAllowed=()=>['Manager','Supervisor'].includes(role());
 function consPurchasePairs(){
@@ -52,7 +75,7 @@ function consPurchasePairs(){
 const consPurchaseToday=()=>new Date(Date.now()+4*3600000).toISOString().slice(0,10);
 const consPurchaseStyle='<style>.cp-entry{display:grid;gap:12px;max-width:780px;margin:auto;min-width:0}.cp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cp-entry h3{margin:0;color:#17324f}.cp-entry .cp-field{display:grid;gap:5px;min-width:0;font-size:13px;font-weight:700;color:#304c68}.cp-entry input,.cp-entry select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box;border:1px solid #c4d6e7;border-radius:9px;background:#fff!important;color:#17324f!important;padding:8px;font-size:16px}.cp-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cp-entry .cp-panel{border:1px solid #d5e2ed;border-radius:12px;padding:12px;background:#f7faff}.cp-search-results{max-height:210px;overflow:auto}.cp-search-results button{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px;border:1px solid #dbe6f2!important;border-radius:7px;background:#fff!important;color:#17324f!important;text-align:left!important;margin:4px 0;min-height:42px}.cp-entry .cp-action{padding:10px 12px;border:1px solid #b6cfe5;border-radius:8px;color:#185999!important;background:#e9f3ff!important;font-weight:800}.cp-entry .cp-add{background:#e4f4ea!important;color:#166534!important}.cp-entry .cp-total{background:#194b80;color:#fff;padding:13px;border-radius:10px;font-weight:800}.cp-entry .cp-line{display:grid;grid-template-columns:minmax(0,1.5fr) .6fr .8fr .8fr auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #dce5ed;font-size:12px}.cp-lines{overflow-x:auto}.cp-entry .cp-line{min-width:430px}.cp-entry .cp-error{font-size:12px;color:#a13a1b}.cp-entry .cp-info{font-size:12px;color:#526b84}.cp-entry .cp-finish{min-height:44px;width:100%;background:#166534!important;color:#fff!important;border-radius:9px}.cp-entry .cp-finish:disabled{opacity:.55;cursor:not-allowed}@media(max-width:380px){.cp-two{grid-template-columns:1fr}}</style>';
 window.consOpenPurchaseEntry=function(reset=false){
- if(!consPurchaseAllowed())return;
+ if(!consPurchaseAllowed()||!consPurchaseRestore())return;
  if(consPurchaseBusy)return;
  if(!consPurchaseDraft||reset&&!consPurchasePending)consPurchaseDraft={invoiceNumber:'',supplier:'',invoiceDate:consPurchaseToday(),lines:[],selected:null,method:'unit'};
  const d=consPurchaseDraft;
@@ -68,17 +91,21 @@ window.consOpenPurchaseEntry=function(reset=false){
  }).catch(()=>{if(document.getElementById('cpFinish')===button)status.textContent='Server unavailable. Draft retained.'});
 };
 window.consPurchaseHeader=function(){
- if(!consPurchaseDraft)return;for(const [field,id] of [['invoiceNumber','cpInvoice'],['supplier','cpSupplier'],['invoiceDate','cpDate']]){const e=document.getElementById(id);if(e)consPurchaseDraft[field]=e.value}
+ if(!consPurchaseDraft||consPurchasePending||consPurchaseBusy)return;for(const [field,id] of [['invoiceNumber','cpInvoice'],['supplier','cpSupplier'],['invoiceDate','cpDate']]){const e=document.getElementById(id);if(e)consPurchaseDraft[field]=e.value}
 };
 window.consPurchaseSearch=function(){
  if(!consPurchaseAllowed()||!consPurchaseDraft)return;
+ if(consPurchaseBusy||consPurchasePending)return;
+ consPurchaseDraft.selected=null;
+ const editor=document.getElementById('cpLineEditor'),selected=document.getElementById('cpSelected');
+ if(editor)editor.hidden=true;if(selected)selected.innerHTML='';
  const q=String(document.getElementById('cpSearch')?.value||'').trim().toLowerCase().split(/\s+/).filter(Boolean),out=document.getElementById('cpResults');
  if(!out)return;
  const pairs=q.length?consPurchasePairs().filter(x=>q.every(t=>(x.material+' '+x.brand+' '+x.unit).toLowerCase().includes(t))).slice(0,30):[];
  out.innerHTML=pairs.map(x=>'<button type="button" data-mid="'+esc(x.materialId)+'" data-bid="'+esc(x.brandId)+'" onclick="consPurchaseSelect(this.dataset.mid,this.dataset.bid)"><b>'+esc(x.material)+' · '+esc(x.brand)+'</b><small>'+esc(x.unit)+'</small></button>').join('')||(q.length?'<div class="cp-info">No matching material and brand.</div>':'');
 };
 window.consPurchaseSelect=function(mid,bid){
- if(!consPurchaseAllowed()||!consPurchaseDraft)return;
+ if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||consPurchasePending)return;
  const row=consPurchasePairs().find(x=>x.materialId===mid&&x.brandId===bid);if(!row)return;
  consPurchaseDraft.selected=row;consPurchaseDraft.method='unit';
  document.getElementById('cpResults').innerHTML='';document.getElementById('cpSearch').value=row.material+' · '+row.brand;
@@ -96,11 +123,22 @@ window.consPurchaseCalculate=function(){
  catch(_){if(method==='unit'&&total)total.value='';else if(unit)unit.value=''}
 };
 window.consPurchaseChangeMethod=function(){
- const unit=document.getElementById('cpUnit'),total=document.getElementById('cpAmount'),method=document.getElementById('cpMethod').value;
+ const unit=document.getElementById('cpUnit'),total=document.getElementById('cpAmount'),select=document.getElementById('cpMethod'),method=select.value;
+ const old=consPurchaseDraft?.method||'unit';
+ // Never silently round an already-entered amount merely by switching input modes.
+ if(old!==method&&consPurchaseDraft?.selected&&unit.value&&total.value){
+  try{
+   const row=consPurchaseDraft.selected,quantity=document.getElementById('cpQty').value;
+   const before=window.ZukaitStockCore.purchaseLine({...row,quantity,priceMethod:old,price:old==='unit'?unit.value:total.value});
+   const after=window.ZukaitStockCore.purchaseLine({...row,quantity,priceMethod:method,price:method==='unit'?unit.value:total.value});
+   if(before.totalMills!==after.totalMills&&!confirm('Changing price method changes the total from OMR '+before.totalAmount.toFixed(3)+' to '+after.totalAmount.toFixed(3)+'. Continue?')){select.value=old;return;}
+  }catch(_){}
+ }
+ if(consPurchaseDraft)consPurchaseDraft.method=method;
  unit.readOnly=method!=='unit';total.readOnly=method!=='total';consPurchaseCalculate();
 };
 window.consPurchaseAddLine=function(){
- if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy)return;
+ if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||consPurchasePending)return;
  try{
   const d=consPurchaseDraft,l=consPurchaseReadLine();
   if(d.lines.length>=50)throw Error('Maximum 50 items per invoice.');
@@ -109,7 +147,7 @@ window.consPurchaseAddLine=function(){
   document.getElementById('cpSearch').value='';document.getElementById('cpSelected').innerHTML='';document.getElementById('cpLineEditor').hidden=true;consPurchaseRenderLines();
  }catch(e){const out=document.getElementById('cpError');if(out)out.textContent=String(e.message||e)}
 };
-window.consPurchaseRemoveLine=function(i){if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||!Number.isInteger(i)||i<0||i>=consPurchaseDraft.lines.length)return;consPurchaseDraft.lines.splice(i,1);consPurchaseRenderLines()};
+window.consPurchaseRemoveLine=function(i){if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||consPurchasePending||!Number.isInteger(i)||i<0||i>=consPurchaseDraft.lines.length)return;consPurchaseDraft.lines.splice(i,1);consPurchaseRenderLines()};
 function consPurchaseRenderLines(){
  const out=document.getElementById('cpLines'),total=document.getElementById('cpTotal'),lines=consPurchaseDraft?.lines||[];
  if(!out||!total)return;
@@ -120,7 +158,9 @@ window.consPurchaseSave=async function(){
  if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy)return;
  const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
  if(!button||button.disabled)return;
- consPurchaseHeader();
+ if(!consPurchaseRestore())return;
+ const owner=consPurchaseOwner;
+ if(!consPurchasePending)consPurchaseHeader();
  try{
   if(consPurchaseDraft.selected)throw Error('Add or remove the selected item before saving.');
   const draft=window.ZukaitStockCore.purchaseInvoiceDraft(consPurchaseDraft,{id:me.id,role:role()},consPurchaseToday());
@@ -132,15 +172,18 @@ window.consPurchaseSave=async function(){
    if(!confirm('Save invoice '+draft.invoiceNumber+' for OMR '+draft.totalAmount.toFixed(3)+' and add all '+draft.lines.length+' stock items?'))return;
    consPurchasePending={fingerprint,id:window.crypto?.randomUUID?.()||('invoice-'+Date.now()+'-'+Math.random().toString(36).slice(2))};
   }
+  consPurchasePersist();
   consPurchaseBusy=true;button.disabled=true;status.textContent='Saving invoice…';
   const r=await consPurchaseApi({operation:'INVOICE_SAVE',requestId:consPurchasePending.id,data});
   if(!r?.ok||!r.invoice?.id){
    // An explicit validation rejection is safe to correct; uncertain network/server failures retain the same receipt ID.
    const code=String(r?.code||'invoice_save_unconfirmed');
-   if(['invalid_invoice','invoice_reference_required','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','duplicate_material_brand','invalid_stock_identity','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','duplicate_invoice','stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled'].includes(code))consPurchasePending=null;
+   if(['invalid_invoice','invoice_reference_required','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','duplicate_material_brand','invalid_stock_identity','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','duplicate_invoice','stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled'].includes(code))consPurchaseClearPending(owner);
    throw Error(code);
   }
-  consPurchasePending=null;consPurchaseDraft=null;consPurchaseBusy=false;
+  consPurchaseClearPending(owner);
+  if(owner!==consPurchaseOwnerId())return;
+  consPurchaseDraft=null;consPurchaseBusy=false;
   alert('Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
   window.consOpenPurchaseInvoices();
  }catch(error){
@@ -148,7 +191,7 @@ window.consPurchaseSave=async function(){
  }finally{consPurchaseBusy=false}
 };
 window.consOpenPurchaseInvoices=function(){
- if(!consPurchaseAllowed()||consPurchaseBusy)return;consPurchaseHeader();
+ if(!consPurchaseAllowed()||!consPurchaseRestore()||consPurchaseBusy)return;consPurchaseHeader();
  modal('Purchase Invoice List',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Invoice List</h3><button type="button" class="cp-action" onclick="consOpenPurchaseEntry()">New Entry</button></div><label class="cp-field">Search invoice / supplier / material<input id="cpHistoryQuery" type="search" maxlength="160"></label><div class="cp-two"><label class="cp-field">From Date<input id="cpHistoryFrom" type="date"></label><label class="cp-field">To Date<input id="cpHistoryTo" type="date"></label></div><button type="button" class="cp-action" onclick="consPurchaseLoadHistory(0)">Search / Refresh</button><div id="cpHistory" class="cp-panel cp-info" role="status">Loading server invoice history…</div></div>','consOpenPurchaseEntry()');
  window.consPurchaseLoadHistory(0);
 };

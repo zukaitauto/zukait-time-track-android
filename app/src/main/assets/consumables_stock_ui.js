@@ -1170,7 +1170,16 @@ async function write(command,data){
    view.pending={fingerprint,requestId:request()};
  try{
    const reply=await api({operation:'WRITE',command,requestId:view.pending.requestId,data});
-   if(!reply.ok)throw Error(reply.code||'STOCK_WRITE_FAILED');
+   if(!reply.ok){
+     if(reply.code==='purchase_invoice_required'){
+       view.pending=null;view.busy=false;
+       if(typeof window.consOpenPurchaseEntry==='function'){
+        window.zukStockPreviewExit('dashboard');window.consOpenPurchaseEntry();return;
+       }
+       throw Error('Use Consumables → Purchase Entry for purchases.');
+     }
+     throw Error(reply.code||'STOCK_WRITE_FAILED');
+   }
    view.pending=null;view.items=[];view.history=[];view.report=null;view.busy=false;
    await load('balance',true);
  }catch(e){
@@ -1322,6 +1331,7 @@ window.zukStockSavePurchase=()=>{
    write('OPENING',{materialId:data.materialId,brandId:data.brandId,quantity:data.quantity,
       unitCost:cost,countConfirmed:true,reason});
  }else write('PURCHASE',data);
+
 };
 window.zukStockSaveAdjustment=()=>{
  if(previewOnly()||!manager())return;

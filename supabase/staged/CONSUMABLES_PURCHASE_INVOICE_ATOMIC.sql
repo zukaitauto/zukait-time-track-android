@@ -19,6 +19,33 @@ alter table public.zukait_purchase_invoices enable row level security;
 revoke all on public.zukait_purchase_invoices from public,anon,authenticated;
 grant select,insert,update on public.zukait_purchase_invoices to service_role;
 
+-- Reserve every invoice reference, including corrected and cancelled references.
+-- A reference may be reused only by the same invoice, never a second invoice.
+create table public.zukait_purchase_invoice_references(
+ invoice_key text primary key,
+ invoice_id uuid not null references public.zukait_purchase_invoices(id),
+ created_at timestamptz not null default now()
+);
+alter table public.zukait_purchase_invoice_references enable row level security;
+revoke all on public.zukait_purchase_invoice_references from public,anon,authenticated;
+grant select,insert on public.zukait_purchase_invoice_references to service_role;
+insert into public.zukait_purchase_invoice_references(invoice_key,invoice_id)
+select invoice_key,id from public.zukait_purchase_invoices;
+create function public.zukait_purchase_invoice_reserve_reference()
+returns trigger language plpgsql security invoker set search_path='' as $fn$
+declare v_owner uuid;
+begin
+ insert into public.zukait_purchase_invoice_references(invoice_key,invoice_id)
+ values(new.invoice_key,new.id) on conflict(invoice_key) do nothing;
+ select invoice_id into v_owner from public.zukait_purchase_invoice_references where invoice_key=new.invoice_key;
+ if v_owner is distinct from new.id then raise exception 'DUPLICATE_INVOICE' using errcode='23505';end if;
+ return new;
+end $fn$;
+revoke all on function public.zukait_purchase_invoice_reserve_reference() from public,anon,authenticated;
+grant execute on function public.zukait_purchase_invoice_reserve_reference() to service_role;
+create trigger zukait_purchase_invoice_reference_guard after insert or update of invoice_key
+on public.zukait_purchase_invoices for each row execute function public.zukait_purchase_invoice_reserve_reference();
+
 create function public.zukait_purchase_invoice_save(p_session_hash text,p_request_id text,p_data jsonb)
 returns jsonb language plpgsql security invoker set search_path='' as $fn$
 declare
@@ -26,7 +53,7 @@ declare
  v_invoice public.zukait_purchase_invoices%rowtype; v_line jsonb; v_lines jsonb:='[]';
  v_m text; v_b text; v_unit text; v_material text; v_brand text; v_qty numeric;
  v_price numeric; v_total numeric; v_rate numeric; v_sum numeric:=0; v_method text;
- v_receipt jsonb; v_idx integer:=0; v_child text;
+ v_receipt jsonb; v_idx integer:=0; v_child text; v_origin text; v_saved jsonb;
 begin
  select sc.user_id::text,sc.role into v_actor,v_role from public.staff_sessions ss
  join public.staff_credentials sc on sc.user_id=ss.user_id
@@ -63,7 +90,25 @@ begin
   join public.zukait_stock_brand_keys k using(brand_id)
   where b.material_id=v_m and b.brand_id=v_b and m.active and k.active and m.unit=b.unit
   for update of b;
-  if not found then raise exception 'STOCK_PAIR_NOT_LINKED'; end if;
+  if not found then
+   -- Only Managers may project a missing pair. The existing RPC revalidates
+   -- the saved material, brand, price, unit and scope inside this transaction.
+   if v_role<>'Manager' then raise exception 'STOCK_PAIR_NOT_LINKED';end if;
+   select x into v_saved from public.workshop_state ws
+   cross join lateral jsonb_array_elements(ws.data->'consumables'->'materials') x
+   where ws.id='main' and x->>'id'=v_m and x->>'active' is distinct from 'false' limit 1;
+   v_origin:=nullif(v_saved->>'department','');
+   if v_origin is null or v_origin='Unassigned' then
+    select department into v_origin from public.zukait_stock_material_keys where material_id=v_m and active;
+   end if;
+   if v_origin is null or v_origin not in ('Painting','Mechanical','Both') then raise exception 'STOCK_PAIR_NOT_LINKED';end if;
+   perform public.zukait_stock_link_master(p_session_hash,v_m,v_b,v_origin);
+   select b.unit,m.display_name,k.display_name into v_unit,v_material,v_brand
+   from public.zukait_stock_balances b join public.zukait_stock_material_keys m using(material_id)
+   join public.zukait_stock_brand_keys k using(brand_id)
+   where b.material_id=v_m and b.brand_id=v_b and m.active and k.active and m.unit=b.unit for update of b;
+   if not found then raise exception 'STOCK_PAIR_NOT_LINKED';end if;
+  end if;
   if v_line->>'unit' is distinct from v_unit then raise exception 'STOCK_UNIT_CONFLICT'; end if;
   if coalesce(v_line->>'quantity','') !~ '^\d{1,7}(\.\d{1,4})?$' or coalesce(v_line->>'price','') !~ '^\d{1,9}(\.\d{1,3})?$' then raise exception 'INVALID_INVOICE_LINE'; end if;
   v_qty:=(v_line->>'quantity')::numeric; v_price:=(v_line->>'price')::numeric; v_method:=v_line->>'priceMethod';
