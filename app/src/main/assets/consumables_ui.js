@@ -262,8 +262,8 @@ window.consPurchaseConfirmReconciliation=async function(){
   if(owner!==consPurchaseOwnerId())return;
   if(!result?.ok){
    const code=String(result?.code||'invoice_price_reconciliation_unconfirmed');
-   const definitive=['manager_only','invalid_price_reconciliation','invalid_invoice_correction','invoice_not_found','invoice_cancelled','invoice_revision_conflict','invoice_price_application_not_found','invoice_price_changed_since_application','invoice_price_actual_changed_since_application','invoice_price_reconciliation_no_fallback','stale_price_reconciliation_review','invoice_price_reconciliation_not_enabled','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','stock_unit_conflict','duplicate_invoice','no_invoice_change','stale_workshop_revision','request_id_conflict'];
-   if(definitive.includes(code)){window.localStorage.removeItem(key);out.textContent='Rejected: '+code+'. Reopen invoice correction to review again.';return;}
+   const definitive=['manager_only','invalid_price_reconciliation','invalid_invoice_correction','invoice_not_found','invoice_cancelled','invoice_revision_conflict','invoice_price_application_not_found','invoice_price_changed_since_application','invoice_price_actual_changed_since_application','invoice_price_reconciliation_no_fallback','invoice_reference_only_use_header_correction','invoice_price_already_reconciled','invalid_invoice_date','invalid_invoice_line','invalid_line_total','invalid_invoice_total','invoice_pair_set_change_requires_review','duplicate_material_brand','piece_whole_required','stale_price_reconciliation_review','invoice_price_reconciliation_not_enabled','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','stock_unit_conflict','duplicate_invoice','no_invoice_change','stale_workshop_revision','request_id_conflict'];
+   if(definitive.includes(code)){window.localStorage.removeItem(key);consPurchaseCorrectionPending.delete(invoice.id+'|'+pending.mode);consPurchaseReconcileSelection=null;out.textContent='Rejected: '+code+'. Reopen invoice correction to review again.';return;}
    throw Error(code);
   }
   if(result.invoice?.id!==invoice.id||result.reconciliation?.requestId!==pending.requestId||result.invoice.revision!==pending.correction.expectedRevision+1)throw Error('Reconciliation confirmation mismatch.');
@@ -301,10 +301,12 @@ window.consPurchaseSaveCorrection=async function(){
   if(!r?.ok||!r.invoice?.id){
    const code=String(r?.code||'invoice_correction_unconfirmed');
    if(code==='invoice_price_reconciliation_required'){
+    // Server explicitly rejected the ordinary correction; there is no unknown write to retry.
+    consPurchaseCorrectionPending.delete(key);
     const owner=consPurchaseOwnerId();
     const reviewed=await window.zukaitCloud.invoicePriceReconcile('PREVIEW',{mode,correction:data});
     if(owner!==consPurchaseOwnerId())return;
-    if(!reviewed?.ok||!reviewed.required)throw Error(reviewed?.code||'Invoice price review unavailable; reload invoice.');
+    if(!reviewed?.ok||!reviewed.required)throw Error(reviewed?.code==='invoice_price_reconciliation_no_fallback'?'A replacement costing price is required. Create an independent earlier effective price in Brands & Price, then retry the invoice correction. No records were changed.':reviewed?.code||'Invoice price review unavailable; reload invoice.');
     const payload={mode,correction:data,requestId:pending.id,applicationRequestId:reviewed.applicationRequestId,review:reviewed.review};
     consReconcileRender(owner,invoice,payload);
     return;
@@ -334,8 +336,9 @@ window.consPurchasePriceReview=function(index){
   const body='<div class="cp-info">Purchase prices are compared with Brands &amp; Price on the invoice date (Oman). This is a preview only. Stock valuation and historical costs are not changed by opening this screen.</div>'+
    rows.map(r=>'<div class="cp-panel"><b>'+esc(r.materialName)+' · '+esc(r.brandName)+'</b><div>Existing rate: '+esc(rate(r.oldRate))+' / '+esc(r.unit)+'</div><div>Invoice rate: '+esc(rate(r.rate))+' / '+esc(r.unit)+'</div><div>Effective date: '+esc(r.date)+'</div><div>'+esc(r.action==='create'?'New price period':r.action==='correct'?'Same-day price correction':r.action==='unchanged'?'No change needed':r.reason)+'</div>'+
     (r.affected===undefined?'':'<div>Affected Actual Materials records: '+r.affected+'</div>')+
-    (r.jobCards?.length?'<div class="cp-info">'+esc(r.jobCards.join(', '))+'</div>':'')+
+    (r.impacts?.length?'<div class="cp-info">'+r.impacts.map(j=>'<div><b>'+esc(j.jobCard)+'</b> · '+esc(j.quantity)+' '+esc(r.unit)+' · OMR '+Number(j.oldCost).toFixed(3)+' → '+Number(j.newCost).toFixed(3)+'</div>').join('')+'<div><b>Material cost total: OMR '+Number(r.oldCost).toFixed(3)+' → '+Number(r.newCost).toFixed(3)+'</b></div></div>':r.jobCards?.length?'<div class="cp-info">'+esc(r.jobCards.join(', '))+'</div>':'')+
     '</div>').join('')+
+   '<div class="cp-panel"><b>Total affected material costs: OMR '+rows.reduce((n,r)=>n+Number(r.oldCost||0),0).toFixed(3)+' → '+rows.reduce((n,r)=>n+Number(r.newCost||0),0).toFixed(3)+'</b><div>Difference: OMR '+rows.reduce((n,r)=>n+Number(r.newCost||0)-Number(r.oldCost||0),0).toFixed(3)+'</div></div>'+
    '<p class="cp-info">Stock valuation is not changed. Applying reviewed prices recalculates affected job costs with an audit record. Invoice corrections and cancellations after applying prices require explicit reconciliation.</p>'+
    (pending?'<div class="cp-info">A previous save was not confirmed. Retry the exact original request; it will not apply twice.</div>':'')+
    (canApply||pending?'<label class="cp-field">Reason (required)<input id="cpPriceReason" maxlength="500" value="'+esc(pending?.reason||'')+'"'+(pending?' disabled':'')+'></label><button type="button" id="cpPriceApply" class="cp-finish" onclick="consPurchaseApplyPrices()">'+(pending?'RETRY PRICE APPLICATION':'APPLY REVIEWED PRICES')+'</button><div id="cpPriceStatus" class="cp-info" role="status"></div>':'<div class="cp-info">No eligible price changes to apply.</div>');
@@ -348,7 +351,7 @@ window.consPurchaseApplyPrices=async function(){
  if(owner!==consPurchaseOwnerId())return;
  const button=document.getElementById('cpPriceApply'),out=document.getElementById('cpPriceStatus');
  if(!button||!out||button.disabled)return;
- const definitive=['manager_only','invalid_price_application','invoice_price_apply_not_enabled','invoice_not_found','invoice_cancelled','invoice_revision_conflict','stale_price_review','price_review_blocked','no_price_changes','invoice_price_reconciliation_required','invoice_price_already_applied_reconciliation_required','request_id_conflict','stale_workshop_revision'];
+ const definitive=['manager_only','invalid_price_application','invoice_price_apply_not_enabled','invoice_not_found','invoice_cancelled','invoice_revision_conflict','stale_price_review','price_review_blocked','no_price_changes','invoice_price_reconciliation_required','invoice_price_already_applied_reconciliation_required','invoice_price_source_conflict','request_id_conflict','stale_workshop_revision'];
  try{
   let pending=JSON.parse(window.localStorage.getItem(key)||'null');
   if(!pending){
@@ -393,7 +396,7 @@ window.consPurchaseAudit=async function(index,page=0){
   const r=await consPurchaseApi({operation:'INVOICE_AUDIT',page,data:{invoiceId:invoice.id}});
   if(owner!==consPurchaseOwnerId()||role()!=='Manager'||document.getElementById('cpAudit')!==out)return;
   if(!r?.ok||!Array.isArray(r.audit))throw Error(r?.code||'Audit history unavailable');
-  out.innerHTML=(r.audit.length?r.audit.map(x=>'<details class="cp-panel"><summary><b>'+esc(x.reason)+'</b><div>'+esc(x.created_at)+' · Staff '+esc(x.actor_id)+'</div></summary><p>Before</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.before_header,null,2))+'</pre><p>After</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.after_header,null,2))+'</pre></details>').join(''):'No corrections recorded.')+
+  out.innerHTML=(r.audit.length?r.audit.map(x=>'<details class="cp-panel"><summary><b>'+esc(String(x.event_type||'INVOICE_CORRECTED').replace(/_/g,' '))+' · '+esc(x.reason)+'</b><div>'+esc(x.created_at)+' · Staff '+esc(x.actor_id)+'</div></summary><p>Before</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.before_header,null,2))+'</pre><p>After</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.after_header,null,2))+'</pre></details>').join(''):'No invoice events recorded.')+
    '<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseAudit('+index+','+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseAudit('+index+','+(page+1)+')">Next</button>':'')+'</div>';
  }catch(e){if(document.getElementById('cpAudit')===out)out.textContent=String(e?.message||e);}
 };
