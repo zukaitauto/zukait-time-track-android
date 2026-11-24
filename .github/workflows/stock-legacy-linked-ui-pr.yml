@@ -10,6 +10,8 @@ on:
       - 'tests/consumables-invoice-price-review.mjs'
       - 'tests/consumables-invoice-price-api.mjs'
       - 'tests/consumables-invoice-price-client.mjs'
+      - 'tests/consumables-invoice-price-reconcile-api.mjs'
+      - 'tests/consumables-invoice-price-reconcile-client.mjs'
       - 'app/src/main/assets/cloud_sync.js'
       - 'tests/consumables-invoice-price-commit-sql.mjs'
       - 'supabase/functions/workshop-api/extensions/invoice_price_*.js'
@@ -51,6 +53,8 @@ jobs:
           node tests/consumables-invoice-price-review.mjs
           node tests/consumables-invoice-price-api.mjs
           node tests/consumables-invoice-price-client.mjs
+          node tests/consumables-invoice-price-reconcile-api.mjs
+          node tests/consumables-invoice-price-reconcile-client.mjs
           node tests/consumables-invoice-price-commit-sql.mjs
       - name: Check Manager Materials and Brand Price modal on iPhone and desktop
         run: |
