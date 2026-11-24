@@ -710,7 +710,7 @@ window.consEditMasterRow=function(mid,bid,pid){
  const c=C().ensureState(state),m=c.materials.find(x=>x.id===mid&&x.active!==false),b=c.brands.find(x=>x.id===bid&&x.active!==false),p=c.prices.find(x=>x.id===pid&&!x.voided&&x.materialId===mid&&x.brandId===bid);
  if(!m||!b||!p)return alert('Material, Brand or Price record not found.');
  const options=(items,current)=>items.map(x=>'<option value="'+esc(x)+'"'+(x===current?' selected':'')+'>'+esc(x)+'</option>').join('');
- const date=new Date(Number(p.effectiveFrom)).toISOString().slice(0,10);
+ const date=consOmanPriceDate(p.effectiveFrom);
  modal('Edit Material Row','<div class="cons-entry-shell"><div class="notice">Changes to a material name, unit or category apply to all brands using that material. Changes to a brand name apply wherever that brand is used. Historical transactions must stay intact. To start a new price period, cancel and choose CHANGE PRICE in Brands &amp; Price.</div><label>Material<input id="cmeName" value="'+esc(m.name)+'"></label><label>Brand<input id="cmeBrand" value="'+esc(b.name)+'"></label><label>Category<select id="cmeCategory">'+options(['Paint','Consumable'],m.category||'Consumable')+'</select></label><label>Unit<select id="cmeUnit">'+options(['Liter','kg','Piece'],m.unit)+'</select></label><label>Price / Unit (OMR)<input id="cmePrice" type="number" step="0.001" min="0" value="'+esc(Number(p.pricePerUnit).toFixed(3))+'"></label><label>Effective From<input id="cmeDate" type="date" value="'+date+'"></label><label>Reason (required)<input id="cmeReason" placeholder="Explain the correction"></label><div class="cons-entry-actions"><button class="green" onclick="consSaveMasterRow(\''+esc(mid)+'\',\''+esc(bid)+'\',\''+esc(pid)+'\')">SAVE CHANGES</button><button class="secondary" onclick="consOpenMaster()">CANCEL</button></div></div>','consOpenMaster()');
 };
 window.consSaveMasterRow=function(mid,bid,pid){
@@ -718,18 +718,18 @@ window.consSaveMasterRow=function(mid,bid,pid){
  const c=C().ensureState(state),m=c.materials.find(x=>x.id===mid&&x.active!==false),b=c.brands.find(x=>x.id===bid&&x.active!==false),p=c.prices.find(x=>x.id===pid&&!x.voided&&x.materialId===mid&&x.brandId===bid);
  if(!m||!b||!p)return alert('Row was changed or removed. Reopen the Material Master.');
  const val=id=>String(document.getElementById(id)?.value||'').trim();
- const name=val('cmeName'),brand=val('cmeBrand'),category=val('cmeCategory'),unit=val('cmeUnit'),rawPrice=val('cmePrice'),price=Number(rawPrice),rawDate=val('cmeDate'),effective=Date.parse(rawDate+'T00:00:00'),reason=val('cmeReason');
+ const name=val('cmeName'),brand=val('cmeBrand'),category=val('cmeCategory'),unit=val('cmeUnit'),rawPrice=val('cmePrice'),price=Number(rawPrice),rawDate=val('cmeDate'),originalDate=consOmanPriceDate(p.effectiveFrom),effective=rawDate===originalDate?Number(p.effectiveFrom):Date.parse(rawDate+'T00:00:00+04:00'),reason=val('cmeReason');
  if(!reason)return alert('Reason is required.');
- if(!name||!brand||!['Paint','Consumable'].includes(category)||!['Liter','kg','Piece'].includes(unit)||!rawPrice||!Number.isFinite(price)||price<0||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(rawDate)||!Number.isFinite(effective))return alert('Check all material fields.');
+ if(!name||!brand||!['Paint','Consumable'].includes(category)||!['Liter','kg','Piece'].includes(unit)||!rawPrice||!Number.isFinite(price)||price<0||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(rawDate)||!Number.isFinite(effective)||consOmanPriceDate(effective)!==rawDate)return alert('Check all material fields.');
  if(c.materials.some(x=>x!==m&&x.active!==false&&x.name.trim().toLowerCase()===name.toLowerCase()))return alert('Duplicate material name.');
  if(c.brands.some(x=>x!==b&&x.active!==false&&x.name.trim().toLowerCase()===brand.toLowerCase()))return alert('Duplicate brand name.');
- const unitChanged=unit!==m.unit,dateChanged=effective!==Number(p.effectiveFrom),priceChanged=Math.round(price*1000)!==Math.round(Number(p.pricePerUnit)*1000);
+ const unitChanged=unit!==m.unit,dateChanged=rawDate!==originalDate,priceChanged=Math.round(price*1000)!==Math.round(Number(p.pricePerUnit)*1000);
  if(unitChanged){
   const used=(c.issues||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid))||(c.actuals||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid));
   if(used)return alert('Unit change blocked: this material has recorded quantities. Historical conversions require a reviewed migration.');
  }
  if(dateChanged&&(c.actuals||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid&&l.brandId===bid)))return alert('Effective date change requires a reviewed costing migration because Actual Materials exist.');
- if(dateChanged&&c.prices.some(x=>x!==p&&!x.voided&&x.materialId===mid&&x.brandId===bid&&Number(x.effectiveFrom)===effective))return alert('Another price already exists on this effective date.');
+ if(dateChanged&&c.prices.some(x=>x!==p&&!x.voided&&x.materialId===mid&&x.brandId===bid&&consOmanPriceDate(x.effectiveFrom)===rawDate))return alert('Another price already exists on this effective date.');
  const changed=name!==m.name||brand!==b.name||category!==(m.category||'Consumable')||unitChanged||dateChanged||priceChanged;
  if(!changed)return alert('No changes detected.');
  if(!confirm('Save all corrections to this master row?'))return;
