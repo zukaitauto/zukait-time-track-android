@@ -1,0 +1,33 @@
+name: V420 production canary read-only smoke
+on:
+  push:
+    branches: [qa/v420-production-canary-smoke]
+permissions:
+  contents: read
+jobs:
+  public-boundaries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      PROJECT: pjknotnjkufadqavcmii
+      PUBLISHABLE_KEY: sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A
+    steps:
+      - name: Compare existing staff and candidate endpoint authentication barriers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in workshop-api workshop-api-v420-canary; do
+            url="https://${PROJECT}.supabase.co/functions/v1/$name"
+            status=$(curl --silent --show-error --max-time 15 -o /tmp/get.json -w '%{http_code}' "$url")
+            test "$status" = 405
+            jq -e '.ok==false and .code=="method"' /tmp/get.json
+            status=$(curl --silent --show-error --max-time 15 -o /tmp/no-key.json -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"action":"revision"}' "$url")
+            test "$status" = 401
+            jq -e '.ok==false and .code=="bad_api_key"' /tmp/no-key.json
+            for action in revision consumables_stock consumables_invoice_price_apply consumables_invoice_price_reconcile; do
+              status=$(curl --silent --show-error --max-time 15 -o /tmp/no-session.json -w '%{http_code}' -X POST -H "apikey: $PUBLISHABLE_KEY" -H 'Content-Type: application/json' -d "{\"action\":\"$action\",\"operation\":\"STATUS\"}" "$url")
+              test "$status" = 401
+              jq -e '.ok==false and .code=="invalid_session"' /tmp/no-session.json
+            done
+            echo "PASS $name: GET and anonymous access denied; no records changed."
+          done
