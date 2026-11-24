@@ -10,8 +10,10 @@ window.me={role:'Manager',id:'qa-manager'};
 window.state={consumables:{
  materials:[{id:'m1',name:'2K BLACK',unit:'Liter',department:'Painting'},
  {id:'m2',name:'2K Hardener',unit:'Liter',department:'Painting'},
- {id:'m3',name:'Primer',unit:'Liter',department:'Painting'}],
- brands:[{id:'b1',name:'2K BLACK'},{id:'b2',name:'Z99'},{id:'b3',name:'Sikkens'}],
+ {id:'m3',name:'Primer',unit:'Liter',department:'Painting'},
+ {id:'m4',name:'2K BLACK',unit:'Liter',department:'Painting'}],
+ brands:[{id:'b1',name:'2K BLACK'},{id:'b2',name:'Z99'},{id:'b3',name:'Sikkens'},
+ {id:'b4',name:'2K BLACK'}],
  prices:[]
 }};
 window.__stockRequests=[];
@@ -29,7 +31,8 @@ window.zukaitCloud={async stockRequest(request){
   const rows=request.page===0?
    [{material_id:'m1',brand_id:'b1',unit:'Liter',physical:5,reserved:0,stock_value:35,minimum:1,initialised:true},
     {material_id:'m2',brand_id:'b2',unit:'Liter',physical:4,reserved:0,stock_value:20,minimum:1,initialised:true}]:
-   [{material_id:'m3',brand_id:'b3',unit:'Liter',physical:10,reserved:0,stock_value:80,minimum:1,initialised:true}];
+   [{material_id:'m3',brand_id:'b3',unit:'Liter',physical:10,reserved:0,stock_value:80,minimum:1,initialised:true},
+    {material_id:'m4',brand_id:'b4',unit:'Liter',physical:2,reserved:0,stock_value:10,minimum:1,initialised:true}];
   return {ok:true,items:rows,hasMore:request.page===0};
  }
  throw Error('A Stock UI test attempted unexpected server action: '+request.operation);
@@ -88,7 +91,21 @@ try{
   await page.locator('#zs-material-brand-search').fill('Sikkens');
   assert.equal(await page.locator('#zs-material').inputValue(),'',
    'Editing the search must clear a previous selection');
+  // Loading another page is read-only and must not erase an unfinished count.
+  await page.locator('#zs-entrytype').selectOption('OPENING');
+  await page.locator('#zs-qty').fill('3.25');
+  await page.locator('#zs-method').selectOption('unit');
+  await page.locator('#zs-price').fill('8.5');
+  await page.locator('#zs-count-confirmed').check();
+  await page.locator('#zs-opening-note').fill('Manager verified this stock count on site');
   await page.getByRole('button',{name:/Load next 100 linked materials/}).click();
+  assert.equal(await page.locator('#zs-entrytype').inputValue(),'OPENING');
+  assert.equal(await page.locator('#zs-qty').inputValue(),'3.25');
+  assert.equal(await page.locator('#zs-method').inputValue(),'unit');
+  assert.equal(await page.locator('#zs-price').inputValue(),'8.5');
+  assert.equal(await page.locator('#zs-count-confirmed').isChecked(),true);
+  assert.equal(await page.locator('#zs-opening-note').inputValue(),'Manager verified this stock count on site');
+  assert.match(await page.locator('#zs-price-calculated').textContent(),/27\\.625/);
   await page.locator('.zs-pair-choice:visible').first().waitFor();
   assert.equal(await page.locator('#zs-material-brand-search').inputValue(),'Sikkens',
    'Keep typed query when user loads next page');
@@ -96,6 +113,17 @@ try{
   await page.locator('.zs-pair-choice:visible').first().click();
   assert.equal(await page.locator('#zs-material').inputValue(),'m3');
   assert.equal(await page.locator('#zs-brand').inputValue(),'b3');
+
+  // Two differently identified items can legitimately have identical labels.
+  // Typing the ambiguous label must NOT silently select the first matching ID.
+  await page.locator('#zs-material-brand-search').fill('2K BLACK — 2K BLACK');
+  assert.equal(await page.locator('#zs-material').inputValue(),'');
+  assert.equal(await page.locator('#zs-brand').inputValue(),'');
+  assert.match(await page.locator('#zs-pair-hint').textContent(),/more than one matching item/i);
+  assert.equal(await page.locator('.zs-pair-choice:visible').count(),2);
+  await page.locator('.zs-pair-choice:visible').nth(1).click();
+  assert.equal(await page.locator('#zs-material').inputValue(),'m4');
+  assert.equal(await page.locator('#zs-brand').inputValue(),'b4');
   const operations=await page.evaluate(()=>window.__stockRequests.map(x=>x.operation));
   assert.equal(operations.filter(x=>x==='WRITE').length,0,'Searching and selecting cannot write stock');
   assert.deepEqual(operations.filter(x=>x==='LIST'),['LIST','LIST'],
