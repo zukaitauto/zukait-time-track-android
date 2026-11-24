@@ -134,11 +134,11 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const materialId=safeId(body.materialId);
     const brandId=safeId(body.brandId);
     if(!materialId||!brandId)return bad('stock_item_required');
-    const {data,error}=await admin.from('zukait_stock_balances')
-      .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at')
-      .eq('material_id',materialId).eq('brand_id',brandId).maybeSingle();
-    if(error)return bad('stock_read_failed',503);
-    return good({item:data||null});
+    const {data,error}=await admin.rpc('zukait_stock_counted_page',{
+      p_page:0,p_department:department||null,p_material_id:materialId,p_brand_id:brandId
+    });
+    if(error||!Array.isArray(data)||data.some(row=>typeof row.initialised!=='boolean'))return bad('stock_read_failed',503);
+    return good({item:data[0]||null});
   }
   if(operation==='REPORTS') {
     const {data,error}=department
@@ -149,15 +149,11 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   }
   if(operation==='LIST') {
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
-    const fields='material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at';
-    let query=admin.from('zukait_stock_balances').select(department
-      ? fields+',material:zukait_stock_material_keys!inner(department,active)' : fields);
-    if(department)query=query.in('material.department',[department,'Both']).eq('material.active',true);
-    const {data,error}=await query.order('material_id',{ascending:true}).order('brand_id',{ascending:true})
-      .range(page*100,(page+1)*100);
-    if(error)return bad('stock_read_failed',503);
-    const rows=Array.isArray(data)?data:[];
-    return good({items:rows.slice(0,100),page,hasMore:rows.length>100});
+    const {data,error}=await admin.rpc('zukait_stock_counted_page',{
+      p_page:page,p_department:department||null,p_material_id:null,p_brand_id:null
+    });
+    if(error||!Array.isArray(data)||data.some(row=>typeof row.initialised!=='boolean'))return bad('stock_read_failed',503);
+    return good({items:data.slice(0,100),page,hasMore:data.length>100});
   }
   if(operation==='HISTORY') {
     const materialId=safeId(body.materialId);

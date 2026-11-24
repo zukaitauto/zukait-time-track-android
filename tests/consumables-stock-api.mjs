@@ -24,7 +24,14 @@ const admin={
        [],error:null}).then(resolve,reject)}
    };return q;
  },
- async rpc(fn,args){requests.push({type:'write',fn,args});return {data:{ok:true},error:null}}
+ async rpc(fn,args){
+   if(fn==='zukait_stock_counted_page'){
+     requests.push({type:'read',fn,args});
+     return {data:args.p_material_id?[{material_id:args.p_material_id,brand_id:args.p_brand_id,unit:'Liter',physical:10,reserved:2,initialised:true}]:
+       Array.from({length:101},(_,i)=>({material_id:'m'+i,brand_id:'b',initialised:i===0})),error:null};
+   }
+   requests.push({type:'write',fn,args});return {data:{ok:true},error:null}
+ }
 };
 const M={role:'Manager',id:'m'},S={role:'Supervisor',id:'s'},E={role:'Employee',id:'e'};
 let r=await consumablesStockApi(admin,E,{operation:'LIST'},{enabled:true});
@@ -209,3 +216,11 @@ assert.equal((await consumablesStockApi(reportsAdmin,{role:'Employee'},reportsBo
 assert.equal((await consumablesStockApi(reportsAdmin,{role:'Supervisor'},reportsBody)).status,503);
 const report=await consumablesStockApi(reportsAdmin,{role:'Supervisor'},reportsBody,{enabled:true});
 assert.deepEqual(report.body,{ok:true,report:{valuation:88,items:101,low:2,out:1}});
+
+// Stock count status must be authoritative and fail closed on older or failed projections.
+const pageCalls=[];
+const countedAdmin={rpc:async(fn,args)=>{assert.equal(fn,'zukait_stock_counted_page');pageCalls.push(args);return {data:[{material_id:'clean',brand_id:'ritver',physical:6.4,reserved:0,stock_value:9,initialised:true},{material_id:'clean',brand_id:'other',physical:0,reserved:0,stock_value:0,initialised:false}],error:null}}};
+const countedPage=await consumablesStockApi(countedAdmin,M,{operation:'LIST',department:'Painting',page:0},{enabled:true});
+assert.equal(countedPage.status,200);assert.equal(countedPage.body.items[0].initialised,true);assert.equal(countedPage.body.items[1].initialised,false);assert.deepEqual(pageCalls[0],{p_page:0,p_department:'Painting',p_material_id:null,p_brand_id:null});
+const missingFlag=await consumablesStockApi({rpc:async()=>({data:[{physical:0}],error:null})},M,{operation:'LIST'},{enabled:true});assert.equal(missingFlag.status,503);
+console.log('Counted ledger projection: exact pair, department and missing-status guard PASS');
