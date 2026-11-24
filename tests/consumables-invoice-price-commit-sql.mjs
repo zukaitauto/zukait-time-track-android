@@ -45,5 +45,45 @@ try{
  await assert.rejects(db.exec("update public.zukait_purchase_invoices set revision=2,status='cancelled'"),/INVOICE_PRICE_RECONCILIATION_REQUIRED/);
  await assert.rejects(db.exec("update public.zukait_purchase_invoices set revision=2,invoice_date='2026-11-23'"),/INVOICE_PRICE_RECONCILIATION_REQUIRED/);
  assert.equal((await db.query('select status from public.zukait_purchase_invoices')).rows[0].status,'posted');
+
+ // Isolate the wrapper's atomicity with a small correction/stock fixture.
+ // The original full ledger RPCs require separate end-to-end qualification.
+ await db.exec(`
+ create table public.test_stock(qty integer);insert into public.test_stock values(10);
+ create function public.zukait_purchase_invoice_cancel(token text,request_id text,d jsonb)
+ returns jsonb language plpgsql as $f$ declare r public.zukait_purchase_invoices%rowtype;
+ begin
+ if d->>'reason'='Stock used already' then raise exception 'INVOICE_STOCK_USED_OR_CHANGED';end if;
+ update public.test_stock set qty=qty-3;
+ update public.zukait_purchase_invoices set status='cancelled',revision=revision+1 where id=(d->>'invoiceId')::uuid returning * into r;
+ return to_jsonb(r);
+ end $f$;
+ create function public.zukait_purchase_invoice_correct_header(token text,request_id text,d jsonb)
+ returns jsonb language sql as $f$ select public.zukait_purchase_invoice_cancel(token,request_id,d) $f$;
+ create function public.zukait_purchase_invoice_correct_lines(token text,request_id text,d jsonb)
+ returns jsonb language sql as $f$ select public.zukait_purchase_invoice_cancel(token,request_id,d) $f$;
+ `);
+ await db.exec(readFileSync(new URL('../supabase/staged/CONSUMABLES_INVOICE_PRICE_RECONCILIATION.sql',import.meta.url),'utf8'));
+ const review={invoiceId:invoice,invoiceRevision:1,applicationRequestId:'r1',changes:[{priceId:'p',action:'void'}]};
+ const reverseReceipt={...review,requestId:'rev1'};
+ const reversed={prices:[{id:'p',voided:true}],actuals:[],audit:[...c.audit,{type:'INVOICE_PRICE_RECONCILED',invoiceId:invoice,applicationRequestId:'r1',requestId:'rev1',by:'m',receipt:reverseReceipt}]};
+ const reconcile=async({reason='Cancel reviewed invoice',live=[{}],token='manager',expected=11}={})=>{
+  const correction={invoiceId:invoice,expectedRevision:1,reason};
+  const fingerprint={mode:'cancel',correction,review};
+  return (await db.query('select public.zukait_invoice_price_reconcile_commit($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) as r',[token,invoice,1,'r1','rev1','cancel',JSON.stringify(correction),JSON.stringify(fingerprint),expected,JSON.stringify(reversed),JSON.stringify(reverseReceipt),JSON.stringify(live)])).rows[0].r;
+ };
+ const qty=async()=>(await db.query('select qty from public.test_stock')).rows[0].qty;
+ const active=async()=>(await db.query("select reconciled_at is null as active from public.zukait_invoice_price_applications where request_id='r1'")).rows[0].active;
+ await assert.rejects(reconcile({token:'supervisor'}),/MANAGER_ONLY/);
+ assert.equal((await reconcile({expected:10})).code,'conflict');
+ await assert.rejects(reconcile({reason:'Stock used already'}),/INVOICE_STOCK_USED_OR_CHANGED/);
+ await assert.rejects(reconcile({live:[]}),/WORKSHOP_PRICE_RECONCILIATION_COMMIT_FAILED/);
+ assert.equal(await qty(),10);assert.equal(await active(),true);assert.equal(Number((await state()).revision),11);
+ assert.equal((await db.query('select status from public.zukait_purchase_invoices')).rows[0].status,'posted');
+ const reversedDone=await reconcile();assert.equal(reversedDone.ok,true);assert.equal(reversedDone.invoice.status,'cancelled');
+ assert.equal(await qty(),7);assert.equal(await active(),false);assert.equal(Number((await state()).revision),12);
+ assert.equal((await reconcile()).replayed,true);assert.equal(await qty(),7);
+ await assert.rejects(reconcile({reason:'Different cancellation reason'}),/REQUEST_ID_CONFLICT/);
+ console.log('Atomic reconciliation wrapper fixture: rollback, stock guard, role, revision and replay PASS');
  console.log('Isolated SQL fixture: role, revision, rollback, atomic receipt, replay, correction and cancellation guard PASS');
 }finally{await db.close()}
