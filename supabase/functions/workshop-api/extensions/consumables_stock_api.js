@@ -11,7 +11,7 @@ function safeId(value, limit=120) {
   const s=String(value||'').trim();
   return s.length<=limit&&/^[a-zA-Z0-9_.:-]*$/.test(s)?s:'';
 }
-export async function consumablesStockApi(admin,user,body,{enabled=false,writesEnabled=false,mechanicalWritesEnabled=false,masterLinkEnabled=false,sessionHash=''}={}) {
+export async function consumablesStockApi(admin,user,body,{enabled=false,writesEnabled=false,mechanicalWritesEnabled=false,masterLinkEnabled=false,countStatusEnabled=false,sessionHash=''}={}) {
   if(!roles.has(user?.role))return bad('stock_forbidden',403);
   if(!body||typeof body!=='object'||Array.isArray(body)||
     Object.keys(body).some(k=>!allowedKeys.has(k)))return bad('stock_invalid_request');
@@ -135,7 +135,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const brandId=safeId(body.brandId);
     if(!materialId||!brandId)return bad('stock_item_required');
     const {data,error}=await admin.from('zukait_stock_balances')
-      .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at')
+      .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at'+(countStatusEnabled?',initialised':''))
       .eq('material_id',materialId).eq('brand_id',brandId).maybeSingle();
     if(error)return bad('stock_read_failed',503);
     return good({item:data||null});
@@ -149,7 +149,10 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   }
   if(operation==='LIST') {
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
-    const fields='material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at';
+    // Never query an uninstalled column. Enable verified count metadata only
+    // after the staged migration, RPC count updates and isolated restore QA.
+    const fields='material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at'+
+      (countStatusEnabled?',initialised':'');
     let query=admin.from('zukait_stock_balances').select(department
       ? fields+',material:zukait_stock_material_keys!inner(department,active)' : fields);
     if(department)query=query.in('material.department',[department,'Both']).eq('material.active',true);
