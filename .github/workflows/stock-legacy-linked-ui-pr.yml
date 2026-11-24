@@ -5,6 +5,7 @@ on:
     paths:
       - 'app/src/main/assets/consumables_stock_ui.js'
       - 'tests/consumables-stock-home-responsive.mjs'
+      - 'tests/consumables-stock-search-toolbar-mobile.mjs'
       - 'app/src/main/assets/consumables_ui.js'
       - 'app/src/main/assets/consumables.js'
       - 'tests/consumables-invoice-price-review.mjs'
@@ -66,4 +67,5 @@ jobs:
           npx playwright install chromium
           node tests/consumables-master-mobile-responsive.mjs
           node tests/consumables-stock-home-responsive.mjs
+          node tests/consumables-stock-search-toolbar-mobile.mjs
           node tests/consumables-purchase-browser-acceptance.mjs
