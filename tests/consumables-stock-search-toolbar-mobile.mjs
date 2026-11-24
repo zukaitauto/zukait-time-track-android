@@ -35,6 +35,7 @@ window.zukaitCloud={async stockRequest(request){
     {material_id:'m4',brand_id:'b4',unit:'Liter',physical:2,reserved:0,stock_value:10,minimum:1,initialised:true}];
   return {ok:true,items:rows,hasMore:request.page===0};
  }
+ if(request.operation==='WRITE')return {ok:true,receipt:{final:true}};
  throw Error('A Stock UI test attempted unexpected server action: '+request.operation);
 }};
 `;
@@ -105,7 +106,7 @@ try{
   assert.equal(await page.locator('#zs-price').inputValue(),'8.5');
   assert.equal(await page.locator('#zs-count-confirmed').isChecked(),true);
   assert.equal(await page.locator('#zs-opening-note').inputValue(),'Manager verified this stock count on site');
-  assert.match(await page.locator('#zs-price-calculated').textContent(),/27\\.625/);
+  assert.match(await page.locator('#zs-price-calculated').textContent(),/27\.625/);
   await page.locator('.zs-pair-choice:visible').first().waitFor();
   assert.equal(await page.locator('#zs-material-brand-search').inputValue(),'Sikkens',
    'Keep typed query when user loads next page');
@@ -128,9 +129,22 @@ try{
   assert.equal(operations.filter(x=>x==='WRITE').length,0,'Searching and selecting cannot write stock');
   assert.deepEqual(operations.filter(x=>x==='LIST'),['LIST','LIST'],
    'Only one server LIST per deliberately loaded page');
+  // Fake in-memory stock API only: Save must submit the clicked exact IDs.
+  await page.locator('#zs-entrytype').selectOption('PURCHASE');
+  await page.locator('#zs-qty').fill('2');
+  await page.locator('#zs-method').selectOption('unit');
+  await page.locator('#zs-price').fill('10');
+  await page.locator('#zs-save-entry').click();
+  await page.waitForFunction(()=>window.__stockRequests.some(x=>x.operation==='WRITE'));
+  const saves=await page.evaluate(()=>window.__stockRequests.filter(x=>x.operation==='WRITE'));
+  assert.equal(saves.length,1);
+  assert.equal(saves[0].command,'PURCHASE');
+  assert.equal(saves[0].data.materialId,'m4');
+  assert.equal(saves[0].data.brandId,'b4');
+  assert.equal(saves[0].data.quantity,2);
   await page.getByRole('button',{name:/Close/}).first().click();
   assert.equal(await page.locator('#zs-stock-screen').count(),0,'Close must remove full-screen stock UI');
   await page.close();
  }
 }finally{await browser.close();}
-console.log('PASS V416: separate Back/Close, pastel 5-card menu, iPhone material/brand search and manual page lookup at 320–768px; no stock writes');
+console.log('PASS V416: iPhone header, pastel cards, duplicate-label exact-ID selection/save, form persistence and manual paging; fake API only');
