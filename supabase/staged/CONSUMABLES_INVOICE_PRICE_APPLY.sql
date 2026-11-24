@@ -23,8 +23,8 @@ grant select,insert,update on public.zukait_invoice_price_applications to servic
 create function public.zukait_invoice_price_reconciliation_guard()
 returns trigger language plpgsql security invoker set search_path='' as $fn$
 begin
- if (new.revision,new.status,new.invoice_date,new.lines) is distinct from
-    (old.revision,old.status,old.invoice_date,old.lines)
+ if (new.status,new.invoice_date,new.lines) is distinct from
+    (old.status,old.invoice_date,old.lines)
  and exists(select 1 from public.zukait_invoice_price_applications where invoice_id=old.id and reconciled_at is null)
  then raise exception 'INVOICE_PRICE_RECONCILIATION_REQUIRED' using errcode='23514'; end if;
  return new;
@@ -83,6 +83,14 @@ begin
  or jsonb_typeof(p_receipt->'changes') is distinct from 'array'
  then raise exception 'INVALID_PRICE_APPLICATION';end if;
  if jsonb_array_length(p_receipt->'changes')=0 then raise exception 'INVALID_PRICE_APPLICATION';end if;
+ -- An active application cannot share an owned price ID with another invoice.
+ -- Concurrent applications also serialize through workshop revision CAS.
+ if exists(select 1 from public.zukait_invoice_price_applications a
+ cross join lateral jsonb_array_elements(a.receipt->'changes') existing
+ cross join lateral jsonb_array_elements(p_receipt->'changes') proposed
+ where a.reconciled_at is null and a.invoice_id<>p_invoice_id
+ and existing->>'priceId'=proposed->>'priceId')
+ then raise exception 'INVOICE_PRICE_SOURCE_CONFLICT';end if;
  if (p_consumables - ARRAY['prices','actuals','audit']::text[]) is distinct from
     ((v_state.data->'consumables') - ARRAY['prices','actuals','audit']::text[])
  then raise exception 'UNRELATED_CONSUMABLES_CHANGE';end if;
