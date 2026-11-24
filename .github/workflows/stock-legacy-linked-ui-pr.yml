@@ -8,6 +8,11 @@ on:
       - 'app/src/main/assets/consumables_ui.js'
       - 'app/src/main/assets/consumables.js'
       - 'tests/consumables-invoice-price-review.mjs'
+      - 'tests/consumables-invoice-price-api.mjs'
+      - 'tests/consumables-invoice-price-commit-sql.mjs'
+      - 'supabase/functions/workshop-api/extensions/invoice_price_*.js'
+      - 'supabase/functions/workshop-api/index.ts'
+      - 'supabase/staged/CONSUMABLES_INVOICE_PRICE_APPLY.sql'
       - 'tests/consumables-master-mobile-responsive.mjs'
       - 'tests/consumables-stock-legacy-linked-ui.mjs'
       - 'package.json'
@@ -41,6 +46,8 @@ jobs:
         run: |
           node tests/consumables-ui.mjs
           node tests/consumables-invoice-price-review.mjs
+          node tests/consumables-invoice-price-api.mjs
+          node tests/consumables-invoice-price-commit-sql.mjs
       - name: Check Manager Materials and Brand Price modal on iPhone and desktop
         run: |
           npx playwright install chromium
