@@ -1,5 +1,5 @@
 -- STAGED ONLY. Manager-only reference corrections, not stock quantity reversal.
-alter table public.zukait_purchase_invoices add column revision integer not null default 1 check(revision>0);
+alter table public.zukait_purchase_invoices add column revision integer not null default 1 check(revision>0), add column status text not null default 'posted' check(status in ('posted','cancelled'));
 create table public.zukait_purchase_invoice_audit(
  request_id text primary key, invoice_id uuid not null references public.zukait_purchase_invoices(id),
  actor_id text not null, fingerprint jsonb not null, reason text not null,
@@ -36,6 +36,7 @@ begin
  v_key:=jsonb_build_array(lower(regexp_replace(normalize(v_supplier,NFKC),'\s+',' ','g')),lower(regexp_replace(normalize(v_number,NFKC),'\s+',' ','g')))::text;
  select * into v_row from public.zukait_purchase_invoices where id=v_id for update;
  if not found then raise exception 'INVOICE_NOT_FOUND'; end if;
+ if v_row.status<>'posted' then raise exception 'INVOICE_CANCELLED';end if;
  if v_revision is distinct from v_row.revision then raise exception 'INVOICE_REVISION_CONFLICT'; end if;
  v_before:=jsonb_build_object('supplier',v_row.supplier,'invoiceNumber',v_row.invoice_number,'invoiceDate',v_row.invoice_date,'revision',v_row.revision);
  if (v_supplier,v_number,v_date)=(v_row.supplier,v_row.invoice_number,v_row.invoice_date) then raise exception 'NO_INVOICE_CHANGE'; end if;
@@ -79,6 +80,7 @@ begin
  end if;
  select * into v_row from public.zukait_purchase_invoices where id=v_id for update;
  if not found then raise exception 'INVOICE_NOT_FOUND'; end if;
+ if v_row.status<>'posted' then raise exception 'INVOICE_CANCELLED';end if;
  if v_revision is distinct from v_row.revision then raise exception 'INVOICE_REVISION_CONFLICT'; end if;
  if jsonb_array_length(p_data->'lines')<>jsonb_array_length(v_row.lines) then raise exception 'INVOICE_PAIR_SET_CHANGE_REQUIRES_REVIEW'; end if;
  if exists(select 1 from jsonb_array_elements(p_data->'lines') x group by x->>'materialId',x->>'brandId' having count(*)>1) then raise exception 'DUPLICATE_MATERIAL_BRAND'; end if;
@@ -121,3 +123,69 @@ begin
 end $fn$;
 revoke all on function public.zukait_purchase_invoice_correct_lines(text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.zukait_purchase_invoice_correct_lines(text,text,jsonb) to service_role;
+
+-- Cancellation is a compensating ledger transaction; never delete the invoice,
+-- its original purchase movements, or any of its historical reference keys.
+create function public.zukait_purchase_invoice_cancel(p_session_hash text,p_request_id text,p_data jsonb)
+returns jsonb language plpgsql security invoker set search_path='' as $fn$
+declare
+ v_actor text; v_role text; v_row public.zukait_purchase_invoices%rowtype;
+ v_prior public.zukait_purchase_invoice_audit%rowtype; v_item public.zukait_stock_balances%rowtype;
+ v_id uuid; v_revision integer; v_reason text; v_line jsonb; v_last text;
+ v_m text;v_b text;v_q numeric;v_cost numeric;v_idx integer:=0;v_before jsonb;v_after jsonb;v_receipt jsonb;
+begin
+ select sc.user_id::text,sc.role into v_actor,v_role from public.staff_sessions ss join public.staff_credentials sc on sc.user_id=ss.user_id
+ where ss.token_hash=nullif(p_session_hash,'') and ss.revoked_at is null and sc.active and not coalesce(sc.must_change,false);
+ if v_actor is null or v_role<>'Manager' then raise exception 'MANAGER_ONLY' using errcode='42501';end if;
+ if p_request_id is null or p_request_id !~ '^[a-zA-Z0-9_.:-]{1,128}$' then raise exception 'REQUEST_ID_REQUIRED';end if;
+ if jsonb_typeof(p_data) is distinct from 'object' or octet_length(p_data::text)>4096 then raise exception 'INVALID_INVOICE_CORRECTION';end if;
+ if exists(select 1 from jsonb_object_keys(p_data) k where k not in ('invoiceId','expectedRevision','reason')) then raise exception 'INVALID_INVOICE_CORRECTION';end if;
+ v_id:=(p_data->>'invoiceId')::uuid;v_revision:=(p_data->>'expectedRevision')::integer;v_reason:=trim(coalesce(p_data->>'reason',''));
+ if length(v_reason) not between 5 and 500 then raise exception 'INVALID_INVOICE_CORRECTION';end if;
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('zukait-invoice-correction:'||p_request_id,0));
+ select * into v_prior from public.zukait_purchase_invoice_audit where request_id=p_request_id;
+ if found then
+  if v_prior.actor_id<>v_actor or v_prior.fingerprint<>p_data then raise exception 'REQUEST_ID_CONFLICT' using errcode='23505';end if;
+  return v_prior.receipt;
+ end if;
+ select * into v_row from public.zukait_purchase_invoices where id=v_id for update;
+ if not found then raise exception 'INVOICE_NOT_FOUND';end if;
+ if v_row.status<>'posted' then raise exception 'INVOICE_CANCELLED';end if;
+ if v_revision is distinct from v_row.revision then raise exception 'INVOICE_REVISION_CONFLICT';end if;
+ v_before:=jsonb_build_object('revision',v_row.revision,'status',v_row.status,'lines',v_row.lines,'totalAmount',v_row.total_amount);
+ for v_line in select x from jsonb_array_elements(v_row.lines) x order by x->>'materialId',x->>'brandId' loop
+  v_idx:=v_idx+1;v_m:=v_line->>'materialId';v_b:=v_line->>'brandId';v_q:=(v_line->>'quantity')::numeric;v_cost:=(v_line->>'totalAmount')::numeric;
+  select * into v_item from public.zukait_stock_balances where material_id=v_m and brand_id=v_b for update;
+  if not found or v_item.unit is distinct from v_line->>'unit' then raise exception 'STOCK_UNIT_CONFLICT';end if;
+  select request_id into v_last from public.zukait_stock_movements where material_id=v_m and brand_id=v_b order by id desc limit 1;
+  if v_last is distinct from coalesce(v_line->>'lastStockMovementRequestId',v_line->>'stockReceiptId') then raise exception 'INVOICE_STOCK_USED_OR_CHANGED';end if;
+  if v_item.physical-v_q<v_item.reserved or v_item.stock_value-v_cost<0 or (v_item.physical-v_q=0 and v_item.stock_value-v_cost<>0) then raise exception 'INVOICE_STOCK_CORRECTION_UNSAFE';end if;
+  update public.zukait_stock_balances set physical=physical-v_q,stock_value=stock_value-v_cost,updated_at=now() where material_id=v_m and brand_id=v_b;
+  insert into public.zukait_stock_movements(material_id,brand_id,action,physical_delta,reserved_delta,cost_delta,actor_id,request_id,note)
+  values(v_m,v_b,'ADJUST',-v_q,0,-v_cost,v_actor,'invoice-cancel:'||v_id::text||':'||v_idx::text,'Invoice cancellation '||v_id::text||': '||left(v_reason,160));
+ end loop;
+ update public.zukait_purchase_invoices set status='cancelled',revision=revision+1 where id=v_id returning * into v_row;
+ v_after:=jsonb_build_object('revision',v_row.revision,'status',v_row.status,'totalAmount',v_row.total_amount);
+ v_receipt:=to_jsonb(v_row)-'fingerprint'-'invoice_key';
+ insert into public.zukait_purchase_invoice_audit(request_id,invoice_id,actor_id,fingerprint,reason,before_header,after_header,receipt)
+ values(p_request_id,v_id,v_actor,p_data,v_reason,v_before,v_after,v_receipt);
+ return v_receipt;
+end $fn$;
+revoke all on function public.zukait_purchase_invoice_cancel(text,text,jsonb) from public,anon,authenticated;
+grant execute on function public.zukait_purchase_invoice_cancel(text,text,jsonb) to service_role;
+
+create function public.zukait_purchase_invoice_audit_list(p_session_hash text,p_invoice_id uuid,p_page integer)
+returns jsonb language plpgsql stable security invoker set search_path='' as $fn$
+declare v_role text;
+begin
+ select sc.role into v_role from public.staff_sessions ss join public.staff_credentials sc on sc.user_id=ss.user_id
+ where ss.token_hash=nullif(p_session_hash,'') and ss.revoked_at is null and sc.active and not coalesce(sc.must_change,false);
+ if v_role is distinct from 'Manager' then raise exception 'MANAGER_ONLY' using errcode='42501';end if;
+ if p_invoice_id is null or p_page is null or p_page not between 0 and 100 then raise exception 'INVALID_INVOICE_FILTER';end if;
+ return (select coalesce(jsonb_agg(to_jsonb(q) order by q.created_at desc,q.request_id desc),'[]'::jsonb)
+ from (select request_id,actor_id,reason,before_header,after_header,created_at
+ from public.zukait_purchase_invoice_audit where invoice_id=p_invoice_id order by created_at desc,request_id desc limit 51 offset p_page*50) q);
+end $fn$;
+revoke all on function public.zukait_purchase_invoice_audit_list(text,uuid,integer) from public,anon,authenticated;
+grant execute on function public.zukait_purchase_invoice_audit_list(text,uuid,integer) to service_role;
+create index zukait_purchase_invoice_audit_invoice_idx on public.zukait_purchase_invoice_audit(invoice_id,created_at desc,request_id desc);
