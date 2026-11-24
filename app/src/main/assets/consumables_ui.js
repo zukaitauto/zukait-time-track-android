@@ -34,7 +34,8 @@ window.openConsumablesModule=function(){
 
 /* Staged Purchase Entry: local draft only. Do not enable stock or price writes
    until a single authenticated invoice transaction and read endpoint exist. */
-let consPurchaseDraft=null;
+let consPurchaseDraft=null,consPurchaseBusy=false,consPurchasePending=null,consPurchaseHistorySeq=0;
+const consPurchaseApi=body=>window.zukaitCloud?.stockRequest?.(body)||Promise.reject(Error('Stock server unavailable'));
 const consPurchaseAllowed=()=>['Manager','Supervisor'].includes(role());
 function consPurchasePairs(){
  const c=C().ensureState(state),seen=new Set(),rows=[];
@@ -51,13 +52,19 @@ const consPurchaseToday=()=>new Date(Date.now()+4*3600000).toISOString().slice(0
 const consPurchaseStyle='<style>.cp-entry{display:grid;gap:12px;max-width:780px;margin:auto;min-width:0}.cp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cp-entry h3{margin:0;color:#17324f}.cp-entry .cp-field{display:grid;gap:5px;min-width:0;font-size:13px;font-weight:700;color:#304c68}.cp-entry input,.cp-entry select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box;border:1px solid #c4d6e7;border-radius:9px;background:#fff!important;color:#17324f!important;padding:8px;font-size:16px}.cp-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cp-entry .cp-panel{border:1px solid #d5e2ed;border-radius:12px;padding:12px;background:#f7faff}.cp-search-results{max-height:210px;overflow:auto}.cp-search-results button{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px;border:1px solid #dbe6f2!important;border-radius:7px;background:#fff!important;color:#17324f!important;text-align:left!important;margin:4px 0;min-height:42px}.cp-entry .cp-action{padding:10px 12px;border:1px solid #b6cfe5;border-radius:8px;color:#185999!important;background:#e9f3ff!important;font-weight:800}.cp-entry .cp-add{background:#e4f4ea!important;color:#166534!important}.cp-entry .cp-total{background:#194b80;color:#fff;padding:13px;border-radius:10px;font-weight:800}.cp-entry .cp-line{display:grid;grid-template-columns:minmax(0,1.5fr) .6fr .8fr .8fr auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #dce5ed;font-size:12px}.cp-lines{overflow-x:auto}.cp-entry .cp-line{min-width:430px}.cp-entry .cp-error{font-size:12px;color:#a13a1b}.cp-entry .cp-info{font-size:12px;color:#526b84}.cp-entry .cp-finish{min-height:44px;width:100%;background:#166534!important;color:#fff!important;border-radius:9px}.cp-entry .cp-finish:disabled{opacity:.55;cursor:not-allowed}@media(max-width:380px){.cp-two{grid-template-columns:1fr}}</style>';
 window.consOpenPurchaseEntry=function(reset=false){
  if(!consPurchaseAllowed())return;
- if(!consPurchaseDraft||reset)consPurchaseDraft={invoiceNumber:'',supplier:'',invoiceDate:consPurchaseToday(),lines:[],selected:null,method:'unit'};
+ if(consPurchaseBusy)return;
+ if(!consPurchaseDraft||reset&&!consPurchasePending)consPurchaseDraft={invoiceNumber:'',supplier:'',invoiceDate:consPurchaseToday(),lines:[],selected:null,method:'unit'};
  const d=consPurchaseDraft;
  modal('Purchase Entry',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Material Purchase</h3><button type="button" class="cp-action" onclick="consOpenPurchaseInvoices()">Invoice List</button></div>'+
  '<div class="cp-panel"><div class="cp-two"><label class="cp-field">Invoice Number<input id="cpInvoice" maxlength="100" autocomplete="off" value="'+esc(d.invoiceNumber)+'" oninput="consPurchaseHeader()"></label><label class="cp-field">Invoice Date<input id="cpDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(d.invoiceDate)+'" oninput="consPurchaseHeader()"></label></div><label class="cp-field">Supplier<input id="cpSupplier" maxlength="160" value="'+esc(d.supplier)+'" oninput="consPurchaseHeader()"></label></div>'+
  '<div class="cp-panel"><label class="cp-field">Search Material + Brand<input id="cpSearch" type="search" autocomplete="off" placeholder="Example: Clear CAPCI" oninput="consPurchaseSearch()"></label><div id="cpResults" class="cp-search-results"></div><div id="cpSelected"></div><div id="cpLineEditor" hidden><label class="cp-field">Quantity<input id="cpQty" inputmode="decimal" type="number" min="0" step="0.0001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Price entry<select id="cpMethod" onchange="consPurchaseChangeMethod()"><option value="unit">Price per Unit</option><option value="total">Total Purchase Amount</option></select></label><div class="cp-two"><label class="cp-field">Price / Unit (OMR)<input id="cpUnit" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Total Amount (OMR)<input id="cpAmount" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()" readonly></label></div><button type="button" class="cp-action cp-add" onclick="consPurchaseAddLine()">＋ ADD ITEM</button><div id="cpError" class="cp-error" role="status"></div></div></div>'+
- '<h3>Invoice Items</h3><div id="cpLines" class="cp-lines"></div><div id="cpTotal" class="cp-total"></div><button type="button" class="cp-finish" disabled>FINISH &amp; SAVE</button><div class="cp-info">Development preview: server invoice saving is not connected. No stock or prices are changed.</div></div>','openConsumablesModule()');
+ '<h3>Invoice Items</h3><div id="cpLines" class="cp-lines"></div><div id="cpTotal" class="cp-total"></div><button type="button" id="cpFinish" class="cp-finish" onclick="consPurchaseSave()" disabled>FINISH &amp; SAVE</button><div id="cpSaveStatus" class="cp-info" role="status">Checking server availability…</div></div>','openConsumablesModule()');
  consPurchaseRenderLines();
+ const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
+ consPurchaseApi({operation:'INVOICE_STATUS'}).then(r=>{
+   if(document.getElementById('cpFinish')!==button)return;
+   button.disabled=!(r?.ok&&r.ready===true);status.textContent=button.disabled?'Purchase invoice posting is not enabled.':'Save posts all invoice lines and stock movements together. Historical costing prices are not changed.';
+ }).catch(()=>{if(document.getElementById('cpFinish')===button)status.textContent='Server unavailable. Draft retained.'});
 };
 window.consPurchaseHeader=function(){
  if(!consPurchaseDraft)return;for(const [field,id] of [['invoiceNumber','cpInvoice'],['supplier','cpSupplier'],['invoiceDate','cpDate']]){const e=document.getElementById(id);if(e)consPurchaseDraft[field]=e.value}
@@ -92,7 +99,7 @@ window.consPurchaseChangeMethod=function(){
  unit.readOnly=method!=='unit';total.readOnly=method!=='total';consPurchaseCalculate();
 };
 window.consPurchaseAddLine=function(){
- if(!consPurchaseAllowed()||!consPurchaseDraft)return;
+ if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy)return;
  try{
   const d=consPurchaseDraft,l=consPurchaseReadLine();
   if(d.lines.length>=50)throw Error('Maximum 50 items per invoice.');
@@ -101,16 +108,63 @@ window.consPurchaseAddLine=function(){
   document.getElementById('cpSearch').value='';document.getElementById('cpSelected').innerHTML='';document.getElementById('cpLineEditor').hidden=true;consPurchaseRenderLines();
  }catch(e){const out=document.getElementById('cpError');if(out)out.textContent=String(e.message||e)}
 };
-window.consPurchaseRemoveLine=function(i){if(!consPurchaseAllowed()||!consPurchaseDraft||!Number.isInteger(i)||i<0||i>=consPurchaseDraft.lines.length)return;consPurchaseDraft.lines.splice(i,1);consPurchaseRenderLines()};
+window.consPurchaseRemoveLine=function(i){if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||!Number.isInteger(i)||i<0||i>=consPurchaseDraft.lines.length)return;consPurchaseDraft.lines.splice(i,1);consPurchaseRenderLines()};
 function consPurchaseRenderLines(){
  const out=document.getElementById('cpLines'),total=document.getElementById('cpTotal'),lines=consPurchaseDraft?.lines||[];
  if(!out||!total)return;
  out.innerHTML=lines.length?'<div class="cp-line"><b>Material / Brand</b><b>Qty</b><b>Rate</b><b>OMR</b><span></span></div>'+lines.map((l,i)=>'<div class="cp-line"><b>'+esc(l.material)+' · '+esc(l.brand)+'</b><span>'+esc(l.quantity)+'</span><span>'+l.unitPrice.toFixed(3)+'</span><b>'+l.totalAmount.toFixed(3)+'</b><button type="button" class="cp-action" onclick="consPurchaseRemoveLine('+i+')" aria-label="Remove item">×</button></div>').join(''):'<p class="cp-info">No items added.</p>';
  total.textContent='Total Invoice Amount: OMR '+(lines.reduce((n,l)=>n+l.totalMills,0)/1000).toFixed(3);
 }
+window.consPurchaseSave=async function(){
+ if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy)return;
+ const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
+ if(!button||button.disabled)return;
+ consPurchaseHeader();
+ try{
+  if(consPurchaseDraft.selected)throw Error('Add or remove the selected item before saving.');
+  const draft=window.ZukaitStockCore.purchaseInvoiceDraft(consPurchaseDraft,{id:me.id,role:role()},consPurchaseToday());
+  const data={supplier:draft.supplier,invoiceNumber:draft.invoiceNumber,invoiceDate:draft.invoiceDate,
+   lines:draft.lines.map(({materialId,brandId,unit,quantity,priceMethod,price})=>({materialId,brandId,unit,quantity,priceMethod,price}))};
+  const fingerprint=JSON.stringify(data);
+  if(consPurchasePending&&consPurchasePending.fingerprint!==fingerprint)throw Error('A previous save is not confirmed. Restore the original draft and retry before changing it.');
+  if(!consPurchasePending){
+   if(!confirm('Save invoice '+draft.invoiceNumber+' for OMR '+draft.totalAmount.toFixed(3)+' and add all '+draft.lines.length+' stock items?'))return;
+   consPurchasePending={fingerprint,id:window.crypto?.randomUUID?.()||('invoice-'+Date.now()+'-'+Math.random().toString(36).slice(2))};
+  }
+  consPurchaseBusy=true;button.disabled=true;status.textContent='Saving invoice…';
+  const r=await consPurchaseApi({operation:'INVOICE_SAVE',requestId:consPurchasePending.id,data});
+  if(!r?.ok||!r.invoice?.id){
+   // An explicit validation rejection is safe to correct; uncertain network/server failures retain the same receipt ID.
+   const code=String(r?.code||'invoice_save_unconfirmed');
+   if(['invalid_invoice','invoice_reference_required','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','duplicate_material_brand','invalid_stock_identity','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','duplicate_invoice','stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled'].includes(code))consPurchasePending=null;
+   throw Error(code);
+  }
+  consPurchasePending=null;consPurchaseDraft=null;consPurchaseBusy=false;
+  alert('Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
+  window.consOpenPurchaseInvoices();
+ }catch(error){
+  if(document.getElementById('cpFinish')===button){status.textContent=String(error?.message||error)+'. Draft retained.';button.disabled=false;}
+ }finally{consPurchaseBusy=false}
+};
 window.consOpenPurchaseInvoices=function(){
- if(!consPurchaseAllowed())return;consPurchaseHeader();
- modal('Purchase Invoice List',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Invoice List</h3><button type="button" class="cp-action" onclick="consOpenPurchaseEntry()">New Entry</button></div><label class="cp-field">Search invoice / supplier / material<input type="search" disabled placeholder="Server history not connected"></label><div class="cp-two"><label class="cp-field">From Date<input type="date" disabled></label><label class="cp-field">To Date<input type="date" disabled></label></div><div class="cp-panel cp-info">Invoice history is not available until the authenticated server read endpoint is connected. No invoice data has been loaded.</div></div>','consOpenPurchaseEntry()');
+ if(!consPurchaseAllowed()||consPurchaseBusy)return;consPurchaseHeader();
+ modal('Purchase Invoice List',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Invoice List</h3><button type="button" class="cp-action" onclick="consOpenPurchaseEntry()">New Entry</button></div><label class="cp-field">Search invoice / supplier / material<input id="cpHistoryQuery" type="search" maxlength="160"></label><div class="cp-two"><label class="cp-field">From Date<input id="cpHistoryFrom" type="date"></label><label class="cp-field">To Date<input id="cpHistoryTo" type="date"></label></div><button type="button" class="cp-action" onclick="consPurchaseLoadHistory(0)">Search / Refresh</button><div id="cpHistory" class="cp-panel cp-info" role="status">Loading server invoice history…</div></div>','consOpenPurchaseEntry()');
+ window.consPurchaseLoadHistory(0);
+};
+window.consPurchaseLoadHistory=async function(page=0){
+ if(!consPurchaseAllowed()||!Number.isInteger(page)||page<0||page>100)return;
+ const out=document.getElementById('cpHistory');if(!out)return;
+ const seq=++consPurchaseHistorySeq;
+ const val=id=>String(document.getElementById(id)?.value||'');
+ const data={query:val('cpHistoryQuery'),from:val('cpHistoryFrom'),to:val('cpHistoryTo')};
+ out.textContent='Loading server invoice history…';
+ try{
+  const r=await consPurchaseApi({operation:'INVOICE_LIST',page,data});
+  if(seq!==consPurchaseHistorySeq||document.getElementById('cpHistory')!==out)return;
+  if(!r?.ok||!Array.isArray(r.invoices))throw Error(r?.code||'Invoice history unavailable');
+  out.innerHTML=r.invoices.length?r.invoices.map(i=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · OMR '+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div></details>').join(''):'No invoices found.';
+  out.innerHTML+='<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page+1)+')">Next</button>':'')+'</div>';
+ }catch(e){if(seq===consPurchaseHistorySeq&&document.getElementById('cpHistory')===out)out.textContent=String(e?.message||e);}
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
 function action(label,sub,fn,cls=''){return '<button class="cons-action '+cls+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
