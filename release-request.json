@@ -12,16 +12,16 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "V420 owner requested publication. Purchase invoice and costing reconciliation passed isolated QA SQL and full browser acceptance; Android candidate build passed. Signed acceptance and final production schema, edge deployment, recovery and physical checks remain pending. No production approval or deployment yet.",
+  "reason": "Owner requested V420 publication. Exact pinned source passed eight final CI workflows including signed APK and purchase invoice browser lifecycle; isolated QA Edge deployed and unauthenticated barriers passed. Production schema prerequisites verified read-only. Staff publication remains blocked: authenticated hosted invoice workflow, fresh backup recovery, physical acceptance and production deployment/smoke not verified. No production changes authorized by this metadata record.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
     "releaseTag": "release-V418-architecture-v2",
     "sourceCommit": "65af4ff062d24e8403d21eda13405222daae3b7a"
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
+  "signedAcceptanceRun": 45461052619,
+  "verificationRun": 45461052837,
   "approvedAt": null,
   "publishNonce": null
 }
