@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {randomUUID} from 'node:crypto';
+import {stripTypeScriptTypes} from 'node:module';
 const src=fs.readFileSync('app/src/main/assets/time_management_rules.js','utf8');
 assert.equal(src,fs.readFileSync('supabase/functions/workshop-api/time_management_rules.js','utf8'));
 const {timeManagementTransition:change,allocationToken,employeeTimeToken,workedMinutes}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
@@ -26,10 +27,10 @@ const stale=fixture();stale.sessions[0].start--;assert.equal(change(stale,manage
 // Execute the real server route: a concurrent overlap must prevent the CAS retry committing.
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const block=api.slice(api.indexOf('    if (action === "time_management") {'),api.indexOf('    if (action === "qc_delivery") {'));
-const endpoint=new (Object.getPrototypeOf(async function(){}).constructor)('admin','timeManagementTransition','computeLiveStatus','reply','user','body','action',api.split('// FINAL_SESSION_STATUS_BEGIN')[1].split('// FINAL_SESSION_STATUS_END')[0]+block);
+const endpoint=new (Object.getPrototypeOf(async function(){}).constructor)('admin','timeManagementTransition','computeLiveStatus','reply','user','body','action','Deno',(()=>{const stripped=stripTypeScriptTypes('async function fixture(){\n'+api.split('// FINAL_SESSION_STATUS_BEGIN')[1].split('// FINAL_SESSION_STATUS_END')[0]+block+'\n}');return stripped.slice(stripped.indexOf('{')+1,stripped.lastIndexOf('}'));})());
 let remote=structuredClone(d),commits=0,saved;
 const db={from(){return{select(){return this},eq(){return this},async single(){return{data:{revision:commits+1,data:structuredClone(remote)}}}}},async rpc(_name,args){commits++;saved=args;return{data:{ok:true,revision:2}}}};
-let response=await endpoint(db,(c,a,q)=>change(c,a,q,at),()=>[],(body,status=200)=>({body,status}),manager,req,'time_management');assert.equal(response.body.ok,true);assert.deepEqual(saved.p_data.sessions[0],d.sessions[0]);
+let response=await endpoint(db,(c,a,q)=>change(c,a,q,at),()=>[],(body,status=200)=>({body,status}),manager,req,'time_management',{env:{get:()=>undefined}});assert.equal(response.body.ok,true);assert.deepEqual(saved.p_data.sessions[0],d.sessions[0]);
 db.rpc=async()=>{commits++;remote.sessions.push({id:'race',emp:'E',job:'OTHER',start,end});return{data:{ok:false,code:'conflict'}}};commits=0;
-response=await endpoint(db,(c,a,q)=>change(c,a,q,at),()=>[],(body,status=200)=>({body,status}),manager,req,'time_management');assert.equal(response.body.code,'time_sessions_changed');assert.equal(commits,1);
+response=await endpoint(db,(c,a,q)=>change(c,a,q,at),()=>[],(body,status=200)=>({body,status}),manager,req,'time_management',{env:{get:()=>undefined}});assert.equal(response.body.code,'time_sessions_changed');assert.equal(commits,1);
 console.log('Historical missing-time: manager scope, live/later state, completed assignment, overlap/ID001, boundaries, invalid times, audit, costing, retries and concurrent save passed.');
