@@ -27,7 +27,34 @@ assert.equal(actual.lines[0].issuedQuantity,2.5);
 assert.equal(actual.lines[0].overIssued,true,'real usage above issued quantity must be retained explicitly');
 assert.equal(actual.totalCost,9.1,'costing must use the actual quantity, not cap it to issued quantity');
 assert.throws(()=>C.finishActual(state,{jobCard:'JC1'},supervisor),/ACTUAL_RECORD_EXISTS/);
-assert.throws(()=>C.issue(state,{jobCard:'JC1',lines:[{materialId:mat.id,brandId:brand.id,quantity:1}]},supervisor,C.TYPES.ADDITIONAL),/ACTUAL_ALREADY_FINISHED/);
+// Additional lists are isolated from finalized legacy list 01.
+{
+ const fixture=structuredClone(state);
+ // Simulate the unchanged historical rows without list numbers.
+ for(const row of [...fixture.consumables.issues,...fixture.consumables.actuals])delete row.listNo;
+ const original=JSON.stringify(fixture.consumables.actuals[0]);
+ const line={materialId:mat.id,brandId:brand.id,quantity:1};
+ const first=C.issue(fixture,{clientRequestId:'extra-2-a',jobCard:'JC1',lines:[line]},supervisor,C.TYPES.ADDITIONAL);
+ assert.equal(first.listNo,2);
+ const replay=C.issue(fixture,{clientRequestId:'extra-2-a',jobCard:'JC1',lines:[line]},supervisor,C.TYPES.ADDITIONAL);
+ assert.equal(replay.id,first.id);
+ const extra=C.issue(fixture,{clientRequestId:'extra-2-b',jobCard:'JC1',lines:[line]},supervisor,C.TYPES.ADDITIONAL);
+ assert.equal(extra.listNo,2);
+ assert.equal(C.allowance(fixture,'JC1')[0].quantity,2);
+ assert.equal(C.allowance(fixture,'JC1',1)[0].quantity,2.5);
+ assert.throws(()=>C.finishActual(fixture,{jobCard:'JC1',listNo:1},supervisor),/STALE_CONSUMABLE_LIST/);
+ const second=C.finishActual(fixture,{clientRequestId:'final-2',jobCard:'JC1',listNo:2,actualAt:new Date(2026,9,16).getTime()},supervisor);
+ assert.equal(second.totalCost,7);
+ assert.equal(C.finishActual(fixture,{clientRequestId:'final-2',jobCard:'JC1'},supervisor).id,second.id);
+ assert.equal(JSON.stringify(fixture.consumables.actuals[0]),original);
+ assert.equal(C.monthlyExpense(fixture,2026,9).totalExpense,16.1);
+ assert.equal(C.monthlyExpense(fixture,2026,9).jobCards,1);
+ const third=C.issue(fixture,{clientRequestId:'extra-3',jobCard:'JC1',lines:[line]},supervisor,C.TYPES.ADDITIONAL);
+ assert.equal(third.listNo,3);
+ assert.equal(C.materialLists(fixture,'JC1').filter(x=>!x.finalized).length,1);
+ assert.equal(C.monthlyExpense(fixture,2026,9).totalExpense,16.1);
+ assert.throws(()=>C.managerReopenActual(fixture,actual.id,manager,'Avoid overlapping lists'),/NEWER_CONSUMABLE_LIST_EXISTS/);
+}
 C.setPrice(state,{materialId:mat.id,brandId:brand.id,pricePerUnit:4,effectiveFrom:new Date(2026,11,1).getTime(),reason:'Initial/configured price'},manager);
 assert.equal(state.consumables.actuals[0].totalCost,9.1,'historical actual must retain price snapshot');
 const month=C.monthlyExpense(state,2026,9);
