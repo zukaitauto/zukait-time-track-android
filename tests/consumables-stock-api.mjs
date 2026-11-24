@@ -209,3 +209,42 @@ assert.equal((await consumablesStockApi(reportsAdmin,{role:'Employee'},reportsBo
 assert.equal((await consumablesStockApi(reportsAdmin,{role:'Supervisor'},reportsBody)).status,503);
 const report=await consumablesStockApi(reportsAdmin,{role:'Supervisor'},reportsBody,{enabled:true});
 assert.deepEqual(report.body,{ok:true,report:{valuation:88,items:101,low:2,out:1}});
+
+// Invoice routes are independently disabled by default. Never trust the client role.
+const invoiceCalls=[];
+const invoiceAdmin={rpc:async(fn,args)=>{invoiceCalls.push({fn,args});return {data:fn==='zukait_purchase_invoice_list'?Array.from({length:51},(_,i)=>({id:String(i)})):{id:'qa-invoice',revision:2,total_amount:9.52},error:null}}};
+const invoiceOpts={enabled:true,writesEnabled:true,invoiceEnabled:true,sessionHash:'qa-session'};
+const invoiceSave={operation:'INVOICE_SAVE',requestId:'qa-invoice-save',data:{supplier:'QA',invoiceNumber:'123',invoiceDate:'2026-11-24',lines:[]}};
+const correction={operation:'INVOICE_CORRECT_LINES',requestId:'qa-invoice-correct',data:{invoiceId:'qa-invoice',expectedRevision:1,reason:'QA correction',lines:[]}};
+assert.equal((await consumablesStockApi(invoiceAdmin,M,invoiceSave,{...invoiceOpts,invoiceEnabled:false})).status,423);
+assert.equal((await consumablesStockApi(invoiceAdmin,M,invoiceSave,{...invoiceOpts,writesEnabled:false})).status,423);
+assert.equal((await consumablesStockApi(invoiceAdmin,E,{operation:'INVOICE_LIST'},invoiceOpts)).status,403);
+assert.equal((await consumablesStockApi(invoiceAdmin,S,correction,invoiceOpts)).status,403);
+assert.equal(invoiceCalls.length,0);
+assert.equal((await consumablesStockApi(invoiceAdmin,M,invoiceSave,invoiceOpts)).status,200);
+assert.equal(invoiceCalls[0].fn,'zukait_purchase_invoice_save');
+assert.equal((await consumablesStockApi(invoiceAdmin,M,{operation:'INVOICE_LIST',page:0,data:{from:'2026-02-30'}},invoiceOpts)).status,400);
+const invoicePage=await consumablesStockApi(invoiceAdmin,M,{operation:'INVOICE_LIST',page:0,data:{query:'123'}},invoiceOpts);
+assert.equal(invoicePage.body.invoices.length,50);
+assert.equal(invoicePage.body.hasMore,true);
+assert.equal((await consumablesStockApi(invoiceAdmin,M,correction,invoiceOpts)).status,200);
+assert.equal(invoiceCalls.at(-1).fn,'zukait_purchase_invoice_correct_lines');
+const rejected=await consumablesStockApi({rpc:async()=>({data:null,error:{message:'INVOICE_STOCK_USED_OR_CHANGED'}})},M,correction,invoiceOpts);
+assert.equal(rejected.status,409);
+assert.equal(rejected.body.code,'invoice_stock_used_or_changed');
+console.log('Invoice API: independent activation, role guards, save/list/correction routes, invalid filter and stock-movement conflict PASS');
+
+const beforeInvoiceGuard=invoiceCalls.length;
+const singlePurchase={operation:'WRITE',command:'PURCHASE',requestId:'qa-old-purchase',data:{}};
+assert.equal((await consumablesStockApi(invoiceAdmin,M,singlePurchase,invoiceOpts)).body.code,'purchase_invoice_required');
+assert.equal(invoiceCalls.length,beforeInvoiceGuard);
+assert.equal((await consumablesStockApi(invoiceAdmin,M,singlePurchase,{...invoiceOpts,invoiceEnabled:false})).status,200);
+const cancelInvoice={operation:'INVOICE_CANCEL',requestId:'qa-cancel',data:{invoiceId:'qa',expectedRevision:1,reason:'Incorrect invoice'}};
+assert.equal((await consumablesStockApi(invoiceAdmin,S,cancelInvoice,invoiceOpts)).status,403);
+assert.equal((await consumablesStockApi(invoiceAdmin,M,cancelInvoice,invoiceOpts)).status,200);
+assert.equal(invoiceCalls.at(-1).fn,'zukait_purchase_invoice_cancel');
+const auditRequest={operation:'INVOICE_AUDIT',page:0,data:{invoiceId:'00000000-0000-4000-8000-000000000001'}};
+assert.equal((await consumablesStockApi(invoiceAdmin,S,auditRequest,invoiceOpts)).status,403);
+const auditAdmin={rpc:async(fn,args)=>({data:[{request_id:'qa-edit',reason:'QA correction'}],error:null})};
+assert.equal((await consumablesStockApi(auditAdmin,M,auditRequest,invoiceOpts)).body.audit.length,1);
+console.log('Purchase cutover guard, cancellation route and Manager-only audit PASS');

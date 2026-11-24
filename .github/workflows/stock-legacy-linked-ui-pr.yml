@@ -7,6 +7,21 @@ on:
       - 'tests/consumables-stock-home-responsive.mjs'
       - 'tests/consumables-stock-search-toolbar-mobile.mjs'
       - 'app/src/main/assets/consumables_ui.js'
+      - 'app/src/main/assets/consumables.js'
+      - 'tests/consumables-invoice-price-review.mjs'
+      - 'tests/consumables-invoice-price-api.mjs'
+      - 'tests/consumables-invoice-price-client.mjs'
+      - 'tests/consumables-invoice-price-authority.mjs'
+      - 'tests/consumables-invoice-price-reconcile-api.mjs'
+      - 'tests/consumables-invoice-price-reconcile-client.mjs'
+      - 'app/src/main/assets/cloud_sync.js'
+      - 'tests/consumables-invoice-price-commit-sql.mjs'
+      - 'tests/consumables-invoice-ledger-reconcile.mjs'
+      - 'tests/consumables-purchase-browser-acceptance.mjs'
+      - 'supabase/functions/workshop-api/extensions/invoice_price_*.js'
+      - 'supabase/functions/workshop-api/index.ts'
+      - 'supabase/staged/CONSUMABLES_INVOICE_PRICE_APPLY.sql'
+      - 'supabase/staged/CONSUMABLES_INVOICE_PRICE_RECONCILIATION.sql'
       - 'tests/consumables-master-mobile-responsive.mjs'
       - 'tests/consumables-stock-legacy-linked-ui.mjs'
       - 'package.json'
@@ -37,10 +52,20 @@ jobs:
       - name: Verify preview-only application safety
         run: node tests/consumables-main-app-preview.mjs
       - name: Verify original Material Master create, brand and price functionality
-        run: node tests/consumables-ui.mjs
+        run: |
+          node tests/consumables-ui.mjs
+          node tests/consumables-invoice-price-review.mjs
+          node tests/consumables-invoice-price-api.mjs
+          node tests/consumables-invoice-price-client.mjs
+          node tests/consumables-invoice-price-authority.mjs
+          node tests/consumables-invoice-price-reconcile-api.mjs
+          node tests/consumables-invoice-price-reconcile-client.mjs
+          node tests/consumables-invoice-price-commit-sql.mjs
+          node tests/consumables-invoice-ledger-reconcile.mjs
       - name: Check Manager Materials and Brand Price modal on iPhone and desktop
         run: |
           npx playwright install chromium
           node tests/consumables-master-mobile-responsive.mjs
           node tests/consumables-stock-home-responsive.mjs
           node tests/consumables-stock-search-toolbar-mobile.mjs
+          node tests/consumables-purchase-browser-acceptance.mjs

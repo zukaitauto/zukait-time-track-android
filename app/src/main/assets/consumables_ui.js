@@ -29,7 +29,376 @@ function deptCard(title,icon,enabled,fn){
 }
 window.openConsumablesModule=function(){
  const r=role();if(r!=='Supervisor'&&r!=='Manager')return;
- modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',true,'openMechanicalConsumables()')+deptCard('Stock','📦',true,'openStockManagement()')+'</div>');
+ modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',true,'openMechanicalConsumables()')+deptCard('Stock','📦',true,'openStockManagement()')+deptCard('Purchase Entry','🛒',true,'consOpenPurchaseEntry()')+'</div>');
+};
+
+/* Staged Purchase Entry: local draft only. Do not enable stock or price writes
+   until a single authenticated invoice transaction and read endpoint exist. */
+let consPurchaseDraft=null,consPurchaseBusy=false,consPurchasePending=null,consPurchaseHistorySeq=0;
+let consPurchaseHistoryRows=[],consPurchaseEditing=null;const consPurchaseCorrectionPending=new Map();
+let consPurchaseOwner='';
+const consPurchaseOwnerId=()=>String(typeof me!=='undefined'?me?.id||'':'');
+const consPurchaseStorageKey=id=>'zukait-purchase-pending-v1:'+id;
+function consPurchaseRestore(){
+ const owner=consPurchaseOwnerId();if(!owner)return false;
+ if(owner!==consPurchaseOwner){
+  consPurchaseOwner=owner;consPurchaseDraft=null;consPurchasePending=null;consPurchaseEditing=null;consPurchaseHistoryRows=[];consPurchaseCorrectionPending.clear();consPurchaseHistorySeq++;
+  try{const saved=JSON.parse(window.localStorage?.getItem(consPurchaseStorageKey(owner))||'null');
+   if(saved?.owner===owner&&saved?.pending?.id&&saved?.draft){consPurchaseDraft=saved.draft;consPurchasePending=saved.pending;}
+  }catch(_){}
+ }
+ return true;
+}
+function consPurchasePersist(){
+ if(!consPurchaseOwner||consPurchaseOwner!==consPurchaseOwnerId())throw Error('Staff session changed.');
+ if(!consPurchasePending||!consPurchaseDraft)return;
+ // Fail closed if storage is unavailable; do not send a transaction whose retry ID would be lost.
+ window.localStorage.setItem(consPurchaseStorageKey(consPurchaseOwner),JSON.stringify({owner:consPurchaseOwner,pending:consPurchasePending,draft:consPurchaseDraft}));
+}
+function consPurchaseLockForm(locked){
+ for(const id of ['cpInvoice','cpSupplier','cpDate','cpSearch','cpQty','cpMethod','cpUnit','cpAmount']){
+  const input=document.getElementById(id);if(input)input.disabled=locked;
+ }
+ const root=document.getElementById('cpLines');
+ if(root?.querySelectorAll)for(const button of root.querySelectorAll('button'))button.disabled=locked;
+}
+function consPurchaseClearPending(owner){
+ try{window.localStorage?.removeItem(consPurchaseStorageKey(owner));}catch(_){}
+ if(consPurchaseOwner===owner)consPurchasePending=null;
+}
+const consPurchaseApi=body=>window.zukaitCloud?.stockRequest?.(body)||Promise.reject(Error('Stock server unavailable'));
+const consPurchaseAllowed=()=>['Manager','Supervisor'].includes(role());
+function consPurchasePairs(){
+ const c=C().ensureState(state),seen=new Set(),rows=[];
+ for(const p of c.prices||[]){
+  if(!p||p.voided)continue;
+  const m=c.materials.find(x=>x.id===p.materialId&&x.active!==false),b=c.brands.find(x=>x.id===p.brandId&&x.active!==false);
+  if(!m||!b)continue;
+  const key=JSON.stringify([m.id,b.id]);if(seen.has(key))continue;seen.add(key);
+  rows.push({materialId:m.id,brandId:b.id,material:m.name,brand:b.name,unit:m.unit,department:m.department||'Painting'});
+ }
+ return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
+}
+const consPurchaseToday=()=>new Date(Date.now()+4*3600000).toISOString().slice(0,10);
+const consPurchaseStyle='<style>.cp-entry{display:grid;gap:12px;max-width:780px;margin:auto;min-width:0}.cp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cp-entry h3{margin:0;color:#17324f}.cp-entry .cp-field{display:grid;gap:5px;min-width:0;font-size:13px;font-weight:700;color:#304c68}.cp-entry input,.cp-entry select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box;border:1px solid #c4d6e7;border-radius:9px;background:#fff!important;color:#17324f!important;padding:8px;font-size:16px}.cp-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cp-entry .cp-panel{border:1px solid #d5e2ed;border-radius:12px;padding:12px;background:#f7faff}.cp-search-results{max-height:210px;overflow:auto}.cp-search-results button{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px;border:1px solid #dbe6f2!important;border-radius:7px;background:#fff!important;color:#17324f!important;text-align:left!important;margin:4px 0;min-height:42px}.cp-entry .cp-action{padding:10px 12px;border:1px solid #b6cfe5;border-radius:8px;color:#185999!important;background:#e9f3ff!important;font-weight:800}.cp-entry .cp-add{background:#e4f4ea!important;color:#166534!important}.cp-entry .cp-total{background:#194b80;color:#fff;padding:13px;border-radius:10px;font-weight:800}.cp-entry .cp-line{display:grid;grid-template-columns:minmax(0,1.5fr) .6fr .8fr .8fr auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #dce5ed;font-size:12px}.cp-lines{overflow-x:auto}.cp-entry .cp-line{min-width:430px}.cp-entry .cp-error{font-size:12px;color:#a13a1b}.cp-entry .cp-info{font-size:12px;color:#526b84}.cp-entry .cp-finish{min-height:44px;width:100%;background:#166534!important;color:#fff!important;border-radius:9px}.cp-entry .cp-finish:disabled{opacity:.55;cursor:not-allowed}@media(max-width:380px){.cp-two{grid-template-columns:1fr}}</style>';
+window.consOpenPurchaseEntry=function(reset=false){
+ if(!consPurchaseAllowed()||!consPurchaseRestore())return;
+ if(consPurchaseBusy)return;
+ if(!consPurchaseDraft||reset&&!consPurchasePending)consPurchaseDraft={invoiceNumber:'',supplier:'',invoiceDate:consPurchaseToday(),lines:[],selected:null,method:'unit'};
+ const d=consPurchaseDraft;
+ modal('Purchase Entry',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Material Purchase</h3><button type="button" class="cp-action" onclick="consOpenPurchaseInvoices()">Invoice List</button></div>'+
+ '<div class="cp-panel"><div class="cp-two"><label class="cp-field">Invoice Number<input id="cpInvoice" maxlength="100" autocomplete="off" value="'+esc(d.invoiceNumber)+'" oninput="consPurchaseHeader()"></label><label class="cp-field">Invoice Date<input id="cpDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(d.invoiceDate)+'" oninput="consPurchaseHeader()"></label></div><label class="cp-field">Supplier<input id="cpSupplier" maxlength="160" value="'+esc(d.supplier)+'" oninput="consPurchaseHeader()"></label></div>'+
+ '<div class="cp-panel"><label class="cp-field">Search Material + Brand<input id="cpSearch" type="search" autocomplete="off" placeholder="Example: Clear CAPCI" oninput="consPurchaseSearch()"></label><div id="cpResults" class="cp-search-results"></div><div id="cpSelected"></div><div id="cpLineEditor" hidden><label class="cp-field">Quantity<input id="cpQty" inputmode="decimal" type="number" min="0" step="0.0001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Price entry<select id="cpMethod" onchange="consPurchaseChangeMethod()"><option value="unit">Price per Unit</option><option value="total">Total Purchase Amount</option></select></label><div class="cp-two"><label class="cp-field">Price / Unit (OMR)<input id="cpUnit" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Total Amount (OMR)<input id="cpAmount" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()" readonly></label></div><button type="button" class="cp-action cp-add" onclick="consPurchaseAddLine()">＋ ADD ITEM</button><div id="cpError" class="cp-error" role="status"></div></div></div>'+
+ '<h3>Invoice Items</h3><div id="cpLines" class="cp-lines"></div><div id="cpTotal" class="cp-total"></div><button type="button" id="cpFinish" class="cp-finish" onclick="consPurchaseSave()" disabled>FINISH &amp; SAVE</button><div id="cpSaveStatus" class="cp-info" role="status">Checking server availability…</div></div>','openConsumablesModule()');
+ consPurchaseRenderLines();consPurchaseLockForm(Boolean(consPurchasePending));
+ const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
+ consPurchaseApi({operation:'INVOICE_STATUS'}).then(r=>{
+   if(document.getElementById('cpFinish')!==button)return;
+   button.disabled=!(r?.ok&&r.ready===true);status.textContent=button.disabled?'Purchase invoice posting is not enabled.':consPurchasePending?'Previous save is unconfirmed. Retry this exact invoice; no new stock will be added if it was already saved.':'Save posts all invoice lines and stock movements together. Historical costing prices are not changed.';
+ }).catch(()=>{if(document.getElementById('cpFinish')===button)status.textContent='Server unavailable. Draft retained.'});
+};
+window.consPurchaseHeader=function(){
+ if(!consPurchaseDraft||consPurchasePending||consPurchaseBusy)return;for(const [field,id] of [['invoiceNumber','cpInvoice'],['supplier','cpSupplier'],['invoiceDate','cpDate']]){const e=document.getElementById(id);if(e)consPurchaseDraft[field]=e.value}
+};
+window.consPurchaseSearch=function(){
+ if(!consPurchaseAllowed()||!consPurchaseDraft)return;
+ if(consPurchaseBusy||consPurchasePending)return;
+ consPurchaseDraft.selected=null;
+ const editor=document.getElementById('cpLineEditor'),selected=document.getElementById('cpSelected');
+ if(editor)editor.hidden=true;if(selected)selected.innerHTML='';
+ const q=String(document.getElementById('cpSearch')?.value||'').trim().toLowerCase().split(/\s+/).filter(Boolean),out=document.getElementById('cpResults');
+ if(!out)return;
+ const pairs=q.length?consPurchasePairs().filter(x=>q.every(t=>(x.material+' '+x.brand+' '+x.unit).toLowerCase().includes(t))).slice(0,30):[];
+ out.innerHTML=pairs.map(x=>'<button type="button" data-mid="'+esc(x.materialId)+'" data-bid="'+esc(x.brandId)+'" onclick="consPurchaseSelect(this.dataset.mid,this.dataset.bid)"><b>'+esc(x.material)+' · '+esc(x.brand)+'</b><small>'+esc(x.unit)+'</small></button>').join('')||(q.length?'<div class="cp-info">No matching material and brand.</div>':'');
+};
+window.consPurchaseSelect=function(mid,bid){
+ if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||consPurchasePending)return;
+ const row=consPurchasePairs().find(x=>x.materialId===mid&&x.brandId===bid);if(!row)return;
+ consPurchaseDraft.selected=row;consPurchaseDraft.method='unit';
+ document.getElementById('cpResults').innerHTML='';document.getElementById('cpSearch').value=row.material+' · '+row.brand;
+ document.getElementById('cpSelected').innerHTML='<b>'+esc(row.material)+' · '+esc(row.brand)+'</b><div class="cp-info">Unit: '+esc(row.unit)+'</div>';
+ document.getElementById('cpLineEditor').hidden=false;document.getElementById('cpQty').value='';document.getElementById('cpQty').step=row.unit==='Piece'?'1':'0.0001';document.getElementById('cpUnit').value='';document.getElementById('cpAmount').value='';document.getElementById('cpMethod').value='unit';document.getElementById('cpUnit').readOnly=false;document.getElementById('cpAmount').readOnly=true;document.getElementById('cpError').textContent='';
+};
+function consPurchaseReadLine(){
+ const d=consPurchaseDraft;if(!d?.selected)throw Error('Select material and brand.');
+ const method=document.getElementById('cpMethod').value;
+ return window.ZukaitStockCore.purchaseLine({...d.selected,quantity:document.getElementById('cpQty').value,priceMethod:method,price:document.getElementById(method==='unit'?'cpUnit':'cpAmount').value});
+}
+window.consPurchaseCalculate=function(){
+ const unit=document.getElementById('cpUnit'),total=document.getElementById('cpAmount'),method=document.getElementById('cpMethod')?.value;
+ try{const l=consPurchaseReadLine();if(method==='unit')total.value=l.totalAmount.toFixed(3);else unit.value=l.unitPrice.toFixed(3)}
+ catch(_){if(method==='unit'&&total)total.value='';else if(unit)unit.value=''}
+};
+window.consPurchaseChangeMethod=function(){
+ const unit=document.getElementById('cpUnit'),total=document.getElementById('cpAmount'),select=document.getElementById('cpMethod'),method=select.value;
+ const old=consPurchaseDraft?.method||'unit';
+ // Never silently round an already-entered amount merely by switching input modes.
+ if(old!==method&&consPurchaseDraft?.selected&&unit.value&&total.value){
+  try{
+   const row=consPurchaseDraft.selected,quantity=document.getElementById('cpQty').value;
+   const before=window.ZukaitStockCore.purchaseLine({...row,quantity,priceMethod:old,price:old==='unit'?unit.value:total.value});
+   const after=window.ZukaitStockCore.purchaseLine({...row,quantity,priceMethod:method,price:method==='unit'?unit.value:total.value});
+   if(before.totalMills!==after.totalMills&&!confirm('Changing price method changes the total from OMR '+before.totalAmount.toFixed(3)+' to '+after.totalAmount.toFixed(3)+'. Continue?')){select.value=old;return;}
+  }catch(_){}
+ }
+ if(consPurchaseDraft)consPurchaseDraft.method=method;
+ unit.readOnly=method!=='unit';total.readOnly=method!=='total';consPurchaseCalculate();
+};
+window.consPurchaseAddLine=function(){
+ if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||consPurchasePending)return;
+ try{
+  const d=consPurchaseDraft,l=consPurchaseReadLine();
+  if(d.lines.length>=50)throw Error('Maximum 50 items per invoice.');
+  if(d.lines.some(x=>x.materialId===l.materialId&&x.brandId===l.brandId))throw Error('Material and brand already added. Remove the previous line before changing quantity.');
+  d.lines.push({...l,material:d.selected.material,brand:d.selected.brand});d.selected=null;
+  document.getElementById('cpSearch').value='';document.getElementById('cpSelected').innerHTML='';document.getElementById('cpLineEditor').hidden=true;consPurchaseRenderLines();
+ }catch(e){const out=document.getElementById('cpError');if(out)out.textContent=String(e.message||e)}
+};
+window.consPurchaseRemoveLine=function(i){if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy||consPurchasePending||!Number.isInteger(i)||i<0||i>=consPurchaseDraft.lines.length)return;consPurchaseDraft.lines.splice(i,1);consPurchaseRenderLines()};
+function consPurchaseRenderLines(){
+ const out=document.getElementById('cpLines'),total=document.getElementById('cpTotal'),lines=consPurchaseDraft?.lines||[];
+ if(!out||!total)return;
+ out.innerHTML=lines.length?'<div class="cp-line"><b>Material / Brand</b><b>Qty</b><b>Rate</b><b>OMR</b><span></span></div>'+lines.map((l,i)=>'<div class="cp-line"><b>'+esc(l.material)+' · '+esc(l.brand)+'</b><span>'+esc(l.quantity)+'</span><span>'+l.unitPrice.toFixed(3)+'</span><b>'+l.totalAmount.toFixed(3)+'</b><button type="button" class="cp-action" onclick="consPurchaseRemoveLine('+i+')" aria-label="Remove item">×</button></div>').join(''):'<p class="cp-info">No items added.</p>';
+ total.textContent='Total Invoice Amount: OMR '+(lines.reduce((n,l)=>n+l.totalMills,0)/1000).toFixed(3);
+}
+window.consPurchaseSave=async function(){
+ if(!consPurchaseAllowed()||!consPurchaseDraft||consPurchaseBusy)return;
+ const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
+ if(!button||button.disabled)return;
+ if(!consPurchaseRestore())return;
+ const owner=consPurchaseOwner;
+ if(!consPurchasePending)consPurchaseHeader();
+ try{
+  if(consPurchaseDraft.selected)throw Error('Add or remove the selected item before saving.');
+  const draft=window.ZukaitStockCore.purchaseInvoiceDraft(consPurchaseDraft,{id:me.id,role:role()},consPurchaseToday());
+  const data={supplier:draft.supplier,invoiceNumber:draft.invoiceNumber,invoiceDate:draft.invoiceDate,
+   lines:draft.lines.map(({materialId,brandId,unit,quantity,priceMethod,price})=>({materialId,brandId,unit,quantity,priceMethod,price}))};
+  const fingerprint=JSON.stringify(data);
+  if(consPurchasePending&&consPurchasePending.fingerprint!==fingerprint)throw Error('A previous save is not confirmed. Restore the original draft and retry before changing it.');
+  const wasPending=Boolean(consPurchasePending);
+  if(!consPurchasePending){
+   if(!confirm('Save invoice '+draft.invoiceNumber+' for OMR '+draft.totalAmount.toFixed(3)+' and add all '+draft.lines.length+' stock items?'))return;
+   consPurchasePending={fingerprint,id:window.crypto?.randomUUID?.()||('invoice-'+Date.now()+'-'+Math.random().toString(36).slice(2))};
+  }
+  try{consPurchasePersist()}catch(e){if(!wasPending)consPurchasePending=null;throw Error('Cannot preserve retry receipt on this device. Invoice was not submitted.');}
+  consPurchaseBusy=true;consPurchaseLockForm(true);button.disabled=true;status.textContent='Saving invoice…';
+  const r=await consPurchaseApi({operation:'INVOICE_SAVE',requestId:consPurchasePending.id,data});
+  if(!r?.ok||!r.invoice?.id){
+   // An explicit validation rejection is safe to correct; uncertain network/server failures retain the same receipt ID.
+   const code=String(r?.code||'invoice_save_unconfirmed');
+   if(['invalid_invoice','invoice_reference_required','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','duplicate_material_brand','invalid_stock_identity','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','duplicate_invoice','stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled'].includes(code))consPurchaseClearPending(owner);
+   throw Error(code);
+  }
+  consPurchaseClearPending(owner);
+  if(owner!==consPurchaseOwnerId())return;
+  consPurchaseDraft=null;consPurchaseBusy=false;
+  alert(r.invoice.status==='cancelled'?'Invoice was already saved and subsequently cancelled. No stock was added again.':'Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
+  window.consOpenPurchaseInvoices();
+ }catch(error){
+  if(document.getElementById('cpFinish')===button){status.textContent=String(error?.message||error)+'. Draft retained.';button.disabled=false;consPurchaseLockForm(Boolean(consPurchasePending));}
+ }finally{consPurchaseBusy=false}
+};
+window.consOpenPurchaseInvoices=function(){
+ if(!consPurchaseAllowed()||!consPurchaseRestore()||consPurchaseBusy)return;consPurchaseHeader();
+ modal('Purchase Invoice List',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Invoice List</h3><button type="button" class="cp-action" onclick="consOpenPurchaseEntry()">New Entry</button></div><label class="cp-field">Search invoice / supplier / material<input id="cpHistoryQuery" type="search" maxlength="160"></label><div class="cp-two"><label class="cp-field">From Date<input id="cpHistoryFrom" type="date"></label><label class="cp-field">To Date<input id="cpHistoryTo" type="date"></label></div><button type="button" class="cp-action" onclick="consPurchaseLoadHistory(0)">Search / Refresh</button><div id="cpHistory" class="cp-panel cp-info" role="status">Loading server invoice history…</div></div>','consOpenPurchaseEntry()');
+ window.consPurchaseLoadHistory(0);
+};
+window.consPurchaseLoadHistory=async function(page=0){
+ if(!consPurchaseAllowed()||!Number.isInteger(page)||page<0||page>100)return;
+ const out=document.getElementById('cpHistory');if(!out)return;
+ const seq=++consPurchaseHistorySeq;
+ const val=id=>String(document.getElementById(id)?.value||'');
+ const data={query:val('cpHistoryQuery'),from:val('cpHistoryFrom'),to:val('cpHistoryTo')};
+ out.textContent='Loading server invoice history…';
+ try{
+  const r=await consPurchaseApi({operation:'INVOICE_LIST',page,data});
+  if(seq!==consPurchaseHistorySeq||document.getElementById('cpHistory')!==out)return;
+  if(!r?.ok||!Array.isArray(r.invoices))throw Error(r?.code||'Invoice history unavailable');
+  consPurchaseHistoryRows=r.invoices;
+  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button><button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Review Brands &amp; Price</button>':'')+(consReconcileHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryReconciliation('+index+')">Retry Price Reconciliation</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
+  out.innerHTML+='<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page+1)+')">Next</button>':'')+'</div>';
+ }catch(e){if(seq===consPurchaseHistorySeq&&document.getElementById('cpHistory')===out)out.textContent=String(e?.message||e);}
+};
+window.consPurchaseEdit=function(index,mode){
+ if(role()!=='Manager'||consPurchaseBusy||!['header','lines','cancel'].includes(mode))return;
+ const invoice=consPurchaseHistoryRows[index];if(!invoice?.id||!Number.isInteger(invoice.revision))return alert('Reload invoice history first.');
+ consPurchaseEditing={invoice,mode};
+ if(consReconcileHasPending(invoice.id))return window.consPurchaseRetryReconciliation(index);
+ if(invoice.status==='cancelled')return alert('Invoice already cancelled.');
+ const fields=mode==='cancel'?'<div class="cp-info">Cancellation reverses all invoice quantities and values only if no affected stock has subsequently been used or changed. The original invoice and audit trail remain visible.</div>':mode==='header'?
+  '<label class="cp-field">Invoice Number<input id="cpEditNumber" maxlength="100" value="'+esc(invoice.invoice_number)+'"></label><label class="cp-field">Supplier<input id="cpEditSupplier" maxlength="160" value="'+esc(invoice.supplier)+'"></label><label class="cp-field">Invoice Date<input id="cpEditDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(invoice.invoice_date)+'"></label>':
+  '<div class="cp-info">Only existing lines can be corrected. The server rejects any changed item with a later stock movement. Applied invoice prices require a separate costing review before saving.</div>'+invoice.lines.map((l,i)=>'<div class="cp-panel"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><label class="cp-field">Quantity ('+esc(l.unit)+')<input id="cpEditQty'+i+'" type="number" min="0" step="'+(l.unit==='Piece'?'1':'0.0001')+'" value="'+esc(l.quantity)+'"></label><label class="cp-field">Price Method<select id="cpEditMethod'+i+'"><option value="unit"'+(l.priceMethod==='unit'?' selected':'')+'>Price per Unit</option><option value="total"'+(l.priceMethod==='total'?' selected':'')+'>Total Amount</option></select></label><label class="cp-field">Amount (OMR)<input id="cpEditPrice'+i+'" type="number" min="0" step="0.001" value="'+esc(l.price)+'"></label></div>').join('');
+ modal('Manager Invoice Correction',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · Revision '+invoice.revision+'</b>'+fields+'<label class="cp-field">Reason (required)<input id="cpEditReason" maxlength="500"></label><button type="button" id="cpEditSave" class="cp-finish" onclick="consPurchaseSaveCorrection()">SAVE CORRECTION</button><div id="cpEditStatus" class="cp-info" role="status"></div></div>','consOpenPurchaseInvoices()');
+};
+let consPurchaseReconcileSelection=null;
+const consReconcileKey=(owner,id)=>'zukait-invoice-reconcile-pending-v1:'+owner+':'+id;
+function consReconcileRead(owner,id){
+ return JSON.parse(window.localStorage.getItem(consReconcileKey(owner,id))||'null');
+}
+function consReconcileHasPending(id){try{return !!consReconcileRead(consPurchaseOwnerId(),id)}catch(_){return false}}
+function consReconcileRender(owner,invoice,payload,pending=false){
+ if(owner!==consPurchaseOwnerId()||role()!=='Manager')return;
+ consPurchaseReconcileSelection={owner,invoice,payload};
+ const rows=payload.review.changes.map(c=>'<div class="cp-panel"><b>'+esc((C().ensureState(state).materials.find(m=>m.id===c.materialId)?.name||c.materialId))+' · '+esc((C().ensureState(state).brands.find(b=>b.id===c.brandId)?.name||c.brandId))+'</b><div>OMR '+Number(c.oldRate).toFixed(3)+' → '+(c.restoredRate==null?'No previous price':'OMR '+Number(c.restoredRate).toFixed(3))+'</div><div>'+esc(c.action==='retain'?'Detach invoice source; retain independently corrected price and existing job costs':c.action==='void'?'Reverse invoice-created period':'Restore previous rate')+'</div>'+c.actuals.map(a=>'<div>'+esc(a.jobCard)+': '+(a.quantity===undefined?'':esc(a.quantity)+' units · ')+'OMR '+Number(a.oldCost).toFixed(3)+' → '+Number(a.newCost).toFixed(3)+'</div>').join('')+'</div>').join('');
+ modal('Review Invoice Price Reconciliation',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · '+esc(payload.mode)+'</b><div class="cp-info">The invoice change and price reversal are one transaction. If stock has already been used, the server rejects the entire change. For a corrected invoice, review its new price separately after saving.</div>'+rows+(pending?'<div class="cp-info">Previous save unconfirmed. Retry the identical request.</div>':'')+'<button id="cpReconcileSave" type="button" class="cp-finish" onclick="consPurchaseConfirmReconciliation()">'+(pending?'RETRY RECONCILIATION':'CONFIRM INVOICE &amp; PRICE REVERSAL')+'</button><div id="cpReconcileStatus" class="cp-info" role="status"></div></div>','consOpenPurchaseInvoices()');
+}
+window.consPurchaseRetryReconciliation=function(index){
+ if(role()!=='Manager'||consPurchaseBusy)return;
+ const invoice=consPurchaseHistoryRows[index],owner=consPurchaseOwnerId();
+ if(!invoice)return;
+ try{const pending=consReconcileRead(owner,invoice.id);if(pending)consReconcileRender(owner,invoice,pending,true)}catch(e){alert(String(e?.message||e))}
+};
+window.consPurchaseConfirmReconciliation=async function(){
+ if(role()!=='Manager'||consPurchaseBusy||!consPurchaseReconcileSelection)return;
+ const {owner,invoice,payload}=consPurchaseReconcileSelection,button=document.getElementById('cpReconcileSave'),out=document.getElementById('cpReconcileStatus');
+ if(owner!==consPurchaseOwnerId()||!button||!out||button.disabled)return;
+ const key=consReconcileKey(owner,invoice.id);
+ try{
+  let pending=consReconcileRead(owner,invoice.id);
+  if(!pending){if(!confirm('Confirm the invoice change and the displayed costing actions? Independently corrected prices marked Retain will remain unchanged.'))return;pending=payload;window.localStorage.setItem(key,JSON.stringify(pending));}
+  if(pending.correction.invoiceId!==invoice.id||JSON.stringify(pending)!==JSON.stringify(payload))throw Error('Unconfirmed reconciliation must be retried unchanged.');
+  consPurchaseBusy=true;button.disabled=true;out.textContent='Saving invoice and reconciled prices…';
+  const result=await window.zukaitCloud.invoicePriceReconcile('APPLY',pending);
+  if(owner!==consPurchaseOwnerId())return;
+  if(!result?.ok){
+   const code=String(result?.code||'invoice_price_reconciliation_unconfirmed');
+   const definitive=['manager_only','invalid_price_reconciliation','invalid_invoice_correction','invoice_not_found','invoice_cancelled','invoice_revision_conflict','invoice_price_application_not_found','invoice_price_changed_since_application','invoice_price_actual_changed_since_application','invoice_price_reconciliation_no_fallback','invoice_reference_only_use_header_correction','invoice_price_already_reconciled','invalid_invoice_date','invalid_invoice_line','invalid_line_total','invalid_invoice_total','invoice_pair_set_change_requires_review','duplicate_material_brand','piece_whole_required','stale_price_reconciliation_review','invoice_price_reconciliation_not_enabled','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','stock_unit_conflict','duplicate_invoice','no_invoice_change','stale_workshop_revision','request_id_conflict'];
+   if(definitive.includes(code)){window.localStorage.removeItem(key);consPurchaseCorrectionPending.delete(invoice.id+'|'+pending.mode);consPurchaseReconcileSelection=null;out.textContent='Rejected: '+code+'. Reopen invoice correction to review again.';return;}
+   throw Error(code);
+  }
+  if(result.invoice?.id!==invoice.id||result.reconciliation?.requestId!==pending.requestId||result.invoice.revision!==pending.correction.expectedRevision+1)throw Error('Reconciliation confirmation mismatch.');
+  window.localStorage.removeItem(key);consPurchaseCorrectionPending.delete(invoice.id+'|'+pending.mode);
+  consPurchaseEditing=null;consPurchaseReconcileSelection=null;consPurchaseBusy=false;
+  alert('Invoice and historical costing reconciled. '+(pending.mode==='cancel'?'Invoice cancelled.':'Review the corrected invoice price separately if needed.'));
+  window.consOpenPurchaseInvoices();
+ }catch(e){if(document.getElementById('cpReconcileStatus')===out){out.textContent=String(e?.message||e);button.disabled=false}}
+ finally{consPurchaseBusy=false}
+};
+window.consPurchaseSaveCorrection=async function(){
+ if(role()!=='Manager'||consPurchaseBusy||!consPurchaseEditing)return;
+ const {invoice,mode}=consPurchaseEditing,button=document.getElementById('cpEditSave'),out=document.getElementById('cpEditStatus');if(!button||button.disabled)return;
+ const val=id=>String(document.getElementById(id)?.value||'').trim(),reason=val('cpEditReason');
+ try{
+  if(reason.length<5||reason.length>500)throw Error('Enter a correction reason (5–500 characters).');
+  const data={invoiceId:invoice.id,expectedRevision:invoice.revision,reason};
+  if(mode==='header'){
+   Object.assign(data,{invoiceNumber:val('cpEditNumber'),supplier:val('cpEditSupplier'),invoiceDate:val('cpEditDate')});
+   if(!data.invoiceNumber||!data.supplier||!data.invoiceDate)throw Error('Complete all invoice fields.');
+  }else if(mode==='cancel'){
+   if(!confirm('Cancel this invoice and reverse its stock entries?'))return;
+  }else{
+   const lines=invoice.lines.map((l,i)=>window.ZukaitStockCore.purchaseLine({materialId:l.materialId,brandId:l.brandId,unit:l.unit,quantity:val('cpEditQty'+i),priceMethod:val('cpEditMethod'+i),price:val('cpEditPrice'+i)}));
+   const total=lines.reduce((n,l)=>n+l.totalMills,0)/1000;
+   if(!confirm('Correct invoice to OMR '+total.toFixed(3)+'? The server will verify all affected stock movements.'))return;
+   data.lines=lines.map(({materialId,brandId,unit,quantity,priceMethod,price})=>({materialId,brandId,unit,quantity,priceMethod,price}));
+  }
+  const key=invoice.id+'|'+mode,fingerprint=JSON.stringify(data);
+  let pending=consPurchaseCorrectionPending.get(key);
+  if(pending&&pending.fingerprint!==fingerprint)throw Error('Previous correction unconfirmed. Restore the original correction and retry.');
+  if(!pending){pending={fingerprint,id:window.crypto?.randomUUID?.()||('correction-'+Date.now()+'-'+Math.random().toString(36).slice(2))};consPurchaseCorrectionPending.set(key,pending)}
+  consPurchaseBusy=true;button.disabled=true;out.textContent='Saving correction…';
+  const r=await consPurchaseApi({operation:mode==='cancel'?'INVOICE_CANCEL':mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',requestId:pending.id,data});
+  if(!r?.ok||!r.invoice?.id){
+   const code=String(r?.code||'invoice_correction_unconfirmed');
+   if(code==='invoice_price_reconciliation_required'){
+    // Server explicitly rejected the ordinary correction; there is no unknown write to retry.
+    consPurchaseCorrectionPending.delete(key);
+    const owner=consPurchaseOwnerId();
+    const reviewed=await window.zukaitCloud.invoicePriceReconcile('PREVIEW',{mode,correction:data});
+    if(owner!==consPurchaseOwnerId())return;
+    if(!reviewed?.ok||!reviewed.required)throw Error(reviewed?.code==='invoice_price_reconciliation_no_fallback'?'A replacement costing price is required. Create an independent earlier effective price in Brands & Price, then retry the invoice correction. No records were changed.':reviewed?.code||'Invoice price review unavailable; reload invoice.');
+    const payload={mode,correction:data,requestId:pending.id,applicationRequestId:reviewed.applicationRequestId,review:reviewed.review};
+    consReconcileRender(owner,invoice,payload);
+    return;
+   }
+   if(['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_cancelled','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','duplicate_invoice'].includes(code))consPurchaseCorrectionPending.delete(key);
+   throw Error(code);
+  }
+  consPurchaseCorrectionPending.delete(key);consPurchaseEditing=null;consPurchaseBusy=false;
+  alert(mode==='cancel'?'Invoice cancelled with audit record.':'Invoice correction saved with audit record.');window.consOpenPurchaseInvoices();
+ }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);}}
+ finally{consPurchaseBusy=false}
+};
+let consPurchasePriceSelection=null;
+const consPricePendingKey=(owner,invoiceId)=>'zukait-invoice-price-pending-v1:'+owner+':'+invoiceId;
+window.consPurchasePriceReview=function(index){
+ if(role()!=='Manager'||!consPurchaseRestore()||consPurchaseBusy)return;
+ const invoice=consPurchaseHistoryRows[index];if(!invoice)return;
+ try{
+  const owner=consPurchaseOwnerId(),key=consPricePendingKey(owner,invoice.id);
+  const pending=JSON.parse(window.localStorage.getItem(key)||'null');
+  if(pending&&(pending.invoiceId!==invoice.id||!pending.requestId||!Array.isArray(pending.review)))throw Error('Invalid pending price application. Contact Manager support.');
+  const rows=pending?pending.review:C().invoicePriceReview(state,invoice,me);
+  consPurchasePriceSelection={owner,invoice,rows,key,pending};
+  const changes=rows.filter(p=>p.action==='create'||p.action==='correct');
+  const canApply=changes.length>0&&!rows.some(p=>p.action==='blocked');
+  const rate=n=>n===null||n===undefined?'Not configured':'OMR '+Number(n).toFixed(3);
+  const body='<div class="cp-info">Purchase prices are compared with Brands &amp; Price on the invoice date (Oman). This is a preview only. Stock valuation and historical costs are not changed by opening this screen.</div>'+
+   rows.map(r=>'<div class="cp-panel"><b>'+esc(r.materialName)+' · '+esc(r.brandName)+'</b><div>Existing rate: '+esc(rate(r.oldRate))+' / '+esc(r.unit)+'</div><div>Invoice rate: '+esc(rate(r.rate))+' / '+esc(r.unit)+'</div><div>Effective date: '+esc(r.date)+'</div><div>'+esc(r.action==='create'?'New price period':r.action==='correct'?'Same-day price correction':r.action==='unchanged'?'No change needed':r.reason)+'</div>'+
+    (r.affected===undefined?'':'<div>Affected Actual Materials records: '+r.affected+'</div>')+
+    (r.impacts?.length?'<div class="cp-info">'+r.impacts.map(j=>'<div><b>'+esc(j.jobCard)+'</b> · '+esc(j.quantity)+' '+esc(r.unit)+' · OMR '+Number(j.oldCost).toFixed(3)+' → '+Number(j.newCost).toFixed(3)+'</div>').join('')+'<div><b>Material cost total: OMR '+Number(r.oldCost).toFixed(3)+' → '+Number(r.newCost).toFixed(3)+'</b></div></div>':r.jobCards?.length?'<div class="cp-info">'+esc(r.jobCards.join(', '))+'</div>':'')+
+    '</div>').join('')+
+   '<div class="cp-panel"><b>Total affected material costs: OMR '+rows.reduce((n,r)=>n+Number(r.oldCost||0),0).toFixed(3)+' → '+rows.reduce((n,r)=>n+Number(r.newCost||0),0).toFixed(3)+'</b><div>Difference: OMR '+rows.reduce((n,r)=>n+Number(r.newCost||0)-Number(r.oldCost||0),0).toFixed(3)+'</div></div>'+
+   '<p class="cp-info">Stock valuation is not changed. Applying reviewed prices recalculates affected job costs with an audit record. Invoice corrections and cancellations after applying prices require explicit reconciliation.</p>'+
+   (pending?'<div class="cp-info">A previous save was not confirmed. Retry the exact original request; it will not apply twice.</div>':'')+
+   (canApply||pending?'<label class="cp-field">Reason (required)<input id="cpPriceReason" maxlength="500" value="'+esc(pending?.reason||'')+'"'+(pending?' disabled':'')+'></label><button type="button" id="cpPriceApply" class="cp-finish" onclick="consPurchaseApplyPrices()">'+(pending?'RETRY PRICE APPLICATION':'APPLY REVIEWED PRICES')+'</button><div id="cpPriceStatus" class="cp-info" role="status"></div>':'<div class="cp-info">No eligible price changes to apply.</div>');
+  modal('Invoice Costing Price Review',consPurchaseStyle+'<div class="cp-entry">'+body+'</div>','consOpenPurchaseInvoices()');
+ }catch(e){alert(String(e?.message||e))}
+};
+window.consPurchaseApplyPrices=async function(){
+ if(role()!=='Manager'||consPurchaseBusy||!consPurchasePriceSelection)return;
+ const selection=consPurchasePriceSelection,{owner,invoice,rows,key}=selection;
+ if(owner!==consPurchaseOwnerId())return;
+ const button=document.getElementById('cpPriceApply'),out=document.getElementById('cpPriceStatus');
+ if(!button||!out||button.disabled)return;
+ const definitive=['manager_only','invalid_price_application','invoice_price_apply_not_enabled','invoice_not_found','invoice_cancelled','invoice_revision_conflict','stale_price_review','price_review_blocked','no_price_changes','invoice_price_reconciliation_required','invoice_price_already_applied_reconciliation_required','invoice_price_source_conflict','request_id_conflict','stale_workshop_revision'];
+ try{
+  let pending=JSON.parse(window.localStorage.getItem(key)||'null');
+  if(!pending){
+   if(rows.some(p=>p.action==='blocked')||!rows.some(p=>p.action==='create'||p.action==='correct'))throw Error('No eligible price changes.');
+   const reason=String(document.getElementById('cpPriceReason')?.value||'').trim();
+   if(reason.length<5||reason.length>500)throw Error('Enter a reason (5–500 characters).');
+   const jobs=new Set(rows.flatMap(p=>p.jobCards||[]));
+   if(!confirm('Apply reviewed invoice prices? '+jobs.size+' job card(s) may be recalculated. Historical changes are audited.'))return;
+   pending={invoiceId:invoice.id,invoiceRevision:invoice.revision,requestId:window.crypto?.randomUUID?.()||('price-'+Date.now()+'-'+Math.random().toString(36).slice(2)),reason,review:rows};
+   // Fail closed before network access if the retry cannot be persisted.
+   window.localStorage.setItem(key,JSON.stringify(pending));
+  }
+  consPurchaseBusy=true;button.disabled=true;
+  const field=document.getElementById('cpPriceReason');if(field)field.disabled=true;
+  out.textContent='Applying reviewed prices…';
+  if(typeof window.zukaitCloud?.invoicePriceApply!=='function')throw Error('Price server unavailable.');
+  const result=await window.zukaitCloud.invoicePriceApply(pending);
+  if(owner!==consPurchaseOwnerId())return;
+  if(!result?.ok){
+   const code=String(result?.code||'invoice_price_commit_unconfirmed');
+   if(definitive.includes(code)){
+    window.localStorage.removeItem(key);
+    if(document.getElementById('cpPriceStatus')===out)out.textContent='Price application rejected: '+code+'. Reopen invoice review before retrying.';
+    return;
+   }
+   throw Error(code);
+  }
+  if(result.invoiceId!==pending.invoiceId||result.requestId!==pending.requestId||result.invoiceRevision!==pending.invoiceRevision)throw Error('Price save confirmation mismatch.');
+  window.localStorage.removeItem(key);
+  if(document.getElementById('cpPriceStatus')===out)out.textContent='Prices saved with audit record. Workshop totals refresh from the server.';
+ }catch(e){
+  if(document.getElementById('cpPriceStatus')===out){out.textContent=String(e?.message||e);button.disabled=false;}
+ }finally{consPurchaseBusy=false;}
+};
+window.consPurchaseAudit=async function(index,page=0){
+ if(role()!=='Manager'||!consPurchaseRestore()||!Number.isInteger(page)||page<0||page>100)return;
+ const invoice=consPurchaseHistoryRows[index];if(!invoice?.id)return;
+ const owner=consPurchaseOwnerId();
+ modal('Invoice Audit History',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · '+esc(invoice.supplier)+'</b><div id="cpAudit" class="cp-panel">Loading history…</div></div>','consOpenPurchaseInvoices()');
+ const out=document.getElementById('cpAudit');
+ try{
+  const r=await consPurchaseApi({operation:'INVOICE_AUDIT',page,data:{invoiceId:invoice.id}});
+  if(owner!==consPurchaseOwnerId()||role()!=='Manager'||document.getElementById('cpAudit')!==out)return;
+  if(!r?.ok||!Array.isArray(r.audit))throw Error(r?.code||'Audit history unavailable');
+  out.innerHTML=(r.audit.length?r.audit.map(x=>'<details class="cp-panel"><summary><b>'+esc(String(x.event_type||'INVOICE_CORRECTED').replace(/_/g,' '))+' · '+esc(x.reason)+'</b><div>'+esc(x.created_at)+' · Staff '+esc(x.actor_id)+'</div></summary><p>Before</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.before_header,null,2))+'</pre><p>After</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.after_header,null,2))+'</pre></details>').join(''):'No invoice events recorded.')+
+   '<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseAudit('+index+','+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseAudit('+index+','+(page+1)+')">Next</button>':'')+'</div>';
+ }catch(e){if(document.getElementById('cpAudit')===out)out.textContent=String(e?.message||e);}
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
 function action(label,sub,fn,cls=''){return '<button class="cons-action '+cls+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
@@ -748,6 +1117,7 @@ window.consSaveMasterRow=function(mid,bid,pid){
  if(c.materials.some(x=>x!==m&&x.active!==false&&x.name.trim().toLowerCase()===name.toLowerCase()))return alert('Duplicate material name.');
  if(c.brands.some(x=>x!==b&&x.active!==false&&x.name.trim().toLowerCase()===brand.toLowerCase()))return alert('Duplicate brand name.');
  const unitChanged=unit!==m.unit,dateChanged=rawDate!==originalDate,priceChanged=Math.round(price*1000)!==Math.round(Number(p.pricePerUnit)*1000);
+ if(((dateChanged||priceChanged)&&C().activeInvoicePriceOwner(c,pid))||(unitChanged&&c.prices.some(x=>x.materialId===mid&&C().activeInvoicePriceOwner(c,x.id))))return alert('This price period is linked to an approved purchase invoice. Use Invoice History to reconcile it, or create a new effective price period.');
  if(unitChanged){
   const used=(c.issues||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid))||(c.actuals||[]).some(x=>!x.voided&&(x.lines||[]).some(l=>l.materialId===mid));
   if(used)return alert('Unit change blocked: this material has recorded quantities. Historical conversions require a reviewed migration.');
@@ -768,7 +1138,7 @@ window.consSaveMasterRow=function(mid,bid,pid){
  if(typeof save==='function')save();consOpenMaster();
 };
 window.consEditMasterNames=function(mid,bid){if(role()!=='Manager')return;const c=C().ensureState(state),m=c.materials.find(x=>String(x.id)===String(mid)&&x.active!==false),b=c.brands.find(x=>String(x.id)===String(bid)&&x.active!==false);if(!m||!b)return alert('Material / Brand record not found.');const mn=prompt('Correct Material Name / spelling',m.name||'');if(mn===null)return;const bn=prompt('Correct Brand Name / spelling',b.name||'');if(bn===null)return;const newM=mn.trim(),newB=bn.trim();if(!newM||!newB)return alert('Material and Brand names cannot be blank.');if(newM===m.name&&newB===b.name)return alert('No name change detected.');const duplicateM=c.materials.find(x=>x!==m&&x.active!==false&&String(x.name||'').trim().toLowerCase()===newM.toLowerCase());if(duplicateM)return alert('Another Material already uses this name. Use that existing Material instead of creating a duplicate.');const duplicateB=c.brands.find(x=>x!==b&&x.active!==false&&String(x.name||'').trim().toLowerCase()===newB.toLowerCase());if(duplicateB)return alert('Another Brand already uses this name. Use that existing Brand instead of creating a duplicate.');const reason=prompt('Reason for Material / Brand correction (required)');if(reason===null)return;if(!reason.trim())return alert('Reason is required.');const before={materialName:m.name,brandName:b.name};m.name=newM;b.name=newB;m.nameCorrectedAt=Date.now();m.nameCorrectedBy=me?.id||'';b.nameCorrectedAt=Date.now();b.nameCorrectedBy=me?.id||'';if(Array.isArray(c.audit))c.audit.push({id:'audit_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type:'MATERIAL_BRAND_NAME_CORRECTED',entityId:m.id,brandId:b.id,by:me?.id||'',at:Date.now(),reason:reason.trim(),before,after:{materialName:newM,brandName:newB}});if(typeof save==='function')save();consRenderMaster();alert('Material / Brand name corrected. Existing IDs, prices and finalized costing remain unchanged.');};
-window.consEditMasterPrice=function(priceId){if(role()!=='Manager')return;const c=C().ensureState(state),p=c.prices.find(x=>x.id===priceId&&!x.voided);if(!p)return alert('Price record not found.');const m=c.materials.find(x=>x.id===p.materialId)||{},b=c.brands.find(x=>x.id===p.brandId)||{};const raw=prompt('Edit current price for '+(m.name||'Material')+' / '+(b.name||'Brand')+' ('+(m.unit||'unit')+')',Number(p.pricePerUnit).toFixed(3));if(raw===null)return;const price=Number(raw);if(!Number.isFinite(price)||price<0)return alert('Enter a valid Price / Unit.');if(price===Number(p.pricePerUnit))return alert('No price change detected.');const reason=prompt('Reason for correcting this price (required)');if(reason===null)return;if(!reason.trim())return alert('Reason is required.');try{C().managerCorrectPrice(state,p.id,price,me,reason.trim());if(typeof save==='function')save();consRenderMaster();alert('Price updated. Affected Actual costs recalculated from its effective date.')}catch(e){alert(String(e?.message||e))}};
+window.consEditMasterPrice=function(priceId){if(role()!=='Manager')return;const c=C().ensureState(state),p=c.prices.find(x=>x.id===priceId&&!x.voided);if(!p)return alert('Price record not found.');if(C().activeInvoicePriceOwner(c,priceId))return alert('Invoice-owned price. Reconcile through Purchase Invoice History or create a new price period.');const m=c.materials.find(x=>x.id===p.materialId)||{},b=c.brands.find(x=>x.id===p.brandId)||{};const raw=prompt('Edit current price for '+(m.name||'Material')+' / '+(b.name||'Brand')+' ('+(m.unit||'unit')+')',Number(p.pricePerUnit).toFixed(3));if(raw===null)return;const price=Number(raw);if(!Number.isFinite(price)||price<0)return alert('Enter a valid Price / Unit.');if(price===Number(p.pricePerUnit))return alert('No price change detected.');const reason=prompt('Reason for correcting this price (required)');if(reason===null)return;if(!reason.trim())return alert('Reason is required.');try{C().managerCorrectPrice(state,p.id,price,me,reason.trim());if(typeof save==='function')save();consRenderMaster();alert('Price updated. Affected Actual costs recalculated from its effective date.')}catch(e){alert(String(e?.message||e))}};
 window.consChangeMaterialCategory=function(mid){if(role()!=='Manager')return;const c=C().ensureState(state),m=c.materials.find(x=>x.id===mid&&x.active!==false);if(!m)return;const next=String(m.category||'Consumable')==='Paint'?'Consumable':'Paint';if(!confirm('Change '+m.name+' category from '+(m.category||'Consumable')+' to '+next+'? This changes Paint Report classification but does not change historical quantities or prices.'))return;m.category=next;m.categoryChangedAt=Date.now();m.categoryChangedBy=me?.id||'';if(Array.isArray(c.audit))c.audit.push({id:'audit_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type:'MATERIAL_CATEGORY_CHANGED',entityId:m.id,by:me?.id||'',at:Date.now(),after:{category:next}});if(typeof save==='function')save();consRenderMaster()};
 window.consPrintMaster=function(){const x=document.getElementById('cmList'),q=document.getElementById('cmListSearch');if(!x)return;const previous=q?.value||'';let copy;try{if(q)q.value='';consRenderMaster();copy=x.cloneNode(true);copy.querySelectorAll('tr').forEach(row=>row.lastElementChild?.remove());}finally{if(q)q.value=previous;consRenderMaster()}const w=consPrintableWindow('Material Price List','<h2>ZUKAIT — Material &amp; Price List</h2><p>Current effective prices as of '+esc(consOmanPriceDate())+'</p>'+copy.innerHTML);if(!w)return alert('Allow pop-ups to print or save PDF.');w.focus();w.print()};
 window.consOpenMaterialSearch=function(){

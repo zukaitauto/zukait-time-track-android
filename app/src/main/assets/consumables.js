@@ -57,6 +57,10 @@
     if(c.brands.some(x=>x.active!==false&&x.name.toLowerCase()===name.toLowerCase()))throw new Error('BRAND_DUPLICATE');
     const row={id:uid('brand'),name,active:true,createdAt:Date.now(),createdBy:actor.id}; c.brands.push(row); return clone(row);
   }
+  function activeInvoicePriceOwner(c,priceId){
+    const reconciled=new Set((c.audit||[]).filter(a=>a.type==='INVOICE_PRICE_RECONCILED').map(a=>a.applicationRequestId));
+    return (c.audit||[]).find(a=>a.type==='INVOICE_PRICE_APPLIED'&&!reconciled.has(a.requestId)&&a.receipt?.changes?.some(p=>p.priceId===priceId))||null;
+  }
   function setPrice(state,input,actor){
     assertRole(actor?.role,true); const c=ensureState(state);
     const material=c.materials.find(x=>x.id===input.materialId&&x.active!==false);
@@ -77,6 +81,7 @@
     assertRole(actor?.role,true); const c=ensureState(state),why=String(reason||'').trim();
     if(!why)throw new Error('REASON_REQUIRED');
     const row=c.prices.find(x=>x.id===priceId&&!x.voided); if(!row)throw new Error('PRICE_NOT_FOUND');
+    if(activeInvoicePriceOwner(c,priceId))throw Error('INVOICE_PRICE_OWNED');
     const price=Number(newPrice); if(!Number.isFinite(price)||price<0)throw new Error('INVALID_PRICE');
     const before=clone(row),now=Date.now();
     row.pricePerUnit=money(price); row.correctedAt=now; row.correctedBy=actor.id; row.correctedByName=String(actor?.name||actor?.id||''); row.correctedByRole=String(actor?.role||'');
@@ -88,6 +93,175 @@
     const c=ensureState(state); const t=Number(at);
     const rows=c.prices.filter(x=>!x.voided&&x.materialId===materialId&&x.brandId===brandId&&x.effectiveFrom<=t).sort((a,b)=>b.effectiveFrom-a.effectiveFrom||b.createdAt-a.createdAt);
     return rows[0]?clone(rows[0]):null;
+  }
+  // Read-only proposal. Invoice purchase rates are not silently substituted
+  // for effective-dated job costing. A Manager reviews the existing price path.
+  function invoicePriceReview(state,invoice,actor){
+    assertRole(actor?.role,true);
+    if(!invoice?.id||invoice.status!=='posted'||!Number.isInteger(invoice.revision)||invoice.revision<1||!Array.isArray(invoice.lines)||!invoice.lines.length)throw Error('POSTED_INVOICE_REQUIRED');
+    const date=String(invoice.invoice_date||''),effective=Date.parse(date+'T00:00:00+04:00');
+    const omanDate=t=>new Date(Number(t)+14400000).toISOString().slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(effective)||omanDate(effective)!==date)throw Error('INVALID_INVOICE_DATE');
+    const snapshot=clone(state),c=ensureState(snapshot),seen=new Set();
+    return invoice.lines.map(l=>{
+      const mid=l.materialId,bid=l.brandId,key=JSON.stringify([mid,bid]),rate=Number(l.unitPrice);
+      if(seen.has(key)||!Number.isFinite(rate)||rate<=0||money(rate)!==rate)throw Error('INVALID_INVOICE_PRICE');
+      seen.add(key);
+      const m=c.materials.find(x=>x.id===mid&&x.active!==false),b=c.brands.find(x=>x.id===bid&&x.active!==false);
+      const base={materialId:mid,brandId:bid,materialName:m?.name||l.materialName||mid,brandName:b?.name||l.brandName||bid,unit:l.unit,rate,date,effectiveFrom:effective,invoiceId:invoice.id,invoiceRevision:invoice.revision};
+      if(!m||!b||m.unit!==l.unit)return {...base,action:'blocked',reason:'Material/brand missing or unit changed'};
+      const periods=c.prices.filter(p=>!p.voided&&p.materialId===mid&&p.brandId===bid);
+      if(periods.some(p=>!Number.isFinite(Number(p.effectiveFrom))))return {...base,action:'blocked',reason:'Invalid existing price history'};
+      const same=periods.filter(p=>omanDate(p.effectiveFrom)===date);
+      const current=priceAt(snapshot,mid,bid,effective);
+      if(same.length>1)return {...base,action:'blocked',reason:'Multiple existing price periods on this date'};
+      if(same.length===1&&money(same[0].pricePerUnit)===rate)return {...base,action:'unchanged',oldRate:rate,affected:0};
+      if(!same.length&&current&&money(current.pricePerUnit)===rate)return {...base,action:'unchanged',oldRate:rate,affected:0};
+      const action=same.length?'correct':'create',from=same.length?Number(same[0].effectiveFrom):effective;
+      const next=periods.filter(p=>Number(p.effectiveFrom)>from).sort((a,b)=>Number(a.effectiveFrom)-Number(b.effectiveFrom))[0];
+      // One active invoice owns a given costing period; a second purchase may
+      // still post to stock, but cannot overwrite the first approved price.
+      const targetId=same[0]?.id||null;
+      const owner=targetId&&activeInvoicePriceOwner(c,targetId);
+      if(owner)return {...base,action:'blocked',reason:'This price period belongs to another approved invoice. Keep the purchase in stock and reconcile the existing price source first.',sourceInvoiceId:owner.invoiceId};
+      const impacts=[];
+      for(const x of c.actuals.filter(x=>!x.voided&&x.locked&&Number(x.actualAt)>=from&&(!next||Number(x.actualAt)<Number(next.effectiveFrom)))){
+        const lines=(x.lines||[]).map((l,i)=>({l,i})).filter(({l})=>l.materialId===mid&&l.brandId===bid);
+        if(!lines.length)continue;
+        if(!lines.some(({l})=>!targetId||l.priceId!==targetId||Number(l.unitPriceSnapshot)!==rate||Number(l.lineCost)!==money(num(l.actualQuantity??l.quantity)*rate)))continue;
+        impacts.push({id:x.id,jobCard:x.jobCard,actualAt:Number(x.actualAt),oldJobTotal:x.totalCost??null,
+          lines:lines.map(({l,i})=>({index:i,quantity:num(l.actualQuantity??l.quantity),priceId:l.priceId??null,oldRate:l.unitPriceSnapshot??null,oldCost:l.lineCost??null,newCost:money(num(l.actualQuantity??l.quantity)*rate)})),
+          quantity:lines.reduce((n,{l})=>n+num(l.actualQuantity??l.quantity),0),
+          oldCost:money(lines.reduce((n,{l})=>n+num(l.lineCost),0)),newCost:money(lines.reduce((n,{l})=>n+money(num(l.actualQuantity??l.quantity)*rate),0))});
+      }
+      impacts.sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+      return {...base,action,oldRate:same.length?Number(same[0].pricePerUnit):current?Number(current.pricePerUnit):null,priceId:targetId,affected:impacts.length,jobCards:[...new Set(impacts.map(x=>x.jobCard))],impacts,oldCost:money(impacts.reduce((n,x)=>n+x.oldCost,0)),newCost:money(impacts.reduce((n,x)=>n+x.newCost,0)),effectiveFrom:from};
+    });
+  }
+  // Candidate only: caller must fetch the authoritative invoice and workshop
+  // revision under one server transaction, then persist the returned patch
+  // atomically with its audit. Never call from an untrusted client to save.
+  function prepareInvoicePriceApply(state,invoice,input,actor){
+    assertRole(actor?.role,true);
+    if(!String(actor?.id||'').trim())throw Error('MANAGER_ID_REQUIRED');
+    const reason=String(input?.reason||'').trim(),rid=String(input?.requestId||'').trim();
+    if(reason.length<5||reason.length>500)throw Error('REASON_REQUIRED');
+    if(!rid||rid.length>200)throw Error('REQUEST_ID_REQUIRED');
+    if(!Array.isArray(input?.review)||!input.review.length)throw Error('REVIEW_REQUIRED');
+    const staged={consumables:clone(state?.consumables||{})},c=ensureState(staged);
+    const fresh=invoicePriceReview(staged,invoice,actor);
+    const fingerprint=JSON.stringify([invoice.id,invoice.revision,reason,input.review]);
+    const prior=c.audit.find(a=>a.type==='INVOICE_PRICE_APPLIED'&&a.requestId===rid);
+    if(prior){
+      if(prior.fingerprint!==fingerprint)throw Error('REQUEST_ID_CONFLICT');
+      return {consumables:clone(state.consumables),receipt:clone(prior.receipt),replayed:true};
+    }
+    // A corrected or cancelled source needs a separate reconciliation flow;
+    // don't reapply a newer revision over independently changed price history.
+    if(c.audit.some(a=>a.type==='INVOICE_PRICE_APPLIED'&&a.invoiceId===invoice.id&&!c.audit.some(r=>r.type==='INVOICE_PRICE_RECONCILED'&&r.applicationRequestId===a.requestId)))
+      throw Error('INVOICE_PRICE_ALREADY_APPLIED_RECONCILIATION_REQUIRED');
+    if(JSON.stringify(fresh)!==JSON.stringify(input.review))throw Error('STALE_PRICE_REVIEW');
+    if(fresh.some(p=>p.action==='blocked'))throw Error('PRICE_REVIEW_BLOCKED');
+    const changes=fresh.filter(p=>p.action==='create'||p.action==='correct');
+    if(!changes.length)throw Error('NO_PRICE_CHANGES');
+    const sourceReason='Invoice '+invoice.id+' rev '+invoice.revision+': '+reason;
+    const receipts=changes.map(p=>{
+      const row=p.action==='create'
+        ?setPrice(staged,{materialId:p.materialId,brandId:p.brandId,pricePerUnit:p.rate,effectiveFrom:p.effectiveFrom,reason:sourceReason},actor)
+        :managerCorrectPrice(staged,p.priceId,p.rate,actor,sourceReason);
+      return {materialId:p.materialId,brandId:p.brandId,priceId:row.id,action:p.action,rate:p.rate,effectiveFrom:row.effectiveFrom};
+    });
+    const receipt={invoiceId:invoice.id,invoiceRevision:invoice.revision,requestId:rid,changes:receipts};
+    c.audit.push({id:uid('audit'),type:'INVOICE_PRICE_APPLIED',entityId:invoice.id,invoiceId:invoice.id,invoiceRevision:invoice.revision,requestId:rid,fingerprint,by:actor.id,at:Date.now(),reason,receipt:clone(receipt)});
+    return {consumables:clone(c),receipt,replayed:false};
+  }
+  // Reversing an invoice application is a new audited costing event. It
+  // does not delete a price or restore an old workshop snapshot.
+  function prepareInvoicePriceReconciliation(state,application,input,actor){
+    assertRole(actor?.role,true);
+    if(!String(actor?.id||'').trim())throw Error('MANAGER_ID_REQUIRED');
+    const staged={consumables:clone(state?.consumables||{})},c=ensureState(staged);
+    const canon=v=>Array.isArray(v)?v.map(canon):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canon(v[k])])):v;
+    const same=(a,b)=>JSON.stringify(canon(a))===JSON.stringify(canon(b));
+    const aid=String(application?.requestId||'');
+    const index=c.audit.findIndex(a=>a.type==='INVOICE_PRICE_APPLIED'&&a.requestId===aid);
+    const event=c.audit[index];
+    if(!aid||!event||!same(event.receipt,application)||!Array.isArray(application.changes)||!application.changes.length)
+      throw Error('INVOICE_PRICE_APPLICATION_NOT_FOUND');
+    if(c.audit.some(a=>a.type==='INVOICE_PRICE_RECONCILED'&&a.applicationRequestId===aid))
+      throw Error('INVOICE_PRICE_ALREADY_RECONCILED');
+    const changes=[],impacts=new Map(),seen=new Set();
+    const sourceReason='Invoice '+application.invoiceId+' rev '+application.invoiceRevision+': '+event.reason;
+    const now=Date.now();
+    for(const applied of application.changes){
+      if(seen.has(applied.priceId))throw Error('INVALID_PRICE_APPLICATION');
+      seen.add(applied.priceId);
+      const price=c.prices.find(p=>p.id===applied.priceId&&!p.voided);
+      const log=c.audit.slice(0,index).reverse().find(a=>a.entityId===applied.priceId&&a.reason===sourceReason&&
+        (applied.action==='correct'?a.type==='PRICE_CORRECTED':['PRICE_CREATED','PRICE_CHANGED'].includes(a.type)));
+      if(!price||!log||price.materialId!==applied.materialId||price.brandId!==applied.brandId||
+        Number(price.effectiveFrom)!==Number(applied.effectiveFrom)||price.unit!==log.after?.unit)
+        throw Error('INVOICE_PRICE_CHANGED_SINCE_APPLICATION');
+      // A previously modified price can be detached only with explicit review.
+      // Retain the independent price and its current job costs; never overwrite it.
+      if(!same(price,log.after)&&Number(price.pricePerUnit)!==Number(applied.rate)){
+        changes.push({materialId:price.materialId,brandId:price.brandId,priceId:price.id,action:'retain',
+          effectiveFrom:Number(price.effectiveFrom),oldRate:price.pricePerUnit,restoredRate:price.pricePerUnit,
+          priceSnapshot:clone(price),actuals:[]});
+        c.audit.push({id:uid('audit'),type:'INVOICE_PRICE_SOURCE_DETACHED',entityId:price.id,by:actor.id,at:now,
+          applicationRequestId:aid,before:clone(price),after:clone(price),reason:String(input?.reason||'').trim()});
+        continue;
+      }
+      if(!['create','correct'].includes(applied.action))throw Error('INVALID_PRICE_APPLICATION');
+      const before=clone(price),from=Number(price.effectiveFrom);
+      const next=c.prices.filter(p=>!p.voided&&p.materialId===price.materialId&&p.brandId===price.brandId&&Number(p.effectiveFrom)>from).sort((a,b)=>Number(a.effectiveFrom)-Number(b.effectiveFrom))[0];
+      if(applied.action==='correct'){
+        if(!log.before||log.before.id!==price.id||log.before.effectiveFrom!==price.effectiveFrom||log.before.unit!==price.unit)
+          throw Error('INVALID_PRICE_APPLICATION');
+        price.pricePerUnit=log.before.pricePerUnit;
+        price.correctedAt=now;price.correctedBy=actor.id;price.correctedByName=String(actor.name||actor.id);price.correctedByRole=actor.role;
+      }else{
+        price.voided=true;price.voidedAt=now;price.voidedBy=actor.id;
+      }
+      if(applied.action==='create'&&!priceAt(staged,price.materialId,price.brandId,from))throw Error('INVOICE_PRICE_RECONCILIATION_NO_FALLBACK');
+      const review={materialId:price.materialId,brandId:price.brandId,priceId:price.id,priceSnapshot:before,
+        action:applied.action==='correct'?'restore':'void',effectiveFrom:from,oldRate:before.pricePerUnit,
+        restoredRate:applied.action==='correct'?price.pricePerUnit:(priceAt(staged,price.materialId,price.brandId,from)?.pricePerUnit??null),actuals:[]};
+      for(const actual of c.actuals.filter(a=>!a.voided&&a.locked&&Number(a.actualAt)>=from&&(!next||Number(a.actualAt)<Number(next.effectiveFrom)))){
+        const matching=(actual.lines||[]).map((l,i)=>({l,i})).filter(({l})=>l.materialId===price.materialId&&l.brandId===price.brandId);
+        if(!matching.length)continue;
+        const applicable=priceAt(staged,price.materialId,price.brandId,actual.actualAt);
+        if(!applicable)throw Error('INVOICE_PRICE_RECONCILIATION_NO_FALLBACK');
+        if(matching.some(({l})=>l.priceId!==price.id||Number(l.unitPriceSnapshot)!==Number(before.pricePerUnit)))
+          throw Error('INVOICE_PRICE_ACTUAL_CHANGED_SINCE_APPLICATION');
+        if(!impacts.has(actual.id))impacts.set(actual.id,{row:actual,before:clone(actual)});
+        const oldCost=money(matching.reduce((n,{l})=>n+num(l.lineCost),0));
+        actual.lines=actual.lines.map(l=>l.materialId===price.materialId&&l.brandId===price.brandId?
+          {...l,priceId:applicable.id,unitPriceSnapshot:applicable.pricePerUnit,lineCost:money(num(l.actualQuantity??l.quantity)*applicable.pricePerUnit)}:l);
+        const newCost=money(actual.lines.filter(l=>l.materialId===price.materialId&&l.brandId===price.brandId).reduce((n,l)=>n+num(l.lineCost),0));
+        review.actuals.push({id:actual.id,jobCard:actual.jobCard,actualAt:Number(actual.actualAt),oldJobTotal:impacts.get(actual.id).before.totalCost??null,quantity:matching.reduce((n,{l})=>n+num(l.actualQuantity??l.quantity),0),lines:matching.map(({l,i})=>({index:i,quantity:num(l.actualQuantity??l.quantity),priceId:l.priceId??null,oldRate:l.unitPriceSnapshot??null,oldCost:l.lineCost??null,newCost:money(num(l.actualQuantity??l.quantity)*applicable.pricePerUnit)})),oldCost,newCost,priceId:applicable.id,rate:applicable.pricePerUnit});
+      }
+      review.actuals.sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+      changes.push(review);
+      c.audit.push({id:uid('audit'),type:'INVOICE_PRICE_REVERSED',entityId:price.id,by:actor.id,at:now,
+        applicationRequestId:aid,before,after:clone(price),reason:String(input?.reason||'').trim()});
+    }
+    const review={invoiceId:application.invoiceId,invoiceRevision:application.invoiceRevision,applicationRequestId:aid,changes};
+    if(!input?.review)return {review};
+    if(!same(input.review,review))throw Error('STALE_PRICE_RECONCILIATION_REVIEW');
+    const reason=String(input.reason||'').trim(),rid=String(input.requestId||'').trim();
+    if(reason.length<5||reason.length>500)throw Error('REASON_REQUIRED');
+    if(!rid||rid.length>128)throw Error('REQUEST_ID_REQUIRED');
+    for(const {row,before} of impacts.values()){
+      row.totalCost=money(row.lines.reduce((n,l)=>n+num(l.lineCost),0));
+      row.priceRecalculatedAt=now;row.priceRecalculatedBy=actor.id;row.correctedAt=now;row.correctedBy=actor.id;
+      row.correctedByName=String(actor.name||actor.id);row.correctedByRole=actor.role;row.correctionReason=reason;
+      auditChange(c,'ACTUAL_PRICE_RECALCULATED',row,before,row,actor,reason);
+    }
+    const receipt={...review,requestId:rid};
+    c.audit.push({id:uid('audit'),type:'INVOICE_PRICE_RECONCILED',entityId:application.invoiceId,invoiceId:application.invoiceId,
+      invoiceRevision:application.invoiceRevision,applicationRequestId:aid,requestId:rid,by:actor.id,at:now,reason,receipt:clone(receipt)});
+    return {review,receipt,consumables:clone(c)};
   }
   function cleanLines(state,lines){
     const c=ensureState(state); if(!Array.isArray(lines)||!lines.length)throw new Error('MATERIAL_LINES_REQUIRED');
@@ -199,5 +373,5 @@
     const keys=['jobs','assign','sessions','corrections','jobEdits','suggestedEdits','reworks','requests','additionalActions','lastActions','overtimeNotices','leaves','leaveAudit'];
     const out={}; for(const k of keys)out[k]=clone(state[k]===undefined?null:state[k]); return JSON.stringify(out);
   }
-  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,managerCorrectPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
+  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,activeInvoicePriceOwner,invoicePriceReview,prepareInvoicePriceApply,prepareInvoicePriceReconciliation,managerCorrectPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
 });
