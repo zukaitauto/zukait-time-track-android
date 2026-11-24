@@ -68,7 +68,9 @@ begin
  if v_invoice.revision is distinct from p_invoice_revision then raise exception 'INVOICE_REVISION_CONFLICT';end if;
  if exists(select 1 from public.zukait_invoice_price_applications where invoice_id=p_invoice_id)
  then raise exception 'INVOICE_PRICE_RECONCILIATION_REQUIRED';end if;
- select * into v_state from public.workshop_state where id='main' for update;
+ -- The existing workshop commit RPC owns the state lock and CAS; do not
+ -- invert its lock order by taking a separate workshop row lock first.
+ select * into v_state from public.workshop_state where id='main';
  if not found or v_state.revision is distinct from p_expected_revision then
   return jsonb_build_object('ok',false,'code','conflict');end if;
  if jsonb_typeof(p_consumables) is distinct from 'object'
@@ -89,6 +91,8 @@ begin
  then raise exception 'PRICE_APPLICATION_AUDIT_REQUIRED';end if;
  v_candidate:=jsonb_set(v_state.data,'{consumables}',p_consumables,false);
  v_commit:=public.zukait_commit_workshop_state_v2(v_state.revision,v_candidate,v_actor,p_live);
+ if v_commit->>'code'='conflict' and v_commit->>'ok' is distinct from 'true' then
+  return jsonb_build_object('ok',false,'code','conflict');end if;
  if v_commit->>'ok' is distinct from 'true' then
   raise exception 'WORKSHOP_PRICE_COMMIT_FAILED';end if;
  v_receipt:=p_receipt||jsonb_build_object('ok',true,'server_revision',(v_commit->>'revision')::bigint,'replayed',false);
