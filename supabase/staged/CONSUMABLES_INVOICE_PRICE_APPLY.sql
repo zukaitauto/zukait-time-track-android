@@ -81,8 +81,8 @@ begin
  or jsonb_typeof(p_receipt->'changes') is distinct from 'array'
  then raise exception 'INVALID_PRICE_APPLICATION';end if;
  if jsonb_array_length(p_receipt->'changes')=0 then raise exception 'INVALID_PRICE_APPLICATION';end if;
- if (p_consumables - 'prices' - 'actuals' - 'audit') is distinct from
-    (v_state.data->'consumables' - 'prices' - 'actuals' - 'audit')
+ if (p_consumables - ARRAY['prices','actuals','audit']::text[]) is distinct from
+    ((v_state.data->'consumables') - ARRAY['prices','actuals','audit']::text[])
  then raise exception 'UNRELATED_CONSUMABLES_CHANGE';end if;
  if not exists(select 1 from jsonb_array_elements(p_consumables->'audit') a
  where a->>'type'='INVOICE_PRICE_APPLIED' and a->>'invoiceId'=p_invoice_id::text
