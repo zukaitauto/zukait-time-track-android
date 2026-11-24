@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "V420 exact corrected source passed ten CI workflows. Signed artifact verified. Additive production schema installed. Candidate production canary deployed; existing staff endpoint v151 unchanged. Owner backup restore deferral applies only to V420. Authenticated production smoke, complete data preservation and physical acceptance remain unverified; staff approval false.",
+  "reason": "V420 signed source and ten workflows passed. Production additive schema and separate canary installed. Existing and candidate endpoint public authentication boundaries passed run 45468655727. Authenticated production verification and physical-device acceptance require a real authorized login and device; not performed. Backup recovery deferred by owner. No staff endpoint cutover or staff publication approved.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -57,7 +57,14 @@
     "canaryBundleSha256": "d165832fac03b0aff89896440b1a3e9aa92d4f136b6f641cb4635990d867fdd2",
     "authenticatedSmoke": "NOT_RUN",
     "existingStaffEndpointReplaced": false,
-    "checkedDate": "2026-11-24"
+    "checkedDate": "2026-11-24",
+    "publicBoundarySmoke": {
+      "status": "PASSED",
+      "runId": 45468655727,
+      "jobId": 138710298855,
+      "verifiedDate": "2026-11-24",
+      "scope": "Existing production staff endpoint and V420 canary reject GET, missing API key and missing session for revision, stock, apply and reconcile routes. No authenticated workflow tested and no business records changed."
+    }
   },
   "correctedSignedCandidate": {
     "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
