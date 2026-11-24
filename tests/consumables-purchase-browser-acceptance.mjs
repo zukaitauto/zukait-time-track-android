@@ -54,8 +54,8 @@ try{
  const ui=source.slice(0,end)+'\n})();';
  const assets={'/consumables.js':readFileSync('app/src/main/assets/consumables.js','utf8'),'/stock.js':readFileSync('app/src/main/assets/consumables_stock_core.js','utf8'),'/ui.js':ui};
  server=createServer((req,res)=>{
-  if(assets[req.url]){res.setHeader('Content-Type','application/javascript');return res.end(assets[req.url])}
-  res.setHeader('Content-Type','text/html');res.end('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;font:16px Arial}#modal{width:min(780px,100%);padding:8px;margin:auto}button{cursor:pointer}</style><main id="modal"></main>');
+  if(assets[req.url]){res.setHeader('Content-Type','application/javascript; charset=utf-8');return res.end(assets[req.url])}
+  res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;font:16px Arial}#modal{width:min(780px,100%);padding:8px;margin:auto}button{cursor:pointer}</style><main id="modal"></main>');
  });
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const base='http://127.0.0.1:'+server.address().port;
@@ -95,8 +95,8 @@ try{
  await open();await waitText('#cpSaveStatus','Previous save is unconfirmed');await page.locator('#cpFinish').click();
  await waitText('#cpHistory','QA-001');assert.equal(saveIds[0],saveIds[1]);assert.deepEqual(await balance(),[10,1.5]);
  const reviewFixture=(await db.query('select id,revision,status,invoice_date::text,lines from public.zukait_purchase_invoices')).rows[0];
- console.log('Review fixture:',JSON.stringify(reviewFixture));
- console.log('Core review:',JSON.stringify(await page.evaluate(i=>ZukaitConsumables.invoicePriceReview(state,i,me),reviewFixture)));
+ const reviewed=await page.evaluate(i=>ZukaitConsumables.invoicePriceReview(state,i,me),reviewFixture);
+ assert.equal(reviewed[0].oldCost,.4);assert.equal(reviewed[0].newCost,.3);
  await page.locator('#cpHistory details summary').click();await page.getByRole('button',{name:'Review Brands & Price'}).click();
  await waitText('#modal','JC1');await waitText('#modal','0.400 → 0.300');
  await page.locator('#cpPriceReason').fill('QA approved rate');await page.locator('#cpPriceApply').click();await waitText('#cpPriceStatus','Prices saved');
