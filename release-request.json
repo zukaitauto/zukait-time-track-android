@@ -10,9 +10,9 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "NOT_RUN",
+  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "V420 signed source and ten workflows passed. Production additive schema and separate canary installed. Existing and candidate endpoint public authentication boundaries passed run 45468655727. Authenticated production verification and physical-device acceptance require a real authorized login and device; not performed. Backup recovery deferred by owner. No staff endpoint cutover or staff publication approved.",
+  "reason": "Owner explicitly deferred backup restore and then physical-device acceptance for V420. Exact signed candidate and ten CI workflows passed. Production schema and canary installed; unauthenticated boundary smoke passed. Authenticated production verification, data preservation, PC-site reconciliation, HTTPS restart and production staff endpoint cutover are still outstanding. Staff approval remains false.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -72,5 +72,19 @@
     "artifactId": 14955831417,
     "successfulWorkflows": 10,
     "status": "VERIFIED_SIGNED_CANDIDATE"
+  },
+  "physicalDeviceDeferral": {
+    "checks": [
+      "physical_android",
+      "physical_safari"
+    ],
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "versionName": "V420",
+    "versionCode": 383,
+    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+    "authorizedBy": "Owner in this conversation",
+    "instruction": "Bypass and publish",
+    "recordedDate": "2026-11-24",
+    "scope": "Physical Android and Safari acceptance only; no device test represented as passed. Other release requirements, including authenticated production verification, remain enforced."
   }
 }

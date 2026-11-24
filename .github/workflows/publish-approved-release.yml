@@ -139,7 +139,7 @@ jobs:
           if [ "$(jq -r '.versionName' release-request.json)" = "V420" ] &&
              [ "$SOURCE_COMMIT" = "c521ccc89c7a11897cb1d536f9a877e7280856d0" ] &&
              [ "$(jq -r '.backupRestoreDeferral.status' release-request.json)" = "DEFERRED_BY_OWNER_NOT_PERFORMED" ]; then
-            test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "0e72d0b24563983bcd6525ed294b9dddc1fa5872" || {
+            test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "56c377a3809b678f4d91555580ca8723e5c7ccb9" || {
               echo "::error::V420 scoped backup-deferral verifier drift"; exit 1;
             }
             EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude).github/workflows/publish-approved-release.yml')

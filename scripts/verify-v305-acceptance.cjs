@@ -30,6 +30,29 @@ function validate(approval,record) {
    assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12,'Browser deferral evidence required');
    continue;
   }
+  // The owner's V420 physical-device deferral is scoped to the exact signed candidate.
+  if(['physical_android','physical_safari'].includes(key) && approval.physicalDeviceDeferral) {
+   const waiver=approval.physicalDeviceDeferral;
+   assert.equal(approval.versionName,'V420','Physical deferral limited to V420');
+   assert.equal(approval.versionCode,383,'V420 physical deferral version code mismatch');
+   assert.equal(approval.releaseScope,'purchase-invoice-coordinated','V420 coordinated scope required');
+   assert.equal(approval.sourceCommit,'c521ccc89c7a11897cb1d536f9a877e7280856d0','V420 physical deferral source mismatch');
+   assert.equal(approval.signedAcceptanceRun,45467177557,'V420 signed acceptance run mismatch');
+   assert.equal(approval.ownerPublicationRequested,true,'Owner publication request required');
+   assert.deepEqual(waiver.checks,['physical_android','physical_safari'],'Physical deferral checks mismatch');
+   assert.equal(waiver.status,'DEFERRED_BY_OWNER_NOT_PERFORMED','Physical deferral status mismatch');
+   assert.equal(waiver.versionName,approval.versionName,'Physical deferral version mismatch');
+   assert.equal(waiver.versionCode,approval.versionCode,'Physical deferral version code mismatch');
+   assert.equal(waiver.sourceCommit,approval.sourceCommit,'Physical deferral source mismatch');
+   assert.equal(waiver.authorizedBy,'Owner in this conversation','Explicit owner authorization required');
+   assert.equal(waiver.instruction,'Bypass and publish','Explicit physical deferral required');
+   assert.equal(waiver.recordedDate,'2026-11-24','V420 physical deferral date mismatch');
+   assert.equal(approval.physicalAcceptanceStatus,waiver.status,'Physical deferral status must be disclosed');
+   assert.equal(check?.passed,false,'Deferred physical test must remain not passed');
+   assert.deepEqual(check?.ownerWaiver,waiver,'Physical deferral records must match');
+   assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12,'Physical deferral evidence required');
+   continue;
+  }
   // Explicit owner authorization applies only to the exact signed V420 source.
   if(key==='fresh_backup_restored' && approval.backupRestoreDeferral) {
    const waiver=approval.backupRestoreDeferral;
@@ -86,6 +109,7 @@ if(require.main===module) {
  validate(approval,record);
  console.log('V305 acceptance requirements satisfied for approved source '+approval.sourceCommit);
  if(approval.ownerBrowserBuildWaiver) console.log('OWNER-DEFERRED: exact browser build verification; owner reports V376 browser tests.');
+ if(approval.physicalDeviceDeferral) console.log('OWNER-DEFERRED: V420 physical Android and Safari tests NOT PERFORMED.');
  if(approval.backupRestoreDeferral) console.log('OWNER-DEFERRED: V420 backup restore NOT PERFORMED.');
  if(approval.ownerBackupRestoreWaiver) console.log('OWNER-DEFERRED: fresh backup restore NOT PERFORMED for V376.');
 }
