@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {randomUUID} from 'node:crypto';
+import {stripTypeScriptTypes} from 'node:module';
 const src=fs.readFileSync('app/src/main/assets/time_management_rules.js','utf8');
 assert.equal(src,fs.readFileSync('supabase/functions/workshop-api/time_management_rules.js','utf8'));
 const {timeManagementTransition:transition,allocationToken,employeeTimeToken,workedMinutes,assignmentHasStarted}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
@@ -35,10 +36,10 @@ const stale=fixture();req=command(stale,'CANCEL_ASSIGNMENT');stale.sessions.push
 req=command(d,'CORRECT_SESSION',{start:at-1800000,end:at});const changed=fixture();changed.assign[0].suggested++;assert.equal(transition(changed,manager,req,at).code,'time_allocation_changed');
 // Exercise the actual server route and stale full-state preservation.
 const api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8'),block=api.slice(api.indexOf('    if (action === "time_management") {'),api.indexOf('    if (action === "qc_delivery") {'));
-const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor,endpoint=new AsyncFunction('admin','timeManagementTransition','computeLiveStatus','reply','user','body','action',api.split('// FINAL_SESSION_STATUS_BEGIN')[1].split('// FINAL_SESSION_STATUS_END')[0]+block);
+const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor,endpoint=new AsyncFunction('admin','timeManagementTransition','computeLiveStatus','reply','user','body','action','Deno',(()=>{const stripped=stripTypeScriptTypes('async function fixture(){\n'+api.split('// FINAL_SESSION_STATUS_BEGIN')[1].split('// FINAL_SESSION_STATUS_END')[0]+block+'\n}');return stripped.slice(stripped.indexOf('{')+1,stripped.lastIndexOf('}'));})());
 let committed,casCalls=0,remote=fixture();const db={from(){return{select(){return this},eq(){return this},async single(){return{data:{revision:1,data:remote}}}}},async rpc(name,args){committed=args;casCalls++;return{data:{ok:true,revision:2}}}};
-let response=await endpoint(db,(...args)=>transition(...args.slice(0,3),at),()=>[],(body,status=200)=>({body,status}),manager,command(remote,'CANCEL_ASSIGNMENT'),'time_management');assert.equal(response.body.ok,true);assert.equal(committed.p_changed_by,'MGR1');assert.equal(committed.p_data.assign[0].cancelled,true);
-response=await endpoint(db,transition,()=>[],(body,status=200)=>({body,status}),{id:'SUP1',role:'Supervisor'},command(remote,'CANCEL_ASSIGNMENT'),'time_management');assert.equal(response.status,403);assert.equal(casCalls,1);
+let response=await endpoint(db,(...args)=>transition(...args.slice(0,3),at),()=>[],(body,status=200)=>({body,status}),manager,command(remote,'CANCEL_ASSIGNMENT'),'time_management',{env:{get:()=>undefined}});assert.equal(response.body.ok,true);assert.equal(committed.p_changed_by,'MGR1');assert.equal(committed.p_data.assign[0].cancelled,true);
+response=await endpoint(db,transition,()=>[],(body,status=200)=>({body,status}),{id:'SUP1',role:'Supervisor'},command(remote,'CANCEL_ASSIGNMENT'),'time_management',{env:{get:()=>undefined}});assert.equal(response.status,403);assert.equal(casCalls,1);
 const keep=api.slice(api.indexOf('function preserveManagerTimeAuthority('),api.indexOf('// A delayed legacy client'));
 const protect=new Function('cloneValue',keep.replace(/: any\b/g,'').replace(/:any\b/g,'').replace(/ as const/g,'')+';return preserveManagerTimeAuthority;')(clone);
 const corrected=transition(d,manager,command(d,'CANCEL_SESSION'),at).data,protectedData=protect(clone(d),corrected);assert.deepEqual(protectedData.sessions,corrected.sessions);assert.deepEqual(protectedData.additionalActions,corrected.additionalActions);assert.deepEqual(protectedData.corrections,corrected.corrections);
