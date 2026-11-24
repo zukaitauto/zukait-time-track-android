@@ -94,8 +94,8 @@ await empty.w.zukStockNav('add');
 assert.match(empty.html(),/No linked material and brand pairs/);
 assert.match(empty.html(),/Review &amp; Link Existing Materials/,
  'Manager gets direct audited link shortcut when there is no Stock catalog');
-assert.match(empty.html(),/disabled placeholder="Link a material \+ brand first"/,
- 'Empty catalog must not display a usable material search field');
+assert.match(empty.html(),/id="zs-material-brand-search"[^>]*placeholder="Link a material \\+ brand first"[^>]*disabled/,
+ 'Empty catalog must display a disabled material search field');
 empty.m('zs-material-brand-search').value='Clear';
 empty.w.zukStockSavePurchase();
 await tick();
