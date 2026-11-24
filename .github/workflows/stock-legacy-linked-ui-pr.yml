@@ -15,6 +15,7 @@ on:
       - 'supabase/functions/workshop-api/extensions/invoice_price_*.js'
       - 'supabase/functions/workshop-api/index.ts'
       - 'supabase/staged/CONSUMABLES_INVOICE_PRICE_APPLY.sql'
+      - 'supabase/staged/CONSUMABLES_INVOICE_PRICE_RECONCILIATION.sql'
       - 'tests/consumables-master-mobile-responsive.mjs'
       - 'tests/consumables-stock-legacy-linked-ui.mjs'
       - 'package.json'
