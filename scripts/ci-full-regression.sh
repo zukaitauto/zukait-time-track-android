@@ -40,6 +40,7 @@ node tests/accountant-context-reader.mjs
 node tests/accountant-read-coalescing-sql.mjs
 node tests/accountant-read-probe-migration.mjs
 node tests/accountant-auth-api.mjs
+node tests/v420-production-session-compatibility.mjs
 node tests/accountant-leave-command.mjs
 node tests/accountant-dashboard.mjs
 node tests/accountant-pending-cost-drilldown.mjs
