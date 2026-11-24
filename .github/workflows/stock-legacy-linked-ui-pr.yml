@@ -16,6 +16,7 @@ on:
       - 'app/src/main/assets/cloud_sync.js'
       - 'tests/consumables-invoice-price-commit-sql.mjs'
       - 'tests/consumables-invoice-ledger-reconcile.mjs'
+      - 'tests/consumables-purchase-browser-acceptance.mjs'
       - 'supabase/functions/workshop-api/extensions/invoice_price_*.js'
       - 'supabase/functions/workshop-api/index.ts'
       - 'supabase/staged/CONSUMABLES_INVOICE_PRICE_APPLY.sql'
@@ -65,3 +66,4 @@ jobs:
           npx playwright install chromium
           node tests/consumables-master-mobile-responsive.mjs
           node tests/consumables-stock-home-responsive.mjs
+          node tests/consumables-purchase-browser-acceptance.mjs
