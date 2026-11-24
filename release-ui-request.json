@@ -12,16 +12,16 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Owner requested publication of the approved V418 frontend improvements separately. Candidate held by the existing protection until exact-source signed and Reception acceptance. Purchase-price backend and migration preserved on deferred/v418-purchase-price-backend; no live inventory, costing, database or API changes. Physical phone acceptance NOT_RUN. No new backup or restore claimed.",
+  "reason": "Owner requested immediate frontend-only V418 publication. Exact-source signed Android, Reception and Stock safety checks passed (45383522882, 45383522809, 45383522877). No backend or production record changes. Physical device testing deferred by owner, fresh backup/restore NOT_RUN; explicit backup deferral not recorded. Hold publication until required approval record is complete.",
   "previousPublishedRelease": {
     "versionName": "V417",
     "versionCode": 380,
     "releaseTag": "release-V417-architecture-v2",
     "sourceCommit": "4976564e9ca53e5a6adcf65d9f33e7e208eeaab5"
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "sourceCommit": "65af4ff062d24e8403d21eda13405222daae3b7a",
+  "signedAcceptanceRun": 45383522882,
+  "verificationRun": 45383522809,
   "approvedAt": null,
   "publishNonce": null
 }
