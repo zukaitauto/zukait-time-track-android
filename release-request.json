@@ -12,16 +12,16 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "V419 menu-only correction requested by owner: remove duplicate Paint Stock shortcut in Painting Consumables; preserve separate Stock module. Multi-list development is excluded. Candidate held pending exact-source acceptance and release approval; no fresh backup or physical test claimed.",
+  "reason": "Owner requested V419 publication of the combined Painting/Mechanical UI changes. Exact-source signed Android, Reception, Accountant, connection and Mechanical/Accountant contracts passed. Source comparison shows no Supabase changes. Multiple-consumables-list feature excluded. Physical acceptance and fresh production backup/restore NOT_RUN. V418-specific backup deferral is not reused; V419 remains held until owner authorizes the applicable deferral.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
     "releaseTag": "release-V418-architecture-v2",
     "sourceCommit": "65af4ff062d24e8403d21eda13405222daae3b7a"
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "sourceCommit": "659ffb9fe0c6d7da05457134a1d9dac7e35f36d7",
+  "signedAcceptanceRun": 45416881957,
+  "verificationRun": 45416882076,
   "approvedAt": null,
   "publishNonce": null
 }
