@@ -11,7 +11,7 @@ function safeId(value, limit=120) {
   const s=String(value||'').trim();
   return s.length<=limit&&/^[a-zA-Z0-9_.:-]*$/.test(s)?s:'';
 }
-export async function consumablesStockApi(admin,user,body,{enabled=false,writesEnabled=false,mechanicalWritesEnabled=false,masterLinkEnabled=false,invoiceEnabled=false,sessionHash=''}={}) {
+export async function consumablesStockApi(admin,user,body,{enabled=false,writesEnabled=false,mechanicalWritesEnabled=false,masterLinkEnabled=false,invoiceEnabled=false,countedReads=false,sessionHash=''}={}) {
   if(!roles.has(user?.role))return bad('stock_forbidden',403);
   if(!body||typeof body!=='object'||Array.isArray(body)||
     Object.keys(body).some(k=>!allowedKeys.has(k)))return bad('stock_invalid_request');
@@ -190,6 +190,13 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const materialId=safeId(body.materialId);
     const brandId=safeId(body.brandId);
     if(!materialId||!brandId)return bad('stock_item_required');
+    if(countedReads){
+      const {data,error}=await admin.rpc('zukait_stock_counted_page',{
+        p_page:0,p_department:department||null,p_material_id:materialId,p_brand_id:brandId
+      });
+      if(error||!Array.isArray(data)||data.some(row=>typeof row.initialised!=='boolean'))return bad('stock_read_failed',503);
+      return good({item:data[0]||null});
+    }
     const {data,error}=await admin.from('zukait_stock_balances')
       .select('material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at')
       .eq('material_id',materialId).eq('brand_id',brandId).maybeSingle();
@@ -205,6 +212,13 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   }
   if(operation==='LIST') {
     const page=Math.max(0,Math.min(20,Number.isInteger(body.page)?body.page:0));
+    if(countedReads){
+      const {data,error}=await admin.rpc('zukait_stock_counted_page',{
+        p_page:page,p_department:department||null,p_material_id:null,p_brand_id:null
+      });
+      if(error||!Array.isArray(data)||data.some(row=>typeof row.initialised!=='boolean'))return bad('stock_read_failed',503);
+      return good({items:data.slice(0,100),page,hasMore:data.length>100});
+    }
     const fields='material_id,brand_id,unit,physical,reserved,stock_value,minimum,updated_at';
     let query=admin.from('zukait_stock_balances').select(department
       ? fields+',material:zukait_stock_material_keys!inner(department,active)' : fields);

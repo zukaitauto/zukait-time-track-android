@@ -248,3 +248,18 @@ assert.equal((await consumablesStockApi(invoiceAdmin,S,auditRequest,invoiceOpts)
 const auditAdmin={rpc:async(fn,args)=>({data:[{request_id:'qa-edit',reason:'QA correction'}],error:null})};
 assert.equal((await consumablesStockApi(auditAdmin,M,auditRequest,invoiceOpts)).body.audit.length,1);
 console.log('Purchase cutover guard, cancellation route and Manager-only audit PASS');
+
+const countedCalls=[];
+const countedAdmin={from(){throw Error('counted production reads must not fall back to raw balances')},async rpc(name,args){countedCalls.push({name,args});return {data:[{material_id:'disc',brand_id:'brand',physical:0,initialised:false}],error:null}}};
+const countedOpts={enabled:true,countedReads:true};
+let counted=await consumablesStockApi(countedAdmin,M,{operation:'LIST',department:'Painting',page:2},countedOpts);
+assert.equal(counted.status,200);assert.equal(counted.body.items[0].initialised,false);
+assert.deepEqual(countedCalls[0],{name:'zukait_stock_counted_page',args:{p_page:2,p_department:'Painting',p_material_id:null,p_brand_id:null}});
+counted=await consumablesStockApi(countedAdmin,M,{operation:'BALANCE',materialId:'disc',brandId:'brand'},countedOpts);
+assert.equal(counted.body.item.initialised,false);
+assert.deepEqual(countedCalls[1].args,{p_page:0,p_department:null,p_material_id:'disc',p_brand_id:'brand'});
+for(const data of [null,[{physical:0}]]){
+ const broken={from(){throw Error('unsafe fallback')},async rpc(){return {data,error:null}}};
+ assert.equal((await consumablesStockApi(broken,M,{operation:'LIST'},countedOpts)).status,503);
+}
+console.log('Production counted stock protection PASS: opening state, bounded RPC, no unsafe fallback');

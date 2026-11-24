@@ -1,3 +1,6 @@
+import { sharedWorkshopSections } from "./extensions/shared_workshop_sections.js";
+import { employeeTimeSections } from "./extensions/employee_time_sections.js";
+import { saveWorkshopJobNotes } from "./workshop_job_notes_editor.mjs";
 import { invoicePriceReconcileApi } from "./extensions/invoice_price_reconcile_api.js";
 import { invoicePriceApplyApi } from "./extensions/invoice_price_apply_api.js";
 import { consumablesStockApi } from "./extensions/consumables_stock_api.js";
@@ -851,6 +854,11 @@ function threeWayMerge(base: any, remote: any, local: any, field = ""): any {
 
 async function baseStateForRevision(revision: number, currentRevision: number, currentData: any) {
   if (revision === currentRevision) return cloneValue(currentData);
+  if (Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co") {
+    const { data, error } = await admin.rpc("zukait_read_workshop_merge_base", { p_revision: revision });
+    if (error) throw error;
+    return data ? cloneValue(data) : null;
+  }
   // Explicit opt-in only: the live legacy database has no compatibility RPC yet.
   // Prefer the compact/legacy-compatible service-role reader. During a rolling
   // migration, an older database may not yet have the RPC in its schema cache.
@@ -1245,6 +1253,7 @@ Deno.serve(async (req: Request) => {
         mechanicalWritesEnabled:false,
         masterLinkEnabled:Deno.env.get('ZUKAIT_STOCK_MASTER_LINK_ENABLED')==='true',
         invoiceEnabled:Deno.env.get('ZUKAIT_PURCHASE_INVOICE_ENABLED')==='true',
+        countedReads:Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co",
         sessionHash:await sha256Hex(token)
       });
       return reply(result.body,result.status);
@@ -1688,9 +1697,14 @@ Deno.serve(async (req: Request) => {
         }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
-        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{
-          p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:String(user.id),p_live:live
-        });
+        const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+          Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
+          ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
+        const sections = useCompactTime ? employeeTimeSections(current.data, result.data) : null;
+        const commitArgs = {p_expected_revision:Number(current.revision||0),p_changed_by:String(user.id),p_live:live};
+        const {data:committed,error:commitError} = sections !== null
+          ? await admin.rpc("zukait_commit_workshop_employee_time_sections",{...commitArgs,p_sections:sections})
+          : await admin.rpc(useCompactTime ? "zukait_commit_workshop_employee_time_supported" : "zukait_commit_workshop_state_v2",{...commitArgs,p_data:result.data});
         if(commitError)throw commitError;
         if(committed?.ok){
           const row=live.find((x:any)=>String(x.employee_id)===String(user.id))||null;
@@ -1710,7 +1724,10 @@ Deno.serve(async (req: Request) => {
         if(result.duplicate)return reply({ok:true,audit:result.audit,duplicate:true,server_revision:current.revision});
         result.data=normalizeCompletedSessionStatuses(result.data);
         const next=Number(current.revision||0)+1;
-        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
+        const {data:committed,error:commitError}=await admin.rpc(
+          Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+          Deno.env.get("ZUKAIT_COMPACT_TIME_MANAGEMENT_ENABLED") !== "false"
+            ? "zukait_commit_workshop_time_management" : "zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
         if(commitError)throw commitError;
         if(committed?.ok)return reply({ok:true,audit:result.audit,server_revision:committed.revision||next});
         if(committed?.code!=="conflict")return reply({ok:false,code:committed?.code||"time_commit_failed"},409);
@@ -1723,17 +1740,44 @@ Deno.serve(async (req: Request) => {
       if(body.operation!=="FULL_EDIT")return reply({ok:false,code:"job_edit_invalid_fields"},400);
       const numberChange=jobNumberChange(body);
       if(numberChange&&!numberChange.ok)return reply({ok:false,code:numberChange.code},400);
+      const compactManagerEdit =
+        Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+        Deno.env.get("ZUKAIT_COMPACT_MANAGER_EDIT_ENABLED") !== "false";
+      const requestKey = compactManagerEdit
+        ? await sha256Hex(JSON.stringify(body, (_key, value) => {
+            if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+            return Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]]));
+          }))
+        : null;
+      const savedReply = (saved: any) => {
+        if (numberChange) numberCodec=jobNumberCodec(saved.number_rows || []);
+        return reply({ok:true,job:saved.job,server_revision:saved.revision,...(numberChange?{data:saved.data}:{})});
+      };
+      const findReceipt = async () => {
+        if (!requestKey) return null;
+        const {data,error}=await admin.rpc("zukait_manager_number_receipt",{p_actor_id:user.id,p_request_key:requestKey});
+        return error ? null : data;
+      };
+      const priorReceipt = await findReceipt();
+      if (priorReceipt?.ok) return savedReply(priorReceipt);
       for(let attempt=0;attempt<8;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
         const result=jobEditTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},409);
-        const {data:committed,error}=await admin.rpc(numberChange?"zukait_manager_numbered_job_edit":"zukait_manager_full_job_edit",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id),...(numberChange?{p_new_number:numberChange.number,p_expected_number:numberChange.expected,p_confirmed:true}:{})});
-        if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
-        if(committed?.ok){
-          if(numberChange)numberCodec=jobNumberCodec(committed.number_rows || []);
-          return reply({ok:true,job:committed.job,server_revision:committed.revision,...(numberChange?{data:committed.data}:{})});
+        const {data:committed,error}=await admin.rpc(
+          compactManagerEdit
+            ? (numberChange?"zukait_manager_numbered_job_edit_once":"zukait_manager_full_job_edit_once")
+            : (numberChange?"zukait_manager_numbered_job_edit":"zukait_manager_full_job_edit"),{p_expected_revision:Number(current.revision||0),p_data:result.data,p_actor_id:user.id,p_job_card:body.jobCard,p_reason:body.reason,p_live:computeLiveStatus(result.data,Number(current.revision||0)+1,user.id),...(numberChange?{p_new_number:numberChange.number,p_expected_number:numberChange.expected,p_confirmed:true}:{}),...(requestKey?{p_request_key:requestKey}:{})});
+        if(error && requestKey) {
+          for (const pause of [0, 300, 700]) {
+            if (pause) await new Promise(resolve => setTimeout(resolve, pause));
+            const saved = await findReceipt();
+            if (saved?.ok) return savedReply(saved);
+          }
         }
+        if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
+        if(committed?.ok) return savedReply(committed);
         if(committed?.code!=="conflict")return reply({ok:false,code:"job_edit_unavailable"},503);
       }
       return reply({ok:false,code:"job_edit_conflict"},409);
@@ -1742,6 +1786,14 @@ Deno.serve(async (req: Request) => {
     if (action === "job_card_edit") {
       if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"job_edit_forbidden"},403);
       if (!["GET","EDIT"].includes(body.operation) || JSON.stringify(body).length>10000) return reply({ok:false,code:"job_edit_invalid_fields"},400);
+      if (Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+          Deno.env.get("ZUKAIT_COMPACT_JOB_NOTES_ENABLED") !== "false") {
+        const saved = await saveWorkshopJobNotes({admin,user,body,transition:jobEditTransition});
+        if (saved?.ok) return reply({ok:true,job:jobEditProjection(saved.job),server_revision:saved.revision});
+        if (saved && saved.code !== "job_edit_legacy_required") {
+          return reply({ok:false,code:saved.code},/forbidden|manager_required/.test(saved.code)?403:409);
+        }
+      }
       for(let attempt=0;attempt<8;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
@@ -1787,7 +1839,18 @@ Deno.serve(async (req: Request) => {
         const result=qcTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},result.code==="qc_permission_denied"?403:409);
         const next=Number(current.revision||0)+1;
-        const {data:committed,error:commitError}=await admin.rpc("zukait_commit_workshop_state_v2",{p_expected_revision:Number(current.revision||0),p_data:result.data,p_changed_by:user.id,p_live:computeLiveStatus(result.data,next,user.id)});
+        const commitArgs = {
+          p_expected_revision: Number(current.revision || 0),
+          p_changed_by: user.id,
+          p_live: computeLiveStatus(result.data, next, user.id)
+        };
+        const {data:committed,error:commitError} = body.operation === "FINAL_INVOICE_ENTRY" && Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co"
+          ? await admin.rpc("zukait_commit_workshop_final_invoice", {
+              ...commitArgs,
+              p_job_index: result.data.jobs.indexOf(result.job),
+              p_job: result.job
+            })
+          : await admin.rpc("zukait_commit_workshop_state_v2", {...commitArgs,p_data:result.data});
         if(commitError)throw commitError;
         if(committed?.ok)return reply({ok:true,job:result.job,server_revision:committed.revision||next});
       }
@@ -2298,12 +2361,13 @@ Deno.serve(async (req: Request) => {
 
         const next = currentRevision + 1;
         const live = computeLiveStatus(candidate, next, user.id);
-        const { data: committed, error } = await admin.rpc("zukait_commit_workshop_state_v2", {
-          p_expected_revision: currentRevision,
-          p_data: candidate,
-          p_changed_by: user.id,
-          p_live: live
-        });
+        const sections = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+          Deno.env.get("ZUKAIT_SHARED_SECTION_SAVE_ENABLED") !== "false"
+          ? sharedWorkshopSections(current.data, candidate) : null;
+        const commitArgs = {p_expected_revision:currentRevision,p_changed_by:user.id,p_live:live};
+        const { data: committed, error } = sections !== null
+          ? await admin.rpc("zukait_commit_workshop_state_sections", {...commitArgs,...sections})
+          : await admin.rpc("zukait_commit_workshop_state_v2", {...commitArgs,p_data:candidate});
         if (error) throw error;
 
         if (committed?.ok) {
@@ -2376,4 +2440,3 @@ Deno.serve(async (req: Request) => {
     return reply({ ok:false, code:"server_error" }, 500);
   }
 });
-
