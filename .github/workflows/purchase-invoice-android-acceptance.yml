@@ -1,0 +1,44 @@
+name: Purchase Invoice Android candidate build
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle.properties'
+      - '.github/workflows/purchase-invoice-android-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Verify Android SDK
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Build exact PR candidate without release credentials
+        run: gradle --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Verify packaged invoice assets
+        run: |
+          python3 - <<'PY'
+          import glob, hashlib, pathlib, zipfile
+          apks=glob.glob('app/build/outputs/apk/debug/*.apk')
+          assert len(apks)==1, apks
+          with zipfile.ZipFile(apks[0]) as apk:
+              for name in ('consumables.js','consumables_ui.js','consumables_stock_core.js','cloud_sync.js'):
+                  source=pathlib.Path('app/src/main/assets',name).read_bytes()
+                  assert apk.read('assets/'+name)==source, 'Mismatched Android asset '+name
+          print('Android candidate compiled; packaged invoice assets match checked-out PR source.')
+          print('APK SHA256:',hashlib.sha256(pathlib.Path(apks[0]).read_bytes()).hexdigest())
+          PY
+      # Do not publish, sign with production keys, distribute or launch against production.
