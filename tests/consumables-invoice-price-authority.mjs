@@ -14,7 +14,7 @@ edit=copy();edit.consumables.audit[0].receipt.changes=[];assert.equal(validate(e
 const reconciled=copy();reconciled.consumables.audit.push({id:'done',type:'INVOICE_PRICE_RECONCILED',applicationRequestId:'r1'});edit=JSON.parse(JSON.stringify(reconciled));edit.consumables.prices[0].pricePerUnit=.3;assert.equal(validate(edit,reconciled),null);
 const codecStart=source.indexOf('const key=v=>String(v??');
 const codecEnd=source.indexOf('function jobNumberChange(',codecStart);
-const codec=new Function(source.slice(codecStart,codecEnd)+'\nreturn jobNumberCodec;')([{number:'JC1',stable_job:'STABLE-A',current_number:'JC9'},{number:'JC9',stable_job:'STABLE-A',current_number:'JC9'},{number:'JC2',stable_job:'STABLE-B',current_number:'JC2'}]);
+const codec=new Function(source.slice(codecStart,codecEnd)+'\nreturn jobNumberCodec;')()([{number:'JC1',stable_job:'STABLE-A',current_number:'JC9'},{number:'JC9',stable_job:'STABLE-A',current_number:'JC9'},{number:'JC2',stable_job:'STABLE-B',current_number:'JC2'}]);
 const review={invoiceId:'inv',materialId:'mat',action:'create',jobCards:['STABLE-A','STABLE-B'],impacts:[{id:'act',jobCard:'STABLE-A',oldCost:2,newCost:3}]};
 const shown=codec.toPublic(review);
 assert.deepEqual(shown.jobCards,['JC9','JC2']);assert.equal(shown.impacts[0].jobCard,'JC9');
