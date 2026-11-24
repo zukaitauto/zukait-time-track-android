@@ -1,3 +1,4 @@
+import { invoicePriceApplyApi } from "./extensions/invoice_price_apply_api.js";
 import { consumablesStockApi } from "./extensions/consumables_stock_api.js";
 import {vehicleMovement} from './vehicle_movement_rules.js';
 import { createDatabaseFetch } from './database_fetch.js';
@@ -1190,6 +1191,19 @@ Deno.serve(async (req: Request) => {
       for (const field of ["search","query"]) if (typeof body[field] === "string") body[field] = numberCodec.internalNumber(body[field]);
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
+
+    // Separate, default-off audited costing route. Never route this through
+    // the stock ledger write API or accept browser-supplied workshop state.
+    if(action==='consumables_invoice_price_apply') {
+      const result=await invoicePriceApplyApi(admin,user,body,{
+        enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true'&&
+          Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true'&&
+          Deno.env.get('ZUKAIT_PURCHASE_INVOICE_ENABLED')==='true'&&
+          Deno.env.get('ZUKAIT_INVOICE_PRICE_APPLY_ENABLED')==='true',
+        sessionHash:await sha256Hex(token),computeLiveStatus
+      });
+      return reply(result.body,result.status);
+    }
 
     // Stock is an isolated, small-table API; NO writes to workshop_state.
     // Both flags default off until the catalog migration and acceptance are complete.
