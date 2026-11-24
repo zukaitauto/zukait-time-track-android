@@ -288,8 +288,13 @@ function showFinancialSummary(data){
   const count=Number(value)||0;
   const start=pendingLink?'<button type="button" class="accounts-kpi accounts-kpi-open" data-pending-costs aria-label="View '+esc(count)+' pending cost job cards"'+(count>0?'':' disabled')+'>':
    costLink?'<button type="button" class="accounts-kpi accounts-kpi-cost-open" data-total-cost-breakdown aria-label="Open total job cost by Parts, Paint, Consumables, Labour and Sublet">':'<div class="accounts-kpi">';
-  return start+'<small>'+esc(label)+'</small><b class="'+(index===1&&value!=null?(Number(value)<0?'negative':'positive'):'')+'">'+
+  // Visual state only: keep the existing displayed figures and drilldowns.
+  const tone=index===0?'expense':index===3?(count>0?'alert':'clear'):
+   value==null||provisional?'provisional':Number(value)<0?'loss':index===1?'profit':'margin';
+  const styledStart=report==='profit'?start.replace('class="accounts-kpi','data-kpi-tone="'+tone+'" class="accounts-kpi'):start;
+  return styledStart+'<small>'+esc(label)+'</small><b class="'+(index===1&&value!=null?(Number(value)<0?'negative':'positive'):'')+'">'+
    (currency?esc(display(value,true)):index===2?(value==null?'Pending / —':Number(value).toFixed(2)+'%'):esc(value))+'</b>'+
+   (report==='profit'&&index===2&&value!=null&&Number.isFinite(Number(value))?'<span class="accounts-kpi-margin-track" aria-hidden="true"><i style="width:'+Math.max(0,Math.min(100,Number(value)))+'%"></i></span>':'')+
    (pendingLink||costLink?'<span class="accounts-kpi-hint">'+(pendingLink?(count>0?'View job cards ›':'No pending jobs'):'View five cost categories ›')+'</span>':'')+
    (pendingLink||costLink?'</button>':'</div>');
  }).join('')+
