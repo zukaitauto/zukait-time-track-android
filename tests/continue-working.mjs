@@ -60,10 +60,10 @@ assert.equal(live(result.data,2,'M1')[0].status,'Working');assert.equal(live(res
 // Real route: CAS conflict re-reads Employee changes; exact retry does not commit twice.
 const block=api.slice(api.indexOf('    if (action === "time_management") {'),api.indexOf('    if (action === "qc_delivery") {'));
 const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
-const route=new AsyncFunction('admin','timeManagementTransition','computeLiveStatus','reply','user','body','action',api.split('// FINAL_SESSION_STATUS_BEGIN')[1].split('// FINAL_SESSION_STATUS_END')[0]+block);
+const route=new AsyncFunction('admin','timeManagementTransition','computeLiveStatus','reply','user','body','action','Deno',(()=>{const stripped=stripTypeScriptTypes('async function fixture(){\n'+api.split('// FINAL_SESSION_STATUS_BEGIN')[1].split('// FINAL_SESSION_STATUS_END')[0]+block+'\n}');return stripped.slice(stripped.indexOf('{')+1,stripped.lastIndexOf('}'));})());
 let remote=fixture(),revision=1,commits=0,conflict=false;
 const db={from(){return{select(){return this},eq(){return this},async single(){return{data:{revision,data:remote}}}}},async rpc(_name,args){commits++;if(conflict){remote.sessions.push({id:'RACE',emp:'E1',job:'OTHER',start:at,end:null});revision++;return{data:{ok:false,code:'conflict'}}}assert.equal(args.p_expected_revision,revision);assert.equal(args.p_live[0].status,'Working');remote=args.p_data;revision++;return{data:{ok:true,revision}}}};
-const invoke=q=>route(db,(d,a,r)=>change(d,a,r,at),live,(body,status=200)=>({body,status}),manager,q,'time_management');
+const invoke=q=>route(db,(d,a,r)=>change(d,a,r,at),live,(body,status=200)=>({body,status}),manager,q,'time_management',{env:{get:()=>undefined}});
 const routeReq=command(remote);assert.equal((await invoke(routeReq)).body.ok,true);assert.equal((await invoke(routeReq)).body.duplicate,true);assert.equal(commits,1);
 remote=fixture();revision=1;conflict=true;const race=await invoke(command(remote));assert.equal(race.body.code,'time_sessions_changed');assert.equal(commits,2,'second CAS is not attempted after employee work changes');
 
