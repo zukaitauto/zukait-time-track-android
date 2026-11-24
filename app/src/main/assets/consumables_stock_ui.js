@@ -86,6 +86,28 @@ function masterInventory(){
   {numeric:true,sensitivity:'base'})),
   unpriced:c.materials.filter(m=>!pricedMaterials.has(String(m.id)))};
 }
+// The Manager can select saved Master pairs directly; only the server-confirmed
+// MASTER_LINK operation creates a ledger placeholder, immediately before a valid
+// stock entry. Never merge these virtual choices into the balance/report rows.
+function addStockChoices(){
+ const rows=[...view.items];
+ if(!manager()||view.itemsHasMore)return rows;
+ const known=new Set(rows.map(x=>String(x.material_id)+'|'+String(x.brand_id)));
+ const c=catalog();
+ for(const pair of masterInventory().pairs){
+  if(known.has(pair.key))continue;
+  const [material_id,brand_id]=pair.key.split('|');
+  const m=c.materials.find(x=>String(x.id)===material_id);
+  if(!m)continue;
+  const linkedMaterial=rows.find(x=>String(x.material_id)===material_id);
+  const scope=['Painting','Mechanical','Both'].includes(m.department)?m.department:
+   linkedMaterial?.material?.department||'Painting';
+  if(department&&scope!==department&&scope!=='Both')continue;
+  rows.push({material_id,brand_id,unit:pair.unit,needsMasterLink:true,linkOrigin:scope});
+  known.add(pair.key);
+ }
+ return rows;
+}
 const label=(r)=>{
   const c=catalog();
   const m=c.materials.find(x=>String(x.id)===String(r.material_id));
@@ -269,10 +291,10 @@ function render(){
    return;
  }
  if(view.page==='add'){
-    const c=catalog(),selected=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
-    const noAssignedItems=Boolean(department&&!view.items.length);
-    const pairChoices=view.items.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(label(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(label(x))+
-      '<small>'+esc(x.unit||'')+'</small></button>').join(''),
+    const choices=addStockChoices(),selected=choices.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
+    const noAssignedItems=Boolean(department&&!choices.length);
+    const pairChoices=choices.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(label(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(label(x))+
+      '<small>'+esc(x.unit||'')+(x.needsMasterLink?' · New stock item':'')+'</small></button>').join(''),
       pairName=selected?label(selected):String(view.pairQuery||'');
     draw('<h3>Add / Open Stock</h3>'+
      (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs for this department.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
@@ -281,7 +303,7 @@ function render(){
      (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
      '<label for="zs-material-brand-search">Search Material + Brand</label>'+
      '<div class="zs-pair-picker"><input id="zs-material-brand-search" type="search" inputmode="search" autocomplete="off" autocapitalize="none" aria-controls="zs-pair-results" aria-expanded="false" placeholder="'+(noAssignedItems?'Link a material + brand first':'Type material or brand to search')+'" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled':'')+' oninput="zukStockResolvePair()" onfocus="zukStockShowPairChoices()">'+
-     '<div id="zs-pair-results" class="zs-pair-results" role="group" aria-label="Matching linked stock materials" hidden>'+pairChoices+
+     '<div id="zs-pair-results" class="zs-pair-results" role="group" aria-label="Matching stock materials and saved Master pairs" hidden>'+pairChoices+
      '<p id="zs-pair-empty" class="zs-muted" hidden>No matching items on this loaded page. '+(view.itemsHasMore?'Load more linked materials below to continue searching.':'Check the material and brand name.')+'</p></div>'+
      '<p id="zs-pair-hint" class="zs-muted" role="status">'+(selected?'Selected '+esc(label(selected)):'Tap a search result to choose the exact material and brand.')+'</p>'+
      (view.itemsHasMore?'<button type="button" id="zs-pair-more" class="zs-btn secondary zs-pair-more" onclick="zukStockPairMore()">Load next 100 linked materials</button>':'')+'</div>'+
@@ -1157,6 +1179,17 @@ async function write(command,data){
  if(!view.pending||view.pending.fingerprint!==fingerprint)
    view.pending={fingerprint,requestId:request()};
  try{
+   // Link only the exact, already-saved pair after the user submits a validated
+   // stock entry. The existing authenticated Manager RPC validates master IDs,
+   // department and unit. A retry reuses the same transaction receipt ID.
+   if(['OPENING','PURCHASE'].includes(command)&&manager()){
+     const selected=addStockChoices().find(x=>String(x.material_id)===String(data.materialId)&&String(x.brand_id)===String(data.brandId));
+     if(selected?.needsMasterLink){
+       const linked=await api({operation:'MASTER_LINK',materialId:data.materialId,brandId:data.brandId,origin:selected.linkOrigin});
+       if(!linked?.ok||linked.linked?.linked!==true)throw Error(linked?.code||'Stock link not confirmed');
+       pickerRequests.clear();
+     }
+   }
    const reply=await api({operation:'WRITE',command,requestId:view.pending.requestId,data});
    if(!reply.ok)throw Error(reply.code||'STOCK_WRITE_FAILED');
    view.pending=null;view.items=[];view.history=[];view.report=null;view.busy=false;
@@ -1191,7 +1224,7 @@ window.zukStockResolvePair=()=>{
  const input=document.getElementById('zs-material-brand-search');
  const value=String(input?.value||'').trim(),normalized=value.toLocaleLowerCase();
  view.pairQuery=value.slice(0,180);
- const exact=view.items.filter(x=>label(x).trim().toLocaleLowerCase()===normalized);
+ const exact=addStockChoices().filter(x=>label(x).trim().toLocaleLowerCase()===normalized);
  // Labels may duplicate; only a unique typed label may select an item.
  const row=exact.length===1?exact[0]:null;
  const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
@@ -1206,7 +1239,7 @@ window.zukStockResolvePair=()=>{
  return !!row;
 };
 window.zukStockChoosePair=index=>{
- const row=view.items[index],input=document.getElementById('zs-material-brand-search');
+ const row=addStockChoices()[index],input=document.getElementById('zs-material-brand-search');
  if(!row||!input)return;
  // Use the clicked item's underlying IDs, never a reverse name lookup.
  const m=document.getElementById('zs-material'),b=document.getElementById('zs-brand');
@@ -1287,7 +1320,7 @@ window.zukStockSavePurchase=()=>{
  if(previewOnly())return;
  const d=document;
  const typed=String(d.getElementById('zs-material-brand-search')?.value||'').trim();
- const chosen=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
+ const chosen=addStockChoices().find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
  // Keep an exact clicked ID even when multiple rows share the same name.
  // Resolve text again only if the search was edited after the selection.
  if(!chosen||typed!==label(chosen).trim())window.zukStockResolvePair?.();
