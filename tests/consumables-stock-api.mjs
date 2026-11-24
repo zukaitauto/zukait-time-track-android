@@ -209,3 +209,18 @@ assert.equal((await consumablesStockApi(reportsAdmin,{role:'Employee'},reportsBo
 assert.equal((await consumablesStockApi(reportsAdmin,{role:'Supervisor'},reportsBody)).status,503);
 const report=await consumablesStockApi(reportsAdmin,{role:'Supervisor'},reportsBody,{enabled:true});
 assert.deepEqual(report.body,{ok:true,report:{valuation:88,items:101,low:2,out:1}});
+
+const priceReq={operation:'LATEST_PURCHASE_PRICES',page:0};
+const callsBeforePrice=requests.length;
+for(const who of [S,MS,E]){
+ const denied=await consumablesStockApi(admin,who,priceReq,{enabled:true,sessionHash:'fixture'});
+ assert.equal(denied.status,403);
+}
+assert.equal((await consumablesStockApi(admin,M,priceReq,{enabled:true})).status,401);
+assert.equal((await consumablesStockApi(admin,M,{...priceReq,page:50},{enabled:true,sessionHash:'fixture'})).status,400);
+assert.equal(requests.length,callsBeforePrice);
+const priceAdmin={async rpc(fn,args){assert.equal(fn,'zukait_stock_latest_purchase_prices');assert.deepEqual(args,{p_session_hash:'fixture',p_page:0});return {data:Array.from({length:101},(_,i)=>({material_id:'m'+i,brand_id:'b',price_per_unit:5.5,recorded_at:'2026-11-24T08:00:00Z'})),error:null}}};
+const prices=await consumablesStockApi(priceAdmin,M,priceReq,{enabled:true,sessionHash:'fixture'});
+assert.equal(prices.status,200);assert.equal(prices.body.items.length,100);assert.equal(prices.body.hasMore,true);
+assert.equal(prices.body.items[0].price_per_unit,5.5);
+console.log('PASS latest purchase price read: Manager role, valid session, bounded page, no unauthorized RPC');
