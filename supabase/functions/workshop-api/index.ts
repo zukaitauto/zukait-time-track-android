@@ -1,3 +1,4 @@
+import {prepareEmployeePause,decideEmployeePause} from "./extensions/employee_pause_record.js";
 import { consumablesStockApi } from "./extensions/consumables_stock_api.js";
 import {vehicleMovement} from './vehicle_movement_rules.js';
 import { createDatabaseFetch } from './database_fetch.js';
@@ -1627,10 +1628,17 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "employee_time_action") {
+      const scopedPause = Deno.env.get("ZUKAIT_PAUSE_RECORD_GUARD") === "true"
+        && String(body.event_type || "").toUpperCase() === "PAUSE"
+        && Boolean(String(body.session_id || "").trim());
+      let pauseBasis = null;
       for(let attempt=0;attempt<8;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
-        const result:any=employeeTimeTransition(current.data,user,body,Date.now());
+        if(scopedPause && attempt===0) pauseBasis=prepareEmployeePause(current.data,user,body);
+        const result:any=pauseBasis
+          ? decideEmployeePause({current:current.data,basis:pauseBasis,user,command:body,now:Date.now(),same,transition:employeeTimeTransition})
+          : employeeTimeTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
         if(result.duplicate){
           const row=computeLiveStatus(current.data,Number(current.revision||0),String(user.id)).find((x:any)=>String(x.employee_id)===String(user.id))||null;
