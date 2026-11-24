@@ -15,3 +15,14 @@ ctx.consSaveNewPrice('M','B');assert.equal(saves,1);assert.match(confirmations.a
 assert.equal(C.priceAt(state,'M','B',Date.parse('2026-11-04T23:59+04:00')).pricePerUnit,6.8);assert.equal(C.priceAt(state,'M','B',Date.parse('2026-11-05T00:00+04:00')).pricePerUnit,6.5);assert.equal(state.consumables.audit.filter(a=>a.type==='PRICE_CHANGED').length,1);
 fill();ctx.consSaveNewPrice('M','B');assert.match(alerts.at(-1),/already exists/);assert.equal(saves,1);assert.equal(state.consumables.prices.length,3);
 console.log('Manager new-price form: Oman date, permission, validation, cancel, duplicate, confirmed save, old/future periods, costing and audit passed.');
+
+// Metadata-only edits must preserve the stored instant, regardless of phone timezone.
+const oldPrice=state.consumables.prices.find(p=>p.id==='old');
+const oldInstant=oldPrice.effectiveFrom, beforeActuals=JSON.stringify(state.consumables.actuals),beforePrices=JSON.stringify(state.consumables.prices);
+ctx.consEditMasterRow('M','B','old');assert.match(ctx.modal,/id="cmeDate" type="date" value="2026-11-01"/,'edit shows the Oman calendar date, not the UTC date');
+for(const [id,value] of Object.entries({cmeName:'Clear + Hardener corrected',cmeBrand:'AUTO PAINT',cmeCategory:'Consumable',cmeUnit:'Liter',cmePrice:'6.800',cmeDate:'2026-11-01',cmeReason:'Correct spelling'}))el(id).value=value;
+ctx.consSaveMasterRow('M','B','old');assert.equal(saves,2);assert.equal(state.consumables.materials[0].name,'Clear + Hardener corrected');assert.equal(oldPrice.effectiveFrom,oldInstant);assert.equal(JSON.stringify(state.consumables.prices),beforePrices);assert.equal(JSON.stringify(state.consumables.actuals),beforeActuals);
+el('cmeDate').value='2026-11-02';ctx.consSaveMasterRow('M','B','old');assert.match(alerts.at(-1),/reviewed costing migration/);assert.equal(saves,2);assert.equal(oldPrice.effectiveFrom,oldInstant);
+// A legacy non-midnight timestamp is not normalized by an unchanged date.
+oldPrice.effectiveFrom=Date.parse('2026-11-01T09:15:00+04:00');const legacyInstant=oldPrice.effectiveFrom;el('cmeDate').value='2026-11-01';el('cmeName').value='Clear + Hardener revised';ctx.consSaveMasterRow('M','B','old');assert.equal(saves,3);assert.equal(oldPrice.effectiveFrom,legacyInstant);assert.equal(JSON.stringify(state.consumables.actuals),beforeActuals);
+console.log('Master edit: Oman date, unchanged exact instant, metadata-only save, genuine date-change guard and historical costs PASS');
