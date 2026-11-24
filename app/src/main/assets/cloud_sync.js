@@ -1458,8 +1458,18 @@
     }
     return result;
   }
+  async function invoicePriceReconcile(operation,data){
+    if(me?.role!=='Manager')throw Error('MANAGER_ONLY');
+    if(!['PREVIEW','APPLY'].includes(operation))throw Error('INVALID_RECONCILIATION_OPERATION');
+    if(!initialDone||cloudDirty||cloudPushing||managerEditInFlight)throw Error('SYNC_PENDING');
+    const result=await api({action:'consumables_invoice_price_reconcile',operation,data});
+    if(result?.ok&&operation==='APPLY'){
+      try{await pull(true);}catch(e){console.warn('Invoice reconciliation saved; refresh pending',e);}
+    }
+    return result;
+  }
   window.zukaitCloud={
-    resetForSession,init,pull,push,stockRequest,invoicePriceApply,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    resetForSession,init,pull,push,stockRequest,invoicePriceApply,invoicePriceReconcile,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},
