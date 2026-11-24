@@ -233,3 +233,18 @@ const rejected=await consumablesStockApi({rpc:async()=>({data:null,error:{messag
 assert.equal(rejected.status,409);
 assert.equal(rejected.body.code,'invoice_stock_used_or_changed');
 console.log('Invoice API: independent activation, role guards, save/list/correction routes, invalid filter and stock-movement conflict PASS');
+
+const beforeInvoiceGuard=invoiceCalls.length;
+const singlePurchase={operation:'WRITE',command:'PURCHASE',requestId:'qa-old-purchase',data:{}};
+assert.equal((await consumablesStockApi(invoiceAdmin,M,singlePurchase,invoiceOpts)).body.code,'purchase_invoice_required');
+assert.equal(invoiceCalls.length,beforeInvoiceGuard);
+assert.equal((await consumablesStockApi(invoiceAdmin,M,singlePurchase,{...invoiceOpts,invoiceEnabled:false})).status,200);
+const cancelInvoice={operation:'INVOICE_CANCEL',requestId:'qa-cancel',data:{invoiceId:'qa',expectedRevision:1,reason:'Incorrect invoice'}};
+assert.equal((await consumablesStockApi(invoiceAdmin,S,cancelInvoice,invoiceOpts)).status,403);
+assert.equal((await consumablesStockApi(invoiceAdmin,M,cancelInvoice,invoiceOpts)).status,200);
+assert.equal(invoiceCalls.at(-1).fn,'zukait_purchase_invoice_cancel');
+const auditRequest={operation:'INVOICE_AUDIT',page:0,data:{invoiceId:'00000000-0000-4000-8000-000000000001'}};
+assert.equal((await consumablesStockApi(invoiceAdmin,S,auditRequest,invoiceOpts)).status,403);
+const auditAdmin={rpc:async(fn,args)=>({data:[{request_id:'qa-edit',reason:'QA correction'}],error:null})};
+assert.equal((await consumablesStockApi(auditAdmin,M,auditRequest,invoiceOpts)).body.audit.length,1);
+console.log('Purchase cutover guard, cancellation route and Manager-only audit PASS');
