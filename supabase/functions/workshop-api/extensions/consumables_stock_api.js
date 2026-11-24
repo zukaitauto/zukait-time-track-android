@@ -38,7 +38,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE','MECHANICAL_RETURNABLE','MECHANICAL_TOTALS'].includes(operation))
     return bad('mechanical_stock_forbidden',403);
   // Separate activation flag: incomplete Purchase Entry cannot use live Stock write permission.
-  if(['INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES'].includes(operation)){
+  if(['INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL','INVOICE_AUDIT'].includes(operation)){
     if(!['Manager','Supervisor'].includes(user.role))return bad('stock_forbidden',403);
     if(!sessionHash)return bad('stock_session_required',401);
     if(operation==='INVOICE_STATUS')return good({ready:invoiceEnabled&&writesEnabled,history:invoiceEnabled});
@@ -59,18 +59,26 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       if(!invoice?.id)return bad('invoice_save_unconfirmed',503);
       return good({invoice});
     }
-    if(['INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES'].includes(operation)){
+    if(operation==='INVOICE_AUDIT'){
+      if(user.role!=='Manager')return bad('manager_only',403);
+      const page=body.page??0,id=String(body.data?.invoiceId||'');
+      if(!Number.isInteger(page)||page<0||page>100||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return bad('invalid_invoice_filter');
+      const {data,error}=await admin.rpc('zukait_purchase_invoice_audit_list',{p_session_hash:sessionHash,p_invoice_id:id,p_page:page});
+      if(error||!Array.isArray(data))return bad('invoice_audit_failed',503);
+      return good({audit:data.slice(0,50),page,hasMore:data.length>50});
+    }
+    if(['INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL'].includes(operation)){
       if(user.role!=='Manager')return bad('manager_only',403);
       if(!writesEnabled)return bad('stock_write_not_enabled',423);
       const requestId=safeId(body.requestId,128),data=body.data;
       if(!requestId||!data||typeof data!=='object'||Array.isArray(data)||JSON.stringify(data).length>65536)return bad('invalid_invoice_correction');
-      const rpc=operation==='INVOICE_CORRECT_HEADER'?'zukait_purchase_invoice_correct_header':'zukait_purchase_invoice_correct_lines';
+      const rpc=operation==='INVOICE_CANCEL'?'zukait_purchase_invoice_cancel':operation==='INVOICE_CORRECT_HEADER'?'zukait_purchase_invoice_correct_header':'zukait_purchase_invoice_correct_lines';
       const {data:invoice,error}=await admin.rpc(rpc,{p_session_hash:sessionHash,p_request_id:requestId,p_data:data});
       if(error){
         const msg=String(error.message||'');
         if(msg==='MANAGER_ONLY')return bad('manager_only',403);
         if(error.code==='23505')return bad(msg==='REQUEST_ID_CONFLICT'?'request_id_conflict':'duplicate_invoice',409);
-        const allowed=['INVALID_INVOICE_CORRECTION','INVALID_INVOICE_DATE','INVOICE_NOT_FOUND','INVOICE_REVISION_CONFLICT','NO_INVOICE_CHANGE','INVOICE_LINE_CORRECTION_REQUIRES_REVIEW','INVOICE_PAIR_SET_CHANGE_REQUIRES_REVIEW','DUPLICATE_MATERIAL_BRAND','INVALID_INVOICE_LINE','PIECE_WHOLE_REQUIRED','INVALID_LINE_TOTAL','INVALID_INVOICE_TOTAL','STOCK_UNIT_CONFLICT','INVOICE_STOCK_USED_OR_CHANGED','INVOICE_STOCK_CORRECTION_UNSAFE'];
+        const allowed=['INVALID_INVOICE_CORRECTION','INVALID_INVOICE_DATE','INVOICE_NOT_FOUND','INVOICE_CANCELLED','INVOICE_REVISION_CONFLICT','NO_INVOICE_CHANGE','INVOICE_LINE_CORRECTION_REQUIRES_REVIEW','INVOICE_PAIR_SET_CHANGE_REQUIRES_REVIEW','DUPLICATE_MATERIAL_BRAND','INVALID_INVOICE_LINE','PIECE_WHOLE_REQUIRED','INVALID_LINE_TOTAL','INVALID_INVOICE_TOTAL','STOCK_UNIT_CONFLICT','INVOICE_STOCK_USED_OR_CHANGED','INVOICE_STOCK_CORRECTION_UNSAFE'];
         return bad(allowed.includes(msg)?msg.toLowerCase():'invoice_correction_failed',allowed.includes(msg)?409:503);
       }
       if(!invoice?.id)return bad('invoice_correction_unconfirmed',503);

@@ -184,7 +184,7 @@ window.consPurchaseSave=async function(){
   consPurchaseClearPending(owner);
   if(owner!==consPurchaseOwnerId())return;
   consPurchaseDraft=null;consPurchaseBusy=false;
-  alert('Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
+  alert(r.invoice.status==='cancelled'?'Invoice was already saved and subsequently cancelled. No stock was added again.':'Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
   window.consOpenPurchaseInvoices();
  }catch(error){
   if(document.getElementById('cpFinish')===button){status.textContent=String(error?.message||error)+'. Draft retained.';button.disabled=false;}
@@ -207,15 +207,16 @@ window.consPurchaseLoadHistory=async function(page=0){
   if(seq!==consPurchaseHistorySeq||document.getElementById('cpHistory')!==out)return;
   if(!r?.ok||!Array.isArray(r.invoices))throw Error(r?.code||'Invoice history unavailable');
   consPurchaseHistoryRows=r.invoices;
-  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · OMR '+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two"><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button></div>':'')+'</details>').join(''):'No invoices found.';
+  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
   out.innerHTML+='<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page+1)+')">Next</button>':'')+'</div>';
  }catch(e){if(seq===consPurchaseHistorySeq&&document.getElementById('cpHistory')===out)out.textContent=String(e?.message||e);}
 };
 window.consPurchaseEdit=function(index,mode){
- if(role()!=='Manager'||consPurchaseBusy||!['header','lines'].includes(mode))return;
+ if(role()!=='Manager'||consPurchaseBusy||!['header','lines','cancel'].includes(mode))return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice?.id||!Number.isInteger(invoice.revision))return alert('Reload invoice history first.');
  consPurchaseEditing={invoice,mode};
- const fields=mode==='header'?
+ if(invoice.status==='cancelled')return alert('Invoice already cancelled.');
+ const fields=mode==='cancel'?'<div class="cp-info">Cancellation reverses all invoice quantities and values only if no affected stock has subsequently been used or changed. The original invoice and audit trail remain visible.</div>':mode==='header'?
   '<label class="cp-field">Invoice Number<input id="cpEditNumber" maxlength="100" value="'+esc(invoice.invoice_number)+'"></label><label class="cp-field">Supplier<input id="cpEditSupplier" maxlength="160" value="'+esc(invoice.supplier)+'"></label><label class="cp-field">Invoice Date<input id="cpEditDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(invoice.invoice_date)+'"></label>':
   '<div class="cp-info">Only existing lines can be corrected. The server rejects any changed item with a later stock movement. No historical job costs are changed.</div>'+invoice.lines.map((l,i)=>'<div class="cp-panel"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><label class="cp-field">Quantity ('+esc(l.unit)+')<input id="cpEditQty'+i+'" type="number" min="0" step="'+(l.unit==='Piece'?'1':'0.0001')+'" value="'+esc(l.quantity)+'"></label><label class="cp-field">Price Method<select id="cpEditMethod'+i+'"><option value="unit"'+(l.priceMethod==='unit'?' selected':'')+'>Price per Unit</option><option value="total"'+(l.priceMethod==='total'?' selected':'')+'>Total Amount</option></select></label><label class="cp-field">Amount (OMR)<input id="cpEditPrice'+i+'" type="number" min="0" step="0.001" value="'+esc(l.price)+'"></label></div>').join('');
  modal('Manager Invoice Correction',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · Revision '+invoice.revision+'</b>'+fields+'<label class="cp-field">Reason (required)<input id="cpEditReason" maxlength="500"></label><button type="button" id="cpEditSave" class="cp-finish" onclick="consPurchaseSaveCorrection()">SAVE CORRECTION</button><div id="cpEditStatus" class="cp-info" role="status"></div></div>','consOpenPurchaseInvoices()');
@@ -230,6 +231,8 @@ window.consPurchaseSaveCorrection=async function(){
   if(mode==='header'){
    Object.assign(data,{invoiceNumber:val('cpEditNumber'),supplier:val('cpEditSupplier'),invoiceDate:val('cpEditDate')});
    if(!data.invoiceNumber||!data.supplier||!data.invoiceDate)throw Error('Complete all invoice fields.');
+  }else if(mode==='cancel'){
+   if(!confirm('Cancel this invoice and reverse its stock entries?'))return;
   }else{
    const lines=invoice.lines.map((l,i)=>window.ZukaitStockCore.purchaseLine({materialId:l.materialId,brandId:l.brandId,unit:l.unit,quantity:val('cpEditQty'+i),priceMethod:val('cpEditMethod'+i),price:val('cpEditPrice'+i)}));
    const total=lines.reduce((n,l)=>n+l.totalMills,0)/1000;
@@ -241,16 +244,30 @@ window.consPurchaseSaveCorrection=async function(){
   if(pending&&pending.fingerprint!==fingerprint)throw Error('Previous correction unconfirmed. Restore the original correction and retry.');
   if(!pending){pending={fingerprint,id:window.crypto?.randomUUID?.()||('correction-'+Date.now()+'-'+Math.random().toString(36).slice(2))};consPurchaseCorrectionPending.set(key,pending)}
   consPurchaseBusy=true;button.disabled=true;out.textContent='Saving correction…';
-  const r=await consPurchaseApi({operation:mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',requestId:pending.id,data});
+  const r=await consPurchaseApi({operation:mode==='cancel'?'INVOICE_CANCEL':mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',requestId:pending.id,data});
   if(!r?.ok||!r.invoice?.id){
    const code=String(r?.code||'invoice_correction_unconfirmed');
-   if(['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','duplicate_invoice'].includes(code))consPurchaseCorrectionPending.delete(key);
+   if(['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_cancelled','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','duplicate_invoice'].includes(code))consPurchaseCorrectionPending.delete(key);
    throw Error(code);
   }
   consPurchaseCorrectionPending.delete(key);consPurchaseEditing=null;consPurchaseBusy=false;
-  alert('Invoice correction saved with audit record.');window.consOpenPurchaseInvoices();
+  alert(mode==='cancel'?'Invoice cancelled with audit record.':'Invoice correction saved with audit record.');window.consOpenPurchaseInvoices();
  }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);}}
  finally{consPurchaseBusy=false}
+};
+window.consPurchaseAudit=async function(index,page=0){
+ if(role()!=='Manager'||!consPurchaseRestore()||!Number.isInteger(page)||page<0||page>100)return;
+ const invoice=consPurchaseHistoryRows[index];if(!invoice?.id)return;
+ const owner=consPurchaseOwnerId();
+ modal('Invoice Audit History',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · '+esc(invoice.supplier)+'</b><div id="cpAudit" class="cp-panel">Loading history…</div></div>','consOpenPurchaseInvoices()');
+ const out=document.getElementById('cpAudit');
+ try{
+  const r=await consPurchaseApi({operation:'INVOICE_AUDIT',page,data:{invoiceId:invoice.id}});
+  if(owner!==consPurchaseOwnerId()||role()!=='Manager'||document.getElementById('cpAudit')!==out)return;
+  if(!r?.ok||!Array.isArray(r.audit))throw Error(r?.code||'Audit history unavailable');
+  out.innerHTML=(r.audit.length?r.audit.map(x=>'<details class="cp-panel"><summary><b>'+esc(x.reason)+'</b><div>'+esc(x.created_at)+' · Staff '+esc(x.actor_id)+'</div></summary><p>Before</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.before_header,null,2))+'</pre><p>After</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(x.after_header,null,2))+'</pre></details>').join(''):'No corrections recorded.')+
+   '<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseAudit('+index+','+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseAudit('+index+','+(page+1)+')">Next</button>':'')+'</div>';
+ }catch(e){if(document.getElementById('cpAudit')===out)out.textContent=String(e?.message||e);}
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
 function action(label,sub,fn,cls=''){return '<button class="cons-action '+cls+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
