@@ -68,3 +68,27 @@ run('PURCHASE',{...exhaust,quantity:5,priceMethod:'unit',price:6},supervisor);
 approx(Stock.avgCost(s.items.find(x=>x.brandId==='c')),6);
 assert.ok(s.movements.length>=15);
 console.log('Consumables stock core: brand separation, opening, weighted average, cost locking, edits, return, finalise, idempotency, audit and role guards PASSED');
+
+// Purchase Entry: precise OMR totals, equivalent input methods, date sorting and role checks.
+const lineA={materialId:'clear',brandId:'capci',unit:'Liter',quantity:'5',priceMethod:'unit',price:'6.500'};
+const lineB={materialId:'primer',brandId:'milaco',unit:'Liter',quantity:'4',priceMethod:'total',price:'21.200'};
+assert.equal(Stock.purchaseLine(lineA).totalAmount,32.5);
+assert.equal(Stock.purchaseLine(lineB).unitPrice,5.3);
+const fractional=Stock.purchaseLine({...lineA,quantity:'3',priceMethod:'total',price:'10.000'});
+assert.equal(fractional.unitPrice,3.333);
+assert.equal(fractional.totalMills,10000,'retain entered total even when displayed rate rounds');
+assert.throws(()=>Stock.purchaseLine({...lineA,unit:'Piece',quantity:'1.2'}),/PIECE_WHOLE_REQUIRED/);
+assert.throws(()=>Stock.purchaseLine({...lineA,price:'0'}),/INVALID_PRICE/);
+const invoice={invoiceNumber:'INV-1085',supplier:'Supplier A',invoiceDate:'2026-11-24',lines:[lineA,lineB]};
+const draft=Stock.purchaseInvoiceDraft(invoice,supervisor,'2026-11-24');
+assert.equal(draft.totalAmount,53.7);
+assert.equal(Stock.purchaseInvoiceDraft({...invoice,supplier:' supplier  a ',invoiceNumber:'inv-1085'},manager,'2026-11-24').invoiceKey,draft.invoiceKey);
+assert.throws(()=>Stock.purchaseInvoiceDraft(invoice,employee,'2026-11-24'),/STOCK_FORBIDDEN/);
+assert.throws(()=>Stock.purchaseInvoiceDraft({...invoice,invoiceDate:'2026-11-25'},manager,'2026-11-24'),/INVALID_INVOICE_DATE/);
+assert.throws(()=>Stock.purchaseInvoiceDraft({...invoice,invoiceDate:'2026-02-30'},manager,'2026-11-24'),/INVALID_INVOICE_DATE/);
+assert.throws(()=>Stock.purchaseInvoiceDraft({...invoice,lines:[lineA,lineA]},manager,'2026-11-24'),/DUPLICATE_MATERIAL_BRAND/);
+const rows=[{...draft,invoiceNumber:'OLD',invoiceDate:'2026-11-20'},{...draft,invoiceNumber:'NEW'}];
+assert.equal(Stock.purchaseInvoiceList(rows)[0].invoiceNumber,'NEW');
+assert.equal(Stock.purchaseInvoiceList(rows,{from:'2026-11-23'}).length,1);
+assert.equal(Stock.purchaseInvoiceList(rows,{query:'old'})[0].invoiceNumber,'OLD');
+console.log('Purchase invoice draft validation and date-sorted list passed');

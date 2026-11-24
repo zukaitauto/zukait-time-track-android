@@ -204,5 +204,54 @@
     state.requests.push({ requestId, fingerprint, result: clone(result) });
     return { state, result, replay: false };
   }
-  return { empty, transaction, available, avgCost, stockLine, roundOMR, key };
+  // Purchase invoice draft rules. Pure validation only; never mutate workshop state
+  // or submit individual stock commands from the invoice form.
+  function purchaseLine(input) {
+    const materialId=String(input?.materialId||'').trim(),brandId=String(input?.brandId||'').trim(),unit=String(input?.unit||'');
+    if(!materialId||!brandId||!['Liter','kg','Piece'].includes(unit))throw Error('INVALID_STOCK_IDENTITY');
+    const decimal=(value,maxDigits,maxDecimals,label)=>{
+      const raw=String(value??'').trim();
+      if(!new RegExp('^\\\\d{1,'+maxDigits+'}(?:\\\\.\\\\d{1,'+maxDecimals+'})?
+});
+).test(raw))throw Error('INVALID_'+label);
+      const [whole,fraction='']=raw.split('.');
+      const n=BigInt(whole)*10n**BigInt(maxDecimals)+BigInt(fraction.padEnd(maxDecimals,'0'));
+      if(n<=0n)throw Error('INVALID_'+label);
+      return n;
+    };
+    const q=decimal(input.quantity,7,4,'QUANTITY');
+    if(unit==='Piece'&&q%10000n!==0n)throw Error('PIECE_WHOLE_REQUIRED');
+    const method=String(input.priceMethod||'');
+    if(!['unit','total'].includes(method))throw Error('PRICE_METHOD_REQUIRED');
+    const p=decimal(input.price,9,3,'PRICE');
+    const rounded=(n,d)=>(n+d/2n)/d;
+    const mills=method==='total'?p:rounded(q*p,10000n);
+    if(mills<=0n||mills>999999999999n)throw Error('INVALID_LINE_TOTAL');
+    const rate=method==='unit'?p:rounded(mills*10000n,q);
+    if(rate<=0n||rate>999999999999n)throw Error('INVALID_UNIT_PRICE');
+    return {materialId,brandId,unit,quantity:Number(q)/10000,priceMethod:method,price:Number(p)/1000,
+      totalMills:Number(mills),totalAmount:Number(mills)/1000,unitPrice:Number(rate)/1000};
+  }
+  function purchaseInvoiceDraft(input,actor,todayOman) {
+    if(!allowed.has(actor?.role)||!String(actor?.id||'').trim())throw Error('STOCK_FORBIDDEN');
+    const supplier=String(input?.supplier||'').trim(),invoiceNumber=String(input?.invoiceNumber||'').trim();
+    if(!supplier||supplier.length>160||!invoiceNumber||invoiceNumber.length>100)throw Error('INVOICE_REFERENCE_REQUIRED');
+    const invoiceDate=String(input?.invoiceDate||'');
+    const validDay=d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
+    if(!validDay(invoiceDate)||!validDay(todayOman)||invoiceDate>todayOman)throw Error('INVALID_INVOICE_DATE');
+    if(!Array.isArray(input.lines)||!input.lines.length||input.lines.length>50)throw Error('INVALID_INVOICE_LINES');
+    const lines=input.lines.map(purchaseLine),seen=new Set();
+    for(const l of lines){const pair=JSON.stringify([l.materialId,l.brandId]);if(seen.has(pair))throw Error('DUPLICATE_MATERIAL_BRAND');seen.add(pair)}
+    const totalMills=lines.reduce((sum,l)=>sum+l.totalMills,0);
+    if(!Number.isSafeInteger(totalMills)||totalMills>999999999999)throw Error('INVALID_INVOICE_TOTAL');
+    const norm=v=>v.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
+    return {invoiceNumber,invoiceDate,supplier,invoiceKey:JSON.stringify([norm(supplier),norm(invoiceNumber)]),lines,totalMills,totalAmount:totalMills/1000};
+  }
+  function purchaseInvoiceList(rows,{query='',from='',to=''}={}) {
+    const terms=String(query).trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return (rows||[]).filter(r=>r&&(!from||r.invoiceDate>=from)&&(!to||r.invoiceDate<=to)&&
+      terms.every(q=>[r.invoiceNumber,r.supplier,...(r.lines||[]).flatMap(l=>[l.material,l.brand,l.materialName,l.brandName])].join(' ').toLowerCase().includes(q)))
+      .slice().sort((a,b)=>String(b.invoiceDate).localeCompare(String(a.invoiceDate))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))||String(a.invoiceNumber).localeCompare(String(b.invoiceNumber)));
+  }
+  return { empty, transaction, available, avgCost, stockLine, roundOMR, key, purchaseLine, purchaseInvoiceDraft, purchaseInvoiceList };
 });
