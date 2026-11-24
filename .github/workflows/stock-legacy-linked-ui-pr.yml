@@ -10,6 +10,7 @@ on:
       - 'tests/consumables-invoice-price-review.mjs'
       - 'tests/consumables-invoice-price-api.mjs'
       - 'tests/consumables-invoice-price-client.mjs'
+      - 'tests/consumables-invoice-price-authority.mjs'
       - 'tests/consumables-invoice-price-reconcile-api.mjs'
       - 'tests/consumables-invoice-price-reconcile-client.mjs'
       - 'app/src/main/assets/cloud_sync.js'
@@ -54,6 +55,7 @@ jobs:
           node tests/consumables-invoice-price-review.mjs
           node tests/consumables-invoice-price-api.mjs
           node tests/consumables-invoice-price-client.mjs
+          node tests/consumables-invoice-price-authority.mjs
           node tests/consumables-invoice-price-reconcile-api.mjs
           node tests/consumables-invoice-price-reconcile-client.mjs
           node tests/consumables-invoice-price-commit-sql.mjs
