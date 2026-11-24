@@ -37,21 +37,21 @@ function master(){
  return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
 }
 const style='<style>'+
- '.mc-cons{max-width:920px;margin:auto;color:#1e3046;font-family:inherit}'+
+ '.mc-cons{max-width:1100px;margin:auto;color:#1e3046;font-family:inherit}'+
  '.mc-cons .mc-cons-toolbar{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}'+
  '.mc-cons button{min-height:44px;border-radius:10px;cursor:pointer;font-weight:700}'+
  '.mc-cons .mc-cons-secondary{background:#f2f7fc;color:#15528b;border:1px solid #b6cee2;padding:8px 12px}'+
- '.mc-cons .mc-cons-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}'+
- '.mc-cons .mc-cons-tile{padding:14px;border:1px solid #bad1e2;background:#f6faff;color:#1e4266;text-align:left}'+
+ '.mc-cons .mc-cons-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}'+
+ '.mc-cons .mc-cons-tile{min-height:96px;padding:12px;border:1px solid #dfe5ec;border-top:4px solid #64748b;background:#fff!important;color:#0f1b2b!important;border-radius:18px;text-align:left;box-shadow:0 5px 18px rgba(15,27,43,.07)}.mc-cons .mc-cons-tile.issued{border-top-color:#2563eb}.mc-cons .mc-cons-tile.actual{border-top-color:#15803d}.mc-cons .mc-cons-tile.additional{border-top-color:#ca8a04}.mc-cons .mc-cons-tile.search{border-top-color:#7c3aed}.mc-cons .mc-cons-tile.manager{border-top-color:#d5a62e}'+
  '.mc-cons .mc-cons-tile b,.mc-cons .mc-cons-tile small{display:block}'+
- '.mc-cons .mc-cons-tile b{font-size:15px}.mc-cons .mc-cons-tile small{margin-top:8px;font-size:12px;color:#4a647b;line-height:1.4}'+
+ '.mc-cons .mc-cons-tile b{font-size:17px;color:#0f1b2b!important}.mc-cons .mc-cons-tile small{margin-top:7px;font-size:12px;color:#64748b!important;line-height:1.35}'+
  '.mc-cons .mc-cons-card{border:1px solid #d1deeb;border-radius:11px;padding:13px;margin:10px 0;background:#fff}'+
  '.mc-cons .mc-cons-muted{color:#4d657b;font-size:13px;line-height:1.5}'+
  '.mc-cons .mc-cons-alert{border-left:4px solid #e1a640;background:#fff8e8;padding:12px;margin:12px 0;color:#694b18}'+
  '.mc-cons input{display:block;border:1px solid #aebfd1;border-radius:9px;padding:10px;font-size:16px;width:100%;box-sizing:border-box;background:white;color:#1e3046}'+
  ' .mc-cons label{font-size:13px;font-weight:700;display:block;margin:8px 0 5px}'+
  '.mc-cons select{display:block;border:1px solid #aebfd1;border-radius:9px;padding:10px;font-size:16px;width:100%;box-sizing:border-box;background:white;color:#1e3046}'+
- '@media(max-width:360px){.mc-cons .mc-cons-list{grid-template-columns:1fr}}'+
+ '@media(max-width:700px){.mc-cons .mc-cons-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mc-cons .mc-cons-tile{min-height:105px}}'+
  '</style>';
 function open(title,body){
  if(typeof window.openModal!=='function')return;
@@ -64,13 +64,13 @@ function open(title,body){
 function menu(){
  if(!canView())return;
  sectionRequest++;
- const stockEntry=['Manager','Supervisor'].includes((typeof me!=='undefined'?me:window.me)?.role)
-   ? '<button type="button" class="mc-cons-tile" onclick="openStockManagement(&quot;Mechanical&quot;)"><b>Mechanical Stock</b><small>Mechanical and shared stock balances, history and reports.</small></button>' : '';
+ // Stock has its own department chooser; do not duplicate the shortcut here.
+ const tileColor={issued:'issued',additional:'additional',returns:'actual',search:'search',totals:'search',master:'manager',materialHistory:'manager'};
  const entries=Object.entries(sections).filter(([,s])=>!s.managerOnly||canManage()).map(([key,s])=>
-  '<button type="button" class="mc-cons-tile" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
+  '<button type="button" class="mc-cons-tile '+tileColor[key]+'" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
   '<b>'+escapeHtml(s.title)+'</b><small>'+escapeHtml(s.desc)+'</small></button>').join('');
  open('','<p class="mc-cons-muted">Mechanical materials are final when issued. No separate Actual Materials or finalisation step. Painting material records remain separate.</p>'+
-  '<div class="mc-cons-list">'+stockEntry+entries+'</div>'+
+  '<div class="mc-cons-list">'+entries+'</div>'+
   '<div class="mc-cons-card"><b>Mechanical unit examples</b><p class="mc-cons-muted">Engine Oil 5W-30, 20W-40, 5W-40 — Litre (L)<br>WD-40 — Piece (can)<br>Coolant — gallon container (pack size identified in material name)</p></div>'+ 
   '<p class="mc-cons-alert">Mechanical issuing and immediate stock deduction are not connected yet. All issue screens remain read-only until the secure Mechanical Job Card and stock integration is enabled.</p>');
 }

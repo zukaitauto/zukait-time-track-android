@@ -50,6 +50,12 @@ assert.doesNotMatch(paintingMenu,/action\('Paint Stock'|openStockManagement/,'Pa
 assert.match(menu,/deptCard\('Stock'[^\n]*openStockManagement\(\)/,'Dedicated Stock menu must remain available');
 assert.match(menu,/openMechanicalConsumables\(\)/);
 assert.match(mech,/window\.ZUKAIT_MECHANICAL_STOCK_ENABLED===true/);
+assert.doesNotMatch(mech,/openStockManagement\(/,'Mechanical Consumables must not duplicate Stock');
+for(const [kind,color] of [['issued','#2563eb'],['actual','#15803d'],['additional','#ca8a04'],['search','#7c3aed'],['manager','#d5a62e']]){
+ assert.ok(menu.includes('.cons-action.'+kind+'{border-top-color:'+color),'Painting card palette');
+ assert.ok(mech.includes('.mc-cons-tile.'+kind+'{border-top-color:'+color),'Mechanical card palette must match Painting');
+}
+assert.ok(mech.includes('grid-template-columns:repeat(2,minmax(0,1fr))'),'Mechanical menu uses the same two-column pattern');
 assert.doesNotMatch(html,/window\.ZUKAIT_MECHANICAL_STOCK_ENABLED\s*=\s*true/,
  'Mechanical issuing must not be enabled by main app');
 
