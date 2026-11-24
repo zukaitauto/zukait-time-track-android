@@ -549,17 +549,18 @@ window.consOpenMaster=function(preset='',section=''){
  '<label class="cons-master-field">Search Material + Brand<input id="cmPairSearch" type="search" autocomplete="off" placeholder="Search material or brand" oninput="consMasterPairSearch()" onfocus="consMasterPairSearch()"></label><div id="cmPairResults" class="cons-material-results hidden"></div>'+
  '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest();consMasterPairChanged()"></label><datalist id="cmMaterialChoices"></datalist>'+
  '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off" oninput="consMasterPairChanged()"></label><datalist id="cmBrandChoices"></datalist>'+
- '<p id="cmLastPrice" class="notice" role="status">Select a material and brand to view its current price.</p>'+
+ '<p id="cmLastPrice" class="notice" role="status">Select a material and brand to view its current price.</p><p id="cmPurchasePrice" class="notice" role="status">Latest purchase price: select an item.</p>'+
  '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
  '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+consOmanPriceDate()+'"></label>'+
  '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button></section>'+
  '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
- '<h3 id="cmListHeading">Material &amp; Price List</h3><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
+ '<h3 id="cmListHeading">Material &amp; Price List</h3><p id="cmPurchaseStatus" role="status" class="notice">Latest purchase prices are checked from confirmed stock purchases.</p><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
  '<div id="cmList"></div><button class="secondary" type="button" onclick="consPrintMaster()">PRINT / PDF PRICE LIST</button></div>',
  'openStockManagement()');
  const d=document.getElementById('cmNewDepartment');
  if(d)d.value=window.consNewItemDefaultDepartment;
  consRenderMaster();consMasterSuggest();
+ if(section!=='create'&&typeof consLoadPurchasePrices==='function')void consLoadPurchasePrices();
  // The Stock chooser offers separate Create Material and Brand & Price shortcuts.
  // Reuse the audited Manager Master, bringing the requested form into view.
  if(section==='create'||section==='price'){
@@ -600,6 +601,41 @@ window.consMasterSuggest=function(){
  const brands=m?c.brands.filter(b=>b.active!==false&&c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id)):c.brands.filter(b=>b.active!==false);
  if(bl)bl.innerHTML=brands.map(b=>'<option value="'+esc(b.name)+'"></option>').join('');
 };
+// Purchase prices are a read-only projection of committed stock movements.
+function consPurchasePrice(mid,bid){
+ const root=document.getElementById('consMasterWorkspace');
+ const cache=root?._purchasePrices;
+ if(!cache||cache.owner!==String(me?.id||'')||cache.token!==window.zukaitAuth?.getToken?.()||role()!=='Manager')return null;
+ return cache.prices.get(JSON.stringify([mid,bid]))||null;
+}
+function consShowPurchasePrice(){
+ const label=document.getElementById('cmPurchasePrice');if(!label)return;
+ const {m,b}=consMasterExactPair(),p=m&&b?consPurchasePrice(m.id,b.id):null;
+ label.textContent=p?'Latest confirmed purchase: OMR '+p.price.toFixed(3)+' / '+m.unit+' · '+consOmanPriceDate(p.at):'Latest purchase: not available for this selection.';
+}
+async function consLoadPurchasePrices(){
+ const root=document.getElementById('consMasterWorkspace'),status=document.getElementById('cmPurchaseStatus');
+ if(!root||!status||role()!=='Manager'||!window.zukaitCloud?.stockRequest)return;
+ const owner=String(me?.id||''),token=window.zukaitAuth?.getToken?.();
+ const current=()=>document.getElementById('consMasterWorkspace')===root&&role()==='Manager'&&String(me?.id||'')===owner&&window.zukaitAuth?.getToken?.()===token;
+ root._purchasePrices=null;status.textContent='Checking confirmed purchase prices…';
+ try{
+  if(!token||!navigator.onLine)throw Error('Unavailable');
+  const prices=new Map();
+  for(let page=0;page<50;page++){
+   const r=await window.zukaitCloud.stockRequest({operation:'LATEST_PURCHASE_PRICES',page});
+   if(!current())return;
+   if(!r?.ok||!Array.isArray(r.items)||r.page!==page||r.items.length>100)throw Error('Unavailable');
+   for(const p of r.items){
+    const price=Number(p.price_per_unit),at=Date.parse(p.recorded_at);
+    if(p.price_per_unit!=null&&Number.isFinite(price)&&price>=0&&Number.isFinite(at)&&p.material_id&&p.brand_id)
+     prices.set(JSON.stringify([p.material_id,p.brand_id]),{price,at});
+   }
+   if(!r.hasMore){root._purchasePrices={owner,token,prices};status.textContent='Latest confirmed purchases shown separately from effective-dated costing prices.';consRenderMaster();consShowPurchasePrice();return;}
+  }
+  throw Error('Incomplete list');
+ }catch(_){if(current()){status.textContent='Latest purchase prices unavailable. Saved costing prices are shown; no stock price is assumed.';consRenderMaster();consShowPurchasePrice();}}
+}
 function consMasterExactPair(){
  const c=C().ensureState(state),norm=v=>String(v||'').trim().toLowerCase();
  const mn=norm(document.getElementById('cmMaterial')?.value),bn=norm(document.getElementById('cmBrand')?.value);
@@ -621,10 +657,10 @@ window.consMasterPairSearch=function(){
    const key=JSON.stringify([m.id,b.id]);
    if(seen.has(key))continue;seen.add(key);
    if(!q.every(t=>(m.name+' '+b.name+' '+m.unit).toLowerCase().includes(t)))continue;
-   rows.push({m,b,p:C().priceAt(state,m.id,b.id,Date.now())});
+   rows.push({m,b,p:C().priceAt(state,m.id,b.id,Date.now()),purchase:consPurchasePrice(m.id,b.id)});
  }
  rows.sort((a,b)=>a.m.name.localeCompare(b.m.name)||a.b.name.localeCompare(b.b.name));
- out.innerHTML=rows.slice(0,50).map(({m,b,p})=>'<button type="button" class="cons-material-result" data-mid="'+esc(m.id)+'" data-bid="'+esc(b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)"><b>'+esc(m.name)+'</b><span>'+esc(b.name)+' · '+esc(m.unit)+'</span><small>'+(p?'OMR '+Number(p.pricePerUnit).toFixed(3):'No effective price yet')+'</small></button>').join('')||'<div class="cons-jc-empty">No matching priced pair. Enter an existing material and a new brand below.</div>';
+ out.innerHTML=rows.slice(0,50).map(({m,b,p,purchase})=>'<button type="button" class="cons-material-result" data-mid="'+esc(m.id)+'" data-bid="'+esc(b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)"><b>'+esc(m.name)+'</b><span>'+esc(b.name)+' · '+esc(m.unit)+'</span><small>'+(p?'OMR '+Number(p.pricePerUnit).toFixed(3):'No effective price yet')+(purchase?' · Latest purchase OMR '+purchase.price.toFixed(3):'')+'</small></button>').join('')||'<div class="cons-jc-empty">No matching priced pair. Enter an existing material and a new brand below.</div>';
  out.classList.remove('hidden');
 };
 window.consMasterSelectPair=function(mid,bid){
@@ -642,6 +678,7 @@ window.consMasterPairChanged=function(){
  const {m,b,ambiguous}=consMasterExactPair(),last=document.getElementById('cmLastPrice'),price=document.getElementById('cmPrice');
  const p=m&&b?C().priceAt(state,m.id,b.id,Date.now()):null;
  if(price)price.value=p?Number(p.pricePerUnit).toFixed(3):'';
+ consShowPurchasePrice();
  if(last)last.textContent=ambiguous?'Select the exact material and brand from search results.':p?'Last effective price: OMR '+Number(p.pricePerUnit).toFixed(3)+' / '+m.unit+' · From '+consOmanPriceDate(p.effectiveFrom):'New material / brand price. Enter the price per unit.';
 };
 window.consSaveMaster=function(){
@@ -680,8 +717,8 @@ window.consRenderMaster=function(){
  rows.sort((a,b)=>a.m.name.localeCompare(b.m.name,undefined,{numeric:true,sensitivity:'base'})||a.b.name.localeCompare(b.b.name,undefined,{numeric:true,sensitivity:'base'}));
  const query=String(document.getElementById('cmListSearch')?.value||'').trim().toLocaleLowerCase();
  const filtered=query?rows.filter(r=>query.split(/\s+/).every(t=>(r.m.name+' '+r.b.name).toLocaleLowerCase().includes(t))):rows;
- out.innerHTML=filtered.length?'<div class="cons-table"><table><tr><th>No.</th><th>Material</th><th>Brand</th><th>Category</th><th>Used In</th><th>Unit</th><th>Price / Unit</th><th>Effective From</th><th>History</th><th>Action</th></tr>'+
- filtered.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.m.name)+'</td><td>'+esc(r.b.name)+'</td><td>'+esc(r.m.category||'Consumable')+'</td><td>'+esc(r.m.department==='Both'?'Shared':r.m.department==='Mechanical'?'Mechanical':'Paint')+'</td><td>'+esc(r.m.unit)+'</td><td>'+(r.p?'OMR '+Number(r.p.pricePerUnit).toFixed(3):'Not yet effective')+'</td><td>'+(r.p?esc(consOmanPriceDate(r.p.effectiveFrom)):'—')+'</td><td>'+r.count+'</td><td><button class="blue" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)">OPEN</button>'+(r.p?'<button class="secondary" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" data-pid="'+esc(r.p.id)+'" onclick="consEditMasterRow(this.dataset.mid,this.dataset.bid,this.dataset.pid)">EDIT</button>':'')+'<button class="green" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" onclick="consOpenPriceChange(this.dataset.mid,this.dataset.bid)">CHANGE PRICE</button></td></tr>').join('')+'</table></div>':'<div class="notice">'+(query?'No matching materials or brands.':'No material prices configured yet.')+'</div>';
+ out.innerHTML=filtered.length?'<div class="cons-table"><table><tr><th>No.</th><th>Material</th><th>Brand</th><th>Category</th><th>Used In</th><th>Unit</th><th>Price / Unit</th><th>Effective From</th><th>Latest Purchase / Unit</th><th>History</th><th>Action</th></tr>'+
+ filtered.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.m.name)+'</td><td>'+esc(r.b.name)+'</td><td>'+esc(r.m.category||'Consumable')+'</td><td>'+esc(r.m.department==='Both'?'Shared':r.m.department==='Mechanical'?'Mechanical':'Paint')+'</td><td>'+esc(r.m.unit)+'</td><td>'+(r.p?'OMR '+Number(r.p.pricePerUnit).toFixed(3):'Not yet effective')+'</td><td>'+(r.p?esc(consOmanPriceDate(r.p.effectiveFrom)):'—')+'</td><td>'+((purchase=>purchase?'OMR '+purchase.price.toFixed(3)+' · '+esc(consOmanPriceDate(purchase.at)):'—')(consPurchasePrice(r.m.id,r.b.id)))+'</td><td>'+r.count+'</td><td><button class="blue" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)">OPEN</button>'+(r.p?'<button class="secondary" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" data-pid="'+esc(r.p.id)+'" onclick="consEditMasterRow(this.dataset.mid,this.dataset.bid,this.dataset.pid)">EDIT</button>':'')+'<button class="green" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" onclick="consOpenPriceChange(this.dataset.mid,this.dataset.bid)">CHANGE PRICE</button></td></tr>').join('')+'</table></div>':'<div class="notice">'+(query?'No matching materials or brands.':'No material prices configured yet.')+'</div>';
 };
 
 function consOmanPriceDate(at=Date.now()){return new Date(Number(at)+4*3600000).toISOString().slice(0,10)}
