@@ -17,7 +17,7 @@ const elements={cmNewDepartment:{value:''},cmCreateHeading:{scrollIntoView(){}},
 const env={window:{},role:()=> 'Manager',
  modal(t,body){title=t;form=body},
  document:{getElementById:id=>elements[id]||null},
- consRenderMaster(){},consMasterSuggest(){}};
+ consRenderMaster(){},consMasterSuggest(){},consOmanPriceDate:()=> '2026-11-24'};
 runInNewContext(src.slice(begin,end),env);
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']}: {})});
 try{
@@ -28,7 +28,7 @@ try{
   assert.equal(title,expected,'correct Material Master screen title');
   for(const id of ['cmNewMaterial','cmNewUnit','cmNewCategory','cmNewDepartment','cmMaterial','cmBrand','cmPrice','cmDate'])
    assert.match(form,new RegExp('id="'+id+'"'),'Original Material Master field must persist');
-  assert.equal((form.match(/class="cons-master-field"/g)||[]).length,8);
+  assert.equal((form.match(/class="cons-master-field"/g)||[]).length,9);
   for(const width of [320,375,390,430,600,768,1280]){
    const page=await browser.newPage({viewport:{width,height:800},deviceScaleFactor:1});
    const html='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">'+
@@ -69,7 +69,7 @@ try{
     assert.equal(layout.priceForm,mode==='price');
     assert.equal(layout.date,mode==='price');
     assert.equal(layout.category,false,'Stock new-material shortcut defaults to Consumable');
-    assert.equal(layout.tableVisible,false,'catalog list must not clutter focused form');
+    assert.equal(layout.tableVisible,mode==='price','full price list is visible only in the approved Brand & Price shortcut');
    }else{
     assert.equal(layout.count,2);
     assert.deepEqual(layout.cols,width<=700?[1,1]:[2,2]);

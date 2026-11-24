@@ -37,6 +37,16 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   // LIST/HISTORY/BALANCE/RESERVATIONS could otherwise disclose Bodyshop-only stock.
   if(user.role==='Mechanical Supervisor'&&!['CATALOG','WRITE','MECHANICAL_RETURNABLE','MECHANICAL_TOTALS'].includes(operation))
     return bad('mechanical_stock_forbidden',403);
+  if(operation==='LATEST_PURCHASE_PRICES') {
+    if(user.role!=='Manager')return bad('manager_only',403);
+    if(!sessionHash)return bad('stock_session_required',401);
+    if(!Number.isInteger(body.page)||body.page<0||body.page>49)return bad('invalid_price_page');
+    const {data,error}=await admin.rpc('zukait_stock_latest_purchase_prices',{
+      p_session_hash:sessionHash,p_page:body.page
+    });
+    if(error||!Array.isArray(data))return bad('stock_purchase_prices_unavailable',503);
+    return good({items:data.slice(0,100),hasMore:data.length>100,page:body.page});
+  }
   if(operation==='LEGACY_PREVIEW') {
     // One-time Manager review of the CURRENT saved master; at most 20 pairs.
     // No write to Stock or workshop_state, no automatic department inference.
