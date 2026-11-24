@@ -6,7 +6,7 @@ const fmt=n=>Number(n||0).toFixed(2);
 let department='';
 let view={page:'balance',items:[],history:[],itemsHasMore:false,itemsNextPage:1,historyHasMore:false,loading:false,error:'',busy:false,
   selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null,
-  balanceQuery:'',balanceFilter:'all'};
+  balanceQuery:'',balanceFilter:'all',pairQuery:''};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
 // The normal app can ask the authenticated server whether a real-data ledger
@@ -253,18 +253,22 @@ function render(){
    return;
  }
  if(view.page==='add'){
-    const c=catalog(),row=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected),
-     selected=row||view.items[0];
+    const c=catalog(),selected=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
     const noAssignedItems=Boolean(department&&!view.items.length);
-    const pairOptions=view.items.map(x=>'<option value="'+esc(label(x))+'"></option>').join(''),
-     pairName=selected?label(selected):'';
+    const pairChoices=view.items.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(label(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(label(x))+
+      '<small>'+esc(x.unit||'')+'</small></button>').join(''),
+      pairName=selected?label(selected):String(view.pairQuery||'');
     draw('<h3>Add / Open Stock</h3>'+
      (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs for this department.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
        (manager()?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
      '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
      (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
-     '<label>Search Material + Brand</label><input id="zs-material-brand-search" list="zs-material-brand-options" autocomplete="off" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled placeholder="Link a material + brand first"':'')+' oninput="zukStockResolvePair()">'+
-     '<datalist id="zs-material-brand-options">'+pairOptions+'</datalist>'+
+     '<label for="zs-material-brand-search">Search Material + Brand</label>'+
+     '<div class="zs-pair-picker"><input id="zs-material-brand-search" type="search" inputmode="search" autocomplete="off" autocapitalize="none" aria-controls="zs-pair-results" aria-expanded="false" placeholder="'+(noAssignedItems?'Link a material + brand first':'Type material or brand to search')+'" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled':'')+' oninput="zukStockResolvePair()" onfocus="zukStockShowPairChoices()">'+
+     '<div id="zs-pair-results" class="zs-pair-results" role="group" aria-label="Matching linked stock materials" hidden>'+pairChoices+
+     '<p id="zs-pair-empty" class="zs-muted" hidden>No matching items on this loaded page. '+(view.itemsHasMore?'Load more linked materials below to continue searching.':'Check the material and brand name.')+'</p></div>'+
+     '<p id="zs-pair-hint" class="zs-muted" role="status">'+(selected?'Selected '+esc(label(selected)):'Tap a search result to choose the exact material and brand.')+'</p>'+
+     (view.itemsHasMore?'<button type="button" id="zs-pair-more" class="zs-btn secondary zs-pair-more" onclick="zukStockPairMore()">Load next 100 linked materials</button>':'')+'</div>'+
      '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
      '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
      '<label>Price method</label><select id="zs-method" onchange="zukStockCalculatePurchase()"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
@@ -1029,7 +1033,7 @@ window.zukStockSelectDepartment=scope=>{
  department=scope;
  preview.page='home';stockTrial.message='';
  view.items=[];view.history=[];view.report=null;view.selected='';
- view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';
+ view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';view.pairQuery='';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(previewOnly())return showPreview();
  if(liveStockReady())return showLiveHome();
@@ -1051,7 +1055,7 @@ window.openStockManagement=async(scope='')=>{
  department=['Painting','Mechanical'].includes(scope)?scope:'';
  if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
  view.items=[];view.history=[];view.report=null;view.selected='';
- view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';
+ view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';view.pairQuery='';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(liveStockReady()){window.closeModal?.();return showLiveHome()}
  return load('balance',true); // Existing isolated stock QA behavior unchanged.
