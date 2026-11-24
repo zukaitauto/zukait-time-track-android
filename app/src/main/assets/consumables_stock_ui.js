@@ -1124,14 +1124,72 @@ async function write(command,data){
    window.zukStockSetEntryType();
  }
 }
+function filterPairChoices(){
+ const root=document.getElementById('zs-pair-results'),input=document.getElementById('zs-material-brand-search');
+ if(!root||typeof root.querySelectorAll!=='function')return;
+ const query=String(input?.value||'').trim().toLocaleLowerCase();
+ let matched=0;
+ for(const button of root.querySelectorAll('[data-pair-choice]')){
+  const name=String(button.getAttribute('data-pair-name')||'').toLocaleLowerCase();
+  const shown=(!query||name.includes(query))&&matched<12;
+  button.hidden=!shown;if(shown)matched++;
+ }
+ const empty=document.getElementById('zs-pair-empty');
+ if(empty)empty.hidden=matched>0;
+ root.hidden=false;
+ if(input)input.setAttribute?.('aria-expanded','true');
+}
+window.zukStockShowPairChoices=()=>filterPairChoices();
 window.zukStockResolvePair=()=>{
- const input=document.getElementById('zs-material-brand-search'),value=String(input?.value||'').trim().toLowerCase();
- const row=view.items.find(x=>label(x).trim().toLowerCase()===value);
+ const input=document.getElementById('zs-material-brand-search');
+ const value=String(input?.value||'').trim(),normalized=value.toLocaleLowerCase();
+ view.pairQuery=value.slice(0,180);
+ const row=view.items.find(x=>label(x).trim().toLocaleLowerCase()===normalized);
  const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
  if(material)material.value=row?.material_id||'';
  if(brand)brand.value=row?.brand_id||'';
  view.selected=row?String(row.material_id)+'|'+String(row.brand_id):'';
+ const hint=document.getElementById('zs-pair-hint');
+ if(hint)hint.textContent=row?'Selected '+label(row):
+    'Tap a matching result to choose the exact material and brand.';
+ filterPairChoices();
  return !!row;
+};
+window.zukStockChoosePair=index=>{
+ const row=view.items[index],input=document.getElementById('zs-material-brand-search');
+ if(!row||!input)return;
+ input.value=label(row);
+ window.zukStockResolvePair();
+ const panel=document.getElementById('zs-pair-results');
+ if(panel)panel.hidden=true;
+ input.setAttribute?.('aria-expanded','false');
+};
+window.zukStockPairMore=async()=>{
+ if(view.loading||view.busy||view.page!=='add'||!view.itemsHasMore)return;
+ // Only explicit user action loads the next page. Typing never scans the database.
+ const page=view.itemsNextPage;
+ if(!Number.isInteger(page)||page>20){view.error='Further stock pages require an administrator review.';render();return}
+ const query=String(document.getElementById('zs-material-brand-search')?.value||view.pairQuery||'');
+ view.pairQuery=query;view.busy=true;
+ const button=document.getElementById('zs-pair-more');if(button)button.disabled=true;
+ try{
+  const response=await stockRead({operation:'LIST',page});
+  if(!response?.ok)throw Error(response?.code||'Stock materials unavailable');
+  const known=new Set(view.items.map(x=>String(x.material_id)+'|'+String(x.brand_id)));
+  for(const row of response.items||[]){
+   const key=String(row.material_id)+'|'+String(row.brand_id);
+   if(!known.has(key)){view.items.push(row);known.add(key)}
+  }
+  view.itemsHasMore=!!response.hasMore;
+  view.itemsNextPage=page+1;
+  view.error='';
+ }catch(error){view.error=String(error?.message||error)}
+ finally{
+  view.busy=false;
+  render();
+  const input=document.getElementById('zs-material-brand-search');
+  if(input){input.value=query;window.zukStockResolvePair();}
+ }
 };
 window.zukStockCalculatePurchase=()=>{
  const d=document,qty=Number(d.getElementById('zs-qty')?.value),price=Number(d.getElementById('zs-price')?.value),
