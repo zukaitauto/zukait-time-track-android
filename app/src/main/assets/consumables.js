@@ -89,6 +89,35 @@
     const rows=c.prices.filter(x=>!x.voided&&x.materialId===materialId&&x.brandId===brandId&&x.effectiveFrom<=t).sort((a,b)=>b.effectiveFrom-a.effectiveFrom||b.createdAt-a.createdAt);
     return rows[0]?clone(rows[0]):null;
   }
+  // Read-only proposal. Invoice purchase rates are not silently substituted
+  // for effective-dated job costing. A Manager reviews the existing price path.
+  function invoicePriceReview(state,invoice,actor){
+    assertRole(actor?.role,true);
+    if(!invoice?.id||invoice.status!=='posted'||!Number.isInteger(invoice.revision)||invoice.revision<1||!Array.isArray(invoice.lines)||!invoice.lines.length)throw Error('POSTED_INVOICE_REQUIRED');
+    const date=String(invoice.invoice_date||''),effective=Date.parse(date+'T00:00:00+04:00');
+    const omanDate=t=>new Date(Number(t)+14400000).toISOString().slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(effective)||omanDate(effective)!==date)throw Error('INVALID_INVOICE_DATE');
+    const snapshot=clone(state),c=ensureState(snapshot),seen=new Set();
+    return invoice.lines.map(l=>{
+      const mid=l.materialId,bid=l.brandId,key=JSON.stringify([mid,bid]),rate=Number(l.unitPrice);
+      if(seen.has(key)||!Number.isFinite(rate)||rate<=0||money(rate)!==rate)throw Error('INVALID_INVOICE_PRICE');
+      seen.add(key);
+      const m=c.materials.find(x=>x.id===mid&&x.active!==false),b=c.brands.find(x=>x.id===bid&&x.active!==false);
+      const base={materialId:mid,brandId:bid,materialName:m?.name||l.materialName||mid,brandName:b?.name||l.brandName||bid,unit:l.unit,rate,date,effectiveFrom:effective,invoiceId:invoice.id,invoiceRevision:invoice.revision};
+      if(!m||!b||m.unit!==l.unit)return {...base,action:'blocked',reason:'Material/brand missing or unit changed'};
+      const periods=c.prices.filter(p=>!p.voided&&p.materialId===mid&&p.brandId===bid);
+      if(periods.some(p=>!Number.isFinite(Number(p.effectiveFrom))))return {...base,action:'blocked',reason:'Invalid existing price history'};
+      const same=periods.filter(p=>omanDate(p.effectiveFrom)===date);
+      const current=priceAt(snapshot,mid,bid,effective);
+      if(same.length>1)return {...base,action:'blocked',reason:'Multiple existing price periods on this date'};
+      if(same.length===1&&money(same[0].pricePerUnit)===rate)return {...base,action:'unchanged',oldRate:rate,affected:0};
+      if(!same.length&&current&&money(current.pricePerUnit)===rate)return {...base,action:'unchanged',oldRate:rate,affected:0};
+      const action=same.length?'correct':'create',from=same.length?Number(same[0].effectiveFrom):effective;
+      const next=periods.filter(p=>Number(p.effectiveFrom)>from).sort((a,b)=>Number(a.effectiveFrom)-Number(b.effectiveFrom))[0];
+      const affected=c.actuals.filter(x=>!x.voided&&x.locked&&Number(x.actualAt)>=from&&(!next||Number(x.actualAt)<Number(next.effectiveFrom))&&(x.lines||[]).some(l=>l.materialId===mid&&l.brandId===bid&&money(l.unitPriceSnapshot)!==rate));
+      return {...base,action,oldRate:same.length?Number(same[0].pricePerUnit):current?Number(current.pricePerUnit):null,priceId:same[0]?.id||null,affected:affected.length,jobCards:[...new Set(affected.map(x=>x.jobCard))],effectiveFrom:from};
+    });
+  }
   function cleanLines(state,lines){
     const c=ensureState(state); if(!Array.isArray(lines)||!lines.length)throw new Error('MATERIAL_LINES_REQUIRED');
     return lines.map((l,i)=>{
@@ -199,5 +228,5 @@
     const keys=['jobs','assign','sessions','corrections','jobEdits','suggestedEdits','reworks','requests','additionalActions','lastActions','overtimeNotices','leaves','leaveAudit'];
     const out={}; for(const k of keys)out[k]=clone(state[k]===undefined?null:state[k]); return JSON.stringify(out);
   }
-  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,managerCorrectPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
+  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,invoicePriceReview,managerCorrectPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
 });

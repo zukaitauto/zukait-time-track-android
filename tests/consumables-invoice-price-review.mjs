@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url),C=require('../app/src/main/assets/consumables.js');
+const at=d=>Date.parse(d+'T00:00:00+04:00');
+const M={id:'mgr',role:'Manager'};
+const state={consumables:{materials:[{id:'m',name:'Disc 80',unit:'Piece'}],brands:[{id:'b',name:'KARUSHI'}],prices:[{id:'old',materialId:'m',brandId:'b',pricePerUnit:.2,effectiveFrom:at('2026-11-01')},{id:'future',materialId:'m',brandId:'b',pricePerUnit:.3,effectiveFrom:at('2026-11-28')}],actuals:['2026-11-20','2026-11-24','2026-11-29'].map((d,i)=>({id:'a'+i,jobCard:'JC'+i,locked:true,actualAt:at(d),lines:[{materialId:'m',brandId:'b',unitPriceSnapshot:i===2?.3:.2}]})),audit:[]}};
+const inv={id:'inv',revision:1,status:'posted',invoice_date:'2026-11-24',lines:[{materialId:'m',brandId:'b',unit:'Piece',unitPrice:.15}]};
+const before=JSON.stringify(state);
+let p=C.invoicePriceReview(state,inv,M)[0];assert.equal(p.action,'create');assert.equal(p.oldRate,.2);assert.equal(p.rate,.15);assert.equal(p.effectiveFrom,at('2026-11-24'));assert.equal(p.affected,1);assert.deepEqual(p.jobCards,['JC1']);assert.equal(JSON.stringify(state),before);
+assert.throws(()=>C.invoicePriceReview(state,inv,{role:'Supervisor'}),/MANAGER_ONLY/);
+assert.throws(()=>C.invoicePriceReview(state,{...inv,status:'cancelled'},M),/POSTED_INVOICE_REQUIRED/);
+assert.throws(()=>C.invoicePriceReview(state,{...inv,invoice_date:'2026-02-30'},M),/INVALID_INVOICE_DATE/);
+assert.equal(C.invoicePriceReview(state,{...inv,lines:[{...inv.lines[0],unitPrice:.2}]},M)[0].action,'unchanged');
+state.consumables.prices.push({id:'same',materialId:'m',brandId:'b',pricePerUnit:.18,effectiveFrom:at('2026-11-24')});
+p=C.invoicePriceReview(state,inv,M)[0];assert.equal(p.action,'correct');assert.equal(p.priceId,'same');assert.equal(p.affected,1);
+assert.equal(C.invoicePriceReview(state,{...inv,lines:[{...inv.lines[0],unit:'kg'}]},M)[0].action,'blocked');
+console.log('Invoice price review: Manager role, Oman date, new period, duplicate-day correction, historical impact, cancelled invoice and no mutation PASS');
