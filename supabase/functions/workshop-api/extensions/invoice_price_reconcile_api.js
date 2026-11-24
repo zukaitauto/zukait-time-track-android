@@ -34,15 +34,16 @@ export async function invoicePriceReconcileApi(admin,user,body,{enabled=false,se
    if(prior.error)return bad('invoice_price_receipt_unavailable',503);
    if(prior.data)return await commit({p_expected_revision:0,p_consumables:{},p_receipt:{},p_live:[]});
   }
-  const inv=await admin.from('zukait_purchase_invoices').select('id,revision,status').eq('id',invoiceId).maybeSingle();
+  const inv=await admin.from('zukait_purchase_invoices').select('id,revision,status,invoice_date').eq('id',invoiceId).maybeSingle();
   if(inv.error)return bad('invoice_price_source_unavailable',503);
   if(!inv.data)return bad('invoice_not_found',404);
   if(inv.data.status!=='posted')return bad('invoice_cancelled');
   if(inv.data.revision!==revision)return bad('invoice_revision_conflict');
+  if(d.mode==='header'&&correction.invoiceDate===inv.data.invoice_date)return bad('invoice_reference_only_use_header_correction');
   const active=await admin.from('zukait_invoice_price_applications').select('request_id,receipt,invoice_revision').eq('invoice_id',invoiceId).is('reconciled_at',null).maybeSingle();
   if(active.error)return bad('invoice_price_source_unavailable',503);
   if(!active.data)return preview?good({required:false}):bad('invoice_price_application_not_found');
-  if(active.data.invoice_revision!==revision||(apply&&active.data.request_id!==d.applicationRequestId))return bad('invoice_revision_conflict');
+  if(apply&&active.data.request_id!==d.applicationRequestId)return bad('invoice_revision_conflict');
   const application={...active.data.receipt};
   delete application.ok;delete application.server_revision;delete application.replayed;
   const current=await admin.from('workshop_state').select('revision,data').eq('id','main').single();
