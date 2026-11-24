@@ -1195,6 +1195,12 @@ Deno.serve(async (req: Request) => {
     // Separate, default-off audited costing route. Never route this through
     // the stock ledger write API or accept browser-supplied workshop state.
     if(action==='consumables_invoice_price_apply') {
+      // Price-review job-card lists are arrays of scalar public numbers.
+      // Translate only this known reference field before comparing to server state.
+      if(numberCodec&&Array.isArray(body.data?.review)){
+        body.data.review=body.data.review.map(row=>row&&Array.isArray(row.jobCards)?
+          {...row,jobCards:row.jobCards.map(number=>numberCodec.internalNumber(number))}:row);
+      }
       const result=await invoicePriceApplyApi(admin,user,body,{
         enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true'&&
           Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true'&&
