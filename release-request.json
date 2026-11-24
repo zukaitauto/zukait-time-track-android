@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner requested publication and explicitly deferred backup restore verification on 2026-11-24 because the PC is unavailable. Exact signed V420 source passed all eight final CI workflows. Hosted QA authentication barriers and production prerequisites passed. Physical acceptance, authenticated QA invoice testing, production schema/Edge deployment and smoke still pending. Current release gate has no V420 backup-deferral exception. Staff approval remains false.",
+  "reason": "Owner requested publication and explicitly deferred only backup restore. Exact signed V420 source passed eight workflows. Production additive invoice schema deployed and verified: five RLS tables, ten service-role-only routines, workshop revision unchanged at 17977. Production Edge deployment, hosted authenticated QA, full preservation verification and physical-device/browser acceptance remain pending. No staff publication approval yet.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -34,5 +34,18 @@
     "instruction": "Defer backup",
     "recordedDate": "2026-11-24",
     "scope": "Backup restore verification only. Physical acceptance and production backend smoke are not waived. No backup is represented as freshly restored."
+  },
+  "productionSchemaDeployment": {
+    "status": "STAGED_AND_VERIFIED",
+    "migration": "v420_purchase_invoice_schema_staged",
+    "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
+    "workshopRevisionBefore": 17977,
+    "workshopRevisionAfter": 17977,
+    "verifiedTables": 5,
+    "verifiedFunctions": 10,
+    "invoiceCount": 0,
+    "priceApplicationCount": 0,
+    "productionEdgeDeployed": false,
+    "verifiedDate": "2026-11-24"
   }
 }

@@ -30,6 +30,29 @@ function validate(approval,record) {
    assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12,'Browser deferral evidence required');
    continue;
   }
+  // Explicit owner authorization applies only to the exact signed V420 source.
+  if(key==='fresh_backup_restored' && approval.backupRestoreDeferral) {
+   const waiver=approval.backupRestoreDeferral;
+   assert.equal(approval.versionName,'V420','V420 backup deferral only');
+   assert.equal(approval.versionCode,383,'V420 backup deferral version code mismatch');
+   assert.equal(approval.releaseScope,'purchase-invoice-coordinated','V420 coordinated scope required');
+   assert.equal(approval.sourceCommit,'5bb6796573a438cd9631835070cf45b70c708566','V420 backup deferral source mismatch');
+   assert.equal(approval.signedAcceptanceRun,45461052619,'V420 signed acceptance run mismatch');
+   assert.equal(approval.ownerPublicationRequested,true,'Owner publication request required');
+   assert.equal(waiver.check,key,'Backup deferral check mismatch');
+   assert.equal(waiver.status,'DEFERRED_BY_OWNER_NOT_PERFORMED','Backup deferral status mismatch');
+   assert.equal(waiver.versionName,approval.versionName,'Backup deferral version mismatch');
+   assert.equal(waiver.versionCode,approval.versionCode,'Backup deferral version code mismatch');
+   assert.equal(waiver.sourceCommit,approval.sourceCommit,'Backup deferral source mismatch');
+   assert.equal(waiver.authorizedBy,'Owner in this conversation','Explicit owner authorization required');
+   assert.equal(waiver.instruction,'Defer backup','Explicit backup deferral required');
+   assert.equal(waiver.recordedDate,'2026-11-24','V420 deferral date mismatch');
+   assert.equal(approval.freshProductionBackupRestoreStatus,waiver.status,'Backup deferral status must be disclosed');
+   assert.equal(check?.passed,false,'Deferred backup must remain not passed');
+   assert.deepEqual(check?.ownerWaiver,waiver,'Backup deferral records must match');
+   assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12,'Backup deferral evidence required');
+   continue;
+  }
   // One-release owner exception: never represent a deferred restore as passed.
   if(key==='fresh_backup_restored' && approval.ownerBackupRestoreWaiver) {
    const waiver=approval.ownerBackupRestoreWaiver;
@@ -63,6 +86,7 @@ if(require.main===module) {
  validate(approval,record);
  console.log('V305 acceptance requirements satisfied for approved source '+approval.sourceCommit);
  if(approval.ownerBrowserBuildWaiver) console.log('OWNER-DEFERRED: exact browser build verification; owner reports V376 browser tests.');
+ if(approval.backupRestoreDeferral) console.log('OWNER-DEFERRED: V420 backup restore NOT PERFORMED.');
  if(approval.ownerBackupRestoreWaiver) console.log('OWNER-DEFERRED: fresh backup restore NOT PERFORMED for V376.');
 }
 module.exports={validate,required};

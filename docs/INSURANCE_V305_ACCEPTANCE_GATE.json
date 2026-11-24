@@ -1,47 +1,58 @@
 {
-  "versionName": "V377",
-  "versionCode": 340,
-  "sourceCommit": "3fe496a8f7e8edfa12184f43aa4f0fded8fcbd5f",
+  "versionName": "V420",
+  "versionCode": 383,
+  "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "evidence": "Exact V420 release acceptance has not been independently verified for this check.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "physical_android": {
       "passed": false,
-      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "evidence": "Exact V420 release acceptance has not been independently verified for this check.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "physical_safari": {
       "passed": false,
-      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "evidence": "Exact V420 release acceptance has not been independently verified for this check.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "full_data_preservation": {
       "passed": false,
-      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "evidence": "Additive production schema installation left workshop revision 17977 unchanged; complete data preservation verification is pending.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "fresh_backup_restored": {
       "passed": false,
-      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "evidence": "Owner explicitly instructed Defer backup on 2026-11-24; recovery rehearsal NOT performed.",
       "verifiedBy": null,
-      "verifiedAt": null
+      "verifiedAt": null,
+      "ownerWaiver": {
+        "check": "fresh_backup_restored",
+        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+        "versionName": "V420",
+        "versionCode": 383,
+        "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
+        "authorizedBy": "Owner in this conversation",
+        "instruction": "Defer backup",
+        "recordedDate": "2026-11-24",
+        "scope": "Backup restore verification only. Physical acceptance and production backend smoke are not waived. No backup is represented as freshly restored."
+      }
     },
     "pc_site_reconciled": {
       "passed": false,
-      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "evidence": "Exact V420 release acceptance has not been independently verified for this check.",
       "verifiedBy": null,
       "verifiedAt": null
     },
     "production_backend_smoke": {
       "passed": false,
-      "evidence": "V377 development qualification pending; previous release evidence and deferrals are not reused.",
+      "evidence": "Production invoice schema verified, Edge deployment and authenticated production smoke pending.",
       "verifiedBy": null,
       "verifiedAt": null
     }
