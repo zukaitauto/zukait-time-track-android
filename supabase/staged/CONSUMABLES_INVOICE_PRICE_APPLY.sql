@@ -2,18 +2,20 @@
 -- No automatic deployment. Test on isolated PostgreSQL before enabling the route.
 begin;
 create table public.zukait_invoice_price_applications(
- invoice_id uuid primary key references public.zukait_purchase_invoices(id),
+ invoice_id uuid not null references public.zukait_purchase_invoices(id),
  invoice_revision integer not null check(invoice_revision>0),
- request_id text not null unique,
+ request_id text primary key,
  actor_id text not null,
  fingerprint jsonb not null,
  receipt jsonb not null,
  workshop_revision bigint not null,
- created_at timestamptz not null default now()
+ created_at timestamptz not null default now(),
+ reconciled_at timestamptz
 );
+create unique index zukait_invoice_price_active_idx on public.zukait_invoice_price_applications(invoice_id) where reconciled_at is null;
 alter table public.zukait_invoice_price_applications enable row level security;
 revoke all on public.zukait_invoice_price_applications from public,anon,authenticated;
-grant select,insert on public.zukait_invoice_price_applications to service_role;
+grant select,insert,update on public.zukait_invoice_price_applications to service_role;
 
 -- Both the application RPC and existing correction/cancel RPCs serialize on
 -- the invoice row. Once applied, require explicit reconciliation rather than
@@ -23,7 +25,7 @@ returns trigger language plpgsql security invoker set search_path='' as $fn$
 begin
  if (new.revision,new.status,new.invoice_date,new.lines) is distinct from
     (old.revision,old.status,old.invoice_date,old.lines)
- and exists(select 1 from public.zukait_invoice_price_applications where invoice_id=old.id)
+ and exists(select 1 from public.zukait_invoice_price_applications where invoice_id=old.id and reconciled_at is null)
  then raise exception 'INVOICE_PRICE_RECONCILIATION_REQUIRED' using errcode='23514'; end if;
  return new;
 end $fn$;
@@ -66,7 +68,7 @@ begin
  end if;
  if v_invoice.status<>'posted' then raise exception 'INVOICE_CANCELLED';end if;
  if v_invoice.revision is distinct from p_invoice_revision then raise exception 'INVOICE_REVISION_CONFLICT';end if;
- if exists(select 1 from public.zukait_invoice_price_applications where invoice_id=p_invoice_id)
+ if exists(select 1 from public.zukait_invoice_price_applications where invoice_id=p_invoice_id and reconciled_at is null)
  then raise exception 'INVOICE_PRICE_RECONCILIATION_REQUIRED';end if;
  -- The existing workshop commit RPC owns the state lock and CAS; do not
  -- invert its lock order by taking a separate workshop row lock first.
