@@ -7,6 +7,11 @@ on:
       - 'tests/consumables-stock-search-toolbar-mobile.mjs'
       - 'tests/consumables-stock-opening-guard.mjs'
       - 'tests/consumables-stock-balance-master-overlay.mjs'
+      - 'tests/consumables-stock-count-status-api.mjs'
+      - 'supabase/functions/workshop-api/extensions/consumables_stock_api.js'
+      - 'supabase/functions/workshop-api/index.ts'
+      - 'supabase/staged/CONSUMABLES_STOCK_COUNT_STATUS_V416.sql'
+      - 'package.json'
       - '.github/workflows/stock-search-toolbar-pr.yml'
   workflow_dispatch:
 permissions:
