@@ -24,7 +24,7 @@ const admin={
   assert.ok(['workshop_state','zukait_purchase_invoices','zukait_invoice_price_applications','zukait_invoice_price_reconciliations'].includes(table));
   const conditions=[],values=[];let columns='*';
   const query={select(c){assert.match(c,/^[a-z_,]+$/);columns=c;return query},eq(k,v){assert.match(k,/^[a-z_]+$/);values.push(v);conditions.push(k+'=$'+values.length);return query},is(k,v){assert.equal(v,null);assert.match(k,/^[a-z_]+$/);conditions.push(k+' is null');return query},
-   async maybeSingle(){try{const rows=(await db.query('select '+columns+' from public.'+table+(conditions.length?' where '+conditions.join(' and '):''),values)).rows;if(rows.length>1)throw Error('ambiguous row');return {data:rows[0]||null,error:null}}catch(error){return {data:null,error}}},
+   async maybeSingle(){try{const sql='select '+columns+' from public.'+table+(conditions.length?' where '+conditions.join(' and '):'');/* Match PostgREST JSON wire types, especially date YYYY-MM-DD rather than the driver Date object. */const rows=(await db.query('select to_jsonb(q) as row from ('+sql+') q',values)).rows;if(rows.length>1)throw Error('ambiguous row');return {data:rows[0]?.row||null,error:null}}catch(error){return {data:null,error}}},
    async single(){return query.maybeSingle()}};
   return query;
  }
