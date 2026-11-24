@@ -93,6 +93,10 @@ const label=(r)=>{
   return (m?.name||r.material_id)+' — '+(b?.name||r.brand_id);
 };
 const available=x=>Number(x.physical)-Number(x.reserved);
+// Only a verified inventory count can establish a real zero balance.
+// Older servers omit this flag; treat the status as unknown, never as zero.
+const countStatus=x=>x?.initialised===true?'counted':x?.initialised===false?'uncounted':'unknown';
+const counted=x=>countStatus(x)==='counted';
 const css='<style>'+
  '.zs{font-family:inherit;color:#15253c;max-width:1150px;margin:auto}.zs *{box-sizing:border-box}'+
  '.zs-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}'+
@@ -146,15 +150,20 @@ function draw(body) {
   window.openModal(markup);
 }
 function rowCard(r){
- const unit=esc(r.unit||'Liter'),a=available(r);
+ const unit=esc(r.unit||'Liter'),isCounted=counted(r),a=available(r),status=countStatus(r);
  const ids=esc(String(r.material_id)+'|'+String(r.brand_id));
+ const statusLabel=status==='uncounted'?'Opening stock not counted':'Opening count status unverified';
  return '<button type="button" class="zs-card" style="display:block;width:100%;text-align:left" data-id="'+ids+
-   '" onclick="zukStockDetail(this.dataset.id)"><div class="zs-row"><b>'+esc(label(r))+'</b>'+
-   (a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
-   '<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+fmt(r.physical)+' '+unit+
+  '" onclick="zukStockDetail(this.dataset.id)"><div class="zs-row"><b>'+esc(label(r))+'</b>'+
+  (!isCounted?'<span class="zs-pill zs-unlinked-pill">'+statusLabel+'</span>':
+   a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
+  (isCounted?'<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+fmt(r.physical)+' '+unit+
    '</b></div><div><div class="zs-muted">Reserved</div><b>'+fmt(r.reserved)+' '+unit+
-   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+'</b></div></div>'+
-   '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div></button>';
+   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+
+   '</b></div></div>'+
+   '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div>':
+   '<p class="zs-muted">Physical, available and stock value cannot be confirmed until opening-count status is verified. No zero quantity is assumed.</p>'+
+   '<div class="zs-grid zs-unlinked-grid"><div><small>Physical</small><b>—</b></div><div><small>Reserved</small><b>—</b></div><div><small>Available</small><b>—</b></div></div>')+'</button>';
 }
 function masterStockCard(x,status){
  return '<div class="zs-card zs-unlinked" data-balance-entry data-balance-kind="'+esc(status)+
@@ -185,8 +194,10 @@ function render(){
     master=masterInventory(),incomplete=view.itemsHasMore||!!view.error,
     unlinked=master.pairs.filter(p=>!known.has(p.key)),
     unpriced=master.unpriced.filter(m=>!rows.some(r=>String(r.material_id)===String(m.id))),
-    low=rows.filter(x=>available(x)>0&&available(x)<Number(x.minimum)).length,
-    out=rows.filter(x=>available(x)<=0).length,
+    low=rows.filter(x=>counted(x)&&available(x)>0&&available(x)<Number(x.minimum)).length,
+    out=rows.filter(x=>counted(x)&&available(x)<=0).length,
+    notCounted=rows.filter(x=>countStatus(x)==='uncounted').length,
+    unknownCount=rows.filter(x=>countStatus(x)==='unknown').length,
     entries=[
      ...rows.map(r=>({name:label(r),markup:'<div data-balance-entry data-balance-kind="linked" data-balance-name="'+esc(label(r))+'">'+rowCard(r)+'</div>'})),
      ...unlinked.map(p=>({name:p.name+' — '+p.brand,markup:masterStockCard(p,incomplete?'pending':'unlinked')})),
@@ -196,7 +207,7 @@ function render(){
     '<div class="zs-metric"><div class="zs-muted">Material / Brand items</div><b>'+entries.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Linked stock</div><b>'+rows.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Needs linking</div><b>'+(incomplete?'—':unlinked.length)+'</b></div></div>'+
-    '<p class="zs-muted">Linked stock: '+low+' low and '+out+' out of stock. Unlinked Master items are not counted as zero stock.</p>'+
+    '<p class="zs-muted">Count-verified linked stock only: '+low+' low and '+out+' out of stock. '+notCounted+' awaiting opening count; '+unknownCount+' with count status unverified. Unlinked materials are not counted as zero stock.</p>'+
     '<div class="zs-row" style="margin-top:12px"><h3>Stock Balance &amp; Material Master</h3>'+
     '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
     '<div class="zs-balance-tools"><label>Search material or brand<input type="search" id="zs-balance-query" autocomplete="off" value="'+esc(view.balanceQuery||'')+
@@ -242,11 +253,15 @@ function render(){
    const r=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
    if(!r){view.page='balance';render();return}
    const unit=esc(r.unit);
+   const isCounted=counted(r);
    draw('<button class="zs-btn secondary" onclick="zukStockNav(\'balance\')">← Stock Balance</button>'+
     '<div class="zs-card"><h3>'+esc(label(r))+'</h3>'+
-    [['Physical',fmt(r.physical)+' '+unit],['Reserved',fmt(r.reserved)+' '+unit],
-     ['Available',fmt(available(r))+' '+unit],['Average cost',OMR(Number(r.physical)?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit],
-     ['Stock value',OMR(r.stock_value)+' OMR'],['Minimum stock',fmt(r.minimum)+' '+unit]]
+    (!isCounted?'<p class="zs-warning">'+(countStatus(r)==='uncounted'?'Opening stock not counted':'Opening count status unavailable')+'. Physical and value totals are not confirmed.</p>':'')+
+    [['Physical',isCounted?fmt(r.physical)+' '+unit:'—'],['Reserved',isCounted?fmt(r.reserved)+' '+unit:'—'],
+     ['Available',isCounted?fmt(available(r))+' '+unit:'—'],
+     ['Average cost',isCounted?OMR(Number(r.physical)?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit:'—'],
+     ['Stock value',isCounted?OMR(r.stock_value)+' OMR':'—'],
+     ['Minimum stock',fmt(r.minimum)+' '+unit]]
      .map(([k,v])=>'<div class="zs-row" style="padding:5px 0"><span class="zs-muted">'+k+'</span><b>'+v+'</b></div>').join('')+'</div>'+
      '<button class="zs-btn" onclick="zukStockNav(\'add\')">Add Purchased Stock</button> '+
      (manager()?'<button class="zs-btn secondary" onclick="zukStockNav(\'adjust\')">Stock Adjustment</button>':''));
@@ -309,6 +324,7 @@ function render(){
    const r=view.report;
    draw('<div class="zs-row"><h3>Stock Reports</h3><button class="zs-btn secondary" onclick="zukStockNav(\'reports\',true)">Refresh</button></div>'+
      (r?'<div class="zs-card">'+
+     '<p class="zs-muted">Report totals are server-reported. Verify opening-count status separately before interpreting a zero balance as physically out of stock.</p>'+
      '<div class="zs-row"><span>Current stock valuation</span><b>'+OMR(r.valuation)+' OMR</b></div>'+
      '<div class="zs-row"><span>Tracked material and brand pairs</span><b>'+esc(r.items)+'</b></div>'+
      '<div class="zs-row"><span>Low stock</span><b>'+esc(r.low)+'</b></div>'+
