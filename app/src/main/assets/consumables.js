@@ -118,6 +118,43 @@
       return {...base,action,oldRate:same.length?Number(same[0].pricePerUnit):current?Number(current.pricePerUnit):null,priceId:same[0]?.id||null,affected:affected.length,jobCards:[...new Set(affected.map(x=>x.jobCard))],effectiveFrom:from};
     });
   }
+  // Candidate only: caller must fetch the authoritative invoice and workshop
+  // revision under one server transaction, then persist the returned patch
+  // atomically with its audit. Never call from an untrusted client to save.
+  function prepareInvoicePriceApply(state,invoice,input,actor){
+    assertRole(actor?.role,true);
+    if(!String(actor?.id||'').trim())throw Error('MANAGER_ID_REQUIRED');
+    const reason=String(input?.reason||'').trim(),rid=String(input?.requestId||'').trim();
+    if(reason.length<5||reason.length>500)throw Error('REASON_REQUIRED');
+    if(!rid||rid.length>200)throw Error('REQUEST_ID_REQUIRED');
+    if(!Array.isArray(input?.review)||!input.review.length)throw Error('REVIEW_REQUIRED');
+    const staged={consumables:clone(state?.consumables||{})},c=ensureState(staged);
+    const fresh=invoicePriceReview(staged,invoice,actor);
+    const fingerprint=JSON.stringify([invoice.id,invoice.revision,reason,input.review]);
+    const prior=c.audit.find(a=>a.type==='INVOICE_PRICE_APPLIED'&&a.requestId===rid);
+    if(prior){
+      if(prior.fingerprint!==fingerprint)throw Error('REQUEST_ID_CONFLICT');
+      return {consumables:clone(state.consumables),receipt:clone(prior.receipt),replayed:true};
+    }
+    // A corrected or cancelled source needs a separate reconciliation flow;
+    // don't reapply a newer revision over independently changed price history.
+    if(c.audit.some(a=>a.type==='INVOICE_PRICE_APPLIED'&&a.invoiceId===invoice.id))
+      throw Error('INVOICE_PRICE_ALREADY_APPLIED_RECONCILIATION_REQUIRED');
+    if(JSON.stringify(fresh)!==JSON.stringify(input.review))throw Error('STALE_PRICE_REVIEW');
+    if(fresh.some(p=>p.action==='blocked'))throw Error('PRICE_REVIEW_BLOCKED');
+    const changes=fresh.filter(p=>p.action==='create'||p.action==='correct');
+    if(!changes.length)throw Error('NO_PRICE_CHANGES');
+    const sourceReason='Invoice '+invoice.id+' rev '+invoice.revision+': '+reason;
+    const receipts=changes.map(p=>{
+      const row=p.action==='create'
+        ?setPrice(staged,{materialId:p.materialId,brandId:p.brandId,pricePerUnit:p.rate,effectiveFrom:p.effectiveFrom,reason:sourceReason},actor)
+        :managerCorrectPrice(staged,p.priceId,p.rate,actor,sourceReason);
+      return {materialId:p.materialId,brandId:p.brandId,priceId:row.id,action:p.action,rate:p.rate,effectiveFrom:row.effectiveFrom};
+    });
+    const receipt={invoiceId:invoice.id,invoiceRevision:invoice.revision,requestId:rid,changes:receipts};
+    c.audit.push({id:uid('audit'),type:'INVOICE_PRICE_APPLIED',entityId:invoice.id,invoiceId:invoice.id,invoiceRevision:invoice.revision,requestId:rid,fingerprint,by:actor.id,at:Date.now(),reason,receipt:clone(receipt)});
+    return {consumables:clone(c),receipt,replayed:false};
+  }
   function cleanLines(state,lines){
     const c=ensureState(state); if(!Array.isArray(lines)||!lines.length)throw new Error('MATERIAL_LINES_REQUIRED');
     return lines.map((l,i)=>{
@@ -228,5 +265,5 @@
     const keys=['jobs','assign','sessions','corrections','jobEdits','suggestedEdits','reworks','requests','additionalActions','lastActions','overtimeNotices','leaves','leaveAudit'];
     const out={}; for(const k of keys)out[k]=clone(state[k]===undefined?null:state[k]); return JSON.stringify(out);
   }
-  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,invoicePriceReview,managerCorrectPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
+  return {DEPT,TYPES,UNITS,CATEGORIES,ensureState,addMaterial,addBrand,setPrice,invoicePriceReview,prepareInvoicePriceApply,managerCorrectPrice,priceAt,issue,allowance,finishActual,managerCorrectIssue,managerCorrectActual,managerRecalculateActualPrices,managerVoid,managerReopenActual,monthlyExpense,timeControlFingerprint};
 });
