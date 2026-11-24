@@ -84,7 +84,12 @@ export async function accountantLeaveCommand(admin,user,body,now,computeLiveStat
  if(source.error)throw source.error;
  const current=source.data;
  const prior=entries(current.data?.leaveAudit).find(x=>x?.requestId===requestId);
- if(prior)return JSON.stringify(prior.command)===JSON.stringify(body.command)?{status:200,body:{ok:true,leave_id:prior.leaveId,replayed:true}}:result('leave_request_conflict',409);
+ if(prior){
+  const saved=prior.command, command=body.command;
+  const same=saved&&command&&Object.keys(saved).length===Object.keys(command).length&&
+    Object.keys(saved).every(key=>Object.hasOwn(command,key)&&saved[key]===command[key]);
+  return prior.by===user.id&&same?{status:200,body:{ok:true,leave_id:prior.leaveId,replayed:true}}:result('leave_request_conflict',409);
+ }
  if(current.revision!==body.expected_revision)return result('leave_revision_conflict',409);
  const targetId=operation==='CANCEL'?current.data?.leaves?.find(x=>String(x?.id)===String(body.command.leave_id))?.emp:
   String(body.command?.emp||current.data?.leaves?.find(x=>String(x?.id)===String(body.command?.leave_id))?.emp||'');
@@ -97,7 +102,9 @@ export async function accountantLeaveCommand(admin,user,body,now,computeLiveStat
  if(!outcome.body.ok)return outcome;
  outcome.data.leaveAudit.at(-1).command=JSON.parse(JSON.stringify(body.command));
  const next=current.revision+1;
- const committed=await admin.rpc('zukait_commit_workshop_state_v2',{p_expected_revision:current.revision,
+ const useCompact=globalThis.Deno?.env.get('SUPABASE_URL')?.replace(/\/$/,'')==='https://pjknotnjkufadqavcmii.supabase.co' &&
+  globalThis.Deno?.env.get('ZUKAIT_COMPACT_LEAVE_ENABLED')!=='false';
+ const committed=await admin.rpc(useCompact?'zukait_commit_workshop_leave':'zukait_commit_workshop_state_v2',{p_expected_revision:current.revision,
   p_data:outcome.data,p_changed_by:user.id,p_live:computeLiveStatus(outcome.data,next,user.id)});
  if(committed.error)throw committed.error;
  if(!committed.data?.ok)return result('leave_revision_conflict',409);

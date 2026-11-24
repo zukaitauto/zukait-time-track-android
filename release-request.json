@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner requested V420 publication and deferred backup restore. Production additive schema verified. Exact signed candidate cannot replace current workshop-api without resolving a confirmed six-active-employee authentication compatibility issue. Physical acceptance and authenticated server smoke remain pending. Staff publication approval remains false.",
+  "reason": "V420 corrected client signed successfully. Production schema deployed; backup restore deferred by owner. Preserve live compact leave and accountant read coalescing before backend cutover; physical tests, live authenticated smoke and publication gate remain outstanding.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -49,11 +49,18 @@
     "verifiedDate": "2026-11-24"
   },
   "productionEdgePreflight": {
-    "status": "BLOCKED_EXISTING_EMPLOYEE_PASSWORD_CHANGE_REQUIREMENTS",
+    "status": "AUTH_COMPATIBILITY_FIXED_ADDITIONAL_LIVE_PARITY_FINDINGS",
     "currentEdgeVersion": 151,
     "currentStaffAuthVersion": 17,
     "affectedActiveEmployeeCount": 6,
     "checkedDate": "2026-11-24",
-    "details": "Current production workshop-api applies must_change only to Receptionist and Accountant. Pinned V420 rejects all must_change users. Six active Employee accounts would be denied. Production Edge has not been replaced; no credentials changed."
+    "details": "112 staff role/session test cases passed in signed build. Read-only parity review found deployed compact leave RPC and actor-bound leave replay missing from candidate; preserve those existing production behaviors and accountant read coalescing. Existing vehicle lookup and checklist link correction RPCs are absent in production; do not claim those routes deployed. No staff endpoint replaced."
+  },
+  "correctedSignedCandidate": {
+    "sourceCommit": "6f617771569536df9526b926e9e4857378b7e488",
+    "signedAcceptanceRun": 45466238004,
+    "artifactId": 14955790909,
+    "sessionCompatibilityCases": 112,
+    "status": "VERIFIED_SIGNED_CLIENT_BACKEND_PARITY_REQUIRES_FOLLOWUP"
   }
 }

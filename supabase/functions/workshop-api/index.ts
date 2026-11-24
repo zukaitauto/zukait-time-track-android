@@ -1363,7 +1363,7 @@ Deno.serve(async (req: Request) => {
     // Accountant leave changes are allowed only through the audited command handler;
     // generic workshop save and Manager operations remain forbidden for Accountant users.
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
-      try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,Date.now(),{computeLiveStatus,coalesceContextReads:Deno.env.get('ZUKAIT_ACCOUNTANT_COALESCE_READS')==='true',contextProject:Deno.env.get('SUPABASE_URL')||''});return reply(result.body,result.status);}
+      try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,Date.now(),{computeLiveStatus,coalesceContextReads:Deno.env.get('ZUKAIT_ACCOUNTANT_COALESCE_READS')==='true'||(Deno.env.get('SUPABASE_URL')?.replace(/\/$/,'')==='https://pjknotnjkufadqavcmii.supabase.co'&&Deno.env.get('ZUKAIT_ACCOUNTANT_COALESCE_READS')!=='false'),contextProject:Deno.env.get('SUPABASE_URL')||''});return reply(result.body,result.status);}
       catch(error){const result=accountantError(error);return reply(result.body,result.status);}
     }
 
