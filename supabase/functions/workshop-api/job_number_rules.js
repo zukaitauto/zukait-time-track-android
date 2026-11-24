@@ -12,6 +12,7 @@ export function jobNumberCodec(rows=[]){
   const jobObject=['jobs','job','expectedJob','linked_job'].includes(parent)||('no' in v&&['jobType','make','reg','receptionNo'].some(k=>k in v));
   return Object.fromEntries(Object.entries(v).map(([k,value])=>[
    dictionaries.has(parent)?String(ref(k,map)):k,
+   k==='jobCards'&&Array.isArray(value)&&'invoiceId' in v&&'materialId' in v?value.map(number=>ref(number,map)):
    references.has(k)||k==='no'&&jobObject||k==='number'&&parent==='manualJobCard'||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(v.eventType||v.event_type||''))?walk(ref(value,map),map,k):walk(value,map,k)
   ]));
  }
