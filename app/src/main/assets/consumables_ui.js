@@ -546,14 +546,16 @@ window.consOpenMaster=function(preset='',section=''){
  '<button class="blue" type="button" onclick="consCreateMaterial()">CREATE MATERIAL</button></section>'+
  '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
  '<p class="notice">Previous effective-dated prices remain in history.</p>'+
- '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest()"></label><datalist id="cmMaterialChoices"></datalist>'+
- '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off"></label><datalist id="cmBrandChoices"></datalist>'+
+ '<label class="cons-master-field">Search Material + Brand<input id="cmPairSearch" type="search" autocomplete="off" placeholder="Search material or brand" oninput="consMasterPairSearch()" onfocus="consMasterPairSearch()"></label><div id="cmPairResults" class="cons-material-results hidden"></div>'+
+ '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest();consMasterPairChanged()"></label><datalist id="cmMaterialChoices"></datalist>'+
+ '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off" oninput="consMasterPairChanged()"></label><datalist id="cmBrandChoices"></datalist>'+
+ '<p id="cmLastPrice" class="notice" role="status">Select a material and brand to view its current price.</p>'+
  '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
- '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label>'+
+ '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+consOmanPriceDate()+'"></label>'+
  '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button></section>'+
  '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
- '<div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
- '<div id="cmList"></div><button class="secondary" type="button" onclick="consPrintMaster()">PRINT MATERIAL &amp; PRICE LIST</button></div>',
+ '<h3 id="cmListHeading">Material &amp; Price List</h3><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
+ '<div id="cmList"></div><button class="secondary" type="button" onclick="consPrintMaster()">PRINT / PDF PRICE LIST</button></div>',
  'openStockManagement()');
  const d=document.getElementById('cmNewDepartment');
  if(d)d.value=window.consNewItemDefaultDepartment;
@@ -563,7 +565,7 @@ window.consOpenMaster=function(preset='',section=''){
  if(section==='create'||section==='price'){
   const heading=document.getElementById(section==='create'?'cmCreateHeading':'cmPriceHeading');
   if(window.matchMedia?.('(min-width:701px)')?.matches===true||section==='price')heading?.scrollIntoView?.({block:'nearest'});
-  const input=document.getElementById(section==='create'?'cmNewMaterial':'cmMaterial');
+  const input=document.getElementById(section==='create'?'cmNewMaterial':'cmPairSearch');
   if(window.matchMedia?.('(min-width:701px)')?.matches===true)input?.focus?.({preventScroll:true});
  }
 };
@@ -598,6 +600,50 @@ window.consMasterSuggest=function(){
  const brands=m?c.brands.filter(b=>b.active!==false&&c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id)):c.brands.filter(b=>b.active!==false);
  if(bl)bl.innerHTML=brands.map(b=>'<option value="'+esc(b.name)+'"></option>').join('');
 };
+function consMasterExactPair(){
+ const c=C().ensureState(state),norm=v=>String(v||'').trim().toLowerCase();
+ const mn=norm(document.getElementById('cmMaterial')?.value),bn=norm(document.getElementById('cmBrand')?.value);
+ const materials=c.materials.filter(x=>x.active!==false&&norm(x.name)===mn),brands=c.brands.filter(x=>x.active!==false&&norm(x.name)===bn);
+ const search=document.getElementById('cmPairSearch');
+ const m=materials.find(x=>x.id===search?.dataset.mid)||(materials.length===1?materials[0]:null);
+ const b=brands.find(x=>x.id===search?.dataset.bid)||(brands.length===1?brands[0]:null);
+ return {c,m,b,ambiguous:materials.length>1&&!m||brands.length>1&&!b};
+}
+window.consMasterPairSearch=function(){
+ const input=document.getElementById('cmPairSearch'),out=document.getElementById('cmPairResults');
+ if(!input||!out)return;
+ const c=C().ensureState(state),q=String(input.value||'').toLowerCase().trim().split(/\s+/).filter(Boolean);
+ const materials=c.materials.filter(m=>m.active!==false),brands=c.brands.filter(b=>b.active!==false),rows=[],seen=new Set();
+ for(const p of c.prices){
+   if(!p||p.voided)continue;
+   const m=materials.find(x=>x.id===p.materialId),b=brands.find(x=>x.id===p.brandId);
+   if(!m||!b)continue;
+   const key=JSON.stringify([m.id,b.id]);
+   if(seen.has(key))continue;seen.add(key);
+   if(!q.every(t=>(m.name+' '+b.name+' '+m.unit).toLowerCase().includes(t)))continue;
+   rows.push({m,b,p:C().priceAt(state,m.id,b.id,Date.now())});
+ }
+ rows.sort((a,b)=>a.m.name.localeCompare(b.m.name)||a.b.name.localeCompare(b.b.name));
+ out.innerHTML=rows.slice(0,50).map(({m,b,p})=>'<button type="button" class="cons-material-result" data-mid="'+esc(m.id)+'" data-bid="'+esc(b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)"><b>'+esc(m.name)+'</b><span>'+esc(b.name)+' · '+esc(m.unit)+'</span><small>'+(p?'OMR '+Number(p.pricePerUnit).toFixed(3):'No effective price yet')+'</small></button>').join('')||'<div class="cons-jc-empty">No matching priced pair. Enter an existing material and a new brand below.</div>';
+ out.classList.remove('hidden');
+};
+window.consMasterSelectPair=function(mid,bid){
+ const c=C().ensureState(state),m=c.materials.find(x=>x.id===mid&&x.active!==false),b=c.brands.find(x=>x.id===bid&&x.active!==false);
+ if(!m||!b)return;
+ const input=document.getElementById('cmPairSearch');
+ if(input){input.value=m.name+' · '+b.name;input.dataset.mid=m.id;input.dataset.bid=b.id}
+ document.getElementById('cmMaterial').value=m.name;
+ document.getElementById('cmBrand').value=b.name;
+ document.getElementById('cmPairResults')?.classList.add('hidden');
+ consMasterSuggest();consMasterPairChanged();
+ document.getElementById('cmPrice')?.scrollIntoView?.({block:'nearest'});
+};
+window.consMasterPairChanged=function(){
+ const {m,b,ambiguous}=consMasterExactPair(),last=document.getElementById('cmLastPrice'),price=document.getElementById('cmPrice');
+ const p=m&&b?C().priceAt(state,m.id,b.id,Date.now()):null;
+ if(price)price.value=p?Number(p.pricePerUnit).toFixed(3):'';
+ if(last)last.textContent=ambiguous?'Select the exact material and brand from search results.':p?'Last effective price: OMR '+Number(p.pricePerUnit).toFixed(3)+' / '+m.unit+' · From '+consOmanPriceDate(p.effectiveFrom):'New material / brand price. Enter the price per unit.';
+};
 window.consSaveMaster=function(){
  if(role()!=='Manager')return;
  const mn=String(document.getElementById('cmMaterial')?.value||'').trim(),
@@ -606,34 +652,36 @@ window.consSaveMaster=function(){
   price=Number(rawPrice),date=document.getElementById('cmDate')?.value;
  if(!mn||!bn||!rawPrice||!Number.isFinite(price)||price<0||!date)
   return alert('Enter Material, Brand, Price and Effective From date.');
- const c=C().ensureState(state),m=c.materials.find(x=>x.active!==false&&String(x.name||'').trim().toLowerCase()===mn.toLowerCase());
+ const {c,m,b:existingBrand,ambiguous}=consMasterExactPair();
+ if(ambiguous)return alert('Select the exact material and brand from search results.');
  if(!m)return alert('Create the material first, then add its Brand & Price here.');
  const reason=prompt('Reason for this price entry/change:');
  if(reason===null)return;
  if(!reason.trim())return alert('Reason is required for every price entry/change.');
  try{
-  let b=c.brands.find(x=>String(x.name).toLowerCase()===bn.toLowerCase()&&x.active!==false);
+  let b=existingBrand;
+  const effective=new Date(date+'T00:00:00+04:00').getTime();
+  if(!Number.isFinite(effective))return alert('Choose a valid effective date.');
+  if(b&&c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id&&consOmanPriceDate(p.effectiveFrom)===date))return alert('A price period already exists on this Oman date. Review its price history before making a correction.');
   if(!b)b=C().addBrand(state,{name:bn},{id:me?.id||'',role:'Manager'});
-  const effective=new Date(date+'T00:00:00').getTime(),
-   hasLater=c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id&&p.effectiveFrom>effective);
+  const hasLater=c.prices.some(p=>!p.voided&&p.materialId===m.id&&p.brandId===b.id&&p.effectiveFrom>effective);
   if(hasLater&&!confirm('This is a backdated price before a newer price period. Affected Actual costs will update from this date up to the next price period. Continue?'))return;
   C().setPrice(state,{materialId:m.id,brandId:b.id,pricePerUnit:price,effectiveFrom:effective,reason:reason.trim()},{id:me?.id||'',role:'Manager'});
   if(typeof save==='function')save();
-  const p=document.getElementById('cmPrice');if(p)p.value='';
-  consRenderMaster();
+  consMasterPairChanged();consMasterSuggest();consRenderMaster();
   const status=document.getElementById('cmSaveMessage');if(status)status.textContent='Brand price saved. Previous periods remain in price history.';
  }catch(e){alert(String(e?.message||e))}
 };
 window.consRenderMaster=function(){
  const out=document.getElementById('cmList');if(!out)return;const c=C().ensureState(state),rows=[];
  c.materials.filter(x=>x.active!==false).forEach(m=>c.brands.filter(x=>x.active!==false).forEach(b=>{
-  const ps=c.prices.filter(p=>p.materialId===m.id&&p.brandId===b.id&&!p.voided).sort((a,z)=>Number(z.effectiveFrom)-Number(a.effectiveFrom));if(ps.length)rows.push({m,b,p:ps[0],count:ps.length});
+  const ps=c.prices.filter(p=>p.materialId===m.id&&p.brandId===b.id&&!p.voided).sort((a,z)=>Number(z.effectiveFrom)-Number(a.effectiveFrom));if(ps.length)rows.push({m,b,p:C().priceAt(state,m.id,b.id,Date.now()),count:ps.length});
  }));
  rows.sort((a,b)=>a.m.name.localeCompare(b.m.name,undefined,{numeric:true,sensitivity:'base'})||a.b.name.localeCompare(b.b.name,undefined,{numeric:true,sensitivity:'base'}));
  const query=String(document.getElementById('cmListSearch')?.value||'').trim().toLocaleLowerCase();
- const filtered=query?rows.filter(r=>String(r.m.name||'').toLocaleLowerCase().includes(query)||String(r.b.name||'').toLocaleLowerCase().includes(query)):rows;
+ const filtered=query?rows.filter(r=>query.split(/\s+/).every(t=>(r.m.name+' '+r.b.name).toLocaleLowerCase().includes(t))):rows;
  out.innerHTML=filtered.length?'<div class="cons-table"><table><tr><th>No.</th><th>Material</th><th>Brand</th><th>Category</th><th>Used In</th><th>Unit</th><th>Price / Unit</th><th>Effective From</th><th>History</th><th>Action</th></tr>'+
- filtered.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.m.name)+'</td><td>'+esc(r.b.name)+'</td><td>'+esc(r.m.category||'Consumable')+'</td><td>'+esc(r.m.department==='Both'?'Shared':r.m.department==='Mechanical'?'Mechanical':'Paint')+'</td><td>'+esc(r.m.unit)+'</td><td>OMR '+Number(r.p.pricePerUnit).toFixed(3)+'</td><td>'+esc(new Date(r.p.effectiveFrom).toLocaleDateString())+'</td><td>'+r.count+'</td><td><button class="blue" type="button" onclick="consEditMasterRow(\''+esc(r.m.id)+'\',\''+esc(r.b.id)+'\',\''+esc(r.p.id)+'\')">EDIT</button><button class="green" type="button" onclick="consOpenPriceChange(\''+esc(r.m.id)+'\',\''+esc(r.b.id)+'\')">CHANGE PRICE</button></td></tr>').join('')+'</table></div>':'<div class="notice">'+(query?'No matching materials or brands.':'No material prices configured yet.')+'</div>';
+ filtered.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.m.name)+'</td><td>'+esc(r.b.name)+'</td><td>'+esc(r.m.category||'Consumable')+'</td><td>'+esc(r.m.department==='Both'?'Shared':r.m.department==='Mechanical'?'Mechanical':'Paint')+'</td><td>'+esc(r.m.unit)+'</td><td>'+(r.p?'OMR '+Number(r.p.pricePerUnit).toFixed(3):'Not yet effective')+'</td><td>'+(r.p?esc(consOmanPriceDate(r.p.effectiveFrom)):'—')+'</td><td>'+r.count+'</td><td><button class="blue" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)">OPEN</button><button class="green" type="button" data-mid="'+esc(r.m.id)+'" data-bid="'+esc(r.b.id)+'" onclick="consOpenPriceChange(this.dataset.mid,this.dataset.bid)">CHANGE PRICE</button></td></tr>').join('')+'</table></div>':'<div class="notice">'+(query?'No matching materials or brands.':'No material prices configured yet.')+'</div>';
 };
 
 function consOmanPriceDate(at=Date.now()){return new Date(Number(at)+4*3600000).toISOString().slice(0,10)}
@@ -698,7 +746,7 @@ window.consSaveMasterRow=function(mid,bid,pid){
 window.consEditMasterNames=function(mid,bid){if(role()!=='Manager')return;const c=C().ensureState(state),m=c.materials.find(x=>String(x.id)===String(mid)&&x.active!==false),b=c.brands.find(x=>String(x.id)===String(bid)&&x.active!==false);if(!m||!b)return alert('Material / Brand record not found.');const mn=prompt('Correct Material Name / spelling',m.name||'');if(mn===null)return;const bn=prompt('Correct Brand Name / spelling',b.name||'');if(bn===null)return;const newM=mn.trim(),newB=bn.trim();if(!newM||!newB)return alert('Material and Brand names cannot be blank.');if(newM===m.name&&newB===b.name)return alert('No name change detected.');const duplicateM=c.materials.find(x=>x!==m&&x.active!==false&&String(x.name||'').trim().toLowerCase()===newM.toLowerCase());if(duplicateM)return alert('Another Material already uses this name. Use that existing Material instead of creating a duplicate.');const duplicateB=c.brands.find(x=>x!==b&&x.active!==false&&String(x.name||'').trim().toLowerCase()===newB.toLowerCase());if(duplicateB)return alert('Another Brand already uses this name. Use that existing Brand instead of creating a duplicate.');const reason=prompt('Reason for Material / Brand correction (required)');if(reason===null)return;if(!reason.trim())return alert('Reason is required.');const before={materialName:m.name,brandName:b.name};m.name=newM;b.name=newB;m.nameCorrectedAt=Date.now();m.nameCorrectedBy=me?.id||'';b.nameCorrectedAt=Date.now();b.nameCorrectedBy=me?.id||'';if(Array.isArray(c.audit))c.audit.push({id:'audit_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type:'MATERIAL_BRAND_NAME_CORRECTED',entityId:m.id,brandId:b.id,by:me?.id||'',at:Date.now(),reason:reason.trim(),before,after:{materialName:newM,brandName:newB}});if(typeof save==='function')save();consRenderMaster();alert('Material / Brand name corrected. Existing IDs, prices and finalized costing remain unchanged.');};
 window.consEditMasterPrice=function(priceId){if(role()!=='Manager')return;const c=C().ensureState(state),p=c.prices.find(x=>x.id===priceId&&!x.voided);if(!p)return alert('Price record not found.');const m=c.materials.find(x=>x.id===p.materialId)||{},b=c.brands.find(x=>x.id===p.brandId)||{};const raw=prompt('Edit current price for '+(m.name||'Material')+' / '+(b.name||'Brand')+' ('+(m.unit||'unit')+')',Number(p.pricePerUnit).toFixed(3));if(raw===null)return;const price=Number(raw);if(!Number.isFinite(price)||price<0)return alert('Enter a valid Price / Unit.');if(price===Number(p.pricePerUnit))return alert('No price change detected.');const reason=prompt('Reason for correcting this price (required)');if(reason===null)return;if(!reason.trim())return alert('Reason is required.');try{C().managerCorrectPrice(state,p.id,price,me,reason.trim());if(typeof save==='function')save();consRenderMaster();alert('Price updated. Affected Actual costs recalculated from its effective date.')}catch(e){alert(String(e?.message||e))}};
 window.consChangeMaterialCategory=function(mid){if(role()!=='Manager')return;const c=C().ensureState(state),m=c.materials.find(x=>x.id===mid&&x.active!==false);if(!m)return;const next=String(m.category||'Consumable')==='Paint'?'Consumable':'Paint';if(!confirm('Change '+m.name+' category from '+(m.category||'Consumable')+' to '+next+'? This changes Paint Report classification but does not change historical quantities or prices.'))return;m.category=next;m.categoryChangedAt=Date.now();m.categoryChangedBy=me?.id||'';if(Array.isArray(c.audit))c.audit.push({id:'audit_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type:'MATERIAL_CATEGORY_CHANGED',entityId:m.id,by:me?.id||'',at:Date.now(),after:{category:next}});if(typeof save==='function')save();consRenderMaster()};
-window.consPrintMaster=function(){const x=document.getElementById('cmList');if(!x)return;const w=consPrintableWindow('Painting Material Price List','<h2>Painting Consumables — Material & Price List</h2>'+x.innerHTML);if(!w)return alert('Allow pop-ups to print.');w.focus();w.print()};
+window.consPrintMaster=function(){const x=document.getElementById('cmList'),q=document.getElementById('cmListSearch');if(!x)return;const previous=q?.value||'';let copy;try{if(q)q.value='';consRenderMaster();copy=x.cloneNode(true);copy.querySelectorAll('tr').forEach(row=>row.lastElementChild?.remove());}finally{if(q)q.value=previous;consRenderMaster()}const w=consPrintableWindow('Material Price List','<h2>ZUKAIT — Material &amp; Price List</h2><p>Current effective prices as of '+esc(consOmanPriceDate())+'</p>'+copy.innerHTML);if(!w)return alert('Allow pop-ups to print or save PDF.');w.focus();w.print()};
 window.consOpenMaterialSearch=function(){
  if(role()!=='Manager')return;const c=C().ensureState(state);
  modal('Search Material','<div class="cons-subnav"><button class="secondary" type="button" onclick="openPaintingConsumables()">← BACK TO CONSUMABLES</button></div><div class="cons-entry-shell"><div class="cons-searchbar"><select id="csmMaterial" onchange="consMaterialHistory()"><option value="">Select Material</option>'+c.materials.filter(x=>x.active!==false).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.unit)+'</option>').join('')+'</select><button class="blue" onclick="consMaterialHistory()">VIEW HISTORY</button></div><div id="csmResult" class="notice">Select a material to view brands and complete effective-date price history.</div></div>');
@@ -1017,7 +1065,7 @@ body.cons-master-open #cmList{max-height:62vh;overflow:auto}
 #consMasterWorkspace.cons-master-focused .cons-master-form>button{border:0!important;border-radius:12px!important;color:#fff!important;background:#205bcd!important;min-height:52px!important;font-size:16px!important;font-weight:850!important;text-align:center!important;box-shadow:0 3px 11px #1d55aa1d!important;margin-top:7px}
 #consMasterWorkspace.cons-master-focused.cons-master-price .cons-master-form>button{background:#086eaa!important}
 #consMasterWorkspace.cons-master-focused .cons-master-form>button:focus-visible{outline:3px solid #6ca6ff!important;outline-offset:3px!important}
-#consMasterWorkspace.cons-master-focused>.cons-searchbar,#consMasterWorkspace.cons-master-focused>#cmList,#consMasterWorkspace.cons-master-focused>button.secondary{display:none!important}
+#consMasterWorkspace.cons-master-create>.cons-searchbar,#consMasterWorkspace.cons-master-create>#cmList,#consMasterWorkspace.cons-master-create>button.secondary,#consMasterWorkspace.cons-master-create>#cmListHeading{display:none!important}
 #consMasterWorkspace.cons-master-focused>#cmSaveMessage{background:#f3f9ff!important;border:1px solid #d5e8f5!important;border-radius:10px!important;padding:12px!important;font-size:13px!important;line-height:1.4!important;color:#3a5b76!important}
 @media(min-width:901px){
  .modal-backdrop:has(#consMasterWorkspace.cons-master-focused) .modal-box{width:min(740px,96vw)!important;max-width:740px!important}
