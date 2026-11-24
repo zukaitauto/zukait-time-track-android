@@ -63,3 +63,44 @@ const lateReplay=transition(afterPause.data,employee,original,4000);assert.equal
 assert.equal(transition(first.data,{id:'EMP002',role:'Employee'},original,2000).code,'employee_time_action_id_conflict');
 assert.match(api,/\["57014","55P03","53300","53400","PGRST003"\]\.includes\(databaseCode\)/,'normalized origin errors must map to retryable busy responses');
 console.log('PASS: upstream errors sanitized without replay; durable employee retry, lost receipt deduplication, actor isolation, corrupt/full storage safety and privacy cleanup retention.');
+
+
+ // A valid committed receipt must unblock employee controls even if the
+ // follow-up snapshot read is still pending. A stale live read must not
+ // regress the server-confirmed timer row.
+ const cloudSource=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
+ const timeSource=cloudSource.slice(cloudSource.indexOf('  async function employeeTimeAction('),cloudSource.indexOf('  async function editSublet('));
+ const liveSource=cloudSource.slice(cloudSource.indexOf('  async function pullLiveStatus('),cloudSource.indexOf('  function payloadState('));
+ let releasePull,releaseLive;
+ const pullGate=new Promise(resolve=>{releasePull=resolve});
+ const liveGate=new Promise(resolve=>{releaseLive=resolve});
+ const context={
+   me:{id:'EMP001',role:'Employee'},sessionEpoch:1,dirtyGeneration:0,cloudRevision:1,
+   liveStatusRevision:1,liveStatusRows:[],liveStatusLastFetchedAt:0,liveStatusServerTime:0,
+   liveInFlight:false,cloudDirty:false,lastSyncedState:{},state:{sessions:[],assign:[]},
+   navigator:{onLine:true},stale:epoch=>epoch!==1,clone:structuredClone,
+   REV_KEY:'rev',DIRTY_KEY:'dirty',PENDING_KEY:'pending',localStorage:{setItem(){},removeItem(){}},
+   persistLocal(){},publishLiveStatus(){},setServerConnection(){},pull:()=>pullGate,
+   sessionToken:()=> 'fixture',liveRole:()=>true,pollWarnings:new Set(),warnPoll(){},
+   api:async command=>command.action==='live_status'?liveGate:{
+     ok:true,server_revision:2,server_time:1000,
+     audit:{confirmed:true,id:command.action_id,emp:'EMP001',type:command.event_type},
+     session:{id:'s1',emp:'EMP001',start:1000},
+     assignment:{id:'a1',emp:'EMP001'},closed_sessions:[],closed_assignments:[],
+     live_row:{employee_id:'EMP001',status:'Working',session_id:'s1'}
+   }
+ };
+ vm.runInNewContext(timeSource+'\n'+liveSource,context);
+ const oldLiveRead=context.pullLiveStatus();
+ try{
+   const confirmed=await Promise.race([
+     context.employeeTimeAction({event_type:'START',action_id:'start-1'}),
+     new Promise((_,reject)=>setTimeout(()=>reject(Error('Confirmed timer action waited on snapshot read')),250))
+   ]);
+   assert.equal(confirmed.ok,true);
+   assert.equal(context.state.sessions[0].id,'s1');
+   assert.equal(context.liveStatusRevision,2);
+   releaseLive({ok:true,revision:1,rows:[{employee_id:'EMP001',status:'Idle'}]});
+   assert.equal(await oldLiveRead,false);
+   assert.equal(context.liveStatusRows[0].status,'Working');
+ }finally{releaseLive({ok:true,revision:1,rows:[]});releasePull()}
