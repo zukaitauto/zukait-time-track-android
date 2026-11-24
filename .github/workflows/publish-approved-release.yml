@@ -142,7 +142,10 @@ jobs:
             test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "56c377a3809b678f4d91555580ca8723e5c7ccb9" || {
               echo "::error::V420 scoped backup-deferral verifier drift"; exit 1;
             }
-            EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude).github/workflows/publish-approved-release.yml')
+            test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "1bfe94874495133d1eaa9ef4ada82251904c9d22" || {
+              echo "::error::V420 scoped release-fixture drift"; exit 1;
+            }
+            EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude).github/workflows/publish-approved-release.yml' ':(exclude)tests/reception-v305-acceptance.mjs')
           fi
           if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . "${EXCLUDES[@]}"; then
             echo "Production source drift detected after approved source commit:"

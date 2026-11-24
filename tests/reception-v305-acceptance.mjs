@@ -11,12 +11,12 @@ assert.equal(required.length,7);
 if (!request.approvedForStaff) assert.throws(()=>validate(request,actual),/Staff approval required/);
 else if (request.releaseScope==='standard') {
  assert.equal(validate(request,actual),true,'Approved standard release requires all seven evidenced gates');
-} else if(request.versionName==='V420'&&request.backupRestoreDeferral&&required.filter(key=>key!=='fresh_backup_restored').every(key=>actual.checks[key]?.passed===true)) {
+} else if(request.versionName==='V420'&&request.backupRestoreDeferral&&required.filter(key=>key!=='fresh_backup_restored'&&!request.physicalDeviceDeferral?.checks.includes(key)).every(key=>actual.checks[key]?.passed===true)) {
  assert.equal(validate(request,actual),true,'V420 explicit backup deferral still requires six verified gates');
 } else if (required.some(key=>actual.checks[key]?.passed!==true)) {
  assert.throws(()=>validate(request,actual),'Incomplete evidence must not validate under another release scope');
 } else assert.equal(validate(request,actual),true);
-const good={...request,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
+const good={...request,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
 const complete={...actual,versionName:good.versionName,versionCode:good.versionCode,sourceCommit:good.sourceCommit,checks:Object.fromEntries(required.map(k=>[k,{passed:true,evidence:'docs/QA-'+k+'.md',verifiedBy:'QA Reviewer',verifiedAt:'2026-10-10T05:00:00Z'}]))};
 assert.equal(validate(good,complete),true,'Synthetic complete attestation must validate');
 for(const key of required) {
@@ -72,9 +72,12 @@ if(request.versionName==='V420'&&request.backupRestoreDeferral){
  const v420={...request,approvedForStaff:true,approvedAt:'2026-11-24T19:00:00Z',publishNonce:'fixture-only-v420'};
  const v420Evidence={...complete,versionName:'V420',versionCode:383,sourceCommit:v420.sourceCommit,checks:structuredClone(complete.checks)};
  v420Evidence.checks.fresh_backup_restored={passed:false,evidence:'Explicit owner deferral; restore not performed.',ownerWaiver:structuredClone(v420.backupRestoreDeferral)};
+ for(const k of v420.physicalDeviceDeferral?.checks||[]) v420Evidence.checks[k]={passed:false,evidence:'Explicit owner physical deferral; not performed.',ownerWaiver:structuredClone(v420.physicalDeviceDeferral)};
  assert.equal(validate(v420,v420Evidence),true);
- for(const k of required.filter(k=>k!=='fresh_backup_restored')){const incomplete=structuredClone(v420Evidence);incomplete.checks[k].passed=false;assert.throws(()=>validate(v420,incomplete),new RegExp(k));}
+ for(const k of required.filter(k=>k!=='fresh_backup_restored'&&!v420.physicalDeviceDeferral?.checks.includes(k))){const incomplete=structuredClone(v420Evidence);incomplete.checks[k].passed=false;assert.throws(()=>validate(v420,incomplete),new RegExp(k));}
  const changed={...v420,sourceCommit:'b'.repeat(40)};assert.throws(()=>validate(changed,{...v420Evidence,sourceCommit:changed.sourceCommit}),/source mismatch/);
  const fake=structuredClone(v420Evidence);fake.checks.fresh_backup_restored.passed=true;assert.throws(()=>validate(v420,fake),/must remain not passed/);
- console.log('PASS: V420 backup-only deferral cannot waive remaining acceptance');
+ for(const k of v420.physicalDeviceDeferral?.checks||[]){const invalid=structuredClone(v420Evidence);invalid.checks[k].passed=true;assert.throws(()=>validate(v420,invalid),/must remain not passed/);}
+ if(v420.physicalDeviceDeferral){const invalid={...v420,physicalDeviceDeferral:undefined};assert.throws(()=>validate(invalid,v420Evidence),/physical_android/);}
+ console.log('PASS: V420 owner deferrals cannot waive any other acceptance check');
 }
