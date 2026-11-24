@@ -93,7 +93,8 @@ const label=(r)=>{
   return (m?.name||r.material_id)+' — '+(b?.name||r.brand_id);
 };
 const available=x=>Number(x.physical)-Number(x.reserved);
-// Only a verified inventory count can establish a real zero balance.
+// Only an explicit opening, purchase or audited adjustment can establish
+// a real ledger zero. New uninitialised catalog rows are placeholders.
 // Older servers omit this flag; treat the status as unknown, never as zero.
 const countStatus=x=>x?.initialised===true?'counted':x?.initialised===false?'uncounted':'unknown';
 const counted=x=>countStatus(x)==='counted';
@@ -207,7 +208,7 @@ function render(){
     '<div class="zs-metric"><div class="zs-muted">Material / Brand items</div><b>'+entries.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Linked stock</div><b>'+rows.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Needs linking</div><b>'+(incomplete?'—':unlinked.length)+'</b></div></div>'+
-    '<p class="zs-muted">Count-verified linked stock only: '+low+' low and '+out+' out of stock. '+notCounted+' awaiting opening count; '+unknownCount+' with count status unverified. Unlinked materials are not counted as zero stock.</p>'+
+    '<p class="zs-muted">Recorded linked stock: '+low+' low and '+out+' out of stock. '+notCounted+' without a posted opening or receipt; '+unknownCount+' with ledger count status unverified. Unlinked materials are not counted as zero stock.</p>'+
     '<div class="zs-row" style="margin-top:12px"><h3>Stock Balance &amp; Material Master</h3>'+
     '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
     '<div class="zs-balance-tools"><label>Search material or brand<input type="search" id="zs-balance-query" autocomplete="off" value="'+esc(view.balanceQuery||'')+
