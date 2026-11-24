@@ -66,6 +66,11 @@ assert.equal(JSON.stringify(context),before);
 assert.equal((await accountantApi(admin,manager,{...request,filters:{month:'2026-10',employee:'E'}},'unused',now)).status,400,'unsupported report filters fail explicitly');
 
 const rows=[{kind:'CASH',job_card:'100',date:'2026-10-01',vehicle:'Toyota Camry 2017',registration:'QA',insurance_company:'',amount_omr:'150.000',total_cost_omr:'100.000',profit_omr:'50.000',profit_percentage:100/3,costs_complete:true,cost_notes:[]},{kind:'INSURANCE',job_card:'101',date:'2026-10-02',vehicle:'Toyota Camry 2020',insurance_company:'Liva',amount_omr:'200.000',total_cost_omr:'100.000',profit_omr:'100.000',profit_percentage:50,costs_complete:true,cost_notes:[]},{kind:'INSURANCE',job_card:'102',date:'2026-10-03',vehicle:'Nissan Altima 2018',insurance_company:'Liva',amount_omr:'100.000',total_cost_omr:'120.000',profit_omr:'-20.000',profit_percentage:-20,costs_complete:true,cost_notes:[]},{kind:'INSURANCE',job_card:'103',date:'2026-10-04',vehicle:'<img src=x onerror=alert(1)>',insurance_company:'Other <script>alert(1)</script>',amount_omr:'50.000',total_cost_omr:null,profit_omr:null,profit_percentage:null,costs_complete:false,cost_notes:['Parts cost pending'],cost_breakdown_omr:{labour:'10.000',parts:null,paint:'5.000',consumables:'2.000'},sublet_cost_omr:'3.000'}];
+for(const row of rows.slice(0,3)){
+ const total=Number(row.total_cost_omr);
+ row.cost_breakdown_omr={labour:'20.000',consumables:'10.000',paint:'5.000',parts:(total-40).toFixed(3)};
+ row.sublet_cost_omr='5.000';row.cost_partial=false;
+}
 const dom=new JSDOM('<!doctype html><html><head></head><body><div id="managerView"><section class="v123-manager-performance"><div class="v123-grid"></div></section></div><div id="modal"></div></body></html>',{url:'https://qa.invalid',runScripts:'outside-only'}),w=dom.window;
 class FixedDate extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
 w.Date=FixedDate;w.me={id:'M',role:'Manager'};let token='QA-TOKEN',calls=0,held=null,monthlyRows=rows;
@@ -142,6 +147,20 @@ await w.zukaitManagerProfit.open('CASH','2026-10','graph');
 assert.equal(w.document.querySelectorAll('.mp-compare-row').length,3,
  'Opening Cash graph also shows each insurer and Cash together');
 assert.match(w.document.querySelector('.mp-compare-row.is-insurance').textContent,/Liva.*26\.67%/);
+assert.equal(w.document.querySelectorAll('.mp-combined-graph').length,1,'one combined monthly chart');
+const original=JSON.stringify(rows),callsBeforeLabour=calls;
+let labour=w.document.getElementById('mpLabour');assert.equal(labour.value,'with');
+labour.value='without';labour.dispatchEvent(new w.Event('change'));
+assert.match(w.document.querySelector('.mp-compare-row.is-cash').textContent,/Cash Jobs.*46\.67%/);
+assert.match(w.document.querySelector('.mp-compare-row.is-insurance').textContent,/Liva.*40\.00%/);
+assert.match(w.document.querySelector('.mp-compare-row.is-provisional').textContent,/Provisional/);
+assert.equal(calls,callsBeforeLabour,'labour toggle uses verified loaded data, no new server read');
+assert.equal(JSON.stringify(rows),original,'labour toggle does not mutate server rows');
+w.document.getElementById('mpMode').value='list';w.document.getElementById('mpMode').dispatchEvent(new w.Event('change'));
+assert.match(w.document.querySelector('.mp-cell-cost').textContent,/80\.000/);
+labour=w.document.getElementById('mpLabour');labour.value='with';labour.dispatchEvent(new w.Event('change'));
+assert.match(w.document.querySelector('.mp-cell-cost').textContent,/100\.000/);
+w.document.getElementById('mpMode').value='graph';w.document.getElementById('mpMode').dispatchEvent(new w.Event('change'));
 let month=w.document.getElementById('mpMonth');month.value='2026-09';month.dispatchEvent(new w.Event('change'));await wait(()=>w.document.querySelector('.mp-empty'));assert.match(w.document.querySelector('.mp-empty').textContent,/No matching/);
 const beforeOffline=calls;Object.defineProperty(w.navigator,'onLine',{configurable:true,value:false});await w.zukaitManagerProfit.open('CASH');assert.equal(calls,beforeOffline);assert.match(w.document.getElementById('mpPage').textContent,/unavailable/);
 Object.defineProperty(w.navigator,'onLine',{configurable:true,value:true});let release;held=new Promise(r=>release=r);const opening=w.zukaitManagerProfit.open('INSURANCE');await new Promise(r=>setImmediate(r));w.me={id:'NEW',role:'Manager'};token='NEW-TOKEN';release();await opening;assert.equal(w.document.querySelectorAll('#mpPage tbody tr').length,0,'old-account report cannot render after switch');
