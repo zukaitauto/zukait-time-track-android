@@ -69,3 +69,25 @@ const newState={consumables:reversed.consumables},newInvoice={...inv,revision:2,
 const reapplied=C.prepareInvoicePriceApply(newState,newInvoice,{...applyInput,requestId:'apply-revised',review:C.invoicePriceReview(newState,newInvoice,M)},M);
 assert.equal(reapplied.consumables.actuals[1].totalCost,.34);
 console.log('Invoice reconciliation: reversible created/corrected prices, bounded costing, stale and independent change protection, reapplication PASS');
+
+const consentState=makeState(),consentReview=C.invoicePriceReview(consentState,inv,M);
+consentState.consumables.actuals[1].lines[0].actualQuantity=200;
+consentState.consumables.actuals[1].lines[0].lineCost=40;
+consentState.consumables.actuals[1].totalCost=40;
+assert.throws(()=>C.prepareInvoicePriceApply(consentState,inv,{...applyInput,review:consentReview},M),/STALE_PRICE_REVIEW/);
+const costMismatch=makeState();costMismatch.consumables.actuals[1].lines[0].unitPriceSnapshot=.15;
+costMismatch.consumables.actuals[1].lines[0].lineCost=.7;
+costMismatch.consumables.actuals[1].totalCost=.7;
+const mismatchReview=C.invoicePriceReview(costMismatch,inv,M);
+assert.equal(mismatchReview[0].affected,1);assert.equal(mismatchReview[0].impacts[0].quantity,2);
+assert.equal(mismatchReview[0].oldCost,.7);assert.equal(mismatchReview[0].newCost,.3);
+const otherInvoice={...inv,id:'other',lines:[{...inv.lines[0],unitPrice:.18}]};
+const overlap=C.invoicePriceReview(persisted,otherInvoice,M);
+assert.equal(overlap[0].action,'blocked');assert.equal(overlap[0].sourceInvoiceId,inv.id);
+assert.throws(()=>C.prepareInvoicePriceApply(persisted,otherInvoice,{...applyInput,requestId:'other',review:overlap},M),/PRICE_REVIEW_BLOCKED/);
+const noEarlierPrice=makeState();noEarlierPrice.consumables.prices=[];noEarlierPrice.consumables.actuals=[];
+const only=C.prepareInvoicePriceApply(noEarlierPrice,inv,{...applyInput,requestId:'only',review:C.invoicePriceReview(noEarlierPrice,inv,M)},M);
+assert.throws(()=>C.prepareInvoicePriceReconciliation({consumables:only.consumables},only.receipt,{},M),/NO_FALLBACK/);
+const replacement={consumables:only.consumables};C.setPrice(replacement,{materialId:'m',brandId:'b',effectiveFrom:at('2026-11-01'),pricePerUnit:.21,reason:'Independent replacement price'},M);
+assert.equal(C.prepareInvoicePriceReconciliation(replacement,only.receipt,{},M).review.changes[0].restoredRate,.21);
+console.log('Second review regression: stale quantities, actual cost mismatch, same-period ownership and mandatory fallback PASS');
