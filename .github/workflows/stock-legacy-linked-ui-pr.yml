@@ -6,6 +6,8 @@ on:
       - 'app/src/main/assets/consumables_stock_ui.js'
       - 'tests/consumables-stock-home-responsive.mjs'
       - 'app/src/main/assets/consumables_ui.js'
+      - 'app/src/main/assets/consumables.js'
+      - 'tests/consumables-invoice-price-review.mjs'
       - 'tests/consumables-master-mobile-responsive.mjs'
       - 'tests/consumables-stock-legacy-linked-ui.mjs'
       - 'package.json'
@@ -36,7 +38,9 @@ jobs:
       - name: Verify preview-only application safety
         run: node tests/consumables-main-app-preview.mjs
       - name: Verify original Material Master create, brand and price functionality
-        run: node tests/consumables-ui.mjs
+        run: |
+          node tests/consumables-ui.mjs
+          node tests/consumables-invoice-price-review.mjs
       - name: Check Manager Materials and Brand Price modal on iPhone and desktop
         run: |
           npx playwright install chromium

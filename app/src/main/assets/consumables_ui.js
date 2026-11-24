@@ -215,7 +215,7 @@ window.consPurchaseLoadHistory=async function(page=0){
   if(seq!==consPurchaseHistorySeq||document.getElementById('cpHistory')!==out)return;
   if(!r?.ok||!Array.isArray(r.invoices))throw Error(r?.code||'Invoice history unavailable');
   consPurchaseHistoryRows=r.invoices;
-  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
+  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button><button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Review Brands &amp; Price</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
   out.innerHTML+='<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page+1)+')">Next</button>':'')+'</div>';
  }catch(e){if(seq===consPurchaseHistorySeq&&document.getElementById('cpHistory')===out)out.textContent=String(e?.message||e);}
 };
@@ -262,6 +262,21 @@ window.consPurchaseSaveCorrection=async function(){
   alert(mode==='cancel'?'Invoice cancelled with audit record.':'Invoice correction saved with audit record.');window.consOpenPurchaseInvoices();
  }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);}}
  finally{consPurchaseBusy=false}
+};
+window.consPurchasePriceReview=function(index){
+ if(role()!=='Manager'||!consPurchaseRestore()||consPurchaseBusy)return;
+ const invoice=consPurchaseHistoryRows[index];if(!invoice)return;
+ try{
+  const rows=C().invoicePriceReview(state,invoice,me);
+  const rate=n=>n===null||n===undefined?'Not configured':'OMR '+Number(n).toFixed(3);
+  const body='<div class="cp-info">Purchase prices are compared with Brands &amp; Price on the invoice date (Oman). This is a preview only. Stock valuation and historical costs are not changed by opening this screen.</div>'+
+   rows.map(r=>'<div class="cp-panel"><b>'+esc(r.materialName)+' · '+esc(r.brandName)+'</b><div>Existing rate: '+esc(rate(r.oldRate))+' / '+esc(r.unit)+'</div><div>Invoice rate: '+esc(rate(r.rate))+' / '+esc(r.unit)+'</div><div>Effective date: '+esc(r.date)+'</div><div>'+esc(r.action==='create'?'New price period':r.action==='correct'?'Same-day price correction':r.action==='unchanged'?'No change needed':r.reason)+'</div>'+
+    (r.affected===undefined?'':'<div>Affected Actual Materials records: '+r.affected+'</div>')+
+    (r.jobCards?.length?'<div class="cp-info">'+esc(r.jobCards.join(', '))+'</div>':'')+
+    '</div>').join('')+
+   '<p class="cp-info">Manager must review existing effective-date periods before applying prices. Invoice correction or cancellation requires a fresh review. No automatic costing write is enabled.</p>';
+  modal('Invoice Costing Price Review',consPurchaseStyle+'<div class="cp-entry">'+body+'</div>','consOpenPurchaseInvoices()');
+ }catch(e){alert(String(e?.message||e))}
 };
 window.consPurchaseAudit=async function(index,page=0){
  if(role()!=='Manager'||!consPurchaseRestore()||!Number.isInteger(page)||page<0||page>100)return;
