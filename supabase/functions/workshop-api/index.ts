@@ -461,7 +461,24 @@ function consumablesRepriceEvidence(candidate,current,after,user) {
     String(x.by||'')===String(user.id)&&Number(x.at)>=Number(after.priceRecalculatedAt)&&
     String(x.reason||'').trim()&&same(x.after,after))||null;
 }
+function validateInvoicePriceAuthority(candidate,current) {
+  const previous=current?.consumables||{},next=candidate?.consumables||{};
+  const invoiceEvent=(row:any)=>['INVOICE_PRICE_APPLIED','INVOICE_PRICE_RECONCILED','INVOICE_PRICE_REVERSED','INVOICE_PRICE_SOURCE_DETACHED'].includes(row?.type);
+  const oldEvents=new Map((previous.audit||[]).filter(invoiceEvent).map((a:any)=>[String(a.id),a]));
+  const newEvents=new Map((next.audit||[]).filter(invoiceEvent).map((a:any)=>[String(a.id),a]));
+  if(oldEvents.size!==newEvents.size)return 'invoice_price_audit_server_owned';
+  for(const [id,row] of oldEvents)if(!same(row,newEvents.get(id)))return 'invoice_price_audit_server_owned';
+  const reconciled=new Set((previous.audit||[]).filter((a:any)=>a.type==='INVOICE_PRICE_RECONCILED').map((a:any)=>a.applicationRequestId));
+  const owned=new Set<string>();
+  for(const a of previous.audit||[])if(a.type==='INVOICE_PRICE_APPLIED'&&!reconciled.has(a.requestId))
+    for(const c of a.receipt?.changes||[])owned.add(String(c.priceId));
+  const oldPrices=new Map((previous.prices||[]).map((p:any)=>[String(p.id),p]));
+  const newPrices=new Map((next.prices||[]).map((p:any)=>[String(p.id),p]));
+  for(const id of owned)if(!same(oldPrices.get(id),newPrices.get(id)))return 'invoice_price_owned';
+  return null;
+}
 function validateConsumablesManagerCorrections(candidate,current,user) {
+  const invoiceIssue=validateInvoicePriceAuthority(candidate,current);if(invoiceIssue)return invoiceIssue;
   const oldActuals=new Map((current?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
   const newActuals=new Map((candidate?.consumables?.actuals||[]).filter((x:any)=>x?.id).map((x:any)=>[String(x.id),x]));
   for(const [id,before] of oldActuals){
@@ -1133,6 +1150,7 @@ function jobNumberCodec(rows=[]){
   const jobObject=['jobs','job','expectedJob','linked_job'].includes(parent)||('no' in v&&['jobType','make','reg','receptionNo'].some(k=>k in v));
   return Object.fromEntries(Object.entries(v).map(([k,value])=>[
    dictionaries.has(parent)?String(ref(k,map)):k,
+   k==='jobCards'&&Array.isArray(value)&&'invoiceId' in v&&'materialId' in v?value.map(number=>ref(number,map)):
    references.has(k)||k==='no'&&jobObject||k==='number'&&parent==='manualJobCard'||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(v.eventType||v.event_type||''))?walk(ref(value,map),map,k):walk(value,map,k)
   ]));
  }
@@ -1208,12 +1226,6 @@ Deno.serve(async (req: Request) => {
     }
 
     if(action==='consumables_invoice_price_apply') {
-      // Price-review job-card lists are arrays of scalar public numbers.
-      // Translate only this known reference field before comparing to server state.
-      if(numberCodec&&Array.isArray(body.data?.review)){
-        body.data.review=body.data.review.map(row=>row&&Array.isArray(row.jobCards)?
-          {...row,jobCards:row.jobCards.map(number=>numberCodec.internalNumber(number))}:row);
-      }
       const result=await invoicePriceApplyApi(admin,user,body,{
         enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true'&&
           Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true'&&
