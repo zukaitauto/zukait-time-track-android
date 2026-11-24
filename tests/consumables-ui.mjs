@@ -291,3 +291,36 @@ await ctx.openMechanicalConsumablesSection('search');
 assert.match(element('mcConsRows').innerHTML,/Legacy Reducer/);
 assert.doesNotMatch(element('mcConsRows').innerHTML,/Primer/);
 console.log('Job Card department pickers exclude the other department');
+
+
+ // Manager Brand & Price: exact pair selection and new brand preservation.
+ vm.runInContext("me={id:'M1',role:'Manager'}",ctx);
+ const masterSnapshot=structuredClone(state.consumables);
+ try{
+   ctx.consOpenMaster('Painting','price');
+   assert.match(ctx.modal,/cmPairSearch/);
+   assert.match(ctx.modal,/PRINT \/ PDF PRICE LIST/);
+   fill({cmPairSearch:'Primer Brand'});
+   ctx.consMasterPairSearch();
+   assert.match(element('cmPairResults').innerHTML,/Primer/);
+   ctx.consMasterSelectPair(m.id,b.id);
+   assert.equal(element('cmMaterial').value,m.name);
+   assert.equal(element('cmBrand').value,b.name);
+   assert.equal(Number(element('cmPrice').value),C.priceAt(state,m.id,b.id,Date.now()).pricePerUnit);
+   const oldPrices=JSON.stringify(state.consumables.prices.filter(p=>p.brandId===b.id));
+   const oldActual=JSON.stringify(state.consumables.actuals);
+   fill({cmBrand:'New Test Brand'});ctx.consMasterPairChanged();
+   assert.equal(element('cmPrice').value,'','New brand must not silently inherit old brand price');
+   fill({cmPrice:'5.625',cmDate:'2020-01-02'});ctx.consSaveMaster();
+   const newBrand=state.consumables.brands.find(x=>x.name==='New Test Brand');
+   assert.ok(newBrand);assert.notEqual(newBrand.id,b.id);
+   assert.equal(C.priceAt(state,m.id,newBrand.id,Date.now()).pricePerUnit,5.625);
+   assert.equal(JSON.stringify(state.consumables.prices.filter(p=>p.brandId===b.id)),oldPrices);
+   assert.equal(JSON.stringify(state.consumables.actuals),oldActual);
+   assert.match(element('cmList').innerHTML,/New Test Brand/);
+   assert.match(element('cmList').innerHTML,/5.625/);
+   const n=state.consumables.prices.length;
+   ctx.consSaveMaster();
+   assert.equal(state.consumables.prices.length,n,'Duplicate Oman day must not add a second period');
+ }finally{state.consumables=masterSnapshot}
+ console.log('PASS Brand & Price exact search, current price prefill, new brand isolation, list and duplicate-date protection');
