@@ -1,0 +1,35 @@
+name: V416 Stock iPhone search and toolbar QA
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/consumables_stock_ui.js'
+      - 'tests/consumables-stock-search-toolbar-mobile.mjs'
+      - '.github/workflows/stock-search-toolbar-pr.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safe-stock-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned test dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Syntax check
+        run: |
+          node --check app/src/main/assets/consumables_stock_ui.js
+          node --check tests/consumables-stock-search-toolbar-mobile.mjs
+      - name: Stock and existing interface regression
+        run: |
+          npm run test:consumables:stock
+          node tests/consumables-stock-pilot-ui.mjs
+          node tests/consumables-main-app-preview.mjs
+      - name: Verify mobile toolbar and search in real browser
+        run: |
+          npx playwright install chromium
+          node tests/consumables-stock-search-toolbar-mobile.mjs
