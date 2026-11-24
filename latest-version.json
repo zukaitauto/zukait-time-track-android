@@ -1,9 +1,9 @@
 {
-  "versionCode": 378,
-  "versionName": "V415",
+  "versionCode": 379,
+  "versionName": "V416",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "0a43ea3ecbcd53688c6ce930f55adae6ae04e465",
-  "apkSha256": "8e092c22fe77233b56342fe4a22ac612f7228dc8f35c2735cf4c55d0ea9945ef",
-  "releaseTag": "release-V415-architecture-v2"
+  "sourceCommit": "96df5faee83ca1c20888375ca3707d2d3dfc6d0c",
+  "apkSha256": "06cd6a8a5681c01bde5f57e220a1efc6b57cf1116507e8b79f88fef268f2a3a6",
+  "releaseTag": "release-V416-architecture-v2"
 }
