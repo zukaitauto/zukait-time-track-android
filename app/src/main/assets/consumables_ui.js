@@ -306,7 +306,7 @@ window.consPurchaseSaveCorrection=async function(){
     if(owner!==consPurchaseOwnerId())return;
     if(!reviewed?.ok||!reviewed.required)throw Error(reviewed?.code||'Invoice price review unavailable; reload invoice.');
     const payload={mode,correction:data,requestId:pending.id,applicationRequestId:reviewed.applicationRequestId,review:reviewed.review};
-    consPurchaseReconcileRender(owner,invoice,payload);
+    consReconcileRender(owner,invoice,payload);
     return;
    }
    if(['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_cancelled','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','duplicate_invoice'].includes(code))consPurchaseCorrectionPending.delete(key);
