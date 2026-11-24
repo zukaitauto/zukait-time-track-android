@@ -13,8 +13,8 @@ window.state={consumables:{
  {id:'m3',name:'Primer',unit:'Liter',department:'Painting'},
  {id:'m4',name:'2K BLACK',unit:'Liter',department:'Painting'}],
  brands:[{id:'b1',name:'2K BLACK'},{id:'b2',name:'Z99'},{id:'b3',name:'Sikkens'},
- {id:'b4',name:'2K BLACK'}],
- prices:[]
+ {id:'b4',name:'2K BLACK'},{id:'b5',name:'KARUSHI'}],
+ prices:[{materialId:'m2',brandId:'b5',pricePerUnit:3}]
 }};
 window.__stockRequests=[];
 window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true;
@@ -35,6 +35,7 @@ window.zukaitCloud={async stockRequest(request){
     {material_id:'m4',brand_id:'b4',unit:'Liter',physical:2,reserved:0,stock_value:10,minimum:1,initialised:true}];
   return {ok:true,items:rows,hasMore:request.page===0};
  }
+ if(request.operation==='MASTER_LINK')return {ok:true,linked:{linked:true}};
  if(request.operation==='WRITE')return {ok:true,receipt:{final:true}};
  throw Error('A Stock UI test attempted unexpected server action: '+request.operation);
 }};
@@ -142,6 +143,23 @@ try{
   assert.equal(saves[0].data.materialId,'m4');
   assert.equal(saves[0].data.brandId,'b4');
   assert.equal(saves[0].data.quantity,2);
+  // A new saved Master pair is selectable without a separate setup screen.
+  await page.evaluate(()=>window.zukStockNav('add',true));
+  await page.locator('#zs-material-brand-search').waitFor();
+  await page.getByRole('button',{name:/Load next 100 linked materials/}).click();
+  await page.locator('#zs-material-brand-search').fill('KARUSHI');
+  assert.equal(await page.locator('.zs-pair-choice:visible').count(),1);
+  await page.locator('.zs-pair-choice:visible').first().click();
+  assert.equal(await page.locator('#zs-material').inputValue(),'m2');
+  assert.equal(await page.locator('#zs-brand').inputValue(),'b5');
+  assert.equal(await page.evaluate(()=>window.__stockRequests.filter(x=>x.operation==='MASTER_LINK').length),0,'Selection alone cannot create stock');
+  await page.locator('#zs-qty').fill('1');
+  await page.locator('#zs-price').fill('3');
+  await page.locator('#zs-save-entry').click();
+  await page.waitForFunction(()=>window.__stockRequests.filter(x=>x.operation==='WRITE').length===2);
+  const linkedAndWritten=await page.evaluate(()=>window.__stockRequests.filter(x=>['MASTER_LINK','WRITE'].includes(x.operation)).slice(-2));
+  assert.deepEqual(linkedAndWritten[0],{operation:'MASTER_LINK',materialId:'m2',brandId:'b5',origin:'Painting'});
+  assert.equal(linkedAndWritten[1].data.brandId,'b5');
   await page.getByRole('button',{name:/Close/}).first().click();
   assert.equal(await page.locator('#zs-stock-screen').count(),0,'Close must remove full-screen stock UI');
   await page.close();
