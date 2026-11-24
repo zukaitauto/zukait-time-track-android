@@ -1,0 +1,114 @@
+name: V420 isolated QA backend smoke and phone APK
+
+on:
+  push:
+    branches: [qa/v420-isolated]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-stock-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      ZUKAIT_STOCK_PILOT_PROJECT_REF: wilbkrwbeptpgubxkxau
+      ZUKAIT_STOCK_PILOT_PUBLISHABLE_KEY: sb_publishable_JpyjVrLNiAuVRDGJT8vJww_KLYhdrFF
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - name: Check out Stock test candidate
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify hosted QA endpoint and authentication barrier
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="https://${ZUKAIT_STOCK_PILOT_PROJECT_REF}.supabase.co/functions/v1/workshop-api-v420-qa"
+          code=$(curl -sS --max-time 30 -o /tmp/v420-get.json -w '%{http_code}' "$endpoint")
+          test "$code" = 405
+          jq -e '.ok==false and .code=="method"' /tmp/v420-get.json
+          code=$(curl -sS --max-time 30 -X POST -H 'Content-Type: application/json' -d '{"action":"consumables_stock","operation":"LIST"}' -o /tmp/v420-no-key.json -w '%{http_code}' "$endpoint")
+          test "$code" = 401
+          jq -e '.ok==false and .code=="bad_api_key"' /tmp/v420-no-key.json
+          code=$(curl -sS --max-time 30 -X POST -H "apikey: $ZUKAIT_STOCK_PILOT_PUBLISHABLE_KEY" -H 'Content-Type: application/json' -d '{"action":"consumables_stock","operation":"LIST"}' -o /tmp/v420-no-session.json -w '%{http_code}' "$endpoint")
+          test "$code" = 401
+          jq -e '.ok==false and .code=="invalid_session"' /tmp/v420-no-session.json
+          echo 'PASS: hosted V420 QA Edge runtime and authentication barriers; no data written.'
+      - name: Validate Stock UI and isolated test paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check app/src/main/assets/consumables_stock_ui.js
+          node tests/consumables-main-app-preview.mjs
+          node tests/consumables-stock-pilot-ui.mjs
+          node tests/consumables-stock-opening-guard.mjs
+      - name: Create QA-only Android source with separate application ID
+        shell: bash
+        run: |
+          set -euo pipefail
+          PILOT_DIR="$(node scripts/prepare-v420-isolated-pilot.mjs)"
+          test -n "$PILOT_DIR"
+          test -s "$PILOT_DIR/app/src/main/assets/consumables_stock_ui.js"
+          grep -Fq 'com.zukait.timetrack.stockpilotv420' "$PILOT_DIR/app/build.gradle"
+          grep -Fq 'stockPilot=1' "$PILOT_DIR/app/src/main/java/com/zukait/timetrack/MainActivity.java"
+          grep -Fq 'wilbkrwbeptpgubxkxau' "$PILOT_DIR/app/src/main/assets/cloud_sync.js"
+          grep -Fq 'wilbkrwbeptpgubxkxau' "$PILOT_DIR/app/src/main/assets/secure_auth.js"
+          if grep -Eq 'pjknotnjkufadqavcmii' "$PILOT_DIR/app/src/main/assets/cloud_sync.js" "$PILOT_DIR/app/src/main/assets/secure_auth.js"; then
+            echo 'FAIL: Production URL in pilot credentials'; exit 1
+          fi
+          echo "PILOT_DIR=$PILOT_DIR" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android build SDK
+        shell: bash
+        run: |
+          set -e
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+      - name: Build QA-only debug APK
+        run: gradle --no-daemon -p "$PILOT_DIR" assembleDebug
+      - name: Confirm separate APK package, pilot backend and no updater
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$PILOT_DIR/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.zukait.timetrack.stockpilotv420'"
+          python3 - <<'PY'
+          import os,zipfile
+          apk=os.environ['PILOT_DIR']+'/app/build/outputs/apk/debug/app-debug.apk'
+          with zipfile.ZipFile(apk) as z:
+              auth=z.read('assets/secure_auth.js')
+              cloud=z.read('assets/cloud_sync.js')
+              stock=z.read('assets/consumables_stock_ui.js')
+              for source in [auth,cloud]:
+                  assert b'wilbkrwbeptpgubxkxau' in source
+                  assert b'pjknotnjkufadqavcmii' not in source
+              assert b'/functions/v1/workshop-api-v420-qa' in cloud
+              assert 'assets/consumables.js' in z.namelist()
+              assert 'assets/consumables_ui.js' in z.namelist()
+          print('PASS: separate QA package, QA endpoint, invoice assets')
+          PY
+          sha256sum "$APK" > "$PILOT_DIR/stock-pilot-apk-sha256.txt"
+          echo 'Isolated stock pilot only: no production data, no APK updater, no production release.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload installable Stock pilot APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZUKAIT-V420-ISOLATED-QA-APK
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            ${{ env.PILOT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+            ${{ env.PILOT_DIR }}/stock-pilot-apk-sha256.txt
