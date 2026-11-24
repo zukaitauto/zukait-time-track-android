@@ -38,6 +38,31 @@ try{
     'input,select,button{padding:10px;border:1px solid #b2c4d4;border-radius:9px}'+css+'</style></head>'+
     '<body><div class="modal-backdrop"><div class="modal-box"><div class="cons-page"><div class="section-title"><h2>'+expected+'</h2></div>'+form+'</div></div></div></body></html>';
    await page.setContent(html);
+   if(mode==='price'){
+    // Simulate the populated search list under the application's dark global button theme.
+    await page.addStyleTag({content:'button{background:#111827!important;color:white!important;display:inline-block}'});
+    await page.evaluate(()=>{
+     const p=document.getElementById('cmPairResults');
+     p.classList.remove('hidden');
+     p.innerHTML='<div class="cm-pair-head"><span>Material</span><span>Brand / Unit</span><span>OMR / Unit</span></div>'+
+      Array.from({length:12},()=>'<button class="cons-material-result cm-pair-row"><b>2K Primer</b><span>CAPCI · Liter</span><small>OMR 5.500</small></button>').join('');
+    });
+    const picker=await page.evaluate(()=>{
+     const p=document.getElementById('cmPairResults'),row=p.querySelector('button'),cs=getComputedStyle(row);
+     const boxes=[...row.children].map(x=>x.getBoundingClientRect());
+     return {display:cs.display,background:cs.backgroundColor,overflow:p.scrollWidth>p.clientWidth+1,height:p.clientHeight,scroll:p.scrollHeight>p.clientHeight,
+      overlap:boxes.some((x,i)=>boxes.slice(i+1).some(y=>Math.min(x.right,y.right)-Math.max(x.left,y.left)>1))};
+    });
+    assert.equal(picker.display,'grid','single-row picker at '+width);
+    assert.equal(picker.background,'rgb(255, 255, 255)','dark global theme must not override picker');
+    assert.equal(picker.overflow,false,'picker horizontal overflow at '+width);
+    assert.equal(picker.overlap,false,'material and brand must not collide at '+width);
+    assert.ok(picker.height<=224&&picker.scroll,'long results must use a bounded scroll area');
+    await page.evaluate(()=>{const p=document.getElementById('cmPairResults');p.classList.add('hidden');document.getElementById('cmPairEditor').showModal();});
+    const editor=await page.evaluate(()=>{const e=document.getElementById('cmPairEditor'),r=e.getBoundingClientRect();return {open:e.open,left:r.left,right:r.right,width:innerWidth,overflow:e.scrollWidth>e.clientWidth+1,price:document.getElementById('cmPrice').getBoundingClientRect().height};});
+    assert.ok(editor.open&&editor.left>=0&&editor.right<=editor.width&&editor.price>=44&&!editor.overflow,'price popup fits at '+width);
+    await page.evaluate(()=>document.getElementById('cmPairEditor').close());
+   }
    const layout=await page.evaluate(()=>{
     const root=document.getElementById('consMasterWorkspace'),m=document.querySelector('.modal-box').getBoundingClientRect();
     const sections=[...root.querySelectorAll('.cons-master-form')].filter(x=>getComputedStyle(x).display!=='none');
@@ -65,9 +90,9 @@ try{
     assert.ok(layout.intro>50,'missing matching section header');
     assert.equal(layout.titleText,expected);
     assert.equal(layout.create,mode==='create');
-    assert.equal(layout.price,mode==='price');
-    assert.equal(layout.priceForm,mode==='price');
-    assert.equal(layout.date,mode==='price');
+    assert.equal(layout.price,false,'price input stays in closed popup');
+    assert.equal(layout.priceForm,false,'material field stays in closed popup');
+    assert.equal(layout.date,false,'effective date stays in closed popup');
     assert.equal(layout.category,false,'Stock new-material shortcut defaults to Consumable');
     assert.equal(layout.tableVisible,mode==='price','full price list is visible only in the approved Brand & Price shortcut');
    }else{

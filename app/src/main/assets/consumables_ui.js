@@ -547,12 +547,14 @@ window.consOpenMaster=function(preset='',section=''){
  '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
  '<p class="notice">Previous effective-dated prices remain in history.</p>'+
  '<label class="cons-master-field">Search Material + Brand<input id="cmPairSearch" type="search" autocomplete="off" placeholder="Search material or brand" oninput="consMasterPairSearch()" onfocus="consMasterPairSearch()"></label><div id="cmPairResults" class="cons-material-results hidden"></div>'+
+ (section==='price'?'<button class="cm-new-brand" type="button" onclick="consMasterNewPair()">＋ Add Brand &amp; Price</button><dialog id="cmPairEditor" aria-labelledby="cmPairEditorTitle"><div class="cm-editor-top"><h3 id="cmPairEditorTitle">Brand &amp; Price</h3><button type="button" onclick="consMasterCloseEditor()" aria-label="Close price editor">✕</button></div>':'')+
  '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest();consMasterPairChanged()"></label><datalist id="cmMaterialChoices"></datalist>'+
  '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off" oninput="consMasterPairChanged()"></label><datalist id="cmBrandChoices"></datalist>'+
  '<p id="cmLastPrice" class="notice" role="status">Select a material and brand to view its current price.</p>'+
  '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
  '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+consOmanPriceDate()+'"></label>'+
- '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button></section>'+
+ '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button>'+
+ (section==='price'?'<button class="cm-editor-cancel" type="button" onclick="consMasterCloseEditor()">Cancel</button></dialog>':'')+'</section>'+
  '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
  '<h3 id="cmListHeading">Material &amp; Price List</h3><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
  '<div id="cmList"></div><button class="secondary" type="button" onclick="consPrintMaster()">PRINT / PDF PRICE LIST</button></div>',
@@ -613,6 +615,8 @@ window.consMasterPairSearch=function(){
  const input=document.getElementById('cmPairSearch'),out=document.getElementById('cmPairResults');
  if(!input||!out)return;
  const c=C().ensureState(state),q=String(input.value||'').toLowerCase().trim().split(/\s+/).filter(Boolean);
+ // Full list is already displayed below. Never show a duplicate list on empty search.
+ if(!q.length){out.innerHTML='';out.classList.add('hidden');return}
  const materials=c.materials.filter(m=>m.active!==false),brands=c.brands.filter(b=>b.active!==false),rows=[],seen=new Set();
  for(const p of c.prices){
    if(!p||p.voided)continue;
@@ -624,10 +628,28 @@ window.consMasterPairSearch=function(){
    rows.push({m,b,p:C().priceAt(state,m.id,b.id,Date.now())});
  }
  rows.sort((a,b)=>a.m.name.localeCompare(b.m.name)||a.b.name.localeCompare(b.b.name));
- out.innerHTML=rows.slice(0,50).map(({m,b,p})=>'<button type="button" class="cons-material-result" data-mid="'+esc(m.id)+'" data-bid="'+esc(b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)"><b>'+esc(m.name)+'</b><span>'+esc(b.name)+' · '+esc(m.unit)+'</span><small>'+(p?'OMR '+Number(p.pricePerUnit).toFixed(3):'No effective price yet')+'</small></button>').join('')||'<div class="cons-jc-empty">No matching priced pair. Enter an existing material and a new brand below.</div>';
+ out.innerHTML=(rows.length?'<div class="cm-pair-head" aria-hidden="true"><span>Material</span><span>Brand / Unit</span><span>OMR / Unit</span></div>':'')+ (rows.slice(0,50).map(({m,b,p})=>'<button type="button" class="cons-material-result cm-pair-row" data-mid="'+esc(m.id)+'" data-bid="'+esc(b.id)+'" onclick="consMasterSelectPair(this.dataset.mid,this.dataset.bid)"><b>'+esc(m.name)+'</b><span>'+esc(b.name)+' · '+esc(m.unit)+'</span><small>'+(p?'OMR '+Number(p.pricePerUnit).toFixed(3):'No effective price yet')+'</small></button>').join('')||'<div class="cons-jc-empty">No matching priced pair. Use Add Brand &amp; Price to enter a new brand.</div>')+(rows.length>50?'<div class="cm-pair-more">Showing 50 of '+rows.length+' results. Refine your search.</div>':'');
  out.classList.remove('hidden');
 };
+function consMasterOpenEditor(){
+ const editor=document.getElementById('cmPairEditor');
+ if(editor?.showModal&&!editor.open)editor.showModal();
+}
+window.consMasterCloseEditor=function(){
+ const editor=document.getElementById('cmPairEditor');
+ if(editor?.open)editor.close();
+};
+window.consMasterNewPair=function(){
+ if(role()!=='Manager')return;
+ const search=document.getElementById('cmPairSearch');
+ if(search){search.value='';delete search.dataset.mid;delete search.dataset.bid}
+ for(const id of ['cmMaterial','cmBrand','cmPrice']){const e=document.getElementById(id);if(e)e.value=''}
+ const date=document.getElementById('cmDate');if(date)date.value=consOmanPriceDate();
+ document.getElementById('cmPairResults')?.classList.add('hidden');
+ consMasterSuggest();consMasterPairChanged();consMasterOpenEditor();
+};
 window.consMasterSelectPair=function(mid,bid){
+ if(role()!=='Manager')return;
  const c=C().ensureState(state),m=c.materials.find(x=>x.id===mid&&x.active!==false),b=c.brands.find(x=>x.id===bid&&x.active!==false);
  if(!m||!b)return;
  const input=document.getElementById('cmPairSearch');
@@ -635,8 +657,9 @@ window.consMasterSelectPair=function(mid,bid){
  document.getElementById('cmMaterial').value=m.name;
  document.getElementById('cmBrand').value=b.name;
  document.getElementById('cmPairResults')?.classList.add('hidden');
- consMasterSuggest();consMasterPairChanged();
- document.getElementById('cmPrice')?.scrollIntoView?.({block:'nearest'});
+ const date=document.getElementById('cmDate');if(date)date.value=consOmanPriceDate();
+ consMasterSuggest();consMasterPairChanged();consMasterOpenEditor();
+ if(!document.getElementById('cmPairEditor'))document.getElementById('cmPrice')?.scrollIntoView?.({block:'nearest'});
 };
 window.consMasterPairChanged=function(){
  const {m,b,ambiguous}=consMasterExactPair(),last=document.getElementById('cmLastPrice'),price=document.getElementById('cmPrice');
@@ -670,6 +693,7 @@ window.consSaveMaster=function(){
   if(typeof save==='function')save();
   consMasterPairChanged();consMasterSuggest();consRenderMaster();
   const status=document.getElementById('cmSaveMessage');if(status)status.textContent='Brand price saved. Previous periods remain in price history.';
+  window.consMasterCloseEditor?.();
  }catch(e){alert(String(e?.message||e))}
 };
 window.consRenderMaster=function(){
@@ -1030,6 +1054,32 @@ body.cons-master-open #cmList{max-height:62vh;overflow:auto}
 #consMasterWorkspace .cons-master-form>.notice{margin:0 0 6px;font-size:13px!important;line-height:1.5!important;color:#34536b!important;white-space:normal!important;overflow-wrap:anywhere}
 #consMasterWorkspace .cons-master-field{display:flex;flex-direction:column;min-width:0;width:100%;gap:6px;font-weight:750!important;font-size:13px!important;line-height:1.4!important;color:#284762!important;white-space:normal!important}
 #consMasterWorkspace .cons-master-field>input,#consMasterWorkspace .cons-master-field>select{display:block;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;min-height:48px!important;margin:0!important;padding:10px 12px!important;background:#fff!important;color:#172f4b!important;border:1px solid #a5bdd2!important;border-radius:10px!important;font-size:16px!important;line-height:1.3!important;text-overflow:ellipsis;box-shadow:none!important}
+/* Brand & Price selector: independent from issue form CSS and global dark button theme. */
+#consMasterWorkspace #cmPairResults{grid-column:1/-1;display:block!important;max-height:224px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;min-width:0;width:100%;box-sizing:border-box;margin:0;border:1px solid #ccdcec;border-radius:10px;background:#fff!important;scrollbar-width:thin}
+#consMasterWorkspace #cmPairResults.hidden{display:none!important}
+#consMasterWorkspace .cm-new-brand{background:#e8f2ff!important;color:#205b9d!important;border:1px solid #b8cfe9!important;min-height:40px!important;font-size:13px!important;margin:0!important;padding:8px 12px!important}
+#consMasterWorkspace #cmPairEditor{position:fixed!important;inset:0!important;width:min(440px,calc(100vw - 24px))!important;max-width:calc(100vw - 24px)!important;max-height:calc(100dvh - 28px)!important;overflow:auto!important;margin:auto!important;box-sizing:border-box!important;background:#fff!important;color:#17324f!important;border:1px solid #cbdcec;border-radius:15px;padding:16px!important;box-shadow:0 16px 60px #142b4b38}
+#consMasterWorkspace #cmPairEditor:not([open]){display:none!important}
+#consMasterWorkspace #cmPairEditor[open]{display:grid!important;grid-template-columns:minmax(0,1fr);gap:12px}
+#consMasterWorkspace #cmPairEditor::backdrop{background:#14243b70}
+#consMasterWorkspace #cmPairEditor .cm-editor-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#consMasterWorkspace #cmPairEditor .cm-editor-top h3{margin:0;font-size:18px;color:#17324f!important}
+#consMasterWorkspace #cmPairEditor .cm-editor-top button,#consMasterWorkspace #cmPairEditor .cm-editor-cancel{background:#edf3f9!important;color:#284762!important;border:1px solid #d1dfed!important;border-radius:8px;padding:8px 12px!important}
+#consMasterWorkspace #cmPairEditor>button.blue{background:#176ba8!important;color:#fff!important;border:0!important;border-radius:10px;padding:12px!important;min-height:44px!important}
+#consMasterWorkspace #cmPairEditor #cmLastPrice{display:block!important;background:#eef7f4!important;color:#226650!important;border-radius:8px;padding:10px;margin:0;font-size:13px}
+#consMasterWorkspace #cmPairResults .cm-pair-head,#consMasterWorkspace #cmPairResults button.cm-pair-row{display:grid!important;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(74px,.72fr)!important;align-items:center;gap:8px!important;width:100%!important;min-width:0!important;box-sizing:border-box;padding:8px 10px!important;margin:0!important;min-height:40px!important;border:0!important;border-radius:0!important;text-align:left!important;white-space:normal!important;box-shadow:none!important;line-height:1.25!important}
+#consMasterWorkspace #cmPairResults .cm-pair-head{position:sticky;top:0;z-index:1;min-height:29px!important;background:#e7eff9;color:#365575;font-size:11px;font-weight:800}
+#consMasterWorkspace #cmPairResults button.cm-pair-row{background:#fff!important;color:#17324f!important;border-top:1px solid #e1eaf3!important;cursor:pointer}
+#consMasterWorkspace #cmPairResults button.cm-pair-row:nth-of-type(even){background:#f4f8fc!important}
+#consMasterWorkspace #cmPairResults button.cm-pair-row:hover,#consMasterWorkspace #cmPairResults button.cm-pair-row:focus-visible{background:#e3f0ff!important;outline:2px solid #2563eb!important;outline-offset:-2px!important}
+#consMasterWorkspace #cmPairResults button.cm-pair-row:before{content:none!important;display:none!important}
+#consMasterWorkspace #cmPairResults button.cm-pair-row b,#consMasterWorkspace #cmPairResults button.cm-pair-row span,#consMasterWorkspace #cmPairResults button.cm-pair-row small{display:block!important;min-width:0!important;grid-column:auto!important;overflow-wrap:anywhere!important;white-space:normal!important;line-height:1.25!important;font-size:13px!important;opacity:1!important;color:#17324f!important}
+#consMasterWorkspace #cmPairResults button.cm-pair-row b{font-weight:800!important}
+#consMasterWorkspace #cmPairResults button.cm-pair-row span{font-weight:500!important;color:#516b84!important}
+#consMasterWorkspace #cmPairResults button.cm-pair-row small{font-weight:800!important;color:#176c58!important;text-align:right!important;font-variant-numeric:tabular-nums}
+#consMasterWorkspace #cmPairResults .cm-pair-head span:last-child{text-align:right}
+#consMasterWorkspace #cmPairResults .cm-pair-more{padding:8px 10px;font-size:11px;color:#516b84}
+@media(max-width:430px){#consMasterWorkspace #cmPairResults .cm-pair-head,#consMasterWorkspace #cmPairResults button.cm-pair-row{padding:8px 6px!important;gap:5px!important;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(64px,.8fr)!important}#consMasterWorkspace #cmPairResults button.cm-pair-row b,#consMasterWorkspace #cmPairResults button.cm-pair-row span,#consMasterWorkspace #cmPairResults button.cm-pair-row small{font-size:11px!important}}
 #consMasterWorkspace .cons-master-field>input::placeholder{color:#61758d!important;opacity:1}
 #consMasterWorkspace .cons-master-field>input:focus-visible,#consMasterWorkspace .cons-master-field>select:focus-visible{outline:3px solid #2c6cbd!important;outline-offset:1px}
 #consMasterWorkspace .cons-master-form>button{width:100%!important;max-width:100%!important;min-height:48px!important;white-space:normal!important;overflow-wrap:anywhere;font-size:14px!important;border-radius:10px!important}
