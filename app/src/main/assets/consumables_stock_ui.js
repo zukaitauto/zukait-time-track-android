@@ -1285,7 +1285,11 @@ window.zukStockSetEntryType=()=>{
 window.zukStockSavePurchase=()=>{
  if(previewOnly())return;
  const d=document;
- window.zukStockResolvePair?.();
+ const typed=String(d.getElementById('zs-material-brand-search')?.value||'').trim();
+ const chosen=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
+ // Keep an exact clicked ID even when multiple rows share the same name.
+ // Resolve text again only if the search was edited after the selection.
+ if(!chosen||typed!==label(chosen).trim())window.zukStockResolvePair?.();
  const data={materialId:d.getElementById('zs-material')?.value,
     brandId:d.getElementById('zs-brand')?.value,
     quantity:Number(d.getElementById('zs-qty')?.value),
