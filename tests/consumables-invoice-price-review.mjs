@@ -14,3 +14,28 @@ state.consumables.prices.push({id:'same',materialId:'m',brandId:'b',pricePerUnit
 p=C.invoicePriceReview(state,inv,M)[0];assert.equal(p.action,'correct');assert.equal(p.priceId,'same');assert.equal(p.affected,1);
 assert.equal(C.invoicePriceReview(state,{...inv,lines:[{...inv.lines[0],unit:'kg'}]},M)[0].action,'blocked');
 console.log('Invoice price review: Manager role, Oman date, new period, duplicate-day correction, historical impact, cancelled invoice and no mutation PASS');
+
+const makeState=()=>{const s=JSON.parse(before);for(const a of s.consumables.actuals){a.lines[0].actualQuantity=2;a.lines[0].lineCost=a.lines[0].unitPriceSnapshot*2;a.totalCost=a.lines[0].lineCost;a.lines[0].priceId=a.id==='a2'?'future':'old';}return s;};
+const candidate=makeState(),original=JSON.stringify(candidate);
+const applyInput={requestId:'apply-1',reason:'Reviewed invoice rate',review:C.invoicePriceReview(candidate,inv,M)};
+const applied=C.prepareInvoicePriceApply(candidate,inv,applyInput,M);
+assert.equal(JSON.stringify(candidate),original);
+assert.equal(applied.receipt.invoiceRevision,1);
+assert.equal(applied.receipt.changes[0].action,'create');
+assert.equal(applied.consumables.actuals[1].totalCost,.3);
+assert.equal(applied.consumables.actuals[0].totalCost,.4);
+assert.equal(applied.consumables.actuals[2].totalCost,.6);
+assert.equal(applied.consumables.audit.filter(a=>a.type==='INVOICE_PRICE_APPLIED').length,1);
+const persisted={consumables:applied.consumables};
+assert.equal(C.prepareInvoicePriceApply(persisted,inv,applyInput,M).replayed,true);
+assert.throws(()=>C.prepareInvoicePriceApply(persisted,inv,{...applyInput,reason:'Different request'},M),/REQUEST_ID_CONFLICT/);
+assert.throws(()=>C.prepareInvoicePriceApply(persisted,{...inv,revision:2},{...applyInput,requestId:'apply-2'},M),/RECONCILIATION_REQUIRED/);
+assert.throws(()=>C.prepareInvoicePriceApply(candidate,{...inv,status:'cancelled'},applyInput,M),/POSTED_INVOICE_REQUIRED/);
+assert.throws(()=>C.prepareInvoicePriceApply(candidate,inv,applyInput,{id:'s',role:'Supervisor'}),/MANAGER_ONLY/);
+assert.throws(()=>C.prepareInvoicePriceApply(candidate,inv,{...applyInput,reason:''},M),/REASON_REQUIRED/);
+assert.throws(()=>C.prepareInvoicePriceApply(candidate,{...inv,revision:2},applyInput,M),/STALE_PRICE_REVIEW/);
+const correction=makeState();correction.consumables.prices.push({id:'same',materialId:'m',brandId:'b',pricePerUnit:.18,effectiveFrom:at('2026-11-24')});
+const corrected=C.prepareInvoicePriceApply(correction,inv,{...applyInput,requestId:'apply-3',review:C.invoicePriceReview(correction,inv,M)},M);
+assert.equal(corrected.receipt.changes[0].priceId,'same');assert.equal(corrected.consumables.prices.length,3);
+assert.equal(corrected.consumables.actuals[1].totalCost,.3);
+console.log('Invoice price application candidate: isolated changes, date boundaries, audit, replay, permissions, stale revision and reconciliation guards PASS');
