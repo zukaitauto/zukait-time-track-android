@@ -2,17 +2,17 @@
   "versionName": "V418",
   "versionCode": 381,
   "releaseScope": "phase1-compatible-ui",
-  "approvedForStaff": false,
-  "ownerPublicationRequested": false,
-  "ownerRequestedImmediateRelease": false,
-  "ownerRequestedProceed": false,
-  "releaseHeldByOwner": true,
+  "approvedForStaff": true,
+  "ownerPublicationRequested": true,
+  "ownerRequestedImmediateRelease": true,
+  "ownerRequestedProceed": true,
+  "releaseHeldByOwner": false,
   "productionBackendChanges": false,
   "backendDeploymentRequired": false,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Owner requested immediate frontend-only V418 publication. Exact-source signed Android, Reception and Stock safety checks passed (45383522882, 45383522809, 45383522877). No backend or production record changes. Physical device testing deferred by owner, fresh backup/restore NOT_RUN; explicit backup deferral not recorded. Hold publication until required approval record is complete.",
+  "reason": "Owner explicitly requested V418 frontend-only publication and authorized fresh production backup/restore deferral. Exact-source signed Android 45383522882, Reception 45383522809 and Stock safety 45383522877 passed. Physical acceptance and fresh production backup/restore remain NOT_RUN. No backend or SQL deployment, inventory activation or historical record changes. Latest purchase-price backend remains deferred. Protected coordinated publication only.",
   "previousPublishedRelease": {
     "versionName": "V417",
     "versionCode": 380,
@@ -22,6 +22,7 @@
   "sourceCommit": "65af4ff062d24e8403d21eda13405222daae3b7a",
   "signedAcceptanceRun": 45383522882,
   "verificationRun": 45383522809,
-  "approvedAt": null,
-  "publishNonce": null
+  "approvedAt": "2026-11-24T11:30:38.945Z",
+  "publishNonce": "v418-ui-7f7cbb1a73a53b62",
+  "backupDeferredByOwner": true
 }
