@@ -29,7 +29,88 @@ function deptCard(title,icon,enabled,fn){
 }
 window.openConsumablesModule=function(){
  const r=role();if(r!=='Supervisor'&&r!=='Manager')return;
- modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',true,'openMechanicalConsumables()')+deptCard('Stock','📦',true,'openStockManagement()')+'</div>');
+ modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',true,'openMechanicalConsumables()')+deptCard('Stock','📦',true,'openStockManagement()')+deptCard('Purchase Entry','🛒',true,'consOpenPurchaseEntry()')+'</div>');
+};
+
+/* Staged Purchase Entry: local draft only. Do not enable stock or price writes
+   until a single authenticated invoice transaction and read endpoint exist. */
+let consPurchaseDraft=null;
+const consPurchaseAllowed=()=>['Manager','Supervisor'].includes(role());
+function consPurchasePairs(){
+ const c=C().ensureState(state),seen=new Set(),rows=[];
+ for(const p of c.prices||[]){
+  if(!p||p.voided)continue;
+  const m=c.materials.find(x=>x.id===p.materialId&&x.active!==false),b=c.brands.find(x=>x.id===p.brandId&&x.active!==false);
+  if(!m||!b)continue;
+  const key=JSON.stringify([m.id,b.id]);if(seen.has(key))continue;seen.add(key);
+  rows.push({materialId:m.id,brandId:b.id,material:m.name,brand:b.name,unit:m.unit,department:m.department||'Painting'});
+ }
+ return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
+}
+const consPurchaseToday=()=>new Date(Date.now()+4*3600000).toISOString().slice(0,10);
+const consPurchaseStyle='<style>.cp-entry{display:grid;gap:12px;max-width:780px;margin:auto;min-width:0}.cp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cp-entry h3{margin:0;color:#17324f}.cp-entry .cp-field{display:grid;gap:5px;min-width:0;font-size:13px;font-weight:700;color:#304c68}.cp-entry input,.cp-entry select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box;border:1px solid #c4d6e7;border-radius:9px;background:#fff!important;color:#17324f!important;padding:8px;font-size:16px}.cp-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cp-entry .cp-panel{border:1px solid #d5e2ed;border-radius:12px;padding:12px;background:#f7faff}.cp-search-results{max-height:210px;overflow:auto}.cp-search-results button{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px;border:1px solid #dbe6f2!important;border-radius:7px;background:#fff!important;color:#17324f!important;text-align:left!important;margin:4px 0;min-height:42px}.cp-entry .cp-action{padding:10px 12px;border:1px solid #b6cfe5;border-radius:8px;color:#185999!important;background:#e9f3ff!important;font-weight:800}.cp-entry .cp-add{background:#e4f4ea!important;color:#166534!important}.cp-entry .cp-total{background:#194b80;color:#fff;padding:13px;border-radius:10px;font-weight:800}.cp-entry .cp-line{display:grid;grid-template-columns:minmax(0,1.5fr) .6fr .8fr .8fr auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #dce5ed;font-size:12px}.cp-lines{overflow-x:auto}.cp-entry .cp-line{min-width:430px}.cp-entry .cp-error{font-size:12px;color:#a13a1b}.cp-entry .cp-info{font-size:12px;color:#526b84}.cp-entry .cp-finish{min-height:44px;width:100%;background:#166534!important;color:#fff!important;border-radius:9px}.cp-entry .cp-finish:disabled{opacity:.55;cursor:not-allowed}@media(max-width:380px){.cp-two{grid-template-columns:1fr}}</style>';
+window.consOpenPurchaseEntry=function(reset=false){
+ if(!consPurchaseAllowed())return;
+ if(!consPurchaseDraft||reset)consPurchaseDraft={invoiceNumber:'',supplier:'',invoiceDate:consPurchaseToday(),lines:[],selected:null,method:'unit'};
+ const d=consPurchaseDraft;
+ modal('Purchase Entry',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Material Purchase</h3><button type="button" class="cp-action" onclick="consOpenPurchaseInvoices()">Invoice List</button></div>'+
+ '<div class="cp-panel"><div class="cp-two"><label class="cp-field">Invoice Number<input id="cpInvoice" maxlength="100" autocomplete="off" value="'+esc(d.invoiceNumber)+'" oninput="consPurchaseHeader()"></label><label class="cp-field">Invoice Date<input id="cpDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(d.invoiceDate)+'" oninput="consPurchaseHeader()"></label></div><label class="cp-field">Supplier<input id="cpSupplier" maxlength="160" value="'+esc(d.supplier)+'" oninput="consPurchaseHeader()"></label></div>'+
+ '<div class="cp-panel"><label class="cp-field">Search Material + Brand<input id="cpSearch" type="search" autocomplete="off" placeholder="Example: Clear CAPCI" oninput="consPurchaseSearch()"></label><div id="cpResults" class="cp-search-results"></div><div id="cpSelected"></div><div id="cpLineEditor" hidden><label class="cp-field">Quantity<input id="cpQty" inputmode="decimal" type="number" min="0" step="0.0001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Price entry<select id="cpMethod" onchange="consPurchaseChangeMethod()"><option value="unit">Price per Unit</option><option value="total">Total Purchase Amount</option></select></label><div class="cp-two"><label class="cp-field">Price / Unit (OMR)<input id="cpUnit" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Total Amount (OMR)<input id="cpAmount" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()" readonly></label></div><button type="button" class="cp-action cp-add" onclick="consPurchaseAddLine()">＋ ADD ITEM</button><div id="cpError" class="cp-error" role="status"></div></div></div>'+
+ '<h3>Invoice Items</h3><div id="cpLines" class="cp-lines"></div><div id="cpTotal" class="cp-total"></div><button type="button" class="cp-finish" disabled>FINISH &amp; SAVE</button><div class="cp-info">Development preview: server invoice saving is not connected. No stock or prices are changed.</div></div>','openConsumablesModule()');
+ consPurchaseRenderLines();
+};
+window.consPurchaseHeader=function(){
+ if(!consPurchaseDraft)return;for(const [field,id] of [['invoiceNumber','cpInvoice'],['supplier','cpSupplier'],['invoiceDate','cpDate']]){const e=document.getElementById(id);if(e)consPurchaseDraft[field]=e.value}
+};
+window.consPurchaseSearch=function(){
+ if(!consPurchaseAllowed()||!consPurchaseDraft)return;
+ const q=String(document.getElementById('cpSearch')?.value||'').trim().toLowerCase().split(/\s+/).filter(Boolean),out=document.getElementById('cpResults');
+ if(!out)return;
+ const pairs=q.length?consPurchasePairs().filter(x=>q.every(t=>(x.material+' '+x.brand+' '+x.unit).toLowerCase().includes(t))).slice(0,30):[];
+ out.innerHTML=pairs.map(x=>'<button type="button" data-mid="'+esc(x.materialId)+'" data-bid="'+esc(x.brandId)+'" onclick="consPurchaseSelect(this.dataset.mid,this.dataset.bid)"><b>'+esc(x.material)+' · '+esc(x.brand)+'</b><small>'+esc(x.unit)+'</small></button>').join('')||(q.length?'<div class="cp-info">No matching material and brand.</div>':'');
+};
+window.consPurchaseSelect=function(mid,bid){
+ if(!consPurchaseAllowed()||!consPurchaseDraft)return;
+ const row=consPurchasePairs().find(x=>x.materialId===mid&&x.brandId===bid);if(!row)return;
+ consPurchaseDraft.selected=row;consPurchaseDraft.method='unit';
+ document.getElementById('cpResults').innerHTML='';document.getElementById('cpSearch').value=row.material+' · '+row.brand;
+ document.getElementById('cpSelected').innerHTML='<b>'+esc(row.material)+' · '+esc(row.brand)+'</b><div class="cp-info">Unit: '+esc(row.unit)+'</div>';
+ document.getElementById('cpLineEditor').hidden=false;document.getElementById('cpQty').value='';document.getElementById('cpQty').step=row.unit==='Piece'?'1':'0.0001';document.getElementById('cpUnit').value='';document.getElementById('cpAmount').value='';document.getElementById('cpMethod').value='unit';document.getElementById('cpUnit').readOnly=false;document.getElementById('cpAmount').readOnly=true;document.getElementById('cpError').textContent='';
+};
+function consPurchaseReadLine(){
+ const d=consPurchaseDraft;if(!d?.selected)throw Error('Select material and brand.');
+ const method=document.getElementById('cpMethod').value;
+ return window.ZukaitStockCore.purchaseLine({...d.selected,quantity:document.getElementById('cpQty').value,priceMethod:method,price:document.getElementById(method==='unit'?'cpUnit':'cpAmount').value});
+}
+window.consPurchaseCalculate=function(){
+ const unit=document.getElementById('cpUnit'),total=document.getElementById('cpAmount'),method=document.getElementById('cpMethod')?.value;
+ try{const l=consPurchaseReadLine();if(method==='unit')total.value=l.totalAmount.toFixed(3);else unit.value=l.unitPrice.toFixed(3)}
+ catch(_){if(method==='unit'&&total)total.value='';else if(unit)unit.value=''}
+};
+window.consPurchaseChangeMethod=function(){
+ const unit=document.getElementById('cpUnit'),total=document.getElementById('cpAmount'),method=document.getElementById('cpMethod').value;
+ unit.readOnly=method!=='unit';total.readOnly=method!=='total';consPurchaseCalculate();
+};
+window.consPurchaseAddLine=function(){
+ if(!consPurchaseAllowed()||!consPurchaseDraft)return;
+ try{
+  const d=consPurchaseDraft,l=consPurchaseReadLine();
+  if(d.lines.length>=50)throw Error('Maximum 50 items per invoice.');
+  if(d.lines.some(x=>x.materialId===l.materialId&&x.brandId===l.brandId))throw Error('Material and brand already added. Remove the previous line before changing quantity.');
+  d.lines.push({...l,material:d.selected.material,brand:d.selected.brand});d.selected=null;
+  document.getElementById('cpSearch').value='';document.getElementById('cpSelected').innerHTML='';document.getElementById('cpLineEditor').hidden=true;consPurchaseRenderLines();
+ }catch(e){const out=document.getElementById('cpError');if(out)out.textContent=String(e.message||e)}
+};
+window.consPurchaseRemoveLine=function(i){if(!consPurchaseAllowed()||!consPurchaseDraft||!Number.isInteger(i)||i<0||i>=consPurchaseDraft.lines.length)return;consPurchaseDraft.lines.splice(i,1);consPurchaseRenderLines()};
+function consPurchaseRenderLines(){
+ const out=document.getElementById('cpLines'),total=document.getElementById('cpTotal'),lines=consPurchaseDraft?.lines||[];
+ if(!out||!total)return;
+ out.innerHTML=lines.length?'<div class="cp-line"><b>Material / Brand</b><b>Qty</b><b>Rate</b><b>OMR</b><span></span></div>'+lines.map((l,i)=>'<div class="cp-line"><b>'+esc(l.material)+' · '+esc(l.brand)+'</b><span>'+esc(l.quantity)+'</span><span>'+l.unitPrice.toFixed(3)+'</span><b>'+l.totalAmount.toFixed(3)+'</b><button type="button" class="cp-action" onclick="consPurchaseRemoveLine('+i+')" aria-label="Remove item">×</button></div>').join(''):'<p class="cp-info">No items added.</p>';
+ total.textContent='Total Invoice Amount: OMR '+(lines.reduce((n,l)=>n+l.totalMills,0)/1000).toFixed(3);
+}
+window.consOpenPurchaseInvoices=function(){
+ if(!consPurchaseAllowed())return;consPurchaseHeader();
+ modal('Purchase Invoice List',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Invoice List</h3><button type="button" class="cp-action" onclick="consOpenPurchaseEntry()">New Entry</button></div><label class="cp-field">Search invoice / supplier / material<input type="search" disabled placeholder="Server history not connected"></label><div class="cp-two"><label class="cp-field">From Date<input type="date" disabled></label><label class="cp-field">To Date<input type="date" disabled></label></div><div class="cp-panel cp-info">Invoice history is not available until the authenticated server read endpoint is connected. No invoice data has been loaded.</div></div>','consOpenPurchaseEntry()');
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
 function action(label,sub,fn,cls=''){return '<button class="cons-action '+cls+'" onclick="'+fn+'"><b>'+label+'</b><small>'+sub+'</small></button>'}
