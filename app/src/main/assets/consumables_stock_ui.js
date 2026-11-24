@@ -120,6 +120,18 @@ const css='<style>'+
  '.zs-unlinked{background:#f8fbff;border-color:#c8d7eb}.zs-unlinked-pill{background:#fff1d5;color:#805113}'+
  '.zs-unlinked-grid{margin:10px 0}.zs-unlinked-grid b{display:block;color:#7b8694;font-size:17px}.zs-unlinked-grid small{display:block;color:#5a6e83}'+
  '.zs-link-action,.zs-master-price-action{margin-top:9px}'+
+ '.zs-balance-scroll{overflow-x:auto;max-width:100%;margin:8px 0;border:1px solid #cbd8e7;border-radius:9px;background:#fff}'+
+ '.zs-balance-table{min-width:900px}'+
+ '.zs .zs-balance-line,.zs .zs-balance-head{display:grid!important;grid-template-columns:minmax(180px,2.2fr) repeat(3,minmax(86px,1fr)) minmax(125px,1.3fr) minmax(240px,2.4fr);align-items:center;gap:8px;width:100%;box-sizing:border-box;padding:7px 10px;text-align:left;line-height:1.2;margin:0;border:0;border-radius:0;background:#fff;color:#172940;font-size:12px;min-height:34px}'+
+ '.zs .zs-balance-head{background:#e6eef8;font-size:11px;font-weight:800;color:#314b69;min-height:32px}'+
+ '.zs .zs-balance-line{border-top:1px solid #e0e8f0}'+
+ '.zs .zs-balance-linked{cursor:pointer;background:#f9fbfe!important;color:#172940!important;font-weight:500}'+
+ '.zs .zs-balance-linked:hover{background:#e8f2ff!important}'+
+ '.zs .zs-balance-linked:focus-visible{outline:2px solid #2563eb;outline-offset:-2px}'+
+ '.zs-balance-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-variant-numeric:tabular-nums;color:#172940!important}'+
+ '.zs-balance-name{font-weight:800}.zs-balance-line .zs-available{font-weight:800;color:#166534!important}'+
+ '.zs-balance-status{font-size:10px;font-weight:700;white-space:nowrap;color:#35536f}.zs-balance-status.pending{color:#94540b}.zs-balance-status.out{color:#b91c1c}.zs-balance-status.ok{color:#166534}'+
+ '.zs-balance-actions{display:flex;gap:5px;align-items:center;min-width:0;flex-wrap:nowrap;overflow:hidden}.zs-balance-mini{border:1px solid #b7cce3;border-radius:5px;padding:3px 5px;color:#174d87!important;background:#eef5ff!important;font-size:10px;white-space:nowrap;cursor:pointer}'+
  '.zs-balance-tools{display:grid;grid-template-columns:minmax(0,2fr) minmax(140px,1fr);gap:10px;margin:9px 0 12px}'+
  '@media(max-width:480px){.zs-balance-tools{grid-template-columns:minmax(0,1fr)}}'+
  '@media(min-width:720px){.zs-nav{grid-template-columns:repeat(5,minmax(0,1fr))}.zs-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}}'+
@@ -150,42 +162,42 @@ function draw(body) {
   if(live){renderStockScreen(previewHomeCss+markup,view.page);return;}
   window.openModal(markup);
 }
+// One compact row per material/brand; unknown quantities remain unknown.
+function balanceCell(value,cls='',title=''){
+ return '<span class="zs-balance-cell '+cls+'"'+(title?' title="'+esc(title)+'"':'')+'>'+esc(value)+'</span>';
+}
+function balanceStatus(label,cls=''){
+ return '<span class="zs-balance-status '+cls+'">'+esc(label)+'</span>';
+}
+function balanceUnknown(){
+ return balanceCell('—')+balanceCell('—')+balanceCell('—')+balanceCell('—');
+}
 function rowCard(r){
- const unit=esc(r.unit||'Liter'),isCounted=counted(r),a=available(r),status=countStatus(r);
+ const unit=r.unit||'Liter',isCounted=counted(r),a=available(r),status=countStatus(r);
  const ids=esc(String(r.material_id)+'|'+String(r.brand_id));
  const statusLabel=status==='uncounted'?'Opening stock not counted':'Opening count status unverified';
- return '<button type="button" class="zs-card" style="display:block;width:100%;text-align:left" data-id="'+ids+
-  '" onclick="zukStockDetail(this.dataset.id)"><div class="zs-row"><b>'+esc(label(r))+'</b>'+
-  (!isCounted?'<span class="zs-pill zs-unlinked-pill">'+statusLabel+'</span>':
-   a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
-  (isCounted?'<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+fmt(r.physical)+' '+unit+
-   '</b></div><div><div class="zs-muted">Reserved</div><b>'+fmt(r.reserved)+' '+unit+
-   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+
-   '</b></div></div>'+
-   '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div>':
-   '<p class="zs-muted">Physical, available and stock value cannot be confirmed until opening-count status is verified. No zero quantity is assumed.</p>'+
-   '<div class="zs-grid zs-unlinked-grid"><div><small>Physical</small><b>—</b></div><div><small>Reserved</small><b>—</b></div><div><small>Available</small><b>—</b></div></div>')+'</button>';
+ const avg=OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit;
+ const quantities=isCounted?balanceCell(fmt(r.physical)+' '+unit)+balanceCell(fmt(r.reserved)+' '+unit)+
+  balanceCell(fmt(a)+' '+unit,'zs-available')+balanceCell(avg,'','Average '+avg):balanceUnknown();
+ return '<button type="button" class="zs-balance-line zs-balance-linked" data-id="'+ids+
+  '" onclick="zukStockDetail(this.dataset.id)">'+balanceCell(label(r),'zs-balance-name',label(r))+
+  quantities+balanceStatus(!isCounted?statusLabel:a<=0?'Out of stock':a<Number(r.minimum)?'Low stock':'In stock',
+   !isCounted?'pending':a<=0?'out':a<Number(r.minimum)?'pending':'ok')+'</button>';
 }
 function masterStockCard(x,status){
- return '<div class="zs-card zs-unlinked" data-balance-entry data-balance-kind="'+esc(status)+
-  '" data-balance-name="'+esc(x.name+' — '+x.brand)+'">'+
-  '<div class="zs-row"><b>'+esc(x.name)+' — '+esc(x.brand)+'</b>'+
-   '<span class="zs-pill zs-unlinked-pill">'+esc(status==='pending'?'Link status not checked':'Not linked')+'</span></div>'+
-  '<p class="zs-muted">'+esc(x.unit||'Unit not recorded')+
-   ' · Material Master record · Stock quantity not recorded</p>'+
-  '<div class="zs-grid zs-unlinked-grid"><div><small>Physical</small><b>—</b></div>'+
-   '<div><small>Reserved</small><b>—</b></div>'+
-   '<div><small>Available</small><b>—</b></div></div>'+
-  (manager()&&status!=='pending'?
-   '<button type="button" class="zs-btn secondary zs-link-action" onclick="zukStockLegacyReview()">Review &amp; Link</button>':'')+
-  '</div>';
+ const name=x.name+' — '+x.brand;
+ return '<div class="zs-balance-line" data-balance-entry data-balance-kind="'+esc(status)+
+  '" data-balance-name="'+esc(name)+'">'+balanceCell(name,'zs-balance-name',name)+balanceUnknown()+
+  '<span class="zs-balance-actions" title="Stock quantity not recorded">'+
+  balanceStatus(status==='pending'?'Link status not checked':'Not linked','pending')+
+  (manager()&&status!=='pending'?'<button type="button" class="zs-balance-mini" onclick="zukStockLegacyReview()">Review &amp; Link</button>':'')+'</span></div>';
 }
 function unpricedMaterialCard(m){
- return '<div class="zs-card zs-unpriced" data-balance-entry data-balance-kind="unpriced"'+
-  ' data-balance-name="'+esc(m.name||m.id)+'"><div class="zs-row"><b>'+esc(m.name||m.id)+'</b>'+
-  '<span class="zs-pill zs-unlinked-pill">Brand &amp; Price needed</span></div>'+
-  '<p class="zs-muted">No saved active brand price for this material. Not a stock balance; no quantity assumed.</p>'+
-  (manager()?'<button type="button" class="zs-btn secondary zs-master-price-action" onclick="zukStockOpenMaterials()">Open Brand &amp; Price</button>':'')+'</div>';
+ const name=String(m.name||m.id);
+ return '<div class="zs-balance-line" data-balance-entry data-balance-kind="unpriced" data-balance-name="'+esc(name)+'">'+
+  balanceCell(name,'zs-balance-name',name)+balanceUnknown()+'<span class="zs-balance-actions">'+
+  balanceStatus('Brand & Price needed','pending')+
+  (manager()?'<button type="button" class="zs-balance-mini" onclick="zukStockOpenMaterials()">Open Brand &amp; Price</button>':'')+'</span></div>';
 }
 function render(){
  if(!allowed())return;
@@ -208,7 +220,7 @@ function render(){
     '<div class="zs-metric"><div class="zs-muted">Material / Brand items</div><b>'+entries.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Linked stock</div><b>'+rows.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Needs linking</div><b>'+(incomplete?'—':unlinked.length)+'</b></div></div>'+
-    '<p class="zs-muted">Recorded linked stock: '+low+' low and '+out+' out of stock. '+notCounted+' without a posted opening or receipt; '+unknownCount+' with ledger count status unverified. Unlinked materials are not counted as zero stock.</p>'+
+    '<p class="zs-muted">'+low+' low · '+out+' out of stock · '+notCounted+' not counted · '+unknownCount+' unverified</p>'+
     '<div class="zs-row" style="margin-top:12px"><h3>Stock Balance &amp; Material Master</h3>'+
     '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
     '<div class="zs-balance-tools"><label>Search material or brand<input type="search" id="zs-balance-query" autocomplete="off" value="'+esc(view.balanceQuery||'')+
@@ -218,7 +230,7 @@ function render(){
       .map(([id,name])=>'<option value="'+id+'"'+(view.balanceFilter===id?' selected':'')+'>'+name+'</option>').join('')+'</select></label></div>'+
     (manager()?'<button class="zs-btn secondary" onclick="zukStockLegacyReview()">One-time: Review Older Materials</button>':'')+
     (view.error?'<p class="zs-warning">Stock link status cannot be verified until the ledger loads successfully. Refresh to retry.</p>':view.itemsHasMore?'<p class="zs-warning">More stock balances may be on later pages. Load them before deciding that unmatched Master items need linking.</p>':'')+
-    (entries.length?entries.map(x=>x.markup).join(''):
+    (entries.length?'<div class="zs-balance-scroll" tabindex="0" aria-label="Stock balance list, scroll horizontally on small screens"><div class="zs-balance-table"><div class="zs-balance-head"><span>Material / Brand</span><span>Physical</span><span>Reserved</span><span>Available</span><span>Avg. Cost / Unit</span><span>Status</span></div>'+entries.map(x=>x.markup).join('')+'</div></div>':
      '<p class="zs-warning">No saved Material Master items or linked Stock records visible. Check the Master and refresh.</p>')+
     (entries.length?'<p class="zs-muted" id="zs-balance-search-empty" hidden>No materials match this search or filter.</p>':'')+
     (incomplete?'<button class="zs-btn secondary" onclick="zukStockMore()">Load more items</button>':''));
