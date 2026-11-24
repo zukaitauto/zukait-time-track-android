@@ -255,7 +255,7 @@ window.consPurchaseSaveCorrection=async function(){
   const r=await consPurchaseApi({operation:mode==='cancel'?'INVOICE_CANCEL':mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',requestId:pending.id,data});
   if(!r?.ok||!r.invoice?.id){
    const code=String(r?.code||'invoice_correction_unconfirmed');
-   if(['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_cancelled','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','duplicate_invoice'].includes(code))consPurchaseCorrectionPending.delete(key);
+   if(['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_cancelled','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','duplicate_invoice'].includes(code))consPurchaseCorrectionPending.delete(key);
    throw Error(code);
   }
   consPurchaseCorrectionPending.delete(key);consPurchaseEditing=null;consPurchaseBusy=false;
@@ -263,20 +263,71 @@ window.consPurchaseSaveCorrection=async function(){
  }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);}}
  finally{consPurchaseBusy=false}
 };
+let consPurchasePriceSelection=null;
+const consPricePendingKey=(owner,invoiceId)=>'zukait-invoice-price-pending-v1:'+owner+':'+invoiceId;
 window.consPurchasePriceReview=function(index){
  if(role()!=='Manager'||!consPurchaseRestore()||consPurchaseBusy)return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice)return;
  try{
-  const rows=C().invoicePriceReview(state,invoice,me);
+  const owner=consPurchaseOwnerId(),key=consPricePendingKey(owner,invoice.id);
+  const pending=JSON.parse(window.localStorage.getItem(key)||'null');
+  if(pending&&(pending.invoiceId!==invoice.id||!pending.requestId||!Array.isArray(pending.review)))throw Error('Invalid pending price application. Contact Manager support.');
+  const rows=pending?pending.review:C().invoicePriceReview(state,invoice,me);
+  consPurchasePriceSelection={owner,invoice,rows,key,pending};
+  const changes=rows.filter(p=>p.action==='create'||p.action==='correct');
+  const canApply=changes.length>0&&!rows.some(p=>p.action==='blocked');
   const rate=n=>n===null||n===undefined?'Not configured':'OMR '+Number(n).toFixed(3);
   const body='<div class="cp-info">Purchase prices are compared with Brands &amp; Price on the invoice date (Oman). This is a preview only. Stock valuation and historical costs are not changed by opening this screen.</div>'+
    rows.map(r=>'<div class="cp-panel"><b>'+esc(r.materialName)+' · '+esc(r.brandName)+'</b><div>Existing rate: '+esc(rate(r.oldRate))+' / '+esc(r.unit)+'</div><div>Invoice rate: '+esc(rate(r.rate))+' / '+esc(r.unit)+'</div><div>Effective date: '+esc(r.date)+'</div><div>'+esc(r.action==='create'?'New price period':r.action==='correct'?'Same-day price correction':r.action==='unchanged'?'No change needed':r.reason)+'</div>'+
     (r.affected===undefined?'':'<div>Affected Actual Materials records: '+r.affected+'</div>')+
     (r.jobCards?.length?'<div class="cp-info">'+esc(r.jobCards.join(', '))+'</div>':'')+
     '</div>').join('')+
-   '<p class="cp-info">Manager must review existing effective-date periods before applying prices. Invoice correction or cancellation requires a fresh review. No automatic costing write is enabled.</p>';
+   '<p class="cp-info">Stock valuation is not changed. Applying reviewed prices recalculates affected job costs with an audit record. Invoice corrections and cancellations after applying prices require explicit reconciliation.</p>'+
+   (pending?'<div class="cp-info">A previous save was not confirmed. Retry the exact original request; it will not apply twice.</div>':'')+
+   (canApply||pending?'<label class="cp-field">Reason (required)<input id="cpPriceReason" maxlength="500" value="'+esc(pending?.reason||'')+'"'+(pending?' disabled':'')+'></label><button type="button" id="cpPriceApply" class="cp-finish" onclick="consPurchaseApplyPrices()">'+(pending?'RETRY PRICE APPLICATION':'APPLY REVIEWED PRICES')+'</button><div id="cpPriceStatus" class="cp-info" role="status"></div>':'<div class="cp-info">No eligible price changes to apply.</div>');
   modal('Invoice Costing Price Review',consPurchaseStyle+'<div class="cp-entry">'+body+'</div>','consOpenPurchaseInvoices()');
  }catch(e){alert(String(e?.message||e))}
+};
+window.consPurchaseApplyPrices=async function(){
+ if(role()!=='Manager'||consPurchaseBusy||!consPurchasePriceSelection)return;
+ const selection=consPurchasePriceSelection,{owner,invoice,rows,key}=selection;
+ if(owner!==consPurchaseOwnerId())return;
+ const button=document.getElementById('cpPriceApply'),out=document.getElementById('cpPriceStatus');
+ if(!button||!out||button.disabled)return;
+ const definitive=['manager_only','invalid_price_application','invoice_price_apply_not_enabled','invoice_not_found','invoice_cancelled','invoice_revision_conflict','stale_price_review','price_review_blocked','no_price_changes','invoice_price_reconciliation_required','invoice_price_already_applied_reconciliation_required','request_id_conflict','stale_workshop_revision'];
+ try{
+  let pending=JSON.parse(window.localStorage.getItem(key)||'null');
+  if(!pending){
+   if(rows.some(p=>p.action==='blocked')||!rows.some(p=>p.action==='create'||p.action==='correct'))throw Error('No eligible price changes.');
+   const reason=String(document.getElementById('cpPriceReason')?.value||'').trim();
+   if(reason.length<5||reason.length>500)throw Error('Enter a reason (5–500 characters).');
+   const jobs=new Set(rows.flatMap(p=>p.jobCards||[]));
+   if(!confirm('Apply reviewed invoice prices? '+jobs.size+' job card(s) may be recalculated. Historical changes are audited.'))return;
+   pending={invoiceId:invoice.id,invoiceRevision:invoice.revision,requestId:window.crypto?.randomUUID?.()||('price-'+Date.now()+'-'+Math.random().toString(36).slice(2)),reason,review:rows};
+   // Fail closed before network access if the retry cannot be persisted.
+   window.localStorage.setItem(key,JSON.stringify(pending));
+  }
+  consPurchaseBusy=true;button.disabled=true;
+  const field=document.getElementById('cpPriceReason');if(field)field.disabled=true;
+  out.textContent='Applying reviewed prices…';
+  if(typeof window.zukaitCloud?.invoicePriceApply!=='function')throw Error('Price server unavailable.');
+  const result=await window.zukaitCloud.invoicePriceApply(pending);
+  if(owner!==consPurchaseOwnerId())return;
+  if(!result?.ok){
+   const code=String(result?.code||'invoice_price_commit_unconfirmed');
+   if(definitive.includes(code)){
+    window.localStorage.removeItem(key);
+    if(document.getElementById('cpPriceStatus')===out)out.textContent='Price application rejected: '+code+'. Reopen invoice review before retrying.';
+    return;
+   }
+   throw Error(code);
+  }
+  if(result.invoiceId!==pending.invoiceId||result.requestId!==pending.requestId||result.invoiceRevision!==pending.invoiceRevision)throw Error('Price save confirmation mismatch.');
+  window.localStorage.removeItem(key);
+  if(document.getElementById('cpPriceStatus')===out)out.textContent='Prices saved with audit record. Workshop totals refresh from the server.';
+ }catch(e){
+  if(document.getElementById('cpPriceStatus')===out){out.textContent=String(e?.message||e);button.disabled=false;}
+ }finally{consPurchaseBusy=false;}
 };
 window.consPurchaseAudit=async function(index,page=0){
  if(role()!=='Manager'||!consPurchaseRestore()||!Number.isInteger(page)||page<0||page>100)return;
