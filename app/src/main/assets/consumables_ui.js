@@ -1102,7 +1102,7 @@ body.cons-master-open #cmList{max-height:62vh;overflow:auto}
 #consMasterWorkspace.cons-master-focused .cons-master-form>button{border:0!important;border-radius:12px!important;color:#fff!important;background:#205bcd!important;min-height:52px!important;font-size:16px!important;font-weight:850!important;text-align:center!important;box-shadow:0 3px 11px #1d55aa1d!important;margin-top:7px}
 #consMasterWorkspace.cons-master-focused.cons-master-price .cons-master-form>button{background:#086eaa!important}
 #consMasterWorkspace.cons-master-focused .cons-master-form>button:focus-visible{outline:3px solid #6ca6ff!important;outline-offset:3px!important}
-#consMasterWorkspace.cons-master-create>.cons-searchbar,#consMasterWorkspace.cons-master-create>#cmList,#consMasterWorkspace.cons-master-create>button.secondary,#consMasterWorkspace.cons-master-create>#cmListHeading{display:none!important}
+#consMasterWorkspace.cons-master-create>.cons-searchbar,#consMasterWorkspace.cons-master-create>#cmList,#consMasterWorkspace.cons-master-create>button.secondary,#consMasterWorkspace.cons-master-create>#cmListHeading,#consMasterWorkspace.cons-master-create>#cmPurchaseStatus{display:none!important}
 #consMasterWorkspace.cons-master-focused>#cmSaveMessage{background:#f3f9ff!important;border:1px solid #d5e8f5!important;border-radius:10px!important;padding:12px!important;font-size:13px!important;line-height:1.4!important;color:#3a5b76!important}
 @media(min-width:901px){
  .modal-backdrop:has(#consMasterWorkspace.cons-master-focused) .modal-box{width:min(740px,96vw)!important;max-width:740px!important}
