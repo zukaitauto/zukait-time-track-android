@@ -1,6 +1,6 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {stripTypeScriptTypes} from 'node:module';
 const source=fs.readFileSync(process.argv[2]||'supabase/functions/workshop-api/index.ts','utf8');const start=source.indexOf('async function baseStateForRevision('),end=source.indexOf('// FINAL_SESSION_STATUS_BEGIN',start);assert.ok(start>0&&end>start);const body=stripTypeScriptTypes(source.slice(start,end));
-function setup({enabled='',rpc={data:{source:'compatible'}},legacy={data:{data:{source:'legacy'}}}}={}){
+function setup({production=false,enabled='',rpc={data:{source:'compatible'}},legacy={data:{data:{source:'legacy'}}}}={}){
  const calls=[];
  const admin={
   rpc:async(name,args)=>{calls.push(['rpc',name,args]);if(rpc instanceof Error)throw rpc;return rpc},
@@ -16,7 +16,7 @@ function setup({enabled='',rpc={data:{source:'compatible'}},legacy={data:{data:{
   }
  };
 
- const reader=new Function('admin','Deno','cloneValue',body+';return baseStateForRevision;')(admin,{env:{get:key=>{assert.equal(key,'ZUKAIT_HISTORY_READER_COMPAT');return enabled}}},structuredClone);return {reader,calls};
+ const reader=new Function('admin','Deno','cloneValue',body+';return baseStateForRevision;')(admin,{env:{get:key=>{if(key==='SUPABASE_URL')return production?'https://pjknotnjkufadqavcmii.supabase.co':undefined;assert.equal(key,'ZUKAIT_HISTORY_READER_COMPAT');return enabled}}},structuredClone);return {reader,calls};
 }
 {
  const h=setup(),value={nested:{value:1}};const out=await h.reader(4,4,value);assert.deepEqual(out,value);assert.notEqual(out,value);out.nested.value=2;assert.equal(value.nested.value,1);assert.deepEqual(h.calls,[],'current revision never fetches history');
@@ -36,3 +36,9 @@ for(const code of ['P0001','42501','PGRST301','XX001']){const err={code,message:
  const h3=setup({legacy:{data:null,error:null}});assert.equal(await h3.reader(2,4,{}),null);
 }
 console.log('PASS compatible history rollout: default legacy/no extra RPC, cloned current data, opt-in RPC, null/missing revisions, rolling-schema fallback, corruption/access/network fail-closed.');
+
+// Live compact reader is authoritative regardless of the legacy compatibility flag.
+for(const enabled of ['', 'false','true']){const h=setup({production:true,enabled});assert.deepEqual(await h.reader(2,4,{}),{source:'compatible'});assert.deepEqual(h.calls,[['rpc','zukait_read_workshop_merge_base',{p_revision:2}]]);}
+{const h=setup({production:true,rpc:{data:null,error:null}});assert.equal(await h.reader(2,4,{}),null);assert.equal(h.calls.length,1);}
+for(const code of ['PGRST202','42501','XX001']){const error={code},h=setup({production:true,rpc:{error}});await assert.rejects(h.reader(2,4,{}),e=>e===error);assert.equal(h.calls.length,1,'production compact reader must not fall back to legacy history');}
+console.log('PASS production compact reader: exact RPC, no fallback and fail-closed errors');
