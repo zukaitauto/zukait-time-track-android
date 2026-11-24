@@ -6,7 +6,7 @@ const fmt=n=>Number(n||0).toFixed(2);
 let department='';
 let view={page:'balance',items:[],history:[],itemsHasMore:false,itemsNextPage:1,historyHasMore:false,loading:false,error:'',busy:false,
   selected:'',mode:'total',pending:null,legacyItems:[],legacyPage:0,legacyHasMore:false,report:null,
-  balanceQuery:'',balanceFilter:'all'};
+  balanceQuery:'',balanceFilter:'all',pairQuery:''};
 const allowed=()=>typeof me!=='undefined'&&['Manager','Supervisor'].includes(me?.role);
 const manager=()=>typeof me!=='undefined'&&me?.role==='Manager';
 // The normal app can ask the authenticated server whether a real-data ledger
@@ -93,6 +93,11 @@ const label=(r)=>{
   return (m?.name||r.material_id)+' — '+(b?.name||r.brand_id);
 };
 const available=x=>Number(x.physical)-Number(x.reserved);
+// Only an explicit opening, purchase or audited adjustment can establish
+// a real ledger zero. New uninitialised catalog rows are placeholders.
+// Older servers omit this flag; treat the status as unknown, never as zero.
+const countStatus=x=>x?.initialised===true?'counted':x?.initialised===false?'uncounted':'unknown';
+const counted=x=>countStatus(x)==='counted';
 const css='<style>'+
  '.zs{font-family:inherit;color:#15253c;max-width:1150px;margin:auto}.zs *{box-sizing:border-box}'+
  '.zs-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}'+
@@ -146,15 +151,20 @@ function draw(body) {
   window.openModal(markup);
 }
 function rowCard(r){
- const unit=esc(r.unit||'Liter'),a=available(r);
+ const unit=esc(r.unit||'Liter'),isCounted=counted(r),a=available(r),status=countStatus(r);
  const ids=esc(String(r.material_id)+'|'+String(r.brand_id));
+ const statusLabel=status==='uncounted'?'Opening stock not counted':'Opening count status unverified';
  return '<button type="button" class="zs-card" style="display:block;width:100%;text-align:left" data-id="'+ids+
-   '" onclick="zukStockDetail(this.dataset.id)"><div class="zs-row"><b>'+esc(label(r))+'</b>'+
-   (a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
-   '<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+fmt(r.physical)+' '+unit+
+  '" onclick="zukStockDetail(this.dataset.id)"><div class="zs-row"><b>'+esc(label(r))+'</b>'+
+  (!isCounted?'<span class="zs-pill zs-unlinked-pill">'+statusLabel+'</span>':
+   a<Number(r.minimum)?'<span class="zs-pill">Low stock</span>':'')+'</div>'+
+  (isCounted?'<div class="zs-grid" style="margin-top:9px"><div><div class="zs-muted">Physical</div><b>'+fmt(r.physical)+' '+unit+
    '</b></div><div><div class="zs-muted">Reserved</div><b>'+fmt(r.reserved)+' '+unit+
-   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+'</b></div></div>'+
-   '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div></button>';
+   '</b></div><div><div class="zs-muted">Available</div><b class="zs-available">'+fmt(a)+' '+unit+
+   '</b></div></div>'+
+   '<div class="zs-muted" style="margin-top:6px">Average '+OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit+'</div>':
+   '<p class="zs-muted">Physical, available and stock value cannot be confirmed until opening-count status is verified. No zero quantity is assumed.</p>'+
+   '<div class="zs-grid zs-unlinked-grid"><div><small>Physical</small><b>—</b></div><div><small>Reserved</small><b>—</b></div><div><small>Available</small><b>—</b></div></div>')+'</button>';
 }
 function masterStockCard(x,status){
  return '<div class="zs-card zs-unlinked" data-balance-entry data-balance-kind="'+esc(status)+
@@ -185,8 +195,10 @@ function render(){
     master=masterInventory(),incomplete=view.itemsHasMore||!!view.error,
     unlinked=master.pairs.filter(p=>!known.has(p.key)),
     unpriced=master.unpriced.filter(m=>!rows.some(r=>String(r.material_id)===String(m.id))),
-    low=rows.filter(x=>available(x)>0&&available(x)<Number(x.minimum)).length,
-    out=rows.filter(x=>available(x)<=0).length,
+    low=rows.filter(x=>counted(x)&&available(x)>0&&available(x)<Number(x.minimum)).length,
+    out=rows.filter(x=>counted(x)&&available(x)<=0).length,
+    notCounted=rows.filter(x=>countStatus(x)==='uncounted').length,
+    unknownCount=rows.filter(x=>countStatus(x)==='unknown').length,
     entries=[
      ...rows.map(r=>({name:label(r),markup:'<div data-balance-entry data-balance-kind="linked" data-balance-name="'+esc(label(r))+'">'+rowCard(r)+'</div>'})),
      ...unlinked.map(p=>({name:p.name+' — '+p.brand,markup:masterStockCard(p,incomplete?'pending':'unlinked')})),
@@ -196,7 +208,7 @@ function render(){
     '<div class="zs-metric"><div class="zs-muted">Material / Brand items</div><b>'+entries.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Linked stock</div><b>'+rows.length+'</b></div>'+
     '<div class="zs-metric"><div class="zs-muted">Needs linking</div><b>'+(incomplete?'—':unlinked.length)+'</b></div></div>'+
-    '<p class="zs-muted">Linked stock: '+low+' low and '+out+' out of stock. Unlinked Master items are not counted as zero stock.</p>'+
+    '<p class="zs-muted">Recorded linked stock: '+low+' low and '+out+' out of stock. '+notCounted+' without a posted opening or receipt; '+unknownCount+' with ledger count status unverified. Unlinked materials are not counted as zero stock.</p>'+
     '<div class="zs-row" style="margin-top:12px"><h3>Stock Balance &amp; Material Master</h3>'+
     '<button class="zs-btn secondary" onclick="zukStockNav(\'balance\',true)">Refresh</button></div>'+
     '<div class="zs-balance-tools"><label>Search material or brand<input type="search" id="zs-balance-query" autocomplete="off" value="'+esc(view.balanceQuery||'')+
@@ -242,29 +254,37 @@ function render(){
    const r=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
    if(!r){view.page='balance';render();return}
    const unit=esc(r.unit);
+   const isCounted=counted(r);
    draw('<button class="zs-btn secondary" onclick="zukStockNav(\'balance\')">← Stock Balance</button>'+
     '<div class="zs-card"><h3>'+esc(label(r))+'</h3>'+
-    [['Physical',fmt(r.physical)+' '+unit],['Reserved',fmt(r.reserved)+' '+unit],
-     ['Available',fmt(available(r))+' '+unit],['Average cost',OMR(Number(r.physical)?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit],
-     ['Stock value',OMR(r.stock_value)+' OMR'],['Minimum stock',fmt(r.minimum)+' '+unit]]
+    (!isCounted?'<p class="zs-warning">'+(countStatus(r)==='uncounted'?'Opening stock not counted':'Opening count status unavailable')+'. Physical and value totals are not confirmed.</p>':'')+
+    [['Physical',isCounted?fmt(r.physical)+' '+unit:'—'],['Reserved',isCounted?fmt(r.reserved)+' '+unit:'—'],
+     ['Available',isCounted?fmt(available(r))+' '+unit:'—'],
+     ['Average cost',isCounted?OMR(Number(r.physical)?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit:'—'],
+     ['Stock value',isCounted?OMR(r.stock_value)+' OMR':'—'],
+     ['Minimum stock',fmt(r.minimum)+' '+unit]]
      .map(([k,v])=>'<div class="zs-row" style="padding:5px 0"><span class="zs-muted">'+k+'</span><b>'+v+'</b></div>').join('')+'</div>'+
      '<button class="zs-btn" onclick="zukStockNav(\'add\')">Add Purchased Stock</button> '+
      (manager()?'<button class="zs-btn secondary" onclick="zukStockNav(\'adjust\')">Stock Adjustment</button>':''));
    return;
  }
  if(view.page==='add'){
-    const c=catalog(),row=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected),
-     selected=row||view.items[0];
+    const c=catalog(),selected=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
     const noAssignedItems=Boolean(department&&!view.items.length);
-    const pairOptions=view.items.map(x=>'<option value="'+esc(label(x))+'"></option>').join(''),
-     pairName=selected?label(selected):'';
+    const pairChoices=view.items.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(label(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(label(x))+
+      '<small>'+esc(x.unit||'')+'</small></button>').join(''),
+      pairName=selected?label(selected):String(view.pairQuery||'');
     draw('<h3>Add / Open Stock</h3>'+
      (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs for this department.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
        (manager()?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
      '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
      (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
-     '<label>Search Material + Brand</label><input id="zs-material-brand-search" list="zs-material-brand-options" autocomplete="off" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled placeholder="Link a material + brand first"':'')+' oninput="zukStockResolvePair()">'+
-     '<datalist id="zs-material-brand-options">'+pairOptions+'</datalist>'+
+     '<label for="zs-material-brand-search">Search Material + Brand</label>'+
+     '<div class="zs-pair-picker"><input id="zs-material-brand-search" type="search" inputmode="search" autocomplete="off" autocapitalize="none" aria-controls="zs-pair-results" aria-expanded="false" placeholder="'+(noAssignedItems?'Link a material + brand first':'Type material or brand to search')+'" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled':'')+' oninput="zukStockResolvePair()" onfocus="zukStockShowPairChoices()">'+
+     '<div id="zs-pair-results" class="zs-pair-results" role="group" aria-label="Matching linked stock materials" hidden>'+pairChoices+
+     '<p id="zs-pair-empty" class="zs-muted" hidden>No matching items on this loaded page. '+(view.itemsHasMore?'Load more linked materials below to continue searching.':'Check the material and brand name.')+'</p></div>'+
+     '<p id="zs-pair-hint" class="zs-muted" role="status">'+(selected?'Selected '+esc(label(selected)):'Tap a search result to choose the exact material and brand.')+'</p>'+
+     (view.itemsHasMore?'<button type="button" id="zs-pair-more" class="zs-btn secondary zs-pair-more" onclick="zukStockPairMore()">Load next 100 linked materials</button>':'')+'</div>'+
      '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
      '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
      '<label>Price method</label><select id="zs-method" onchange="zukStockCalculatePurchase()"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
@@ -305,6 +325,7 @@ function render(){
    const r=view.report;
    draw('<div class="zs-row"><h3>Stock Reports</h3><button class="zs-btn secondary" onclick="zukStockNav(\'reports\',true)">Refresh</button></div>'+
      (r?'<div class="zs-card">'+
+     '<p class="zs-muted">Report totals are server-reported. Verify opening-count status separately before interpreting a zero balance as physically out of stock.</p>'+
      '<div class="zs-row"><span>Current stock valuation</span><b>'+OMR(r.valuation)+' OMR</b></div>'+
      '<div class="zs-row"><span>Tracked material and brand pairs</span><b>'+esc(r.items)+'</b></div>'+
      '<div class="zs-row"><span>Low stock</span><b>'+esc(r.low)+'</b></div>'+
@@ -822,6 +843,36 @@ const previewHomeCss='<style>'+
  '#zs-stock-screen .zs-entry-summary-note{grid-column:1/-1;font-size:11px;line-height:1.3;color:#516c82;margin:4px 0 0}'+
  '@media(max-width:600px){#zs-stock-screen .zs-entry-home{gap:22px!important}#zs-stock-screen .zs-entry-hero{padding:17px 14px!important;gap:12px!important}#zs-stock-screen .zs-entry-hero-icon{width:49px;height:49px;flex-basis:49px;font-size:31px}#zs-stock-screen .zs-entry-hero h2{font-size:22px!important}#zs-stock-screen .zs-entry-hero p{font-size:13px!important}#zs-stock-screen .zs-entry-section-head h3{font-size:23px!important}#zs-stock-screen .zs-entry-section-head p{font-size:13px!important}#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{gap:10px!important}#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{padding:12px!important;min-height:190px!important;gap:8px!important}#zs-stock-screen .zs-entry-home .zs-department-card strong,#zs-stock-screen .zs-entry-home .zs-manager-actions button strong{font-size:17px!important}#zs-stock-screen .zs-entry-home .zs-department-card small,#zs-stock-screen .zs-entry-home .zs-manager-actions button small{font-size:13px!important}#zs-stock-screen .zs-entry-home .zs-department-icon,#zs-stock-screen .zs-entry-home .zs-action-icon{height:46px!important;width:46px!important;flex-basis:46px!important;font-size:23px!important}#zs-stock-screen .zs-entry-summary{padding:12px;gap:8px}#zs-stock-screen .zs-entry-summary-item{gap:7px}#zs-stock-screen .zs-entry-summary-item+.zs-entry-summary-item{padding-left:9px}#zs-stock-screen .zs-entry-summary-icon{height:36px;width:36px;flex-basis:36px;font-size:19px}#zs-stock-screen .zs-entry-summary-item strong{font-size:23px}}'+
  '@media(max-width:349px){#zs-stock-screen .zs-entry-home .zs-department-grid,#zs-stock-screen .zs-entry-home .zs-manager-actions{grid-template-columns:minmax(0,1fr)!important}#zs-stock-screen .zs-entry-home .zs-department-card,#zs-stock-screen .zs-entry-home .zs-manager-actions button{min-height:150px!important;padding:17px!important}}'+
+ /* V416 follow-up: readable pastel cards, independent Back/Close and mobile search. */
+ '#zs-stock-screen .zs-screen-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-areas:"back close" "brand brand"!important;align-items:center!important;gap:9px 12px!important;padding:12px!important;background:#f5f9fd!important;border:1px solid #d6e4ef!important;border-radius:14px!important;box-shadow:0 3px 12px #2346610c!important}'+
+ '#zs-stock-screen .zs-screen-toolbar>.zs-ghost:first-child{grid-area:back!important;order:initial!important;flex:none!important;justify-self:start!important;min-width:0!important;max-width:100%!important;background:#174d72!important;border:1px solid #174d72!important;color:white!important;padding:11px 14px!important;font-size:14px!important;line-height:1.25!important;border-radius:10px!important;white-space:normal!important}'+
+ '#zs-stock-screen .zs-screen-toolbar>.zs-ghost:last-child{grid-area:close!important;order:initial!important;flex:none!important;justify-self:end!important;min-width:0!important;max-width:100%!important;background:#fff!important;border:1px solid #b9d0e1!important;color:#1d4867!important;padding:11px 14px!important;font-size:14px!important;line-height:1.25!important;border-radius:10px!important}'+
+ '#zs-stock-screen .zs-screen-toolbar .zs-screen-brand{grid-area:brand!important;order:initial!important;flex:none!important;display:block!important;justify-self:stretch!important;min-width:0!important;text-align:center!important;border-top:1px solid #dae6f0!important;padding:8px 0 0!important;color:#315b78!important;font-size:13px!important;line-height:1.2!important;white-space:normal!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile{background:#f5f9fd!important;color:#1a3a54!important;border:1px solid #d3e2ef!important;box-shadow:0 4px 12px #22455f11!important;transform:none!important;border-radius:17px!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.blue{background:#edf5ff!important;border-color:#cbdff5!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.green{background:#eff9ef!important;border-color:#cfe9d5!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.purple{background:#f5effb!important;border-color:#e5d5f1!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.orange{background:#fff4e9!important;border-color:#f0ddc9!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile.teal{background:#edf8fa!important;border-color:#cee8ed!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-info strong{color:#1b3852!important;text-shadow:none!important;font-weight:850!important;line-height:1.3!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-info small{color:#456078!important;text-shadow:none!important;font-size:13px!important;font-weight:550!important;line-height:1.42!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-chevron{color:#315b7a!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-icon{background:#fff!important;color:#1c629b!important;border:1px solid #d5e6f5!important;border-radius:50%!important;box-shadow:0 2px 7px #27476413!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-tile:focus-visible{outline:3px solid #2076b6!important;outline-offset:3px!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-hero{background:#f8fbff!important;border:1px solid #dce8f1!important;color:#183954!important}'+
+ '#zs-stock-screen .zs-preview .zs-home-hero h3{color:#173650!important}'+
+ '#zs-stock-screen .zs-pair-picker{min-width:0;width:100%;position:relative;margin-top:6px}'+
+ '#zs-stock-screen #zs-material-brand-search{min-height:50px!important;font-size:16px!important;color:#153952!important;background:#fff!important;border:1px solid #a9c4d7!important}'+
+ '#zs-stock-screen .zs-pair-results{margin-top:6px;max-height:240px;overflow-y:auto;overscroll-behavior:contain;background:#fff;border:1px solid #bed4e6;border-radius:12px;box-shadow:0 4px 12px #183a5812;padding:4px}'+
+ '#zs-stock-screen .zs-pair-results[hidden],#zs-stock-screen .zs-pair-choice[hidden],#zs-stock-screen #zs-pair-empty[hidden]{display:none!important}'+
+ '#zs-stock-screen .zs-pair-choice{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;min-height:49px;padding:12px 10px;background:#fff;color:#1c3e56;border:0;border-bottom:1px solid #e7edf4;border-radius:7px;text-align:left;font-size:15px!important;font-weight:700;white-space:normal;overflow-wrap:anywhere}'+
+ '#zs-stock-screen .zs-pair-choice:hover,#zs-stock-screen .zs-pair-choice:focus-visible{background:#eaf4ff;color:#144c78;outline:2px solid #3a87c2;outline-offset:0}'+
+ '#zs-stock-screen .zs-pair-choice small{flex:0 0 auto;color:#4b667b;font-size:12px}'+
+ '#zs-stock-screen #zs-pair-hint{color:#49647b!important;line-height:1.4!important;font-size:13px!important}'+
+ '#zs-stock-screen .zs-pair-more{width:100%!important;margin-top:8px!important;min-height:44px!important;background:#e7f2fc!important;color:#174e77!important;border:1px solid #b8d5e8!important}'+
+ '#zs-stock-screen .zs:not(.zs-preview) label{font-size:14px!important;color:#264862!important;font-weight:750!important}'+
+ '#zs-stock-screen .zs:not(.zs-preview) input:not([type=hidden]),#zs-stock-screen .zs:not(.zs-preview) select{min-height:48px!important;font-size:16px!important;color:#15334e!important;border-color:#b2c8db!important;border-radius:10px!important}'+
+ '@media(max-width:600px){#zs-stock-screen .zs-screen-toolbar{gap:8px!important;padding:10px!important;margin-bottom:14px!important}#zs-stock-screen .zs-screen-toolbar>.zs-ghost:first-child,#zs-stock-screen .zs-screen-toolbar>.zs-ghost:last-child{min-height:45px!important;font-size:14px!important;padding:10px 12px!important}#zs-stock-screen .zs-screen-toolbar .zs-screen-brand{flex:none!important;order:initial!important;font-size:12px!important}#zs-stock-screen .zs-preview .zs-home-tile{min-height:160px!important;padding:14px!important;gap:8px!important}#zs-stock-screen .zs-preview .zs-home-info strong{font-size:16px!important}#zs-stock-screen .zs-preview .zs-home-info small{font-size:12px!important}}'+
  '</style>';
 const previewHomeTiles=[
  ['balance','📦','Stock Balance','Available, reserved and total stock, with average cost','blue'],
@@ -1029,7 +1080,7 @@ window.zukStockSelectDepartment=scope=>{
  department=scope;
  preview.page='home';stockTrial.message='';
  view.items=[];view.history=[];view.report=null;view.selected='';
- view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';
+ view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';view.pairQuery='';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(previewOnly())return showPreview();
  if(liveStockReady())return showLiveHome();
@@ -1051,7 +1102,7 @@ window.openStockManagement=async(scope='')=>{
  department=['Painting','Mechanical'].includes(scope)?scope:'';
  if(previewOnly()){preview.page='home';window.closeModal?.();showPreview();return}
  view.items=[];view.history=[];view.report=null;view.selected='';
- view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';
+ view.itemsNextPage=1;view.balanceQuery='';view.balanceFilter='all';view.pairQuery='';
  view.itemsHasMore=false;view.historyHasMore=false;
  if(liveStockReady()){window.closeModal?.();return showLiveHome()}
  return load('balance',true); // Existing isolated stock QA behavior unchanged.
@@ -1120,14 +1171,97 @@ async function write(command,data){
    window.zukStockSetEntryType();
  }
 }
+function filterPairChoices(){
+ const root=document.getElementById('zs-pair-results'),input=document.getElementById('zs-material-brand-search');
+ if(!root||typeof root.querySelectorAll!=='function')return;
+ const query=String(input?.value||'').trim().toLocaleLowerCase();
+ let matched=0;
+ for(const button of root.querySelectorAll('[data-pair-choice]')){
+  const name=String(button.getAttribute('data-pair-name')||'').toLocaleLowerCase();
+  const shown=(!query||name.includes(query))&&matched<12;
+  button.hidden=!shown;if(shown)matched++;
+ }
+ const empty=document.getElementById('zs-pair-empty');
+ if(empty)empty.hidden=matched>0;
+ root.hidden=false;
+ if(input)input.setAttribute?.('aria-expanded','true');
+}
+window.zukStockShowPairChoices=()=>filterPairChoices();
 window.zukStockResolvePair=()=>{
- const input=document.getElementById('zs-material-brand-search'),value=String(input?.value||'').trim().toLowerCase();
- const row=view.items.find(x=>label(x).trim().toLowerCase()===value);
+ const input=document.getElementById('zs-material-brand-search');
+ const value=String(input?.value||'').trim(),normalized=value.toLocaleLowerCase();
+ view.pairQuery=value.slice(0,180);
+ const exact=view.items.filter(x=>label(x).trim().toLocaleLowerCase()===normalized);
+ // Labels may duplicate; only a unique typed label may select an item.
+ const row=exact.length===1?exact[0]:null;
  const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
  if(material)material.value=row?.material_id||'';
  if(brand)brand.value=row?.brand_id||'';
  view.selected=row?String(row.material_id)+'|'+String(row.brand_id):'';
+ const hint=document.getElementById('zs-pair-hint');
+ if(hint)hint.textContent=row?'Selected '+label(row):
+    exact.length>1?'More than one matching item. Tap the correct result to select its exact IDs.':
+    'Tap a matching result to choose the exact material and brand.';
+ filterPairChoices();
  return !!row;
+};
+window.zukStockChoosePair=index=>{
+ const row=view.items[index],input=document.getElementById('zs-material-brand-search');
+ if(!row||!input)return;
+ // Use the clicked item's underlying IDs, never a reverse name lookup.
+ const m=document.getElementById('zs-material'),b=document.getElementById('zs-brand');
+ input.value=label(row);view.pairQuery=input.value.slice(0,180);
+ if(m)m.value=String(row.material_id);
+ if(b)b.value=String(row.brand_id);
+ view.selected=String(row.material_id)+'|'+String(row.brand_id);
+ const hint=document.getElementById('zs-pair-hint');
+ if(hint)hint.textContent='Selected '+label(row);
+ const panel=document.getElementById('zs-pair-results');
+ if(panel)panel.hidden=true;
+ input.setAttribute?.('aria-expanded','false');
+};
+window.zukStockPairMore=async()=>{
+ if(view.loading||view.busy||view.page!=='add'||!view.itemsHasMore)return;
+ // Only explicit user action loads the next page. Typing never scans the database.
+ const page=view.itemsNextPage;
+ if(!Number.isInteger(page)||page>20){view.error='Further stock pages require an administrator review.';render();return}
+ const el=id=>document.getElementById('zs-'+id);
+ const query=String(el('material-brand-search')?.value||view.pairQuery||'');
+ // Load More is a read action: never discard an unfinished stock entry.
+ const form={selected:view.selected,entrytype:el('entrytype')?.value,
+  qty:el('qty')?.value,method:el('method')?.value,
+  price:el('price')?.value,confirmed:el('count-confirmed')?.checked,
+  note:el('opening-note')?.value};
+ view.pairQuery=query;view.busy=true;
+ const button=document.getElementById('zs-pair-more');if(button)button.disabled=true;
+ try{
+  const response=await stockRead({operation:'LIST',page});
+  if(!response?.ok)throw Error(response?.code||'Stock materials unavailable');
+  const known=new Set(view.items.map(x=>String(x.material_id)+'|'+String(x.brand_id)));
+  for(const row of response.items||[]){
+   const key=String(row.material_id)+'|'+String(row.brand_id);
+   if(!known.has(key)){view.items.push(row);known.add(key)}
+  }
+  view.itemsHasMore=!!response.hasMore;
+  view.itemsNextPage=page+1;
+  view.error='';
+ }catch(error){view.error=String(error?.message||error)}
+ finally{
+  view.busy=false;
+  render();
+  const input=el('material-brand-search');
+  if(input)input.value=query;
+  // Re-render keeps the selected ID in view.selected, including duplicate labels.
+  for(const [key,value] of [['entrytype',form.entrytype],['qty',form.qty],
+    ['method',form.method],['price',form.price],['opening-note',form.note]]){
+   const field=el(key);if(field&&value!==undefined)field.value=value;
+  }
+  const box=el('count-confirmed');
+  if(box&&form.confirmed!==undefined)box.checked=form.confirmed;
+  window.zukStockSetEntryType();
+  window.zukStockCalculatePurchase();
+  if(input&&!view.selected)window.zukStockResolvePair();
+ }
 };
 window.zukStockCalculatePurchase=()=>{
  const d=document,qty=Number(d.getElementById('zs-qty')?.value),price=Number(d.getElementById('zs-price')?.value),
@@ -1152,7 +1286,11 @@ window.zukStockSetEntryType=()=>{
 window.zukStockSavePurchase=()=>{
  if(previewOnly())return;
  const d=document;
- window.zukStockResolvePair?.();
+ const typed=String(d.getElementById('zs-material-brand-search')?.value||'').trim();
+ const chosen=view.items.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
+ // Keep an exact clicked ID even when multiple rows share the same name.
+ // Resolve text again only if the search was edited after the selection.
+ if(!chosen||typed!==label(chosen).trim())window.zukStockResolvePair?.();
  const data={materialId:d.getElementById('zs-material')?.value,
     brandId:d.getElementById('zs-brand')?.value,
     quantity:Number(d.getElementById('zs-qty')?.value),

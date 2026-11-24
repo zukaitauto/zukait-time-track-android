@@ -1199,6 +1199,7 @@ Deno.serve(async (req: Request) => {
         writesEnabled:Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true',
         mechanicalWritesEnabled:false,
         masterLinkEnabled:Deno.env.get('ZUKAIT_STOCK_MASTER_LINK_ENABLED')==='true',
+        countStatusEnabled:Deno.env.get('ZUKAIT_STOCK_COUNT_STATUS_READS_ENABLED')==='true',
         sessionHash:await sha256Hex(token)
       });
       return reply(result.body,result.status);

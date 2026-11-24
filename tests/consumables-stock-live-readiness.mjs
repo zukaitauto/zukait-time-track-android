@@ -64,7 +64,7 @@ function makeFixture(status,role='Manager'){
       if(command.operation==='STATUS')return status();
       if(command.operation==='LIST')return {ok:true,items:[{
         material_id:'M',brand_id:'B',unit:'Liter',physical:10,reserved:0,
-        stock_value:30,minimum:1
+        stock_value:30,minimum:1,initialised:true
       }],hasMore:false};
       throw Error('Unexpected Stock operation: '+command.operation);
     }},

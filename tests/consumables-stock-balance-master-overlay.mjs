@@ -16,7 +16,7 @@ prices:[
  {materialId:'both',brandId:'a',pricePerUnit:5,voided:false},
  {materialId:'mech',brandId:'a',pricePerUnit:7,voided:false}
 ]};
-function fixture(role='Manager',paged=false){
+function fixture(role='Manager',paged=false,verified=true){
  const requests=[];let html='';const win={
   openModal(markup){html=markup},
   ZukaitConsumables:{ensureState(state){return state.consumables}},
@@ -25,9 +25,10 @@ function fixture(role='Manager',paged=false){
    if(request.operation!=='LIST')throw Error('Unexpected Stock operation '+request.operation);
    if(request.department==='Mechanical')return {ok:true,hasMore:false,items:[]};
    if(paged&&request.page===1)return {ok:true,hasMore:false,items:[{
-    material_id:'p2',brand_id:'b',unit:'Liter',physical:0,reserved:0,stock_value:0,minimum:0}]};
+    material_id:'p2',brand_id:'b',unit:'Liter',physical:0,reserved:0,stock_value:0,minimum:0,initialised:false}]};
    return {ok:true,hasMore:paged,items:[{
-    material_id:'p1',brand_id:'a',unit:'Liter',physical:7,reserved:2,stock_value:14,minimum:1}]};
+    material_id:'p1',brand_id:'a',unit:'Liter',physical:7,reserved:2,stock_value:14,minimum:1,
+    ...(verified?{initialised:true}:{})}]};
   }}
  };
  const ctx={window:win,me:{id:role,role},state:{consumables:structuredClone(master)},
@@ -74,9 +75,16 @@ await paged.win.zukStockMore();
 assert.match(paged.html(),/Thinner — Bravo/);
 assert.equal((paged.html().match(/data-balance-kind="linked"/g)||[]).length,2,
  'Pair present on later Stock page must deduplicate Master overlay');
+assert.match(paged.html(),/Opening stock not counted/,'Uncounted pair cannot be treated as physically zero');
+assert.doesNotMatch(paged.html(),/0\.00 Liter/,'Uncounted pair must not display a fake zero physical count');
 assert.equal((paged.html().match(/data-balance-kind="unlinked"/g)||[]).length,1,
  'Only truly unlinked pair remains after loading all pages');
-for(const fx of [manager,supervisor,mechanical,paged])
+const missingStatus=fixture('Manager',false,false);
+await missingStatus.win.openStockManagement('Painting');
+assert.match(missingStatus.html(),/Opening count status unverified/,'Older API without count status must fail closed');
+assert.doesNotMatch(missingStatus.html(),/7\.00 Liter|5\.00 Liter/,'Unverified counts are not confirmed stock');
+assert.match(missingStatus.html(),/0 out of stock/,'Unverified counts cannot be marked as out of stock');
+for(const fx of [manager,supervisor,mechanical,paged,missingStatus])
  assert.equal(fx.requests.some(x=>x.operation==='WRITE'||x.operation==='MASTER_LINK'),false,
   'Displaying Master list never writes stock or automatically links materials');
 function requestsToStrings(calls){return calls.map(x=>x.operation+':'+x.department+':'+x.page)}
