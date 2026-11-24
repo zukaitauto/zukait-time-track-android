@@ -61,12 +61,13 @@ try{
  const base='http://127.0.0.1:'+server.address().port;
  browser=await chromium.launch({headless:true});
  const page=await browser.newPage({viewport:{width:390,height:844}});
- const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
+ const errors=[],dialogs=[];page.on('pageerror',e=>{errors.push(String(e));console.error('Browser error:',String(e))});page.on('dialog',d=>{dialogs.push(d.message());console.log('Browser dialog:',d.message());return d.accept()});
  await page.route('**/*',route=>route.request().url().startsWith(base+'/')?route.continue():route.abort());
  let dropResponse=false,saveIds=[],currentUser=user;
  await page.exposeFunction('qaCall',async(kind,body)=>{
   const options={...opts,sessionHash:currentUser.role==='Manager'?token:'isolated-supervisor'};
   const r=kind==='stock'?await consumablesStockApi(admin,currentUser,body,options):kind==='apply'?await invoicePriceApplyApi(admin,currentUser,{data:body},options):await invoicePriceReconcileApi(admin,currentUser,body,options);
+  if(!r.body?.ok)console.log('QA API rejection:',kind,body.operation,r.body.code);
   if(kind==='stock'&&body.operation==='INVOICE_SAVE'){saveIds.push(body.requestId);if(dropResponse){dropResponse=false;return {drop:true}}}
   return {body:r.body,state:(await snapshot()).data};
  });
@@ -81,7 +82,7 @@ try{
   await page.evaluate(()=>consOpenPurchaseEntry());
   await page.waitForFunction(()=>!document.querySelector('#cpFinish').disabled);
  };
- const waitText=async(selector,value)=>page.waitForFunction(({selector,value})=>document.querySelector(selector)?.textContent.includes(value),{selector,value});
+ const waitText=async(selector,value)=>{try{await page.waitForFunction(({selector,value})=>document.querySelector(selector)?.textContent.includes(value),{selector,value},{timeout:8000})}catch(e){console.error('Expected:',selector,value,'Actual:',await page.locator('#modal').textContent(),'Dialogs:',dialogs,'Page errors:',errors);throw e}};
  await open();
  await page.locator('#cpInvoice').fill('QA-001');await page.locator('#cpSupplier').fill('QA Supplier');await page.locator('#cpDate').fill('2020-02-01');
  await page.locator('#cpSearch').fill('KARUSHI Disc');await page.locator('#cpResults button').click();
@@ -93,6 +94,9 @@ try{
  assert.deepEqual(await balance(),[10,1.5]);assert.equal((await snapshot()).data.consumables.actuals[0].totalCost,.4);
  await open();await waitText('#cpSaveStatus','Previous save is unconfirmed');await page.locator('#cpFinish').click();
  await waitText('#cpHistory','QA-001');assert.equal(saveIds[0],saveIds[1]);assert.deepEqual(await balance(),[10,1.5]);
+ const reviewFixture=(await db.query('select id,revision,status,invoice_date::text,lines from public.zukait_purchase_invoices')).rows[0];
+ console.log('Review fixture:',JSON.stringify(reviewFixture));
+ console.log('Core review:',JSON.stringify(await page.evaluate(i=>ZukaitConsumables.invoicePriceReview(state,i,me),reviewFixture)));
  await page.locator('#cpHistory details summary').click();await page.getByRole('button',{name:'Review Brands & Price'}).click();
  await waitText('#modal','JC1');await waitText('#modal','0.400 → 0.300');
  await page.locator('#cpPriceReason').fill('QA approved rate');await page.locator('#cpPriceApply').click();await waitText('#cpPriceStatus','Prices saved');
