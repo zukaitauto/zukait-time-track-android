@@ -12,16 +12,16 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "V420 corrected client signed successfully. Production schema deployed; backup restore deferred by owner. Preserve live compact leave and accountant read coalescing before backend cutover; physical tests, live authenticated smoke and publication gate remain outstanding.",
+  "reason": "V420 exact corrected source passed ten CI workflows. Signed artifact verified. Additive production schema installed. Candidate production canary deployed; existing staff endpoint v151 unchanged. Owner backup restore deferral applies only to V420. Authenticated production smoke, complete data preservation and physical acceptance remain unverified; staff approval false.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
     "releaseTag": "release-V418-architecture-v2",
     "sourceCommit": "65af4ff062d24e8403d21eda13405222daae3b7a"
   },
-  "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
-  "signedAcceptanceRun": 45461052619,
-  "verificationRun": 45461052837,
+  "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+  "signedAcceptanceRun": 45467177557,
+  "verificationRun": 45467177569,
   "approvedAt": null,
   "publishNonce": null,
   "backupRestoreDeferral": {
@@ -29,7 +29,7 @@
     "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
     "versionName": "V420",
     "versionCode": 383,
-    "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
+    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
     "authorizedBy": "Owner in this conversation",
     "instruction": "Defer backup",
     "recordedDate": "2026-11-24",
@@ -49,18 +49,21 @@
     "verifiedDate": "2026-11-24"
   },
   "productionEdgePreflight": {
-    "status": "AUTH_COMPATIBILITY_FIXED_ADDITIONAL_LIVE_PARITY_FINDINGS",
-    "currentEdgeVersion": 151,
-    "currentStaffAuthVersion": 17,
-    "affectedActiveEmployeeCount": 6,
-    "checkedDate": "2026-11-24",
-    "details": "112 staff role/session test cases passed in signed build. Read-only parity review found deployed compact leave RPC and actor-bound leave replay missing from candidate; preserve those existing production behaviors and accountant read coalescing. Existing vehicle lookup and checklist link correction RPCs are absent in production; do not claim those routes deployed. No staff endpoint replaced."
+    "status": "PRODUCTION_CANARY_DEPLOYED",
+    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+    "staffEndpointVersion": 151,
+    "canaryFunction": "workshop-api-v420-canary",
+    "canaryVersion": 1,
+    "canaryBundleSha256": "d165832fac03b0aff89896440b1a3e9aa92d4f136b6f641cb4635990d867fdd2",
+    "authenticatedSmoke": "NOT_RUN",
+    "existingStaffEndpointReplaced": false,
+    "checkedDate": "2026-11-24"
   },
   "correctedSignedCandidate": {
-    "sourceCommit": "6f617771569536df9526b926e9e4857378b7e488",
-    "signedAcceptanceRun": 45466238004,
-    "artifactId": 14955790909,
-    "sessionCompatibilityCases": 112,
-    "status": "VERIFIED_SIGNED_CLIENT_BACKEND_PARITY_REQUIRES_FOLLOWUP"
+    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+    "signedAcceptanceRun": 45467177557,
+    "artifactId": 14955831417,
+    "successfulWorkflows": 10,
+    "status": "VERIFIED_SIGNED_CANDIDATE"
   }
 }

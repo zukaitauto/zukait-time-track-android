@@ -36,8 +36,8 @@ function validate(approval,record) {
    assert.equal(approval.versionName,'V420','V420 backup deferral only');
    assert.equal(approval.versionCode,383,'V420 backup deferral version code mismatch');
    assert.equal(approval.releaseScope,'purchase-invoice-coordinated','V420 coordinated scope required');
-   assert.equal(approval.sourceCommit,'5bb6796573a438cd9631835070cf45b70c708566','V420 backup deferral source mismatch');
-   assert.equal(approval.signedAcceptanceRun,45461052619,'V420 signed acceptance run mismatch');
+   assert.equal(approval.sourceCommit,'c521ccc89c7a11897cb1d536f9a877e7280856d0','V420 backup deferral source mismatch');
+   assert.equal(approval.signedAcceptanceRun,45467177557,'V420 signed acceptance run mismatch');
    assert.equal(approval.ownerPublicationRequested,true,'Owner publication request required');
    assert.equal(waiver.check,key,'Backup deferral check mismatch');
    assert.equal(waiver.status,'DEFERRED_BY_OWNER_NOT_PERFORMED','Backup deferral status mismatch');

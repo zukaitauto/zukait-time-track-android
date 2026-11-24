@@ -1,7 +1,7 @@
 {
   "versionName": "V420",
   "versionCode": 383,
-  "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
+  "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
   "checks": {
     "client_https_restart": {
       "passed": false,
@@ -37,7 +37,7 @@
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
         "versionName": "V420",
         "versionCode": 383,
-        "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
+        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
         "authorizedBy": "Owner in this conversation",
         "instruction": "Defer backup",
         "recordedDate": "2026-11-24",
@@ -52,7 +52,7 @@
     },
     "production_backend_smoke": {
       "passed": false,
-      "evidence": "Production invoice schema verified, Edge deployment and authenticated production smoke pending.",
+      "evidence": "Production canary workshop-api-v420-canary v1 deployed from exact signed source. Existing staff endpoint remains v151. Authenticated production smoke not run.",
       "verifiedBy": null,
       "verifiedAt": null
     }
