@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner requested publication and explicitly deferred only backup restore. Exact signed V420 source passed eight workflows. Production additive invoice schema deployed and verified: five RLS tables, ten service-role-only routines, workshop revision unchanged at 17977. Production Edge deployment, hosted authenticated QA, full preservation verification and physical-device/browser acceptance remain pending. No staff publication approval yet.",
+  "reason": "Owner requested V420 publication and deferred backup restore. Production additive schema verified. Exact signed candidate cannot replace current workshop-api without resolving a confirmed six-active-employee authentication compatibility issue. Physical acceptance and authenticated server smoke remain pending. Staff publication approval remains false.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -47,5 +47,13 @@
     "priceApplicationCount": 0,
     "productionEdgeDeployed": false,
     "verifiedDate": "2026-11-24"
+  },
+  "productionEdgePreflight": {
+    "status": "BLOCKED_EXISTING_EMPLOYEE_PASSWORD_CHANGE_REQUIREMENTS",
+    "currentEdgeVersion": 151,
+    "currentStaffAuthVersion": 17,
+    "affectedActiveEmployeeCount": 6,
+    "checkedDate": "2026-11-24",
+    "details": "Current production workshop-api applies must_change only to Receptionist and Accountant. Pinned V420 rejects all must_change users. Six active Employee accounts would be denied. Production Edge has not been replaced; no credentials changed."
   }
 }
