@@ -55,6 +55,13 @@ function consPurchasePersist(){
  // Fail closed if storage is unavailable; do not send a transaction whose retry ID would be lost.
  window.localStorage.setItem(consPurchaseStorageKey(consPurchaseOwner),JSON.stringify({owner:consPurchaseOwner,pending:consPurchasePending,draft:consPurchaseDraft}));
 }
+function consPurchaseLockForm(locked){
+ for(const id of ['cpInvoice','cpSupplier','cpDate','cpSearch','cpQty','cpMethod','cpUnit','cpAmount']){
+  const input=document.getElementById(id);if(input)input.disabled=locked;
+ }
+ const root=document.getElementById('cpLines');
+ if(root?.querySelectorAll)for(const button of root.querySelectorAll('button'))button.disabled=locked;
+}
 function consPurchaseClearPending(owner){
  try{window.localStorage?.removeItem(consPurchaseStorageKey(owner));}catch(_){}
  if(consPurchaseOwner===owner)consPurchasePending=null;
@@ -83,11 +90,11 @@ window.consOpenPurchaseEntry=function(reset=false){
  '<div class="cp-panel"><div class="cp-two"><label class="cp-field">Invoice Number<input id="cpInvoice" maxlength="100" autocomplete="off" value="'+esc(d.invoiceNumber)+'" oninput="consPurchaseHeader()"></label><label class="cp-field">Invoice Date<input id="cpDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(d.invoiceDate)+'" oninput="consPurchaseHeader()"></label></div><label class="cp-field">Supplier<input id="cpSupplier" maxlength="160" value="'+esc(d.supplier)+'" oninput="consPurchaseHeader()"></label></div>'+
  '<div class="cp-panel"><label class="cp-field">Search Material + Brand<input id="cpSearch" type="search" autocomplete="off" placeholder="Example: Clear CAPCI" oninput="consPurchaseSearch()"></label><div id="cpResults" class="cp-search-results"></div><div id="cpSelected"></div><div id="cpLineEditor" hidden><label class="cp-field">Quantity<input id="cpQty" inputmode="decimal" type="number" min="0" step="0.0001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Price entry<select id="cpMethod" onchange="consPurchaseChangeMethod()"><option value="unit">Price per Unit</option><option value="total">Total Purchase Amount</option></select></label><div class="cp-two"><label class="cp-field">Price / Unit (OMR)<input id="cpUnit" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Total Amount (OMR)<input id="cpAmount" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()" readonly></label></div><button type="button" class="cp-action cp-add" onclick="consPurchaseAddLine()">＋ ADD ITEM</button><div id="cpError" class="cp-error" role="status"></div></div></div>'+
  '<h3>Invoice Items</h3><div id="cpLines" class="cp-lines"></div><div id="cpTotal" class="cp-total"></div><button type="button" id="cpFinish" class="cp-finish" onclick="consPurchaseSave()" disabled>FINISH &amp; SAVE</button><div id="cpSaveStatus" class="cp-info" role="status">Checking server availability…</div></div>','openConsumablesModule()');
- consPurchaseRenderLines();
+ consPurchaseRenderLines();consPurchaseLockForm(Boolean(consPurchasePending));
  const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
  consPurchaseApi({operation:'INVOICE_STATUS'}).then(r=>{
    if(document.getElementById('cpFinish')!==button)return;
-   button.disabled=!(r?.ok&&r.ready===true);status.textContent=button.disabled?'Purchase invoice posting is not enabled.':'Save posts all invoice lines and stock movements together. Historical costing prices are not changed.';
+   button.disabled=!(r?.ok&&r.ready===true);status.textContent=button.disabled?'Purchase invoice posting is not enabled.':consPurchasePending?'Previous save is unconfirmed. Retry this exact invoice; no new stock will be added if it was already saved.':'Save posts all invoice lines and stock movements together. Historical costing prices are not changed.';
  }).catch(()=>{if(document.getElementById('cpFinish')===button)status.textContent='Server unavailable. Draft retained.'});
 };
 window.consPurchaseHeader=function(){
@@ -168,12 +175,13 @@ window.consPurchaseSave=async function(){
    lines:draft.lines.map(({materialId,brandId,unit,quantity,priceMethod,price})=>({materialId,brandId,unit,quantity,priceMethod,price}))};
   const fingerprint=JSON.stringify(data);
   if(consPurchasePending&&consPurchasePending.fingerprint!==fingerprint)throw Error('A previous save is not confirmed. Restore the original draft and retry before changing it.');
+  const wasPending=Boolean(consPurchasePending);
   if(!consPurchasePending){
    if(!confirm('Save invoice '+draft.invoiceNumber+' for OMR '+draft.totalAmount.toFixed(3)+' and add all '+draft.lines.length+' stock items?'))return;
    consPurchasePending={fingerprint,id:window.crypto?.randomUUID?.()||('invoice-'+Date.now()+'-'+Math.random().toString(36).slice(2))};
   }
-  consPurchasePersist();
-  consPurchaseBusy=true;button.disabled=true;status.textContent='Saving invoice…';
+  try{consPurchasePersist()}catch(e){if(!wasPending)consPurchasePending=null;throw Error('Cannot preserve retry receipt on this device. Invoice was not submitted.');}
+  consPurchaseBusy=true;consPurchaseLockForm(true);button.disabled=true;status.textContent='Saving invoice…';
   const r=await consPurchaseApi({operation:'INVOICE_SAVE',requestId:consPurchasePending.id,data});
   if(!r?.ok||!r.invoice?.id){
    // An explicit validation rejection is safe to correct; uncertain network/server failures retain the same receipt ID.
@@ -187,7 +195,7 @@ window.consPurchaseSave=async function(){
   alert(r.invoice.status==='cancelled'?'Invoice was already saved and subsequently cancelled. No stock was added again.':'Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
   window.consOpenPurchaseInvoices();
  }catch(error){
-  if(document.getElementById('cpFinish')===button){status.textContent=String(error?.message||error)+'. Draft retained.';button.disabled=false;}
+  if(document.getElementById('cpFinish')===button){status.textContent=String(error?.message||error)+'. Draft retained.';button.disabled=false;consPurchaseLockForm(Boolean(consPurchasePending));}
  }finally{consPurchaseBusy=false}
 };
 window.consOpenPurchaseInvoices=function(){
