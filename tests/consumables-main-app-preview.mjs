@@ -44,6 +44,10 @@ const mech=readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8
 assert.ok(html.includes('<script>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true;</script><script src="consumables_stock_ui.js'),
  'The main app must enable Stock preview mode before loading the Stock UI');
 assert.match(menu,/openStockManagement\(\)/);
+const paintingMenu=menu.slice(menu.indexOf('window.openPaintingConsumables=function()'),menu.indexOf('window.openTotalConsumables=function()'));
+assert.ok(paintingMenu.includes("action('Additional Materials'"));
+assert.doesNotMatch(paintingMenu,/action\('Paint Stock'|openStockManagement/,'Painting Consumables must not duplicate the separate Stock menu');
+assert.match(menu,/deptCard\('Stock'[^\n]*openStockManagement\(\)/,'Dedicated Stock menu must remain available');
 assert.match(menu,/openMechanicalConsumables\(\)/);
 assert.match(mech,/window\.ZUKAIT_MECHANICAL_STOCK_ENABLED===true/);
 assert.doesNotMatch(html,/window\.ZUKAIT_MECHANICAL_STOCK_ENABLED\s*=\s*true/,
