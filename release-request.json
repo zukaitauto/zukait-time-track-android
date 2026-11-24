@@ -11,8 +11,8 @@
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Owner requested V420 publication. Exact pinned source passed eight final CI workflows including signed APK and purchase invoice browser lifecycle; isolated QA Edge deployed and unauthenticated barriers passed. Production schema prerequisites verified read-only. Staff publication remains blocked: authenticated hosted invoice workflow, fresh backup recovery, physical acceptance and production deployment/smoke not verified. No production changes authorized by this metadata record.",
+  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "reason": "Owner requested publication and explicitly deferred backup restore verification on 2026-11-24 because the PC is unavailable. Exact signed V420 source passed all eight final CI workflows. Hosted QA authentication barriers and production prerequisites passed. Physical acceptance, authenticated QA invoice testing, production schema/Edge deployment and smoke still pending. Current release gate has no V420 backup-deferral exception. Staff approval remains false.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -23,5 +23,16 @@
   "signedAcceptanceRun": 45461052619,
   "verificationRun": 45461052837,
   "approvedAt": null,
-  "publishNonce": null
+  "publishNonce": null,
+  "backupRestoreDeferral": {
+    "check": "fresh_backup_restored",
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "versionName": "V420",
+    "versionCode": 383,
+    "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
+    "authorizedBy": "Owner in this conversation",
+    "instruction": "Defer backup",
+    "recordedDate": "2026-11-24",
+    "scope": "Backup restore verification only. Physical acceptance and production backend smoke are not waived. No backup is represented as freshly restored."
+  }
 }
