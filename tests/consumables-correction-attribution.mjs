@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 const C=createRequire(import.meta.url)('../app/src/main/assets/consumables.js');
 const source=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
 const section=source.slice(source.indexOf('function consumablesRepriceEvidence('),source.indexOf('// Paint purchasing is also'));
-const ctx={same:(a,b)=>JSON.stringify(a)===JSON.stringify(b)};vm.createContext(ctx);vm.runInContext(section.replace(/:\s*any\b/g,''),ctx);
+const ctx={same:(a,b)=>JSON.stringify(a)===JSON.stringify(b)};vm.createContext(ctx);vm.runInContext(section.replace(/:\s*any\b/g,'').replaceAll('new Set<string>()','new Set()'),ctx);
 const validate=ctx.validateConsumablesManagerCorrections;
 const mgr={id:'MGR001',name:'Manager',role:'Manager'},sup={id:'SUP001',role:'Supervisor'};
 const s={};const m=C.addMaterial(s,{name:'Paint',unit:'Liter'},mgr),b=C.addBrand(s,{name:'Brand'},mgr);
