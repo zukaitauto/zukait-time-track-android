@@ -258,9 +258,8 @@
         if(!r.ok){
           const e=new Error(r.code||'EMPLOYEE_TIME_ACTION_FAILED');e.code=r.code||'EMPLOYEE_TIME_ACTION_FAILED';throw e;
         }
-        // The mutation response itself is the authoritative confirmation. Pull
-        // the committed state + live row before allowing the employee UI to leave
-        // its pending state.
+        // The mutation response is authoritative. A complete, current receipt
+        // can release the employee controls without waiting for snapshot reads.
         if(!me||me.role!=='Employee'||String(me.id)!==actorId)throw new Error('EMPLOYEE_TIME_ACTOR_CHANGED');
         const receiptRevision=Number(r.server_revision||0);
         // A mutation receipt is not a complete workshop snapshot. Never attach
@@ -268,6 +267,7 @@
         if(receiptRevision>cloudRevision)lastSyncedState=null;
         cloudRevision=Math.max(cloudRevision,receiptRevision);
         const audit=r.audit;
+        let receiptApplied=false;
         if(audit?.confirmed===true&&String(audit.type)===String(payload.event_type).toUpperCase()&&String(audit.emp)===String(me.id)&&String(audit.id)===String(payload.action_id)){
           const applyOwn=(key,rows)=>{
             state[key]=Array.isArray(state[key])?state[key]:[];
@@ -284,6 +284,7 @@
               liveStatusRows=[clone(r.live_row)];liveStatusRevision=receiptRevision;
               liveStatusLastFetchedAt=Date.now();liveStatusServerTime=Number(r.server_time||audit.serverAt||0);
               publishLiveStatus(true);
+              receiptApplied=Number.isSafeInteger(receiptRevision)&&receiptRevision>0;
             }
             persistLocal();
           }
@@ -292,6 +293,21 @@
         if(!cloudDirty&&dirtyGeneration===actionGeneration){
           localStorage.removeItem(DIRTY_KEY);localStorage.removeItem(PENDING_KEY);
         }
+        if(stale(epoch))throw Error('STALE_SESSION');
+        if(receiptApplied){
+          // The validated after-images and live row are already persisted.
+          // Reconcile reads independently; never extend a confirmed action's
+          // pending UI with additional network timeouts or a reconnect read.
+          setServerConnection('connected');
+          Promise.resolve().then(async()=>{
+            if(stale(epoch)||String(me?.id)!==actorId)return;
+            try{await pull(true)}catch(_){}
+            if(stale(epoch)||String(me?.id)!==actorId)return;
+            try{await pullLiveStatus()}catch(_){}
+          }).catch(()=>{});
+          return r;
+        }
+        // Older or incomplete receipts retain the existing reconciliation path.
         try{await pull(true)}catch(_){}
         try{await pullLiveStatus()}catch(_){}
         if(stale(epoch))throw Error('STALE_SESSION');
@@ -425,6 +441,9 @@
     try{
       const r=await api({action:'live_status'});
       if(!r.ok)throw new Error(r.code||'LIVE_STATUS_FAILED');
+      // A live-status read started before a confirmed timer action may finish
+      // afterwards. Never overwrite the receipt with an older live revision.
+      if(stale(epoch)||Number(r.revision||0)<liveStatusRevision)return false;
       liveStatusRows=Array.isArray(r.rows)?r.rows:[];
       liveStatusRevision=Number(r.revision||0);
       liveStatusLastFetchedAt=Date.now();
