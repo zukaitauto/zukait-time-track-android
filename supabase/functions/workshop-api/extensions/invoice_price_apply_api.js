@@ -7,7 +7,7 @@ const good=receipt=>({body:receipt,status:200});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
 const same=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
-const allowed=new Set(['MANAGER_ONLY','REQUEST_ID_CONFLICT','INVOICE_NOT_FOUND','INVOICE_CANCELLED','INVOICE_REVISION_CONFLICT','INVOICE_PRICE_RECONCILIATION_REQUIRED','WORKSHOP_PRICE_COMMIT_FAILED','INVALID_PRICE_APPLICATION','STALE_PRICE_REVIEW','PRICE_REVIEW_BLOCKED','NO_PRICE_CHANGES','POSTED_INVOICE_REQUIRED','INVALID_INVOICE_DATE','INVALID_INVOICE_PRICE','INVOICE_PRICE_ALREADY_APPLIED_RECONCILIATION_REQUIRED']);
+const allowed=new Set(['MANAGER_ONLY','REQUEST_ID_CONFLICT','INVOICE_NOT_FOUND','INVOICE_CANCELLED','INVOICE_REVISION_CONFLICT','INVOICE_PRICE_RECONCILIATION_REQUIRED','WORKSHOP_PRICE_COMMIT_FAILED','INVALID_PRICE_APPLICATION','STALE_PRICE_REVIEW','PRICE_REVIEW_BLOCKED','INVOICE_PRICE_SOURCE_CONFLICT','NO_PRICE_CHANGES','POSTED_INVOICE_REQUIRED','INVALID_INVOICE_DATE','INVALID_INVOICE_PRICE','INVOICE_PRICE_ALREADY_APPLIED_RECONCILIATION_REQUIRED']);
 export async function invoicePriceApplyApi(admin,user,body,{enabled=false,sessionHash='',computeLiveStatus}={}){
  if(!enabled)return bad('invoice_price_apply_not_enabled',423);
  if(user?.role!=='Manager'||!user.id)return bad('manager_only',403);
