@@ -1174,13 +1174,16 @@ window.zukStockResolvePair=()=>{
  const input=document.getElementById('zs-material-brand-search');
  const value=String(input?.value||'').trim(),normalized=value.toLocaleLowerCase();
  view.pairQuery=value.slice(0,180);
- const row=view.items.find(x=>label(x).trim().toLocaleLowerCase()===normalized);
+ const exact=view.items.filter(x=>label(x).trim().toLocaleLowerCase()===normalized);
+ // Labels may duplicate; only a unique typed label may select an item.
+ const row=exact.length===1?exact[0]:null;
  const material=document.getElementById('zs-material'),brand=document.getElementById('zs-brand');
  if(material)material.value=row?.material_id||'';
  if(brand)brand.value=row?.brand_id||'';
  view.selected=row?String(row.material_id)+'|'+String(row.brand_id):'';
  const hint=document.getElementById('zs-pair-hint');
  if(hint)hint.textContent=row?'Selected '+label(row):
+    exact.length>1?'More than one matching item. Tap the correct result to select its exact IDs.':
     'Tap a matching result to choose the exact material and brand.';
  filterPairChoices();
  return !!row;
@@ -1188,8 +1191,14 @@ window.zukStockResolvePair=()=>{
 window.zukStockChoosePair=index=>{
  const row=view.items[index],input=document.getElementById('zs-material-brand-search');
  if(!row||!input)return;
- input.value=label(row);
- window.zukStockResolvePair();
+ // Use the clicked item's underlying IDs, never a reverse name lookup.
+ const m=document.getElementById('zs-material'),b=document.getElementById('zs-brand');
+ input.value=label(row);view.pairQuery=input.value.slice(0,180);
+ if(m)m.value=String(row.material_id);
+ if(b)b.value=String(row.brand_id);
+ view.selected=String(row.material_id)+'|'+String(row.brand_id);
+ const hint=document.getElementById('zs-pair-hint');
+ if(hint)hint.textContent='Selected '+label(row);
  const panel=document.getElementById('zs-pair-results');
  if(panel)panel.hidden=true;
  input.setAttribute?.('aria-expanded','false');
@@ -1199,7 +1208,13 @@ window.zukStockPairMore=async()=>{
  // Only explicit user action loads the next page. Typing never scans the database.
  const page=view.itemsNextPage;
  if(!Number.isInteger(page)||page>20){view.error='Further stock pages require an administrator review.';render();return}
- const query=String(document.getElementById('zs-material-brand-search')?.value||view.pairQuery||'');
+ const el=id=>document.getElementById('zs-'+id);
+ const query=String(el('material-brand-search')?.value||view.pairQuery||'');
+ // Load More is a read action: never discard an unfinished stock entry.
+ const form={selected:view.selected,entrytype:el('entrytype')?.value,
+  qty:el('qty')?.value,method:el('method')?.value,
+  price:el('price')?.value,confirmed:el('count-confirmed')?.checked,
+  note:el('opening-note')?.value};
  view.pairQuery=query;view.busy=true;
  const button=document.getElementById('zs-pair-more');if(button)button.disabled=true;
  try{
@@ -1217,8 +1232,18 @@ window.zukStockPairMore=async()=>{
  finally{
   view.busy=false;
   render();
-  const input=document.getElementById('zs-material-brand-search');
-  if(input){input.value=query;window.zukStockResolvePair();}
+  const input=el('material-brand-search');
+  if(input)input.value=query;
+  // Re-render keeps the selected ID in view.selected, including duplicate labels.
+  for(const [key,value] of [['entrytype',form.entrytype],['qty',form.qty],
+    ['method',form.method],['price',form.price],['opening-note',form.note]]){
+   const field=el(key);if(field&&value!==undefined)field.value=value;
+  }
+  const box=el('count-confirmed');
+  if(box&&form.confirmed!==undefined)box.checked=form.confirmed;
+  window.zukStockSetEntryType();
+  window.zukStockCalculatePurchase();
+  if(input&&!view.selected)window.zukStockResolvePair();
  }
 };
 window.zukStockCalculatePurchase=()=>{
