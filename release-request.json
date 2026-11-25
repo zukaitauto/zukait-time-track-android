@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner confirmed connectivity recovered and requested publication on 2026-11-25. Backend V152 remains deployed; 154 HTTP 200 POSTs, zero HTTP 503/500 in short observation window starting 04:36 UTC. Database responding at revision 17993. Exact V151 rollback bundle not recovered. Authenticated V420 workflows, full data preservation, PC site reconciliation and HTTPS restart acceptance not independently verified. Backup and physical-device deferrals remain recorded. Staff approval remains false pending outstanding evidence.",
+  "reason": "Owner requested V420 publication after recovery and confirmed existing Manager dashboard and Stock Balance open. V152 remains deployed. PC website, updater and public V418 APK metadata reconciled. Exact signed V420 candidate and ten CI workflows passed. Authenticated V420 purchase-invoice workflow, full data preservation and real HTTPS restart acceptance remain outstanding. Exact previous V151 rollback bundle not recovered. Backup and physical-device deferrals remain recorded. Staff approval remains false.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -100,6 +100,17 @@
         "workshopRevision": 17993,
         "scope": "Short observation window and owner-confirmed reconnect; not authenticated full acceptance."
       }
+    },
+    "ownerWorkflowConfirmation": {
+      "status": "OWNER_CONFIRMED_EXISTING_CLIENT_READS",
+      "recordedDate": "2026-11-25",
+      "backendVersion": 152,
+      "clientVersion": "V418",
+      "checks": [
+        "Manager dashboard opens",
+        "Stock Balance opens"
+      ],
+      "scope": "Owner confirmed both screens open in conversation. No independent authenticated V420 purchase invoice workflow, stock writes or full data preservation test performed."
     }
   },
   "correctedSignedCandidate": {
