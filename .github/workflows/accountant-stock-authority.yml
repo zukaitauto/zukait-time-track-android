@@ -1,0 +1,51 @@
+name: Accountant Stock role gate
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/workshop-api/extensions/consumables_stock_api.js'
+      - 'supabase/staged/ACCOUNTANT_STOCK_ENTRY_AUTHORITY.sql'
+      - 'tests/accountant-stock-authority.mjs'
+      - 'tests/accountant-stock-workspace.mjs'
+      - 'tests/accountant-stock-authority-pg17.sql'
+      - 'app/src/main/assets/accountant_stock.js'
+      - 'app/src/main/assets/accountant.js'
+      - 'app/src/main/assets/accountant.html'
+      - '.github/workflows/accountant-stock-authority.yml'
+permissions:
+  contents: read
+jobs:
+  role-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: |
+          node --check app/src/main/assets/accountant_stock.js
+          node tests/accountant-stock-workspace.mjs
+          node tests/accountant-stock-authority.mjs
+          node tests/consumables-stock-api.mjs
+  database-transactions:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: qa_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Isolated actual stock and invoice RPC transactions
+        env:
+          PGHOST: 127.0.0.1
+          PGUSER: postgres
+          PGPASSWORD: qa_only
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/accountant-stock-authority-pg17.sql

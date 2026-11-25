@@ -1,7 +1,7 @@
 // ZUKAIT Consumables Stock read/write gateway.
 // Feature flags default OFF; never accept staff identities/roles from request JSON.
 // Uses small, paginated tables and one transactional RPC per write.
-const roles = new Set(['Manager','Supervisor','Mechanical Supervisor']);
+const roles = new Set(['Manager','Supervisor','Mechanical Supervisor','Accountant']);
 const managerActions = new Set(['OPENING','ADJUST','MINIMUM']);
 const allowedCommands = new Set(['OPENING','PURCHASE','RESERVE','CHANGE','CANCEL','FINALISE','RETURN','ADJUST','MINIMUM','MECHANICAL_ISSUE','MECHANICAL_RETURN']);
 const allowedKeys = new Set(['action','operation','command','requestId','data','materialId','brandId','jobCard','cursor','page','origin','department']);
@@ -29,6 +29,9 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       masterLink:ready&&masterLinkEnabled});
   }
   if(!enabled)return bad('stock_not_enabled',503);
+  // Accounts may read inventory and post opening counts / purchase invoices, not issue, return, adjust, cancel or alter master prices.
+  if(user.role==='Accountant'&&!['LIST','BALANCE','HISTORY','REPORTS','ENTRY_CATALOG','INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_AUDIT','WRITE'].includes(operation))return bad('stock_forbidden',403);
+  if(user.role==='Accountant'&&operation==='WRITE'&&String(body.command||'').toUpperCase()!=='OPENING')return bad('stock_forbidden',403);
   const department=body.department;
   if(department!==undefined&&!['Painting','Mechanical'].includes(department))
     return bad('stock_invalid_department');
@@ -39,7 +42,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     return bad('mechanical_stock_forbidden',403);
   // Separate activation flag: incomplete Purchase Entry cannot use live Stock write permission.
   if(['INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL','INVOICE_AUDIT'].includes(operation)){
-    if(!['Manager','Supervisor'].includes(user.role))return bad('stock_forbidden',403);
+    if(!['Manager','Supervisor','Accountant'].includes(user.role))return bad('stock_forbidden',403);
     if(!sessionHash)return bad('stock_session_required',401);
     if(operation==='INVOICE_STATUS')return good({ready:invoiceEnabled&&writesEnabled,history:invoiceEnabled});
     if(!invoiceEnabled)return bad('stock_invoice_not_enabled',423);
@@ -60,7 +63,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       return good({invoice});
     }
     if(operation==='INVOICE_AUDIT'){
-      if(user.role!=='Manager')return bad('manager_only',403);
+      if(!['Manager','Accountant'].includes(user.role))return bad('manager_only',403);
       const page=body.page??0,id=String(body.data?.invoiceId||'');
       if(!Number.isInteger(page)||page<0||page>100||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return bad('invalid_invoice_filter');
       const {data,error}=await admin.rpc('zukait_purchase_invoice_audit_list',{p_session_hash:sessionHash,p_invoice_id:id,p_page:page});
@@ -68,7 +71,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       return good({audit:data.slice(0,50),page,hasMore:data.length>50});
     }
     if(['INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL'].includes(operation)){
-      if(user.role!=='Manager')return bad('manager_only',403);
+      if(!['Manager','Accountant'].includes(user.role)||operation==='INVOICE_CANCEL'&&user.role!=='Manager')return bad('manager_only',403);
       if(!writesEnabled)return bad('stock_write_not_enabled',423);
       const requestId=safeId(body.requestId,128),data=body.data;
       if(!requestId||!data||typeof data!=='object'||Array.isArray(data)||JSON.stringify(data).length>65536)return bad('invalid_invoice_correction');
@@ -162,6 +165,18 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     });
     if(error)return bad('returnable_read_failed',503);
     return good({returnable:data});
+  }
+  if(operation==='ENTRY_CATALOG') {
+    if(!['Manager','Accountant'].includes(user.role))return bad('stock_forbidden',403);
+    if(!sessionHash)return bad('stock_session_required',401);
+    const page=body.page??0;
+    if(!Number.isInteger(page)||page<0||page>20)return bad('invalid_catalog_page');
+    let q=admin.from('zukait_stock_balances').select('material_id,brand_id,unit,material:zukait_stock_material_keys!inner(display_name,department,active),brand:zukait_stock_brand_keys!inner(display_name,active)').eq('material.active',true).eq('brand.active',true);
+    if(department)q=q.in('material.department',[department,'Both']);
+    const {data,error}=await q.order('material_id',{ascending:true}).order('brand_id',{ascending:true}).range(page*100,(page+1)*100);
+    if(error||!Array.isArray(data))return bad('stock_catalog_failed',503);
+    const items=data.slice(0,100).map(x=>({materialId:x.material_id,brandId:x.brand_id,unit:x.unit,material:x.material?.display_name,brand:x.brand?.display_name,department:x.material?.department}));
+    return good({items,page,hasMore:data.length>100});
   }
   if(operation==='CATALOG') {
     // One bounded indexed read; only stock catalog keys, never workshop_state.
@@ -268,11 +283,11 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const command=String(body.command||'').toUpperCase();
     if(invoiceEnabled&&command==='PURCHASE')return bad('purchase_invoice_required',409);
     if(!allowedCommands.has(command))return bad('stock_unknown_command');
-    if(managerActions.has(command)&&user.role!=='Manager')return bad('manager_only',403);
+    if(managerActions.has(command)&&user.role!=='Manager'&&!(user.role==='Accountant'&&command==='OPENING'))return bad('manager_only',403);
     if(command==='MECHANICAL_ISSUE'||command==='MECHANICAL_RETURN') {
       if(!['Manager','Mechanical Supervisor'].includes(user.role))return bad('mechanical_stock_forbidden',403);
       if(!mechanicalWritesEnabled)return bad('mechanical_stock_not_enabled',423);
-    }else if(!['Manager','Supervisor'].includes(user.role))return bad('stock_forbidden',403);
+    }else if(!['Manager','Supervisor','Accountant'].includes(user.role))return bad('stock_forbidden',403);
     const requestId=safeId(body.requestId,128);
     if(!requestId)return bad('stock_request_id_required');
     if(!sessionHash)return bad('stock_session_required',401);

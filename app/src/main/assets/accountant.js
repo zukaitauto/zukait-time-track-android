@@ -1,7 +1,7 @@
 (function(){'use strict';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const config=window.ZUKAIT_ACCOUNTANT_CONFIG||{},url=config.url||'https://pjknotnjkufadqavcmii.supabase.co',publicKey=config.key||'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A',sessionKey='zukait_secure_session_v42';
-const modules=[['jobs','Job Card 360°'],['cash','Cash In'],['insurance_invoiced','Insurance Invoiced'],['leave','Leave Management'],['profit','Profit / Loss'],['consumables','Consumables'],['parts','Spare Parts'],['paint','Paint']];
+const modules=[['jobs','Job Card 360°'],['cash','Cash In'],['insurance_invoiced','Insurance Invoiced'],['leave','Leave Management'],['profit','Profit / Loss'],['consumables','Consumables'],['parts','Spare Parts'],['paint','Paint'],['stock','Stock']];
 const money=(title,key)=>[title,key,true],omanMonth=()=>new Date(Date.now()+14400000).toISOString().slice(0,7),common=[['JC','job_card'],['Vehicle','vehicle'],['Date','date']];
 const columns={jobs:[['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],['Type','job_type'],money('Invoice OMR','invoice_amount_omr'),money('Total cost OMR','total_cost_omr'),money('Estimated GP OMR','estimated_gross_profit_omr')],consumables:[...common,['Material','material'],['Brand','brand'],['Actual quantity','quantity'],['Unit','unit'],money('Unit price OMR','unit_price_omr'),money('Cost OMR','cost_omr')],paint:[...common,['PO','po'],['Supplier','supplier'],['Brand','brand'],['Status','status'],['Quantity','quantity'],['Unit','unit'],money('Unit price OMR','unit_price_omr'),money('Paint amount OMR','gross_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],parts:[...common,['PL','list_no'],['Part','part'],['Ordered quantity','quantity'],['Received quantity','received_quantity'],['Pending quantity','pending_quantity'],['Returned quantity','returned_quantity'],['Supplier','supplier'],['Status','status'],['Invoice reference','invoice_reference'],money('Purchase OMR','purchase_amount_omr'),money('Pending purchase OMR','pending_purchase_omr'),money('Returns OMR','returns_omr'),money('Net OMR','net_cost_omr')],leave:[['Employee','employee'],['Date','date'],['Period','period_label'],['Approval','approval_status'],['Days','days'],['Remark','remark']],cash:[['Invoice Date','invoice_date'],['JC','job_card'],['Registration','registration'],['Vehicle','vehicle'],['Customer','customer'],money('Invoice Amount OMR','invoice_amount_omr')],cash_ledger:[['Date','transaction_date'],['Source','receipt_source'],['Direction','kind'],['JC','job_card'],['Payer / payee','payee'],['Category','category'],['Method','payment_method'],money('Posted OMR','recorded_amount_omr'),money('Counted OMR','amount_omr'),['Reference','reference']],lpo:[['Insurance','insurance_company'],['JC','job_card'],['Claim','claim_number'],['LPO status','lpo_status'],['LPO document received','lpo_received_date'],money('LPO amount OMR','lpo_amount_omr'),money('Cash collected OMR','collected_amount_omr'),['Latest collection date','collection_date'],money('Balance OMR','outstanding_omr')],outstanding:[['JC','job_card'],['Customer','customer'],['Insurance','insurance_company'],['Invoice date','invoice_date'],['Delivery date','delivery_date'],money('Invoice OMR','invoice_amount_omr'),money('Verified receipts OMR','payment_received_omr'),money('Balance OMR','outstanding_omr'),['Status','payment_status']],monthly:[['Month','month'],...['cash_in','cash_out','invoiced_revenue','payments_received','consumables','paint','parts','labour','total_job_cost','estimated_gross_profit','outstanding','lpo_collected','lpo_documents_received'].map(k=>money(k.replaceAll('_',' ')+' OMR',k+'_omr')),['Pending cost records','pending_cost_records'],['Pending LPO documents','lpo_pending_records'],['Leave days','leave_days']]};
 
@@ -54,7 +54,7 @@ async function submitBill(command,retry=false){
  catch(e){say(e.message);throw e;}
  finally{busy=false;showPending();}
 }
-function invalidate(){closeCashDialog();billReview?.reset();verified=false;generation++;closeDetail();result=null;pendingCostRows=null;target=null;$('app').hidden=true;for(const id of ['rows','detail','summary','pending'])$(id).replaceChildren();$('pending').hidden=true;window.dispatchEvent(new Event('zukait-accountant-session'));}
+function invalidate(){accountStock?.reset();closeCashDialog();billReview?.reset();verified=false;generation++;closeDetail();result=null;pendingCostRows=null;target=null;$('app').hidden=true;for(const id of ['rows','detail','summary','pending'])$(id).replaceChildren();$('pending').hidden=true;window.dispatchEvent(new Event('zukait-accountant-session'));}
 window.addEventListener('storage',e=>{if(verified&&billsEnabled&&(e.key===pendingKey()||e.key==='zukait_bill_intent_v1:'+encodeURIComponent(url)+':'+encodeURIComponent(user.id)))showPending();});
 window.addEventListener('storage',e=>{if(e.key===sessionKey&&verified){try{token()}catch{say('Account changed. Sign in again.')}}});
 async function request(endpoint,body){
@@ -495,6 +495,7 @@ function filterVisibility(){
 }
 function switchReport(name){
  if(!modules.some(m=>m[0]===name))return;
+ if(name==='stock'){if(!verified||busy)return;token();return accountStock?.open();}
  report=name;labourMode='with';offset=0;$('accounts-workspace').dataset.report=name;
  $('accounts-home').hidden=true;$('accounts-workspace').hidden=false;closeCashDialog();
  for(const id of ['query','month','from','to','employee','material','insurance'])$(id).value='';
@@ -753,7 +754,8 @@ const moduleDesign={
  profit:[moduleSvg('<rect x="4" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="16" y="3" width="4" height="18" rx="1"/>'),'Cash, Insurance, Credit and Corporate combined','teal'],
  consumables:[moduleSvg('<rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 2v6m6-6v6M8 12h8m-8 4h8"/>'),'Monthly material consumption, brand and costs','green'],
  parts:[moduleSvg('<path d="M14 4a6 6 0 0 0-7 7L3 15l6 6 4-4a6 6 0 0 0 7-7l-5 5-4-4z"/>'),'Monthly spare parts purchases and returns','blue'],
- paint:[moduleSvg('<path d="M5 13h14v7H5zM8 4h8l3 9H5zM12 4V2"/>'),'Monthly paint purchases and returns','indigo']
+ paint:[moduleSvg('<path d="M5 13h14v7H5zM8 4h8l3 9H5zM12 4V2"/>'),'Monthly paint purchases and returns','indigo'],
+ stock:[moduleSvg('<path d="M3 7l9-5 9 5v10l-9 5-9-5zM3 7l9 5 9-5M12 12v10"/>'),'Opening stock, purchase invoices and audit history','teal']
 };
 $('navigation').innerHTML=modules.map(([name,title])=>{const [icon,description,tone]=moduleDesign[name];return '<button type="button" class="module-card tone-'+tone+'" aria-label="'+esc(title)+'" data-report="'+name+'"><span class="module-icon" aria-hidden="true">'+icon+'</span><span class="module-copy"><strong>'+title+'</strong><small>'+description+'</small></span><span class="module-arrow" aria-hidden="true">›</span></button>';}).join('');for(const id of ['navigation','summary'])$(id).onclick=e=>{const b=e.target.closest('[data-report]');if(b)switchReport(b.dataset.report)};
 $('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();offset=0;$('detail').hidden=true;load()}});$('refresh').onclick=()=>{offset=0;$('detail').hidden=true;load()};$('clear').onclick=()=>{
@@ -793,8 +795,9 @@ async function changePassword(currentPassword,newPassword){
  await load();
 }
 async function prepareForUpdate(){
- const clean=()=>verified&&!busy&&navigator.onLine!==false&&localStorage.getItem(pendingKey())===null&&!hasBillPending()&&$('entry').hidden&&!$('cash-entry-dialog').open&&$('correction').hidden&&$('account-password-form').hidden;
+ const clean=()=>verified&&!busy&&!accountStock?.blocked()&&navigator.onLine!==false&&localStorage.getItem(pendingKey())===null&&!hasBillPending()&&$('entry').hidden&&!$('cash-entry-dialog').open&&$('correction').hidden&&$('account-password-form').hidden;
  try{if(!clean())return false;token();await request('workshop-api',{action:'accountant_dashboard',limit:1});return clean();}catch{return false;}
 }
+const accountStock=window.zukaitCreateAccountStock?.({request:body=>request('workshop-api',{...body,action:'consumables_stock'}),getUser:()=>verified?{...user}:null,project:url,canWrite:()=>verified&&!busy&&!pending()&&!hasBillPending(),notify:say});
 window.zukaitAccountant={load,openJob,switchReport,submit,exportRows,changePassword,prepareForUpdate,submitBill,getUser:()=>verified?{...user}:null,formatNormalDutyHours};boot();
 })();
