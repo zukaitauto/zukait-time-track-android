@@ -10,10 +10,20 @@ AS $function$
 begin
  if not pg_try_advisory_xact_lock(hashtextextended('workshop_archive_conversion',0)) then return; end if;
  create temp table archive_trial_full(revision bigint primary key,payload jsonb not null) on commit drop;
-insert into archive_trial_full select revision,data from public.workshop_state_history where revision <= 17683 and (case when exists(
- select from public.workshop_state_history where revision < (select min(revision) from private.workshop_archive_conversion_pilot)
-) then revision < (select min(revision) from private.workshop_archive_conversion_pilot)
-else revision > (select max(revision) from private.workshop_archive_conversion_pilot) end) order by case when revision < (select min(revision) from private.workshop_archive_conversion_pilot) then -revision else revision end limit 4;
+-- Select the indexed frontier in the correct direction; no expression sort
+-- or reading old payloads before the four-revision limit.
+if not exists(select 1 from private.workshop_archive_conversion_pilot) then
+  insert into archive_trial_full select revision,data from public.workshop_state_history
+    where revision<=17683 order by revision asc limit 4;
+elsif exists(select 1 from public.workshop_state_history where revision < (select min(revision) from private.workshop_archive_conversion_pilot)) then
+  insert into archive_trial_full select revision,data from public.workshop_state_history
+    where revision<=17683 and revision < (select min(revision) from private.workshop_archive_conversion_pilot)
+    order by revision desc limit 4;
+else
+  insert into archive_trial_full select revision,data from public.workshop_state_history
+    where revision<=17683 and revision > (select max(revision) from private.workshop_archive_conversion_pilot)
+    order by revision asc limit 4;
+end if;
 declare
   original record;
   previous jsonb;
