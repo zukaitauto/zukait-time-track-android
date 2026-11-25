@@ -4,7 +4,7 @@ from urllib.parse import quote
 spec=importlib.util.spec_from_file_location("base_repair",pathlib.Path(__file__).with_name("accountant-stock-web-repair.py"))
 b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
 PATCH=("accountant.html","accountant.js","accountant_stock.js")
-BASELINE="c60aca7b6bc8447f48f0d55d3dd5b4d48132a940"
+BASELINE="8e4c0f99dd6e80bb88a5f1dce189b4464c500b84"
 def baseline(name):
     return subprocess.check_output(["git","show",BASELINE+":app/src/main/assets/"+str(b.safe(name))])
 def candidate():
