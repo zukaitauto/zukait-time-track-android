@@ -3,7 +3,7 @@
   "versionCode": 385,
   "releaseScope": "standard",
   "approvedForStaff": false,
-  "ownerPublicationRequested": false,
+  "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": false,
   "ownerRequestedProceed": false,
   "releaseHeldByOwner": false,
@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Held V422 Accountant Stock parity: scoped API, database authorization and atomic master-link changes require integrated acceptance and backend deployment. Not approved for publication.",
+  "reason": "Owner requested publication after verification and waived the live staff sign-in check. V154 Stock backend and report correction deployed. Qualify this V422 candidate through the automated release workflows.",
   "previousPublishedRelease": {
     "versionName": "V421",
     "versionCode": 384,
@@ -23,5 +23,6 @@
   "signedAcceptanceRun": null,
   "verificationRun": null,
   "approvedAt": null,
-  "publishNonce": null
+  "publishNonce": null,
+  "productionAuthenticatedAcceptance": "WAIVED_BY_OWNER_NOT_RUN"
 }
