@@ -25,7 +25,7 @@ else if (request.remainingAcceptanceDeferral) {
 } else if (required.some(key=>actual.checks[key]?.passed!==true)) {
  assert.throws(()=>validate(request,actual),'Incomplete evidence must not validate under another release scope');
 } else assert.equal(validate(request,actual),true);
-const good={...request,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
+const good={...request,v421AcceptanceDeferral:undefined,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
 const complete={...actual,versionName:good.versionName,versionCode:good.versionCode,sourceCommit:good.sourceCommit,checks:Object.fromEntries(required.map(k=>[k,{passed:true,evidence:'docs/QA-'+k+'.md',verifiedBy:'QA Reviewer',verifiedAt:'2026-10-10T05:00:00Z'}]))};
 assert.equal(validate(good,complete),true,'Synthetic complete attestation must validate');
 for(const key of required) {
@@ -89,4 +89,21 @@ if(request.versionName==='V420'&&request.backupRestoreDeferral){
  for(const k of v420.physicalDeviceDeferral?.checks||[]){const invalid=structuredClone(v420Evidence);invalid.checks[k].passed=true;assert.throws(()=>validate(v420,invalid),/must remain not passed/);}
  if(v420.physicalDeviceDeferral){const invalid={...v420,physicalDeviceDeferral:undefined};assert.throws(()=>validate(invalid,v420Evidence),/physical_android/);}
  console.log('PASS: V420 owner deferrals cannot waive any other acceptance check');
+}
+
+if(request.versionName==='V421'&&request.v421AcceptanceDeferral){
+ const approved={...request,approvedForStaff:true,approvedAt:'2026-11-25T08:00:00Z',publishNonce:'fixture-v421-owner-defer'};
+ assert.equal(validate(approved,actual),true);
+ assert.throws(()=>validate({...approved,v421AcceptanceDeferral:undefined},actual),/client_https_restart/);
+ for(const key of required){
+  const fake=structuredClone(actual);fake.checks[key].passed=true;
+  assert.throws(()=>validate(approved,fake),/must remain not passed/);
+  const missing=structuredClone(actual);delete missing.checks[key].ownerWaiver;
+  assert.throws(()=>validate(approved,missing),/records must match/);
+ }
+ for(const [key,value] of Object.entries({versionName:'V422',versionCode:385,sourceCommit:'b'.repeat(40),signedAcceptanceRun:1})){
+  const altered={...approved,[key]:value};
+  assert.throws(()=>validate(altered,{...actual,[key]:value}));
+ }
+ console.log('PASS: V421 exception is exact-source, owner-directed and cannot fabricate acceptance.');
 }

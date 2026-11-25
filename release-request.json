@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner requested V421 Android/web publication on 25 Nov 2026. All requested feature changes merged, A4 print passed. Accountant stock SQL migration applied and workshop-api V153 deployed (per existing release record). Exact-source signed build run 45571357825 succeeded; signed APK artifact 15002296841 is present. Owner requested deferral of physical-device acceptance and fresh backup-restore verification; neither was performed. V421-specific waiver handling and independently verified remaining acceptance evidence are pending. Staff approval remains false; no publication authorized by this record.",
+  "reason": "Owner directed V421 publication with all seven manual acceptance gates deferred, not performed. Signed build 45571357825 succeeded on pinned source; backend V153 deployment is recorded in prior metadata, not independently smoke-tested here. Previous V420 remains rollback release. Signature, package/version, source provenance and coordinated delivered-byte verification are retained. Staff approval remains false until release exception changes are reviewed.",
   "previousPublishedRelease": {
     "versionName": "V420",
     "versionCode": 383,
@@ -23,5 +23,24 @@
   "signedAcceptanceRun": 45571357825,
   "verificationRun": null,
   "approvedAt": null,
-  "publishNonce": null
+  "publishNonce": null,
+  "v421AcceptanceDeferral": {
+    "versionName": "V421",
+    "versionCode": 384,
+    "sourceCommit": "5e02808249f536505d115d2f054651c161617408",
+    "signedAcceptanceRun": 45571357825,
+    "checks": [
+      "client_https_restart",
+      "physical_android",
+      "physical_safari",
+      "full_data_preservation",
+      "fresh_backup_restored",
+      "pc_site_reconciled",
+      "production_backend_smoke"
+    ],
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "authorizedBy": "Owner in this conversation",
+    "instruction": "3 bypass; fix and publish",
+    "recordedDate": "2026-11-25"
+  }
 }
