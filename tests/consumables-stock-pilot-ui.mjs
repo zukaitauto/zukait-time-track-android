@@ -6,6 +6,7 @@ const calls=[];
 let html='';
 const fields={};
 const window={
+  localStorage:{getItem(k){return this[k]??null},setItem(k,v){this[k]=String(v)},removeItem(k){delete this[k]}},
   location:{search:'?stockPilot=1'},
   ZUKAIT_STOCK_UI_PREVIEW_ONLY:true,
   ZUKAIT_STOCK_ISOLATED_PILOT:true,

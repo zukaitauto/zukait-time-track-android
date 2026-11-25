@@ -25,7 +25,7 @@ else if (request.remainingAcceptanceDeferral) {
 } else if (required.some(key=>actual.checks[key]?.passed!==true)) {
  assert.throws(()=>validate(request,actual),'Incomplete evidence must not validate under another release scope');
 } else assert.equal(validate(request,actual),true);
-const good={...request,v423AcceptanceDeferral:undefined,v422AcceptanceDeferral:undefined,v421AcceptanceDeferral:undefined,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
+const good={...request,v424AcceptanceDeferral:undefined,v423AcceptanceDeferral:undefined,v422AcceptanceDeferral:undefined,v421AcceptanceDeferral:undefined,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
 const complete={...actual,versionName:good.versionName,versionCode:good.versionCode,sourceCommit:good.sourceCommit,checks:Object.fromEntries(required.map(k=>[k,{passed:true,evidence:'docs/QA-'+k+'.md',verifiedBy:'QA Reviewer',verifiedAt:'2026-10-10T05:00:00Z'}]))};
 assert.equal(validate(good,complete),true,'Synthetic complete attestation must validate');
 for(const key of required) {
