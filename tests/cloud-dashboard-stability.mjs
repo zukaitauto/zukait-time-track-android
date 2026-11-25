@@ -23,7 +23,7 @@ async function run(remote,initial,baseline=null,afterPull=null,who={role:'Employ
     setServerConnection:()=>{},status:(s)=>statuses.push(s),clone:structuredClone,
     api:async()=>({ok:true,revision:2,data:remote}),
     normalizeRemote:(data)=>{ctx.state=structuredClone(data)},
-    render:()=>{renders++},dashboardRenderTimer:null,clearTimeout, setTimeout:(fn)=>{fn();return 1},window:{v42AfterCloudPull:afterPull?()=>afterPull(ctx):undefined,zukaitLiveStatusAuthority:{apply(){}}},console
+    render:()=>{renders++},dashboardRenderTimer:null,dashboardRenderPending:false,clearTimeout, setTimeout:(fn)=>{fn();return 1},window:{v42AfterCloudPull:afterPull?()=>afterPull(ctx):undefined,zukaitLiveStatusAuthority:{apply(){}}},console
   };
   vm.runInNewContext(pullSource+';globalThis.pull=pull;',ctx);
   await ctx.pull(true);
@@ -63,3 +63,16 @@ assert.doesNotMatch(pushBlock,/if\(me\)try\{render\(\)\}/,'push acknowledgements
 assert.match(pushBlock,/scheduleDashboardRender\(beforeAckRender,state\)/,'successful acknowledgements must use the structural render gate');
 assert.match(pushBlock,/scheduleDashboardRender\(beforeConflictRender,state\)/,'conflict reconciliation must use the structural render gate');
 console.log('Cloud push stability: acknowledgements cannot directly rebuild dashboards');
+
+// Hidden structural updates must survive until the dashboard becomes visible.
+let redraws=0;const queued=[];
+const hidden={me:{role:'Employee',id:'EMP1'},document:{visibilityState:'hidden'},window:{},dashboardRenderTimer:null,dashboardRenderPending:false,clearTimeout(){},setTimeout:fn=>{queued.push(fn);return queued.length},render:()=>redraws++,console};
+vm.createContext(hidden);vm.runInContext(src.slice(helperBegin,helperEnd),hidden);
+vm.runInContext("scheduleDashboardRender({assign:[]},{assign:[{id:'A1',emp:'EMP1',job:'JC1'}]})",hidden);
+assert.equal(queued.length,0);assert.equal(hidden.dashboardRenderPending,true);
+hidden.document.visibilityState='visible';vm.runInContext('queueDashboardRender()',hidden);assert.equal(queued.length,1);
+queued.shift()();assert.equal(redraws,1);assert.equal(hidden.dashboardRenderPending,false);
+vm.runInContext('queueDashboardRender()',hidden);assert.equal(queued.length,0);
+
+// Integrated regression: execute the shared report reader fixture as well.
+await import('./shared-dashboard-read.mjs');

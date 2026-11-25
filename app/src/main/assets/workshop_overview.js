@@ -409,7 +409,9 @@ function patchSummary(box){
  }else box.innerHTML=markup;
  box.__woSummaryMarkup=markup;removeManagerSummaryReady();
 }
-setInterval(()=>{ensurePanel();ensureFloatingJobSearch();if(role()==='Manager'){const box=document.getElementById('woDailySummary');if(box)patchSummary(box);window.v273SettleTimeAttention?.()}},5000);
+function refreshVisibleOverview(){if(document.visibilityState==='hidden')return;ensurePanel();ensureFloatingJobSearch();if(role()==='Manager'){const box=document.getElementById('woDailySummary');if(box)patchSummary(box);window.v273SettleTimeAttention?.()}}
+setInterval(refreshVisibleOverview,5000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleOverview()});
 // Dashboard/report links are purpose-specific. Full review is entered only by top-search results.
 function focusedDetail(no,scope='work'){
  fullReviewJob='';
