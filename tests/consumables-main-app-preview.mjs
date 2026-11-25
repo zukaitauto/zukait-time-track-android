@@ -32,11 +32,19 @@ for(const [screen,color] of [['history','#62418a'],['adjust','#875521'],['report
 
 const html=readFileSync('app/src/main/assets/offline_test.html','utf8');
 const menu=readFileSync('app/src/main/assets/consumables_ui.js','utf8');
-const masterStart=menu.indexOf('<h3 id="cmCreateHeading"'),priceStart=menu.indexOf('<h3 id="cmPriceHeading"');
+// Test actual shared form markup, not the old inline source location.
+const masterEnv={window:{}};
+runInNewContext(readFileSync('app/src/main/assets/consumables_stock_core.js','utf8'),masterEnv);
+const masterCore=masterEnv.ZukaitStockCore||masterEnv.window.ZukaitStockCore;
+const createForm=masterCore.masterCreateMarkup(),priceFields=masterCore.masterPriceFields('2026-11-25');
+const masterStart=menu.indexOf('window.ZukaitStockCore.masterCreateMarkup('),priceStart=menu.indexOf('<h3 id="cmPriceHeading"');
 assert.ok(masterStart>=0&&priceStart>masterStart,'Material creation and Brand & Price must be separate screen sections');
-assert.match(menu,/CREATE MATERIAL/);
-assert.match(menu,/SAVE BRAND &amp; PRICE/);
-assert.doesNotMatch(menu.slice(masterStart,priceStart),/id="cmPrice|id="cmDate/,'Create Material must not collect price or effective date');
+assert.match(createForm,/<section class="cons-master-form" aria-labelledby="cmCreateHeading">/);
+assert.match(createForm,/CREATE MATERIAL/);
+assert.match(priceFields,/SAVE BRAND &amp; PRICE/);
+assert.match(priceFields,/id="cmPrice"/);
+assert.match(priceFields,/id="cmDate"/);
+assert.doesNotMatch(createForm,/id="cmPrice|id="cmDate/,'Create Material must not collect price or effective date');
 assert.match(menu,/modal\(pageTitle,/,'Manager Master must use the selected screen title');
 assert.match(menu,/pageTitle=section==='create'\?'Create Material':section==='price'\?'Brand & Price':'Materials & Brands'/,'Focused create/price screens preserve combined Master fallback');
 assert.doesNotMatch(menu,/action\('Brands & Price'/,'Old Painting dashboard must not show moved Master action');
