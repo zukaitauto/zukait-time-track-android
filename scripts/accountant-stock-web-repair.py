@@ -18,9 +18,22 @@ def safe(name):
     require(bool(name) and not p.is_absolute() and ".." not in p.parts and ":" not in name and "\\" not in name and "?" not in name and "#" not in name, "Unsafe path: "+name)
     return p
 def fetch(name):
-    with urllib.request.urlopen(urllib.request.Request(BASE+name,headers={"Cache-Control":"no-cache","User-Agent":"Zukait-stock-web-repair"}),timeout=45) as response:
-        require(response.url.startswith(BASE),"Unexpected redirect")
-        return response.read()
+    # Retry transient Pages/CDN errors only; never ignore an integrity mismatch.
+    from urllib.error import HTTPError, URLError
+    from http.client import IncompleteRead
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(BASE+name,headers={"Cache-Control":"no-cache","User-Agent":"Zukait-stock-web-repair"}),timeout=20) as response:
+                require(response.url.startswith(BASE),"Unexpected redirect")
+                return response.read()
+        except HTTPError as exc:
+            if exc.code not in (408,429,500,502,503,504) or attempt==4:
+                raise RuntimeError(f"Pages fetch failed for {name}: HTTP {exc.code}") from exc
+            print(f"Retry Pages asset {name}: HTTP {exc.code} ({attempt+1}/4)",flush=True)
+        except (URLError,TimeoutError,ConnectionError,IncompleteRead) as exc:
+            if attempt==4: raise RuntimeError(f"Pages fetch failed for {name}: {exc}") from exc
+            print(f"Retry Pages asset {name}: transport error ({attempt+1}/4)",flush=True)
+        time.sleep(2**attempt)
 def pinned(name):
     return subprocess.check_output(["git","show",SOURCE+":app/src/main/assets/"+str(safe(name))])
 def check_record(record):
@@ -102,6 +115,19 @@ def selftest():
         try: dependencies(('<script src="accountant_stock.js"></script><script src="'+bad+'"></script>').encode())
         except ValueError: pass
         else: raise AssertionError("Unsafe script accepted: "+bad)
-    print("PASS: Accountant script discovery and path guards")
+    from unittest.mock import patch, MagicMock
+    from urllib.error import HTTPError
+    response=MagicMock()
+    response.__enter__.return_value=response
+    response.url=BASE+"qa.js"
+    response.read.return_value=b"verified"
+    error=HTTPError(BASE+"qa.js",503,"Service Unavailable",None,None)
+    with patch("urllib.request.urlopen",side_effect=[error,response]) as call, patch("time.sleep"):
+        assert fetch("qa.js")==b"verified" and call.call_count==2
+    with patch("urllib.request.urlopen",side_effect=HTTPError(BASE+"qa.js",404,"Not Found",None,None)) as call, patch("time.sleep"):
+        try: fetch("qa.js")
+        except RuntimeError: assert call.call_count==1
+        else: raise AssertionError("Permanent HTTP error ignored")
+    print("PASS: Accountant script discovery, path guards and transient download retry")
 if __name__=="__main__":
     {"prepare":prepare,"verify":verify,"selftest":selftest}[sys.argv[1]]()
