@@ -967,8 +967,8 @@ function departmentMenu(){
   '<div class="zs-entry-hero-text"><h2>Consumables Stock Management</h2>'+
   '<p>Manage paint and mechanical consumables, materials, brands and pricing.</p></div></div>'+
   '<div class="zs-entry-section"><h3>Central Stock Entry</h3><div class="zs-department-grid" aria-label="Central Stock Entry">'+
-  '<button type="button" class="zs-department-card painting" onclick="zukStockCentralPurchase()"><strong>Purchase Entry</strong><small>Purchase invoices</small></button>'+
-  (manager()?'<button type="button" class="zs-department-card mechanical" onclick="zukStockCentralOpening()"><strong>Add Stock</strong><small>Opening stock · physical count</small></button>':'')+'</div></div>'+
+  '<button type="button" class="zs-department-card painting" onclick="zukStockCentralPurchase()"><span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">🛒</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span><strong>Purchase Entry</strong><small>Purchase invoices</small></button>'+
+  (manager()?'<button type="button" class="zs-department-card mechanical" onclick="zukStockCentralOpening()"><span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">＋</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span><strong>Add Stock</strong><small>Opening stock · physical count</small></button>':'')+'</div></div>'+
   '<div class="zs-entry-section zs-entry-department-section">'+
   '<div class="zs-entry-section-head"><div>'+
   '<h3>Stock</h3><p>Open and manage stock for each department.</p></div></div>'+
