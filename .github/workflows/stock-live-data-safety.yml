@@ -50,7 +50,11 @@ jobs:
             request.backendDeploymentRequired===true && request.approvedAt===null &&
             request.publishNonce===null;
           const heldParity=request.releaseScope==='standard' && request.versionName==='V422' && request.versionCode===385 && request.approvedForStaff===false && request.approvedAt===null && request.publishNonce===null && request.productionBackendChanges===true && request.backendDeploymentRequired===true;
-          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase && !heldParity))
+          // V424 is a held, UI-only Consumables menu/list update, with no backend changes.
+          const heldV424=request.releaseScope==='standard' && request.versionName==='V424' &&
+            request.versionCode===387 && request.approvedForStaff===false && request.approvedAt===null &&
+            request.publishNonce===null && request.productionBackendChanges===false && request.backendDeploymentRequired===false;
+          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase && !heldParity && !heldV424))
             throw Error('Unexpected Stock backend activation or release scope');
           const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
           if(!html.includes('window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true'))
