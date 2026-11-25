@@ -4,13 +4,19 @@ from urllib.parse import quote
 spec=importlib.util.spec_from_file_location("base_repair",pathlib.Path(__file__).with_name("accountant-stock-web-repair.py"))
 b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
 PATCH=("accountant.html","accountant.js","accountant_stock.js")
+BASELINE="c60aca7b6bc8447f48f0d55d3dd5b4d48132a940"
+def baseline(name):
+    return subprocess.check_output(["git","show",BASELINE+":app/src/main/assets/"+str(b.safe(name))])
 def candidate():
     return subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
 def prepare():
     b.check_updater()
     b.require(not b.SITE.exists(),"Refuse to overwrite staging")
     raw=b.fetch("release-integrity.json"); record=json.loads(raw); b.check_record(record)
-    b.require(not record.get("accountantStockWebUpdate"),"Layout already updated; review baseline before another deployment")
+    previous=record.get("accountantStockWebUpdate",{})
+    b.require(previous.get("sourceCommit")==BASELINE and previous.get("apkUnchanged") is True,"Unexpected live Accountant layout baseline")
+    evidence=json.loads(pathlib.Path("docs/accountant-stock-backend-deployment.json").read_text())
+    b.require(evidence.get("project")=="pjknotnjkufadqavcmii" and evidence.get("verified") is True and evidence.get("databaseMigrationApplied") is True and isinstance(evidence.get("backendVersion"),int) and evidence["backendVersion"]>153,"Matching production backend has not been verified")
     b.SITE.mkdir();b.EVIDENCE.mkdir(parents=True,exist_ok=True)
     original=dict(record["files"])
     def preserve(entry):
@@ -20,7 +26,7 @@ def prepare():
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(preserve,original.items()))
     source=candidate()
     for name in PATCH:
-        b.require(original.get(name)==b.digest(b.pinned(name)),"V421 baseline differs: "+name)
+        b.require(original.get(name)==b.digest(baseline(name)),"V421 Accountant layout baseline differs: "+name)
         data=pathlib.Path("app/src/main/assets",name).read_bytes()
         b.require(data==subprocess.check_output(["git","show",source+":app/src/main/assets/"+name]),"Uncommitted source: "+name)
         (b.SITE/name).write_bytes(data);record["files"][name]=b.digest(data)

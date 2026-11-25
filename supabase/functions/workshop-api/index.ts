@@ -1281,7 +1281,7 @@ Deno.serve(async (req: Request) => {
     // Stock is an isolated, small-table API; NO writes to workshop_state.
     // Both flags default off until the catalog migration and acceptance are complete.
     if(action==='consumables_stock_master') {
-      const result=await stockMasterApi(admin,user,body,{enabled:Deno.env.get('ZUKAIT_ACCOUNTANT_STOCK_MASTER_ENABLED')==='true'&&Deno.env.get('ZUKAIT_STOCK_MASTER_LINK_ENABLED')==='true'&&Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true',sessionHash:await sha256Hex(token),computeLiveStatus});
+      const result=await stockMasterApi(admin,user,body,{enabled:Deno.env.get('ZUKAIT_ACCOUNTANT_STOCK_MASTER_ENABLED')!=='false'&&Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true'&&Deno.env.get('ZUKAIT_STOCK_MASTER_LINK_ENABLED')==='true'&&Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true',sessionHash:await sha256Hex(token),computeLiveStatus});
       return reply(result.body,result.status);
     }
     if(action==='consumables_stock') {

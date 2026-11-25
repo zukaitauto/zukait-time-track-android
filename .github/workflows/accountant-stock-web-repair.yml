@@ -30,6 +30,9 @@ jobs:
           npm ci --ignore-scripts --include=dev
           node tests/accountant-stock-workspace.mjs
           node tests/accountant-stock-authority.mjs
+          node tests/accountant-stock-master-api.mjs
+          node tests/consumables-invoice-price-api.mjs
+          node tests/consumables-invoice-price-reconcile-api.mjs
       - name: Verify source-bound Accountant web layout update
         run: |
           git merge-base --is-ancestor 5e02808249f536505d115d2f054651c161617408 "$GITHUB_SHA"
