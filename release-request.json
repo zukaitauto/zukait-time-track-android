@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Production V152 deployed but subsequent owner-reported connection interruption corroborated by HTTP 503 and PostgreSQL statement timeout. Exact V151 rollback bundle not yet recovered. Hold staff publication until connectivity is restored and verified. Previously authorized backup and physical deferrals remain recorded.",
+  "reason": "Owner confirmed connectivity recovered and requested publication on 2026-11-25. Backend V152 remains deployed; 154 HTTP 200 POSTs, zero HTTP 503/500 in short observation window starting 04:36 UTC. Database responding at revision 17993. Exact V151 rollback bundle not recovered. Authenticated V420 workflows, full data preservation, PC site reconciliation and HTTPS restart acceptance not independently verified. Backup and physical-device deferrals remain recorded. Staff approval remains false pending outstanding evidence.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -79,7 +79,7 @@
       "fullDataPreservationVerified": false
     },
     "connectivityIncident": {
-      "status": "OPEN",
+      "status": "RECOVERY_OBSERVED",
       "reportedDate": "2026-11-25",
       "backendVersion": 152,
       "observedHttp503": 11,
@@ -88,7 +88,18 @@
       "databaseResponding": true,
       "fullRollbackVerified": false,
       "ownerReported": "Connection interrupted after initial connectivity",
-      "staffReleaseHold": true
+      "staffReleaseHold": true,
+      "ownerReportedRecovered": true,
+      "ownerRequestedPublicationAfterRecovery": true,
+      "recoveryEvidence": {
+        "observedAt": "2026-11-25T04:38:28.950641Z",
+        "windowStart": "2026-11-25T04:36:00Z",
+        "successfulPostRequests": 154,
+        "http503": 0,
+        "http500": 0,
+        "workshopRevision": 17993,
+        "scope": "Short observation window and owner-confirmed reconnect; not authenticated full acceptance."
+      }
     }
   },
   "correctedSignedCandidate": {
