@@ -23,8 +23,9 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
  if(x.operation==='PRICE_RECONCILE_PREVIEW')return {required:false};
  if(x.operation==='PRICE_APPLY_REVIEW')return {review:[{action:'create',materialName:'Primer',brandName:'Brand A',date:'2026-11-25',rate:2,affected:0}]};
  if(x.operation==='PRICE_APPLY_APPLY')return {ok:true};
+ if(x.operation==='INVOICE_CORRECT_HEADER')throw Error('invoice_not_found');
  if(x.operation==='INVOICE_CANCEL')return {invoice:{id:'inv',status:'cancelled'}};
- if(x.operation==='INVOICE_AUDIT')return {audit:[{actor_id:'A1',reason:'Created',event_type:'CREATED',before_header:null,after_header:{invoice_number:'QA1'}}],hasMore:false};
+ if(x.operation==='INVOICE_AUDIT')return {audit:[{actor_id:'A1',reason:'Created',event_type:'CREATED',before_header:null,after_header:{invoice_number:'QA1'}}],hasMore:x.page===0};
  throw Error('Unexpected '+x.operation);
 }});
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
@@ -44,8 +45,14 @@ await click('save-opening');assert.match(d.body.textContent,/Unconfirmed/);asser
 const before=calls.at(-1);assert.equal(before.command,'OPENING');assert.equal(before.data.quantity,2);
 await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
 await click('purchase');await click('invoices');await click('audit:0');assert.match(d.body.textContent,/A1/);
+await click('audit:0:1');assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).data.invoiceId,'inv');
+await click('audit:0:0');assert.equal(calls.at(-1).page,0);
 await click('back');await click('department:Painting');await click('adjust');d.querySelector('#as-pair').value='0';d.querySelector('#as-counted').value='3';d.querySelector('#as-reason').value='QA recount';await click('save-adjust');assert.equal(calls.at(-1).command,'ADJUST');assert.equal(calls.at(-1).data.countedQuantity,3);
 await click('purchase');await click('invoices');await click('cancel:0');d.querySelector('#as-reason').value='Wrong QA invoice';await click('save-edit');assert.equal(calls.at(-1).operation,'INVOICE_CANCEL');
+await click('purchase');await click('invoices');await click('header:0');
+d.querySelector('#as-supplier').value='Updated supplier';d.querySelector('#as-reason').value='Invoice correction';await click('save-edit');
+assert.match(d.body.textContent,/Server rejected transaction/);
+assert.equal(w.localStorage.length,0,'A definitive invoice rejection must clear the retry request');
 panel.reset();assert.equal(d.querySelector('#as-dialog'),null);
 ready=false;await panel.open();await click('purchase');assert.ok(d.querySelector('#as-number'),'Purchase page opens even when write readiness is false');assert.match(d.querySelector('#as-status').textContent,/disabled|not ready/);await click('invoices');assert.match(d.body.textContent,/QA1/);panel.reset();
 catalogFailure=true;await panel.open();await click('purchase');assert.match(d.body.textContent,/Unable to load the material catalog/);assert.ok(d.querySelector('[data-as="invoices"]'));await click('invoices');assert.match(d.body.textContent,/QA1/);panel.reset();
