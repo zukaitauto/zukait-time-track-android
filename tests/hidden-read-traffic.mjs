@@ -48,3 +48,20 @@ await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,0,'schedu
 await vm.runInContext('pullLiveStatus()',lc);assert.equal(requests,1,'explicit refresh is never suppressed');
 now+=7000;await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,2,'expired live status is refreshed');
 lc.liveStatusLastFetchedAt=0;await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,3,'new session must fetch');
+
+// Conditional report reads and session isolation.
+const reportStart=cloud.indexOf('  async function readLatest()'),reportEnd=cloud.indexOf('  let monthlyReadInFlight=',reportStart);
+const calls=[],pending=[];
+const rc={navigator:{onLine:true},sessionEpoch:1,readLatestInFlight:null,confirmedReadState:null,confirmedReadRevision:-1,clone:x=>JSON.parse(JSON.stringify(x)),api:p=>{calls.push(p);return new Promise(resolve=>pending.push(resolve))}};
+rc.stale=e=>e!==rc.sessionEpoch;
+vm.createContext(rc);vm.runInContext(cloud.slice(reportStart,reportEnd),rc);
+const read=()=>vm.runInContext('readLatest()',rc);
+let first=read(),duplicate=read();assert.equal(calls.length,1);assert.equal(calls[0].known_revision,undefined);
+pending.shift()({ok:true,revision:4,data:{jobs:[{id:'A'}]}});await Promise.all([first,duplicate]);
+let repeat=read();assert.equal(calls.at(-1).known_revision,4);pending.shift()({ok:true,revision:4,not_modified:true});assert.equal((await repeat).data.jobs[0].id,'A');
+let changedRead=read();pending.shift()({ok:true,revision:5,data:{jobs:[{id:'B'}]}});assert.equal((await changedRead).data.jobs[0].id,'B');
+let invalid=read();pending.shift()({ok:true,revision:6,not_modified:true});await assert.rejects(invalid,/INVALID_NOT_MODIFIED/);
+let old=read();const oldRejected=assert.rejects(old,/STALE_SESSION/);rc.sessionEpoch++;rc.readLatestInFlight=null;rc.confirmedReadState=null;rc.confirmedReadRevision=-1;
+let current=read();assert.equal(calls.at(-1).known_revision,undefined);pending.shift()({ok:true,revision:5,data:{jobs:[{id:'OLD'}]}});await oldRejected;
+let currentDuplicate=read();assert.equal(pending.length,1,'old request cannot clear new single-flight');pending.shift()({ok:true,revision:6,data:{jobs:[{id:'NEW'}]}});assert.equal((await current).data.jobs[0].id,'NEW');assert.equal((await currentDuplicate).data.jobs[0].id,'NEW');
+console.log('Conditional report downloads and account switching passed');

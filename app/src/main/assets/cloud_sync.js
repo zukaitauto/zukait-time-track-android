@@ -1071,16 +1071,25 @@
   async function readLatest(){
     if(!navigator.onLine)throw new Error('OFFLINE');
     if(readLatestInFlight)return readLatestInFlight;
-    readLatestInFlight=(async()=>{
-      const r=await api({action:'load'});
+    const epoch=sessionEpoch;
+    const request=(async()=>{
+      // Reuse only a server-confirmed read baseline from this session.
+      const baseline=confirmedReadState&&confirmedReadRevision>=0?{revision:confirmedReadRevision,data:confirmedReadState}:null;
+      const r=await api(baseline?{action:'load',known_revision:baseline.revision}:{action:'load'});
       if(!r.ok)throw new Error(r.code||'LOAD_FAILED');
+      if(stale(epoch))throw Error('STALE_SESSION');
+      if(r.not_modified===true){
+        if(!baseline||Number(r.revision)!==baseline.revision)throw new Error('INVALID_NOT_MODIFIED');
+        r.data=baseline.data;
+      }
       if(!r.data||typeof r.data!=='object')throw new Error('INVALID_SERVER_RECORDS');
       const revision=Number(r.revision||0);
       if(revision>=confirmedReadRevision){confirmedReadState=clone(r.data);confirmedReadRevision=revision;}
       // Neither state nor the dirty flag/conflict merge baseline is changed.
       return {revision:confirmedReadRevision,data:clone(confirmedReadState)};
     })();
-    try{return await readLatestInFlight}finally{readLatestInFlight=null}
+    readLatestInFlight=request;
+    try{return await request}finally{if(readLatestInFlight===request)readLatestInFlight=null}
   }
 
   let monthlyReadInFlight=null;
