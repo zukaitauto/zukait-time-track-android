@@ -65,7 +65,7 @@ try{
      subtitle:getComputedStyle(e.querySelector('small')).color,box:box(e)
    })),pageWidth:document.body.scrollWidth,headerWidth:box(header).width};
   });
-  assert.equal(home.cards.length,5,'five stock functions on department screen '+width);
+  assert.equal(home.cards.length,4,'four stock functions on department screen '+width);
   assert.ok(home.back.right+7<=home.close.x,'Back and Close overlap at '+width);
   assert.ok(home.back.bottom<=home.brand.y+2,'Brand title must sit below buttons at '+width);
   assert.ok(home.close.bottom<=home.brand.y+2,'Brand title must sit below Close at '+width);
@@ -78,6 +78,8 @@ try{
    assert.ok(card.box.right<=width+1,'Stock tile clipped at '+width);
   }
 
+  assert.equal(await page.getByRole('button',{name:/Add Stock/}).count(),0,'No duplicate departmental entry');
+  await page.evaluate(()=>window.zukStockResetDepartment());
   await page.getByRole('button',{name:/Add Stock/}).click();
   await page.locator('#zs-material-brand-search').waitFor();
   assert.equal(await page.locator('#zs-material-brand-search').inputValue(),'',
@@ -94,7 +96,7 @@ try{
   assert.equal(await page.locator('#zs-material').inputValue(),'',
    'Editing the search must clear a previous selection');
   // Loading another page is read-only and must not erase an unfinished count.
-  await page.locator('#zs-entrytype').selectOption('OPENING');
+  assert.equal(await page.locator('#zs-entrytype').inputValue(),'OPENING');
   await page.locator('#zs-qty').fill('3.25');
   await page.locator('#zs-method').selectOption('unit');
   await page.locator('#zs-price').fill('8.5');
@@ -131,7 +133,7 @@ try{
   assert.deepEqual(operations.filter(x=>x==='LIST'),['LIST','LIST'],
    'Only one server LIST per deliberately loaded page');
   // Fake in-memory stock API only: Save must submit the clicked exact IDs.
-  await page.locator('#zs-entrytype').selectOption('PURCHASE');
+  assert.equal(await page.locator('#zs-entrytype').inputValue(),'OPENING');
   await page.locator('#zs-qty').fill('2');
   await page.locator('#zs-method').selectOption('unit');
   await page.locator('#zs-price').fill('10');
@@ -139,7 +141,10 @@ try{
   await page.waitForFunction(()=>window.__stockRequests.some(x=>x.operation==='WRITE'));
   const saves=await page.evaluate(()=>window.__stockRequests.filter(x=>x.operation==='WRITE'));
   assert.equal(saves.length,1);
-  assert.equal(saves[0].command,'PURCHASE');
+  assert.equal(saves[0].command,'OPENING');
+  assert.equal(saves[0].data.countConfirmed,true);
+  assert.equal('supplier' in saves[0].data,false);
+  assert.equal('invoiceNumber' in saves[0].data,false);
   assert.equal(saves[0].data.materialId,'m4');
   assert.equal(saves[0].data.brandId,'b4');
   assert.equal(saves[0].data.quantity,2);
@@ -155,6 +160,8 @@ try{
   assert.equal(await page.evaluate(()=>window.__stockRequests.filter(x=>x.operation==='MASTER_LINK').length),0,'Selection alone cannot create stock');
   await page.locator('#zs-qty').fill('1');
   await page.locator('#zs-price').fill('3');
+  await page.locator('#zs-count-confirmed').check();
+  await page.locator('#zs-opening-note').fill('Physically verified new material count');
   await page.locator('#zs-save-entry').click();
   await page.waitForFunction(()=>window.__stockRequests.filter(x=>x.operation==='WRITE').length===2);
   const linkedAndWritten=await page.evaluate(()=>window.__stockRequests.filter(x=>['MASTER_LINK','WRITE'].includes(x.operation)).slice(-2));
