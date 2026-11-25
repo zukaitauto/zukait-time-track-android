@@ -1,151 +1,27 @@
 {
-  "versionName": "V420",
-  "versionCode": 383,
-  "releaseScope": "purchase-invoice-coordinated",
-  "approvedForStaff": true,
-  "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": true,
+  "versionName": "V421",
+  "versionCode": 384,
+  "releaseScope": "standard",
+  "approvedForStaff": false,
+  "ownerPublicationRequested": false,
+  "ownerRequestedImmediateRelease": false,
   "ownerRequestedProceed": true,
-  "releaseHeldByOwner": false,
+  "releaseHeldByOwner": true,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner explicitly requested V420 coordinated Android and web publication for testing, with remaining acceptance deferred. Signed exact-source build and CI passed. Authenticated production purchase-invoice smoke, complete preservation verification and HTTPS restart were not completed. Physical and backup deferrals remain recorded. Existing V152 stays deployed.",
+  "physicalAcceptanceStatus": "NOT_RUN",
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "reason": "V421 adaptive synchronization and scoped database reads candidate. User requested proceed with release preparation. Signed build, production backend verification and current acceptance gates pending. V420 remains public. Archive conversion remains disabled. No prior release waiver is carried forward.",
   "previousPublishedRelease": {
-    "versionName": "V418",
-    "versionCode": 381,
-    "releaseTag": "release-V418-architecture-v2",
-    "sourceCommit": "65af4ff062d24e8403d21eda13405222daae3b7a"
-  },
-  "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-  "signedAcceptanceRun": 45467177557,
-  "verificationRun": 45467177569,
-  "approvedAt": "2026-11-25T05:44:12.241448Z",
-  "publishNonce": "8d82bd5a28b6f04e7ac7e40ea6ba0654",
-  "backupRestoreDeferral": {
-    "check": "fresh_backup_restored",
-    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
     "versionName": "V420",
     "versionCode": 383,
-    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-    "authorizedBy": "Owner in this conversation",
-    "instruction": "Defer backup",
-    "recordedDate": "2026-11-24",
-    "scope": "Backup restore verification only. Physical acceptance and production backend smoke are not waived. No backup is represented as freshly restored."
+    "releaseTag": "release-V420-architecture-v2",
+    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0"
   },
-  "productionSchemaDeployment": {
-    "status": "STAGED_AND_VERIFIED",
-    "migration": "v420_purchase_invoice_schema_staged",
-    "sourceCommit": "5bb6796573a438cd9631835070cf45b70c708566",
-    "workshopRevisionBefore": 17977,
-    "workshopRevisionAfter": 17977,
-    "verifiedTables": 5,
-    "verifiedFunctions": 10,
-    "invoiceCount": 0,
-    "priceApplicationCount": 0,
-    "productionEdgeDeployed": true,
-    "verifiedDate": "2026-11-24"
-  },
-  "productionEdgePreflight": {
-    "status": "PRODUCTION_STAFF_ENDPOINT_DEPLOYED",
-    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-    "staffEndpointVersion": 152,
-    "canaryFunction": "workshop-api-v420-canary",
-    "canaryVersion": 1,
-    "canaryBundleSha256": "d165832fac03b0aff89896440b1a3e9aa92d4f136b6f641cb4635990d867fdd2",
-    "authenticatedSmoke": "NOT_RUN",
-    "existingStaffEndpointReplaced": true,
-    "checkedDate": "2026-11-25",
-    "publicBoundarySmoke": {
-      "status": "PASSED",
-      "runId": 45468655727,
-      "jobId": 138710298855,
-      "verifiedDate": "2026-11-24",
-      "scope": "Existing production staff endpoint and V420 canary reject GET, missing API key and missing session for revision, stock, apply and reconcile routes. No authenticated workflow tested and no business records changed."
-    },
-    "productionCutover": {
-      "deployedAt": "2026-11-25T04:33:19.500Z",
-      "bundleSha256": "d165832fac03b0aff89896440b1a3e9aa92d4f136b6f641cb4635990d867fdd2",
-      "exactCanaryFilesVerified": true,
-      "status": "ACTIVE",
-      "previousStaffEndpointVersion": 151,
-      "staffAuthUnchanged": true,
-      "activeStaffAfter": 25,
-      "workshopRevisionAfter": 17989,
-      "purchaseInvoicesAfter": 0,
-      "priceApplicationsAfter": 0,
-      "fullDataPreservationVerified": false
-    },
-    "connectivityIncident": {
-      "status": "RECOVERY_OBSERVED",
-      "reportedDate": "2026-11-25",
-      "backendVersion": 152,
-      "observedHttp503": 11,
-      "observedPostgresStatementTimeout": 1,
-      "observationWindowStart": "2026-11-25T04:33:19Z",
-      "databaseResponding": true,
-      "fullRollbackVerified": false,
-      "ownerReported": "Connection interrupted after initial connectivity",
-      "staffReleaseHold": true,
-      "ownerReportedRecovered": true,
-      "ownerRequestedPublicationAfterRecovery": true,
-      "recoveryEvidence": {
-        "observedAt": "2026-11-25T04:38:28.950641Z",
-        "windowStart": "2026-11-25T04:36:00Z",
-        "successfulPostRequests": 154,
-        "http503": 0,
-        "http500": 0,
-        "workshopRevision": 17993,
-        "scope": "Short observation window and owner-confirmed reconnect; not authenticated full acceptance."
-      }
-    },
-    "ownerWorkflowConfirmation": {
-      "status": "OWNER_CONFIRMED_EXISTING_CLIENT_READS",
-      "recordedDate": "2026-11-25",
-      "backendVersion": 152,
-      "clientVersion": "V418",
-      "checks": [
-        "Manager dashboard opens",
-        "Stock Balance opens"
-      ],
-      "scope": "Owner confirmed both screens open in conversation. No independent authenticated V420 purchase invoice workflow, stock writes or full data preservation test performed."
-    }
-  },
-  "correctedSignedCandidate": {
-    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-    "signedAcceptanceRun": 45467177557,
-    "artifactId": 14955831417,
-    "successfulWorkflows": 10,
-    "status": "VERIFIED_SIGNED_CANDIDATE"
-  },
-  "physicalDeviceDeferral": {
-    "checks": [
-      "physical_android",
-      "physical_safari"
-    ],
-    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-    "versionName": "V420",
-    "versionCode": 383,
-    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-    "authorizedBy": "Owner in this conversation",
-    "instruction": "Bypass and publish",
-    "recordedDate": "2026-11-24",
-    "scope": "Physical Android and Safari acceptance only; no device test represented as passed. Other release requirements, including authenticated production verification, remain enforced."
-  },
-  "remainingAcceptanceDeferral": {
-    "checks": [
-      "client_https_restart",
-      "full_data_preservation",
-      "production_backend_smoke"
-    ],
-    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-    "versionName": "V420",
-    "versionCode": 383,
-    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-    "authorizedBy": "Owner in this conversation",
-    "instruction": "bypass all and publish",
-    "recordedDate": "2026-11-25"
-  }
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "approvedAt": null,
+  "publishNonce": null
 }

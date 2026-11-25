@@ -1,130 +1,49 @@
 {
-  "versionName": "V420",
-  "versionCode": 383,
-  "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+  "versionName": "V421",
+  "versionCode": 384,
+  "sourceCommit": null,
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "evidence": "Exact V420 release acceptance has not been independently verified for this check.",
+      "evidence": "V421 exact-source acceptance not yet verified.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "full_data_preservation",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V420",
-        "versionCode": 383,
-        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "bypass all and publish",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "physical_android": {
       "passed": false,
-      "evidence": "Owner authorized deferring physical-device acceptance by instructing Bypass and publish on 2026-11-24. Test NOT PERFORMED.",
+      "evidence": "V421 exact-source acceptance not yet verified.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "physical_android",
-          "physical_safari"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V420",
-        "versionCode": 383,
-        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
-        "recordedDate": "2026-11-24",
-        "scope": "Physical Android and Safari acceptance only; no device test represented as passed. Other release requirements, including authenticated production verification, remain enforced."
-      }
+      "verifiedAt": null
     },
     "physical_safari": {
       "passed": false,
-      "evidence": "Owner authorized deferring physical-device acceptance by instructing Bypass and publish on 2026-11-24. Test NOT PERFORMED.",
+      "evidence": "V421 exact-source acceptance not yet verified.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "physical_android",
-          "physical_safari"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V420",
-        "versionCode": 383,
-        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
-        "recordedDate": "2026-11-24",
-        "scope": "Physical Android and Safari acceptance only; no device test represented as passed. Other release requirements, including authenticated production verification, remain enforced."
-      }
+      "verifiedAt": null
     },
     "full_data_preservation": {
       "passed": false,
-      "evidence": "Additive production schema installation left workshop revision 17977 unchanged; complete data preservation verification is pending.",
+      "evidence": "V421 exact-source acceptance not yet verified.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "full_data_preservation",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V420",
-        "versionCode": 383,
-        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "bypass all and publish",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "fresh_backup_restored": {
       "passed": false,
-      "evidence": "Owner explicitly instructed Defer backup on 2026-11-24; recovery rehearsal NOT performed.",
+      "evidence": "V421 exact-source acceptance not yet verified.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "check": "fresh_backup_restored",
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V420",
-        "versionCode": 383,
-        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer backup",
-        "recordedDate": "2026-11-24",
-        "scope": "Backup restore verification only. Physical acceptance and production backend smoke are not waived. No backup is represented as freshly restored."
-      }
+      "verifiedAt": null
     },
     "pc_site_reconciled": {
-      "passed": true,
-      "evidence": "Pre-release reconciliation: live PC release-integrity.json, architecture-v2 latest-version.json and public GitHub latest APK release all agree on V418 code 381, source 65af4ff062d24e8403d21eda13405222daae3b7a, tag release-V418-architecture-v2 and APK SHA-256 7300fd7805586a20800e626ea2a6d98ff0d9c37dbfebf28503b0dbc5517c0e4d. Previous coordinated publication run 45385780368 passed public Pages byte verification and updater/APK parity. Current check confirms manifest/metadata parity, not V420 publication or a fresh full site-byte comparison.",
-      "verifiedBy": "ChatGPT via public Pages manifest and GitHub release metadata",
-      "verifiedAt": "2026-11-25T04:38:28Z"
+      "passed": false,
+      "evidence": "V421 exact-source acceptance not yet verified.",
+      "verifiedBy": null,
+      "verifiedAt": null
     },
     "production_backend_smoke": {
       "passed": false,
-      "evidence": "Exact V420 canary bundle deployed as live workshop-api V152 on 2026-11-25. Owner confirmed reconnect; 154 HTTP 200 POSTs and zero HTTP 503/500 in short window starting 04:36 UTC; database revision 17993. Authenticated V420 purchase-invoice and stock workflow tests remain NOT_RUN; previous 503 incident noted in release-request.json.",
+      "evidence": "V421 exact-source acceptance not yet verified.",
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "full_data_preservation",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V420",
-        "versionCode": 383,
-        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "bypass all and publish",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     }
   }
 }
