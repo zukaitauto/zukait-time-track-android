@@ -6,7 +6,7 @@ export function employeeTimeSections(previous, next) {
 
   const sections = {};
   for (const name of new Set([...Object.keys(previous), ...Object.keys(next)])) {
-    if (JSON.stringify(previous[name]) === JSON.stringify(next[name])) continue;
+    if (previous[name] === next[name] || JSON.stringify(previous[name]) === JSON.stringify(next[name])) continue;
     if (!timeSections.has(name) || !Object.hasOwn(next, name)) return null;
     sections[name] = next[name];
   }
