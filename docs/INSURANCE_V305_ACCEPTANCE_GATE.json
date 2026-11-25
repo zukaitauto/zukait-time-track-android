@@ -73,14 +73,14 @@
       }
     },
     "pc_site_reconciled": {
-      "passed": false,
-      "evidence": "Exact V420 release acceptance has not been independently verified for this check.",
-      "verifiedBy": null,
-      "verifiedAt": null
+      "passed": true,
+      "evidence": "Pre-release reconciliation: live PC release-integrity.json, architecture-v2 latest-version.json and public GitHub latest APK release all agree on V418 code 381, source 65af4ff062d24e8403d21eda13405222daae3b7a, tag release-V418-architecture-v2 and APK SHA-256 7300fd7805586a20800e626ea2a6d98ff0d9c37dbfebf28503b0dbc5517c0e4d. Previous coordinated publication run 45385780368 passed public Pages byte verification and updater/APK parity. Current check confirms manifest/metadata parity, not V420 publication or a fresh full site-byte comparison.",
+      "verifiedBy": "ChatGPT via public Pages manifest and GitHub release metadata",
+      "verifiedAt": "2026-11-25T04:38:28Z"
     },
     "production_backend_smoke": {
       "passed": false,
-      "evidence": "Production canary workshop-api-v420-canary v1 deployed from exact signed source. Existing staff endpoint remains v151. Authenticated production smoke not run.",
+      "evidence": "Exact V420 canary bundle deployed as live workshop-api V152 on 2026-11-25. Owner confirmed reconnect; 154 HTTP 200 POSTs and zero HTTP 503/500 in short window starting 04:36 UTC; database revision 17993. Authenticated V420 purchase-invoice and stock workflow tests remain NOT_RUN; previous 503 incident noted in release-request.json.",
       "verifiedBy": null,
       "verifiedAt": null
     }
