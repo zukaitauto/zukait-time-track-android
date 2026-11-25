@@ -1,0 +1,21 @@
+name: Job Card A4 document view
+on:
+  pull_request:
+    paths:
+      - 'app/src/main/assets/job_card_edit.js'
+      - 'tests/job-card-a4-view.mjs'
+      - '.github/workflows/job-card-a4-view.yml'
+permissions:
+  contents: read
+jobs:
+  document-view:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/job-card-a4-view.mjs
+      - run: node tests/reception-job-edit.mjs
