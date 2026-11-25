@@ -6,7 +6,7 @@ const source=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const transport=source.slice(source.indexOf('  // One transport circuit'),source.indexOf('  async function employeeTimeAction'));
 let now=100000,calls=0,response={status:500,body:{ok:false,code:'server_error'}};
 const timers=new Map();let timerId=0;
-const c={sessionEpoch:0,stale:()=>false,requestControllers:new Set(),Date:{now:()=>now},Math:Object.assign(Object.create(Math),{random:()=>0}),Map,AbortController,
+const c={sessionEpoch:0,stale:()=>false,requestControllers:new Set(),Date:{now:()=>now,parse:Date.parse},Math:Object.assign(Object.create(Math),{random:()=>0}),Map,AbortController,
   sessionToken:()=> 'fixture-only',navigator:{onLine:true},API_URL:'https://fixture.invalid',CLOUD_KEY:'fixture',
   setTimeout(fn,ms){timers.set(++timerId,{fn,ms});return timerId},clearTimeout(id){timers.delete(id)},
   fetch:async()=>{calls++;const r=response;if(r instanceof Error)throw r;return {status:r.status,headers:{get:()=>null},json:async()=>{if(r.body instanceof Error)throw r.body;return r.body}}}};
@@ -74,3 +74,10 @@ assert.match(ui.banner.textContent,/sync is delayed/);assert.doesNotMatch(ui.ban
 assert.match(ui.banner.className,/banner-busy/);
 u.setServerConnection('connected');assert.match(ui.banner.textContent,/restored/);
 console.log('PASS: shared outage cooldown, bounded retry load, read/write recovery isolation, queue preservation and successful-save banner recovery.');
+
+// A server retry hint longer than the normal exponential cap must be honored.
+now+=120000;c.fetch=async()=>({status:503,headers:{get:()=> '90'},json:async()=>({ok:false,code:'database_busy',retry_after_ms:5000})});
+await api({action:'revision'});assert.equal(api.retryAfter('revision'),90000);
+now+=90000;c.fetch=async()=>({status:429,headers:{get:()=>new Date(now+120000).toUTCString()},json:async()=>({ok:false,code:'rate_limited'})});
+await api({action:'revision'});assert.equal(api.retryAfter('revision'),120000);
+console.log('PASS: Retry-After seconds and HTTP-date honored beyond ordinary exponential cap.');

@@ -205,7 +205,7 @@
       if(key){
         const prior=syncRecovery.get(key);
         const failures=Math.min(6,(prior?.failures||0)+1);
-        const delay=Math.min(60000,Math.max(retryAfter,Math.min(30000,2000*2**(failures-1))*(1+Math.random()*0.25)));
+        const delay=Math.max(retryAfter,Math.min(30000,2000*2**(failures-1))*(1+Math.random()*0.25));
         if(!prior||sequence>=prior.sequence)syncRecovery.set(key,{until:Date.now()+delay,failures,sequence});
       }
       const e=new Error(code);e.code=code;e.httpStatus=httpStatus||0;
@@ -226,7 +226,11 @@
       if(!body||typeof body!=='object')throw failed('INVALID_SERVER_RESPONSE',502);
       body._status=res.status;
       if(res.status>=500||res.status===429||['server_error','database_busy','conflict_busy'].includes(body.code)){
-        const retryAfter=Math.max(Number(res.headers?.get?.('Retry-After')||0)*1000,Number(body.retry_after_ms||0));
+        const retryHeader=res.headers?.get?.('Retry-After');
+        const seconds=Number(retryHeader||0);
+        const headerDelay=Number.isFinite(seconds)?seconds*1000:Date.parse(retryHeader)-Date.now();
+        const bodyDelay=Number(body.retry_after_ms||0);
+        const retryAfter=Math.max(0,Number.isFinite(headerDelay)?headerDelay:0,Number.isFinite(bodyDelay)?bodyDelay:0);
         // Keep the existing response contract for older action handlers.
         const error=failed(body.code||'SERVER_BUSY',res.status,Number.isFinite(retryAfter)?retryAfter:0);
         body._retryAfterMs=error.retryAfterMs;
@@ -771,13 +775,16 @@
     revisionProbeInFlight=true;
     try{
       const r=await api({action:'revision'});
-      if(!r.ok)throw new Error(r.code||'REVISION_CHECK_FAILED');
+      if(!r.ok){
+        if(r.code==='invalid_session'||r._status===401){status('LOGIN REQUIRED','bad');return false;}
+        throw new Error(r.code||'REVISION_CHECK_FAILED');
+      }
       lastRevisionProbeAt=Date.now();
       pollWarnings.delete('Revision probe failed');
       setServerConnection('connected');
       const remoteRevision=Number(r.revision||0);
       lastProbedRevision=remoteRevision;
-      if(remoteRevision===cloudRevision&&(cloudDirty||Date.now()-lastSuccessfulSyncAt<30000))return false;
+      if(lastSyncedState&&remoteRevision===cloudRevision&&(cloudDirty||Date.now()-lastSuccessfulSyncAt<30000))return false;
 
       // Never pull over a local click. Commit it first; the server will rebase
       // it transactionally if another device already advanced the revision.
@@ -1340,25 +1347,38 @@
   function beginPolling(generation){
     if(generation!==pollGeneration)return;
     pollActive=true;
-    const pollMs=()=>document.visibilityState==='hidden'?120000:1000;
-    const liveMs=()=>document.visibilityState==='hidden'?60000:15000;
+    let quietTicks=0;
+    // Jitter prevents devices that resume together from polling in lockstep.
+    // The write queue and explicit employee actions remain independent.
+    const pollMs=()=>document.visibilityState==='hidden'?120000:
+      quietTicks<3?5000+Math.floor(Math.random()*1000):8000+Math.floor(Math.random()*2000);
+    const liveMs=()=>document.visibilityState==='hidden'?60000:15000+Math.floor(Math.random()*3000);
+    const delay=(base,action)=>{
+      const remaining=api.retryAfter?.(action)||0;
+      return Math.min(2147483647,Math.max(base,remaining>0?remaining+Math.floor(Math.random()*1000):0));
+    };
     const schedulePoll=()=>{
       if(!pollActive||generation!==pollGeneration)return;
       clearTimeout(pollTimer);
       pollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
-        if(sessionToken()&&navigator.onLine)await probeRevision();
-        schedulePoll();
-      },pollMs());
+        if(sessionToken()&&navigator.onLine){
+          try{
+            const changed=await probeRevision();
+            quietTicks=changed?0:Math.min(3,quietTicks+1);
+          }finally{schedulePoll();}
+        }else schedulePoll();
+      },delay(pollMs(),'revision'));
     };
     const scheduleLive=()=>{
       if(!pollActive||generation!==pollGeneration)return;
       clearTimeout(livePollTimer);
-      livePollTimer=setTimeout(()=>{
+      livePollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
-        if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole())pullLiveStatus();
-        scheduleLive();
-      },liveMs());
+        try{
+          if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0))await pullLiveStatus();
+        }finally{scheduleLive();}
+      },delay(liveMs(),'live_status'));
     };
     schedulePoll();scheduleLive();
   }
@@ -1385,13 +1405,15 @@
       console.error('Cloud initialization failed',e);
       status(navigator.onLine?'SYNC ERROR':'OFFLINE — LOCAL CACHE',navigator.onLine?'bad':'warn');
       setServerConnection(navigator.onLine?'busy':'offline',navigator.onLine?'Workshop sync is delayed. Retrying automatically; keep this page open.':'No internet connection. Check Wi-Fi/internet.');
-      initialDone=false;return false;
+      initialDone=false;
+      // A transient startup failure must not leave automatic recovery stopped.
+      if(sessionToken()&&navigator.onLine&&!['invalid_session','SESSION_IDENTITY_MISMATCH','STALE_SESSION'].includes(String(e?.code||e?.message)))beginPolling(generation);
+      return false;
     }
-    if(stale(epoch)||!navigator.onLine||!lastSyncedState)return false;
-    // Work-status revision detection stays at 1 second foreground / 120 seconds hidden; writes retain their independent immediate queue.
-    // Explicit actions and reconnect still reconcile immediately.
+    if(stale(epoch))return false;
+    // Start the recovery loop even if a queued save or first read is still pending.
     beginPolling(generation);
-    return true;
+    return !!(navigator.onLine&&lastSyncedState);
   }
 
   function stop(){
