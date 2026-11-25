@@ -10,17 +10,17 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Owner requested V421 Android/web publication on 25 Nov 2026. All requested feature changes merged, A4 print passed. Accountant stock SQL migration applied and workshop-api V153 deployed; exact-source signed build and required release acceptance still pending. Do not mark staff approval or publish until verified.",
+  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "reason": "Owner requested V421 Android/web publication on 25 Nov 2026. All requested feature changes merged, A4 print passed. Accountant stock SQL migration applied and workshop-api V153 deployed (per existing release record). Exact-source signed build run 45571357825 succeeded; signed APK artifact 15002296841 is present. Owner requested deferral of physical-device acceptance and fresh backup-restore verification; neither was performed. V421-specific waiver handling and independently verified remaining acceptance evidence are pending. Staff approval remains false; no publication authorized by this record.",
   "previousPublishedRelease": {
     "versionName": "V420",
     "versionCode": 383,
     "releaseTag": "release-V420-architecture-v2",
     "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0"
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
+  "sourceCommit": "5e02808249f536505d115d2f054651c161617408",
+  "signedAcceptanceRun": 45571357825,
   "verificationRun": null,
   "approvedAt": null,
   "publishNonce": null
