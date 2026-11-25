@@ -751,7 +751,7 @@
       }finally{cloudApplying=false}
       const changed=JSON.stringify(previousSnapshot)!==JSON.stringify(state);
       lastSyncedState=clone(state||{});
-      if(typeof window.v42AfterCloudPull==='function'){
+      if(changed&&typeof window.v42AfterCloudPull==='function'){
         try{window.v42AfterCloudPull(before,clone(state),r)}catch(e){console.warn('Notification hook failed',e)}
       }
       if(changed) scheduleDashboardRender(previousSnapshot,state)
@@ -767,7 +767,7 @@
 
   async function probeRevision(){
     const epoch=sessionEpoch;
-    if(revisionProbeInFlight||!sessionToken()||!navigator.onLine)return false;
+    if(revisionProbeInFlight||pullInFlight||cloudPushing||!sessionToken()||!navigator.onLine)return false;
     if(api.retryAfter?.('revision')>0)return false;
     // Focus/visibility and the scheduled tick can arrive together. Reuse only
     // a successful check of the snapshot we actually hold, within one tick.
