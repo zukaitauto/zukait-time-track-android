@@ -4,7 +4,7 @@
 window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notify}){
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const omr=x=>Number(x||0).toFixed(3),today=()=>new Date(Date.now()+14400000).toISOString().slice(0,10);
- let dialog=null,owner='',generation=0,busy=false,ready=false,invoiceReady=false,tab='home',catalog=[],catalogPage=0,moreCatalog=false,lines=[],invoices=[],editing=null;
+ let dialog=null,owner='',generation=0,busy=false,ready=false,invoiceReady=false,tab='home',department='',catalog=[],catalogPage=0,moreCatalog=false,lines=[],invoices=[],editing=null;
  const identity=()=>{const u=getUser();return ['Manager','Accountant'].includes(u?.role)?String(u.id)+'|'+u.role:''};
  const key=who=>'zukait-account-stock-intent-v1:'+encodeURIComponent(project)+':'+encodeURIComponent(who);
  const pending=()=>{const raw=localStorage.getItem(key(identity()));return raw?JSON.parse(raw):null};
@@ -14,23 +14,30 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  const status=x=>{if(current()&&field('as-status'))field('as-status').textContent=x};
  const valid=(g,who)=>current()&&generation===g&&owner===who;
  const btn=(label,action)=>'<button type="button" data-as="'+action+'">'+label+'</button>';
- const nav=()=>'<div class="as-nav">'+btn('Stock Balance','balance')+btn('Add Stock','opening')+btn('Purchase Entry','purchase')+btn('Invoice List','invoices')+btn('Stock History','history')+btn('Stock Reports','reports')+'</div>';
+ const departmentTitle=()=>department==='Painting'?'Paint Consumables':department==='Mechanical'?'Mechanical Consumables':'Consumables Stock Management';
+ const tile=(title,desc,icon,tone,action,restricted=false)=>'<button type="button" class="as-tile '+tone+'" '+(restricted?'aria-disabled="true" disabled':'data-as="'+action+'"')+'><span class="as-tile-top"><span class="as-icon" aria-hidden="true">'+icon+'</span><span aria-hidden="true">'+(restricted?'🔒':'›')+'</span></span><strong>'+title+'</strong><small>'+desc+'</small></button>';
+ const homeMenu=()=>'<div class="as-hero"><span class="as-hero-icon" aria-hidden="true">▱</span><h2>Consumables Stock Management</h2></div>'+
+  '<h3>Central Stock Entry</h3><div class="as-grid">'+tile('Purchase Entry','Purchase invoices','🛒','blue','purchase')+tile('Add Stock','Opening stock · physical count','＋','green','opening')+'</div>'+
+  '<h3>Stock</h3><div class="as-grid">'+tile('Paint Consumables','Painting materials and shared stock','🎨','blue','department:Painting')+tile('Mechanical Consumables','Mechanical materials and shared stock','⚙','green','department:Mechanical')+'</div>'+
+  '<h3>Material Setup</h3><div class="as-grid">'+tile('Create Material','Manager only','＋','purple','',true)+tile('Brand &amp; Price','Manager only','◇','amber','',true)+'</div>';
+ const departmentMenu=()=>'<h2>'+departmentTitle()+'</h2><div class="as-grid">'+tile('Stock Balance','Available, reserved and total stock','📦','blue','balance')+tile('Stock History','Stock movement history','◷','purple','history')+tile('Stock Adjustment','Manager only','⚖','amber','',true)+tile('Stock Reports','Stock valuation and consumption','▤','green','reports')+'</div>';
+ const nav=()=>'<header class="as-toolbar">'+(tab==='home'?'':btn('← '+(department&&tab!=='department'?'Department':'Stock'),'back'))+'<span>▣ ZUKAIT · STOCK</span>'+btn('✕ Close','close')+'</header>';
  function show(body){
   if(!current())return;
-  dialog.innerHTML='<style>#as-dialog{width:min(94vw,850px);max-height:90dvh;overflow:auto;border:1px solid #b5c9df;border-radius:16px;background:#fff;color:#173653;padding:16px}#as-dialog .as-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}#as-dialog button{min-height:42px;border:1px solid #b8d3e7;border-radius:9px;background:#eaf2fb;color:#173653;padding:9px;font-weight:700}#as-dialog label{display:grid;gap:4px;margin:9px 0;font-weight:700}#as-dialog input,#as-dialog select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #b8cde0;border-radius:8px;padding:7px;color:#173653;background:white}#as-dialog .as-row{border:1px solid #d4e2ee;border-radius:10px;padding:10px;margin:7px 0;background:#f7fafc;overflow-wrap:anywhere}#as-dialog pre{white-space:pre-wrap;overflow-wrap:anywhere}#as-dialog button:disabled{opacity:.5}#as-dialog .as-close{float:right}</style>'+btn('Close','close')+'<h2>Stock</h2>'+nav()+'<p id="as-status" role="status" aria-live="polite"></p><section id="as-body">'+body+'</section>';
+  dialog.innerHTML='<style>#as-dialog{box-sizing:border-box;width:100%;max-width:none;height:100%;max-height:none;inset:0;margin:0;overflow:auto;border:0;border-radius:0;background:#f5f8fc;color:#173653;padding:16px}#as-dialog .as-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 16px}#as-dialog .as-toolbar span{font-size:12px;font-weight:800;margin-right:auto}#as-dialog #as-body{max-width:1040px;margin:auto}#as-dialog .as-hero{display:flex;align-items:center;gap:14px;border:1px solid #dce6f1;background:white;border-radius:16px;padding:16px;margin-bottom:24px}#as-dialog .as-hero h2{font-size:23px;line-height:1.2;margin:0}#as-dialog .as-hero-icon{font-size:30px;color:#376caa}#as-dialog h3{font-size:18px;margin:24px 0 12px}#as-dialog .as-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#as-dialog .as-grid .as-tile{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;min-width:0;min-height:154px;padding:15px;border-radius:16px;overflow-wrap:anywhere}#as-dialog .as-tile-top{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:20px}#as-dialog .as-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#2878ca;color:white}#as-dialog .as-tile strong{font-size:16px;line-height:1.25}#as-dialog .as-tile small{font-size:12px;font-weight:500;color:#4f6479;line-height:1.4}#as-dialog .as-tile.blue{background:#eaf2ff;border-color:#c6d9f5}#as-dialog .as-tile.green{background:#edf7e9;border-color:#cfe3c9}#as-dialog .as-tile.green .as-icon{background:#58a43d}#as-dialog .as-tile.purple{background:#f2edfa;border-color:#ddd1f0}#as-dialog .as-tile.purple .as-icon{background:#8056b6}#as-dialog .as-tile.amber{background:#fff5e4;border-color:#ead9b9}#as-dialog .as-tile.amber .as-icon{background:#bd792c}#as-dialog .as-tile:disabled{opacity:.75}#as-dialog #as-status:not(:empty){max-width:1040px;margin:0 auto 12px;color:#315777;font-size:14px}#as-dialog button{min-height:42px;border:1px solid #b8d3e7;border-radius:9px;background:#eaf2fb;color:#173653;padding:9px;font-weight:700}#as-dialog label{display:grid;gap:4px;margin:9px 0;font-weight:700}#as-dialog input,#as-dialog select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #b8cde0;border-radius:8px;padding:7px;color:#173653;background:white}#as-dialog .as-row{border:1px solid #d4e2ee;border-radius:10px;padding:10px;margin:7px 0;background:#f7fafc;overflow-wrap:anywhere}#as-dialog pre{white-space:pre-wrap;overflow-wrap:anywhere}#as-dialog button:disabled{opacity:.5}#as-dialog .as-close{float:right}</style>'+nav()+'<p id="as-status" role="status" aria-live="polite"></p><section id="as-body">'+body+'</section>';
   dialog.onclick=e=>{const b=e.target.closest('[data-as]');if(b)act(b.dataset.as).catch(err=>status(err.message));};
   dialog.oninput=e=>{if(e.target.id==='as-search')filterCatalog();if(e.target.id==='as-qty'||e.target.id==='as-price'||e.target.id==='as-method')calculate();};
   const p=pending();if(p){field('as-body').innerHTML='<div class="as-row"><b>Previous stock transaction awaiting confirmation</b><p>'+esc(p.operation)+' · '+esc(p.data?.invoiceNumber||p.data?.invoiceId||p.data?.materialId||'')+'</p>'+btn('Retry exact saved request','retry')+'</div>';status('Resolve the previous transaction before entering another.');}
  }
- function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;catalog=[];lines=[];editing=null;}
+ function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;tab='home';department='';catalog=[];lines=[];editing=null;}
  async function open(){
   if(!identity())return;
   if(dialog){dialog.focus();return;}
   owner=identity();dialog=document.createElement('dialog');dialog.id='as-dialog';dialog.setAttribute('aria-label','Accounts Stock');document.body.appendChild(dialog);
   dialog.addEventListener('cancel',e=>{e.preventDefault();if(!busy)reset()});
-  dialog.showModal();show('<p>Checking Stock permissions…</p>');
+  dialog.showModal();show(homeMenu());status('Checking Stock permissions…');
   const g=++generation,who=owner;
-  try{const r=await request({operation:'STATUS'});if(!valid(g,who))return;ready=r.ready===true&&r.writes===true;const v=r.ready===true?await request({operation:'INVOICE_STATUS'}):{};if(!valid(g,who))return;invoiceReady=v.ready===true;show('<p>Use the centralized Stock entry and invoice history.</p>');status(ready?'Stock server connected.':'Stock entry is not enabled on this server.');}catch(e){if(valid(g,who))status(e.message);}
+  try{const r=await request({operation:'STATUS'});if(!valid(g,who))return;ready=r.ready===true&&r.writes===true;const v=r.ready===true?await request({operation:'INVOICE_STATUS'}):{};if(!valid(g,who))return;invoiceReady=v.ready===true;if(tab==='home'){show(homeMenu());status(ready?'Stock server connected.':'Stock entry is not enabled on this server.');}}catch(e){if(valid(g,who))status(e.message);}
  }
  function filterCatalog(){
   const q=val('as-search').toLowerCase().split(/\s+/).filter(Boolean),select=field('as-pair');if(!select)return;
@@ -52,7 +59,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  const header=(i={})=>'<label>Invoice number<input id="as-number" maxlength="100" value="'+esc(i.invoice_number||'')+'"></label><label>Supplier<input id="as-supplier" maxlength="160" value="'+esc(i.supplier||'')+'"></label><label>Invoice date<input id="as-date" type="date" max="'+today()+'" value="'+esc(i.invoice_date||today())+'"></label>';
  function renderEntry(){
   if(tab==='opening'){show('<h3>Opening Stock (one time only)</h3><p>Physical count only. No supplier or invoice number.</p>'+lineFields()+'<label><input id="as-count" type="checkbox" style="width:auto"> Physical count confirmed</label><label>Count reference<input id="as-reason" maxlength="180"></label>'+btn('Confirm Opening Stock','save-opening'));}
-  else{show('<h3>Purchase Entry</h3>'+header()+lineFields()+btn('Add item','add-line')+'<div id="as-lines"></div>'+btn('Finish &amp; Save','save-invoice'));renderLines();}
+  else{show('<h3>Purchase Entry</h3>'+btn('Invoice List','invoices')+header()+lineFields()+btn('Add item','add-line')+'<div id="as-lines"></div>'+btn('Finish &amp; Save','save-invoice'));renderLines();}
   filterCatalog();
  }
  async function readPage(which,page=0){
@@ -62,7 +69,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    show('<h3>Invoice List</h3>'+invoices.map((i,k)=>'<details class="as-row"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b> · OMR '+omr(i.total_amount)+'</summary><p>'+esc(i.invoice_date)+' · '+esc(i.status)+'</p>'+(i.lines||[]).map(l=>'<p>'+esc(l.materialName)+' · '+esc(l.brandName)+' · '+esc(l.quantity)+' '+esc(l.unit)+' · OMR '+omr(l.totalAmount)+'</p>').join('')+(i.status==='cancelled'?'':btn('Edit invoice details','header:'+k)+btn('Correct quantity / price','lines:'+k))+btn('Audit history','audit:'+k)+'</details>').join('')+(page?btn('Previous','invoices:'+ (page-1)):'')+(r.hasMore?btn('Next','invoices:'+ (page+1)):''));
   }else{
    const operation=which==='balance'?'LIST':which==='history'?'HISTORY':'REPORTS';
-   const r=await request({operation,...(which==='balance'?{page}:which==='history'&&page?{cursor:String(page)}:{})});if(!valid(g,who))return;
+   const r=await request({operation,...(department?{department}:{}),...(which==='balance'?{page}:which==='history'&&page?{cursor:String(page)}:{})});if(!valid(g,who))return;
    const list=r.items||r.history||[];let body=which==='reports'?'<h3>Stock Reports</h3><pre>'+esc(JSON.stringify(r.report,null,2))+'</pre>':'<h3>'+ (which==='balance'?'Stock Balance':'Stock History')+'</h3>'+list.map(x=>'<div class="as-row"><b>'+esc(x.material_name||x.material_id)+' · '+esc(x.brand_name||x.brand_id)+'</b><p>'+esc(which==='balance'?'Physical '+x.physical+' · Reserved '+x.reserved+' · Value OMR '+omr(x.stock_value):x.action+' · Quantity '+x.physical_delta+' · OMR '+omr(x.cost_delta)+' · '+x.recorded_at+' · Staff '+x.actor_id)+'</p></div>').join('');
    if(r.hasMore&&which==='balance')body+=btn('Next page','balance:'+(page+1));if(r.hasMore&&which==='history'&&list.length)body+=btn('Older movements','history:'+list.at(-1).id);show(body);
   }
@@ -79,7 +86,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(!retry){if(p)throw Error('Retry the saved request first.');p={...command,requestId:crypto.randomUUID()};if(!confirm('Confirm this stock transaction?'))return;localStorage.setItem(k,JSON.stringify(p));}
   if(!p)throw Error('No pending request.');
   busy=true;show('');status('Submitting saved request…');
-  try{const r=await request(p);if(p.operation==='WRITE'?!r.receipt:!r.invoice?.id)throw Error('Confirmation unavailable');localStorage.removeItem(k);if(current()&&owner===who){lines=[];editing=null;show('<p>Transaction confirmed.</p>');status('Saved successfully.');}}
+  try{const r=await request(p);if(p.operation==='WRITE'?!r.receipt:!r.invoice?.id)throw Error('Confirmation unavailable');localStorage.removeItem(k);if(current()&&owner===who){lines=[];editing=null;tab='home';department='';show(homeMenu());status('Saved successfully.');}}
   catch(e){if(rejection.has(e.message)){localStorage.removeItem(k);if(current()&&owner===who){show('<p>Server rejected transaction. Reopen the entry and check the values.</p>');status(e.message==='invoice_price_reconciliation_required'?'Manager costing review is required. No invoice change was made.':e.message);}}else if(current()&&owner===who){status('Unconfirmed: '+e.message+' · Retry the exact saved request.');}}
   finally{busy=false;}
  }
@@ -87,8 +94,10 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(!current()||busy)return;
   if(action==='close'){reset();return;}if(action==='retry')return send(null,true);if(pending()){show('');return;}
   const [op,index]=action.split(':');
-  if(['balance','invoices','history','reports'].includes(op))return readPage(op,Number(index||0));
-  if(op==='opening'||op==='purchase'){
+  if(op==='department'&&['Painting','Mechanical'].includes(index)){generation++;department=index;tab='department';show(departmentMenu());return;}
+  if(op==='back'){if(tab==='purchase'&&lines.length&&!confirm('Discard unsaved invoice items?'))return;generation++;if(department&&tab!=='department'){tab='department';show(departmentMenu());}else{department='';tab='home';show(homeMenu());}return;}
+  if(['balance','invoices','history','reports'].includes(op))return readPage(op,op==='history'?(index||0):Number(index||0));
+  if(op==='opening'||op==='purchase'){department='';
    if(op==='opening'&&!ready||op==='purchase'&&!invoiceReady){status('Entry not enabled on this server.');return;}
    tab=op;lines=[];generation++;show('<p>Loading material catalog…</p>');if(await loadCatalog())renderEntry();return;
   }

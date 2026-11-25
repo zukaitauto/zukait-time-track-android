@@ -12,6 +12,7 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
  calls.push(JSON.parse(JSON.stringify(x)));
  if(x.operation==='STATUS')return {ready:true,writes:true};
  if(x.operation==='INVOICE_STATUS')return {ready:true};
+ if(x.operation==='LIST')return {items:[],hasMore:false};
  if(x.operation==='ENTRY_CATALOG')return {items:[{materialId:'m',brandId:'b',material:'Primer',brand:'Brand A',department:'Both',unit:'Liter'}],hasMore:false};
  if(x.operation==='WRITE'){if(fail){fail=false;throw Error('timeout');}return {receipt:{final:true}}}
  if(x.operation==='INVOICE_LIST')return {invoices:[{id:'inv',invoice_number:'QA1',supplier:'Test',invoice_date:'2026-11-20',status:'active',revision:1,total_amount:2,lines:[{materialId:'m',brandId:'b',materialName:'Primer',brandName:'Brand A',unit:'Liter',quantity:1,priceMethod:'unit',price:2,totalAmount:2}]}],hasMore:false};
@@ -21,6 +22,10 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const click=async a=>{d.querySelector('[data-as="'+a+'"]').click();await tick();};
 await panel.open();
+assert.equal(d.querySelectorAll('.as-grid .as-tile').length,6);
+assert.equal(d.querySelectorAll('.as-tile:disabled').length,2);
+await click('department:Painting');await click('balance');assert.equal(calls.at(-1).department,'Painting');await click('back');await click('back');
+await click('department:Mechanical');await click('balance');assert.equal(calls.at(-1).department,'Mechanical');await click('back');await click('back');
 await click('opening');
 assert.equal(d.querySelector('#as-number'),null);
 assert.equal(d.querySelector('#as-supplier'),null);
@@ -28,7 +33,7 @@ d.querySelector('#as-pair').value='0';d.querySelector('#as-qty').value='2';d.que
 await click('save-opening');assert.match(d.body.textContent,/Unconfirmed/);assert.equal(panel.blocked(),true);
 const before=calls.at(-1);assert.equal(before.command,'OPENING');assert.equal(before.data.quantity,2);
 await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
-await click('invoices');await click('audit:0');assert.match(d.body.textContent,/A1/);
+await click('purchase');await click('invoices');await click('audit:0');assert.match(d.body.textContent,/A1/);
 panel.reset();assert.equal(d.querySelector('#as-dialog'),null);
 user={id:'E1',role:'Employee'};await panel.open();assert.equal(d.querySelector('#as-dialog'),null);
 console.log('PASS Accounts stock workspace: physical count only, exact retry, audit, role isolation');
