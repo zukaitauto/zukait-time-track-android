@@ -942,7 +942,7 @@ function departmentTitle(){
 // Material/Brand changes use the existing audited Manager Material Master.
 // Stock quantities are separate; the preview cannot create balances.
 // Catalog setup belongs on the first Stock screen, not inside the five-card Stock menu.
-const stockMasterActions=()=>manager()?
+const stockMasterActions=(managerAccess=manager())=>managerAccess?
  '<div class="zs-entry-section zs-entry-setup-section">'+
  '<div class="zs-entry-section-head"><div>'+
  '<h3>Material Setup</h3><p>Create materials and manage brands and prices.</p></div></div>'+
@@ -955,10 +955,9 @@ const stockMasterActions=()=>manager()?
  '<strong>Brand &amp; Price</strong><small>Assign brands and effective-dated prices.</small></button></div></div>':'';
 const legacyEntryQA=()=>window.ZUKAIT_STOCK_QA_SIMULATION===true||isolatedStockPilot();
 const departmentTiles=()=>previewHomeTiles.filter(t=>t[0]!=='add'||legacyEntryQA());
-function departmentMenu(){
+function departmentMenu({managerAccess=manager(),totals=(typeof state!=='undefined'&&state?.consumables)?catalog():null}={}){
  // Counts describe the saved Material Master, NOT verified physical stock.
  // No mockup example values, remote requests or fabricated inventory.
- const totals=(typeof state!=='undefined'&&state?.consumables)?catalog():null;
  const materials=totals?String(totals.materials.length):'—';
  const brands=totals?String(totals.brands.length):'—';
  return '<div class="zs-entry-home">'+
@@ -968,7 +967,7 @@ function departmentMenu(){
   '<p>Manage paint and mechanical consumables, materials, brands and pricing.</p></div></div>'+
   '<div class="zs-entry-section"><h3>Central Stock Entry</h3><div class="zs-department-grid" aria-label="Central Stock Entry">'+
   '<button type="button" class="zs-department-card painting" onclick="zukStockCentralPurchase()"><span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">🛒</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span><strong>Purchase Entry</strong><small>Purchase invoices</small></button>'+
-  (manager()?'<button type="button" class="zs-department-card mechanical" onclick="zukStockCentralOpening()"><span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">＋</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span><strong>Add Stock</strong><small>Opening stock · physical count</small></button>':'')+'</div></div>'+
+  (managerAccess?'<button type="button" class="zs-department-card mechanical" onclick="zukStockCentralOpening()"><span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">＋</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span><strong>Add Stock</strong><small>Opening stock · physical count</small></button>':'')+'</div></div>'+
   '<div class="zs-entry-section zs-entry-department-section">'+
   '<div class="zs-entry-section-head"><div>'+
   '<h3>Stock</h3><p>Open and manage stock for each department.</p></div></div>'+
@@ -979,8 +978,8 @@ function departmentMenu(){
   '<button type="button" class="zs-department-card mechanical" data-department="Mechanical" onclick="zukStockSelectDepartment(this.dataset.department)">'+
   '<span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">⚙</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
   '<strong>Mechanical Consumables</strong><small>Mechanical materials and shared stock.</small></button></div></div>'+
-  stockMasterActions()+
-  (manager()?'<div class="zs-entry-summary" aria-label="Saved Material Master totals">'+
+  stockMasterActions(managerAccess)+
+  (managerAccess?'<div class="zs-entry-summary" aria-label="Saved Material Master totals">'+
   '<div class="zs-entry-summary-item"><span class="zs-entry-summary-icon blue" aria-hidden="true">▣</span><div>'+
   '<small>Total Materials</small><strong>'+esc(materials)+'</strong></div></div>'+
   '<div class="zs-entry-summary-item"><span class="zs-entry-summary-icon amber" aria-hidden="true">◇</span><div>'+
@@ -988,18 +987,42 @@ function departmentMenu(){
   '<p class="zs-entry-summary-note">Saved Material Master records, not physical stock counts.</p></div>':'')+
   '</div>';
 }
+function liveDepartmentMenu(scope,tiles=departmentTiles()){
+ const title=scope==='Painting'?'Paint Consumables':'Mechanical Consumables';
+ return '<div class="zs-home-hero"><h3>'+esc(title)+'</h3>'+
+  '<p class="zs-preview-note">Live department-filtered inventory. Shared materials use one physical balance.</p></div>'+
+  '<div class="zs-home-grid" aria-label="'+esc(title)+' Stock Management menu">'+tiles.map(t=>
+   '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockLiveNavigate(\''+t[0]+'\')">'+
+   '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
+   '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
+   '<span class="zs-home-chevron" aria-hidden="true">›</span></button>').join('')+'</div>';
+}
+// Pure shared menu view for the scoped Accountant adapter. This never changes
+// the signed-in role, reads workshop_state, invokes Manager handlers or posts stock.
+window.zukaitSharedStockMenu=({scope=''}={})=>{
+ if(!['','Painting','Mechanical'].includes(scope))throw Error('Invalid Stock department');
+ const markup=scope?liveDepartmentMenu(scope,previewHomeTiles.filter(t=>t[0]!=='add')):departmentMenu({managerAccess:true,totals:null});
+ const actions={
+  'zukStockCentralPurchase()':'purchase',
+  'zukStockCentralOpening()':'opening',
+  'zukStockCreateItem()':'master-create',
+  'zukStockOpenMaterials()':'master-list',
+  "zukStockLiveNavigate('balance')":'balance',
+  "zukStockLiveNavigate('history')":'history',
+  "zukStockLiveNavigate('adjust')":'adjust',
+  "zukStockLiveNavigate('reports')":'reports'
+ };
+ const html=markup.replace(/data-department="(Painting|Mechanical)" onclick="zukStockSelectDepartment\(this\.dataset\.department\)"/g,(_,d)=>'data-as="department:'+d+'"')
+  .replace(/onclick="([^"]+)"/g,(_,handler)=>{
+   if(!Object.prototype.hasOwnProperty.call(actions,handler))throw Error('Unmapped Stock menu action');
+   return 'data-as="'+actions[handler]+'"';
+  });
+ return {html,styles:css+previewCss+previewHomeCss};
+};
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
  const choosing=!department;
- const tiles=choosing?'':departmentTiles().map(t=>
-  '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockLiveNavigate(\''+t[0]+'\')">'+
-  '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
-  '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
-  '<span class="zs-home-chevron" aria-hidden="true">›</span></button>').join('');
- const content=choosing?departmentMenu():
-  '<div class="zs-home-hero"><h3>'+esc(departmentTitle())+'</h3>'+
-  '<p class="zs-preview-note">Live department-filtered inventory. Shared materials use one physical balance.</p></div>'+
-  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+tiles+'</div>';
+ const content=choosing?departmentMenu():liveDepartmentMenu(department);
  const markup=css+previewCss+previewHomeCss+
   '<section class="zs zs-preview" data-stock-view="home">'+
   '<header class="zs-screen-toolbar">'+

@@ -6,6 +6,7 @@ const w=dom.window,d=w.document;
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
 w.confirm=()=>true;
 w.eval(fs.readFileSync('app/src/main/assets/consumables_stock_core.js','utf8'));
+w.eval(fs.readFileSync('app/src/main/assets/consumables_stock_ui.js','utf8'));
 w.eval(fs.readFileSync('app/src/main/assets/accountant_stock.js','utf8'));
 let user={id:'A1',role:'Accountant'},calls=[],fail=true,ready=true,catalogFailure=false;
 const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:()=>true,notify:()=>{},request:async x=>{
@@ -31,8 +32,11 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const click=async a=>{d.querySelector('[data-as="'+a+'"]').click();await tick();};
 await panel.open();
-assert.equal(d.querySelectorAll('.as-grid .as-tile').length,6);
-assert.equal(d.querySelectorAll('.as-tile:disabled').length,0);
+assert.equal(d.querySelectorAll('.as-shared-menu button[data-as]').length,6);
+assert.equal(d.querySelectorAll('.as-shared-menu button:disabled').length,0);
+assert.equal(d.querySelectorAll('.as-shared-menu [onclick]').length,0,'Shared menu must use scoped Accountant handlers');
+assert.deepEqual([...d.querySelectorAll('.as-shared-menu button strong')].map(x=>x.textContent),['Purchase Entry','Add Stock','Paint Consumables','Mechanical Consumables','Create Material','Brand & Price']);
+assert.ok(d.querySelector('.zs-entry-home'),'Manager menu markup is used');
 await click('master-create');d.querySelector('#as-material-name').value='QA';d.querySelector('#as-department').value='Both';d.querySelector('#as-reason').value='QA material';await click('master-create-review');assert.match(d.body.textContent,/Affected Actual Materials/);await click('master-save');assert.equal(calls.at(-1).operation,'MASTER_SAVE');
 await click('master-list');await click('master-material:0');assert.match(d.body.textContent,/Brand A/);await click('master-correct:0');d.querySelector('#as-master-rate').value='3';d.querySelector('#as-reason').value='QA correction';await click('master-correct-review:0');await click('master-save');assert.equal(calls.at(-1).data.command,'CORRECT_PRICE');
 await click('department:Painting');await click('balance');assert.equal(calls.at(-1).department,'Painting');await click('back');await click('back');

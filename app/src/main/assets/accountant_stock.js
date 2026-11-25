@@ -15,12 +15,14 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  const valid=(g,who)=>current()&&generation===g&&owner===who;
  const btn=(label,action)=>'<button type="button" data-as="'+action+'">'+label+'</button>';
  const departmentTitle=()=>department==='Painting'?'Paint Consumables':department==='Mechanical'?'Mechanical Consumables':'Consumables Stock Management';
- const tile=(title,desc,icon,tone,action,restricted=false)=>'<button type="button" class="as-tile '+tone+'" '+(restricted?'aria-disabled="true" disabled':'data-as="'+action+'"')+'><span class="as-tile-top"><span class="as-icon" aria-hidden="true">'+icon+'</span><span aria-hidden="true">'+(restricted?'🔒':'›')+'</span></span><strong>'+title+'</strong><small>'+desc+'</small></button>';
- const homeMenu=()=>'<div class="as-hero"><span class="as-hero-icon" aria-hidden="true">▱</span><h2>Consumables Stock Management</h2></div>'+
-  '<h3>Central Stock Entry</h3><div class="as-grid">'+tile('Purchase Entry','Purchase invoices','🛒','blue','purchase')+tile('Add Stock','Opening stock · physical count','＋','green','opening')+'</div>'+
-  '<h3>Stock</h3><div class="as-grid">'+tile('Paint Consumables','Painting materials and shared stock','🎨','blue','department:Painting')+tile('Mechanical Consumables','Mechanical materials and shared stock','⚙','green','department:Mechanical')+'</div>'+
-  '<h3>Material Setup</h3><div class="as-grid">'+tile('Create Material','Material, unit and department','＋','purple','master-create')+tile('Brand &amp; Price','Effective-dated prices and history','◇','amber','master-list')+'</div>';
- const departmentMenu=()=>'<h2>'+departmentTitle()+'</h2><div class="as-grid">'+tile('Stock Balance','Available, reserved and total stock','📦','blue','balance')+tile('Stock History','Stock movement history','◷','purple','history')+tile('Stock Adjustment','Physical count and minimum stock','⚖','amber','adjust')+tile('Stock Reports','Stock valuation and consumption','▤','green','reports')+'</div>';
+ // Render the exact Manager menu, but bind its buttons to this scoped adapter.
+ const sharedMenu=scope=>{
+  const menu=window.zukaitSharedStockMenu({scope});
+  return menu.styles+'<style>#as-dialog #as-body:has(.as-shared-menu){max-width:none}#as-dialog .as-shared-menu #zs-stock-screen{position:static;overflow:visible;min-height:0;background:none}#as-dialog .as-shared-menu .zs-preview{min-height:0}</style>'+
+   '<div class="as-shared-menu"><div id="zs-stock-screen"><section class="zs zs-preview" data-stock-view="home">'+menu.html+'</section></div></div>';
+ };
+ const homeMenu=()=>sharedMenu('');
+ const departmentMenu=()=>sharedMenu(department);
  const nav=()=>'<header class="as-toolbar">'+(tab==='home'?'':btn('← '+(department&&tab!=='department'?'Department':'Stock'),'back'))+'<span>▣ ZUKAIT · STOCK</span>'+btn('✕ Close','close')+'</header>';
  function show(body){
   if(!current())return;
