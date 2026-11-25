@@ -42,6 +42,37 @@ function validate(approval,record) {
    assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12);
    continue;
   }
+  // One-time V422 owner-directed release exception. No deferred check is a pass.
+  if(approval.v422AcceptanceDeferral) {
+   const waiver=approval.v422AcceptanceDeferral;
+   assert.equal(approval.versionName,'V422','Exception limited to V422');
+   assert.equal(approval.versionCode,385);
+   assert.equal(approval.releaseScope,'standard');
+   assert.equal(approval.sourceCommit,'4f390af88fea04b28f72cb5b063ed549916f110d');
+   assert.equal(approval.signedAcceptanceRun,45593239658);
+   assert.equal(approval.verificationRun,45593239138);
+   assert.equal(approval.accountantVerificationRun,45593239082);
+   assert.equal(approval.ownerPublicationRequested,true);
+   assert.equal(approval.ownerRequestedImmediateRelease,true);
+   assert.equal(approval.phase2ActivationApproved,false);
+   assert.equal(approval.previousPublishedRelease?.versionName,'V421');
+   assert.deepEqual(waiver.checks,required);
+   assert.equal(waiver.status,'DEFERRED_BY_OWNER_NOT_PERFORMED');
+   assert.equal(waiver.versionName,approval.versionName);
+   assert.equal(waiver.versionCode,approval.versionCode);
+   assert.equal(waiver.sourceCommit,approval.sourceCommit);
+   assert.equal(waiver.signedAcceptanceRun,approval.signedAcceptanceRun);
+   assert.equal(waiver.authorizedBy,'Owner in this conversation');
+   assert.equal(waiver.instruction,'Bypass and publish');
+   assert.equal(waiver.recordedDate,'2026-11-25');
+   assert.equal(approval.physicalAcceptanceStatus,waiver.status);
+   assert.equal(approval.freshProductionBackupRestoreStatus,waiver.status);
+   assert.equal(check?.passed,false,'Deferred check must remain not passed: '+key);
+   assert.equal(check?.status,waiver.status);
+   assert.deepEqual(check?.ownerWaiver,waiver,'V422 exception records must match');
+   assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12);
+   continue;
+  }
   if(['client_https_restart','physical_safari'].includes(key) && approval.ownerBrowserBuildWaiver) {
    const waiver=approval.ownerBrowserBuildWaiver;
    assert.equal(approval.versionName,'V376','Browser waiver is limited to V376');

@@ -156,6 +156,14 @@ jobs:
             test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "f329c8669137c8359515fa6d213464a535f26a47"
             EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude)tests/reception-v305-acceptance.mjs' ':(exclude).github/workflows/publish-approved-release.yml')
           fi
+          # V422 owner-directed acceptance exception: only pinned publication control files may differ.
+          if [ "$(jq -r '.versionName' release-request.json)" = "V422" ] &&
+             [ "$SOURCE_COMMIT" = "4f390af88fea04b28f72cb5b063ed549916f110d" ] &&
+             [ "$(jq -r '.v422AcceptanceDeferral.status' release-request.json)" = "DEFERRED_BY_OWNER_NOT_PERFORMED" ]; then
+            test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "c2b8289ece01a95baf8ca55e251ddce2a9a3ee73"
+            test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "bdaae55ed4d765fbff14ee3342085caac590aba9"
+            EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude)tests/reception-v305-acceptance.mjs' ':(exclude).github/workflows/publish-approved-release.yml')
+          fi
           if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . "${EXCLUDES[@]}"; then
             echo "Production source drift detected after approved source commit:"
             git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json'
@@ -272,7 +280,7 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true' || env.SOURCE_VERSION_NAME == 'V421') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve the exact physically accepted signed APK' }}
+      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true' || env.SOURCE_VERSION_NAME == 'V421' || env.SOURCE_VERSION_NAME == 'V422') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve the exact physically accepted signed APK' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

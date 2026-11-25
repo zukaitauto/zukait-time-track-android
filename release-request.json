@@ -2,17 +2,17 @@
   "versionName": "V422",
   "versionCode": 385,
   "releaseScope": "standard",
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
-  "ownerRequestedProceed": false,
+  "ownerRequestedProceed": true,
   "releaseHeldByOwner": false,
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Owner requested publication after verification and waived the live staff sign-in check. V154 Stock backend and report correction deployed. Qualify this V422 candidate through the automated release workflows.",
+  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "reason": "Publish the verified signed V422 Stock candidate with the remaining manual acceptance checks explicitly deferred by the owner.",
   "previousPublishedRelease": {
     "versionName": "V421",
     "versionCode": 384,
@@ -22,8 +22,27 @@
   "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
   "signedAcceptanceRun": 45593239658,
   "verificationRun": 45593239138,
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedAt": "2026-11-25T10:22:44.309Z",
+  "publishNonce": "v422-stock-4f390af88fea04b2",
   "productionAuthenticatedAcceptance": "WAIVED_BY_OWNER_NOT_RUN",
-  "accountantVerificationRun": 45593239082
+  "accountantVerificationRun": 45593239082,
+  "v422AcceptanceDeferral": {
+    "checks": [
+      "client_https_restart",
+      "physical_android",
+      "physical_safari",
+      "full_data_preservation",
+      "fresh_backup_restored",
+      "pc_site_reconciled",
+      "production_backend_smoke"
+    ],
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "versionName": "V422",
+    "versionCode": 385,
+    "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
+    "signedAcceptanceRun": 45593239658,
+    "authorizedBy": "Owner in this conversation",
+    "instruction": "Bypass and publish",
+    "recordedDate": "2026-11-25"
+  }
 }
