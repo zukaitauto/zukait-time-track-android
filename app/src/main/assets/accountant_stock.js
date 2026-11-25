@@ -36,8 +36,9 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   owner=identity();dialog=document.createElement('dialog');dialog.id='as-dialog';dialog.setAttribute('aria-label','Accounts Stock');document.body.appendChild(dialog);
   dialog.addEventListener('cancel',e=>{e.preventDefault();if(!busy)reset()});
   dialog.showModal();show(homeMenu());status('Checking Stock permissions…');
-  const g=++generation,who=owner;
-  try{const r=await request({operation:'STATUS'});if(!valid(g,who))return;ready=r.ready===true&&r.writes===true;const v=r.ready===true?await request({operation:'INVOICE_STATUS'}):{};if(!valid(g,who))return;invoiceReady=v.ready===true;if(tab==='home'){show(homeMenu());status(ready?'Stock server connected.':'Stock entry is not enabled on this server.');}}catch(e){if(valid(g,who))status(e.message);}
+  const opened=dialog,who=owner;generation++;
+  const stillOpen=()=>dialog===opened&&current()&&owner===who;
+  try{const r=await request({operation:'STATUS'});if(!stillOpen())return;ready=r.ready===true&&r.writes===true;const v=r.ready===true?await request({operation:'INVOICE_STATUS'}):{};if(!stillOpen())return;invoiceReady=v.ready===true;if(tab==='home'){show(homeMenu());status(ready?'Stock server connected.':'Stock entry is not enabled on this server.');}}catch(e){if(stillOpen())status(e.message);}
  }
  function filterCatalog(){
   const q=val('as-search').toLowerCase().split(/\s+/).filter(Boolean),select=field('as-pair');if(!select)return;
