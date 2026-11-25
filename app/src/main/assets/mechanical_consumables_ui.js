@@ -20,7 +20,7 @@ let sectionRequest=0;
 function master(){
  // Read the existing Material and Brand Master. Never store a duplicate catalog.
  const c=(typeof state!=='undefined'&&state?.consumables)||{};
- const materials=(Array.isArray(c.materials)?c.materials:[]).filter(x=>x&&x.active!==false);
+ const materials=(Array.isArray(c.materials)?c.materials:[]).filter(x=>x&&x.active!==false&&['Mechanical','Both'].includes(x.department));
  const brands=(Array.isArray(c.brands)?c.brands:[]).filter(x=>x&&x.active!==false);
  const prices=Array.isArray(c.prices)?c.prices:[];
  const rows=[];
@@ -36,6 +36,7 @@ function master(){
  }
  return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
 }
+const consDepartmentMenuStyle="<style>.cons-department-menu{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0}.cons-department-menu button.cons-action,.cons-department-menu button.mc-cons-tile{position:relative;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;min-width:0;min-height:106px!important;padding:13px!important;border:1px solid #b5c9df!important;border-bottom:4px solid #b5c9df!important;border-radius:16px!important;background:#eaf2fb!important;color:#173653!important;text-align:left;box-shadow:0 4px 12px #17365312}.cons-department-menu button.actual{background:#e6f5ed!important;border-color:#add6bd!important;color:#18563b!important}.cons-department-menu button.additional{background:#fff1d9!important;border-color:#e5c582!important;color:#70460e!important}.cons-department-menu button.search{background:#f1eafa!important;border-color:#cdb8e5!important;color:#53347c!important}.cons-department-menu button.manager{background:#e8f5f6!important;border-color:#afd5d8!important;color:#20555e!important}.cons-department-menu b{font-size:16px!important;font-weight:800;line-height:1.28;color:inherit!important;overflow-wrap:anywhere}.cons-department-menu .cons-menu-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#ffffffaa;font-size:19px;color:inherit}.cons-department-menu button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}@media(max-width:360px){.cons-department-menu{gap:8px}.cons-department-menu button{padding:10px!important}.cons-department-menu b{font-size:14px!important}}</style>";
 const style='<style>'+
  '.mc-cons{max-width:1100px;margin:auto;color:#1e3046;font-family:inherit}'+
  '.mc-cons .mc-cons-toolbar{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}'+
@@ -66,13 +67,11 @@ function menu(){
  sectionRequest++;
  // Stock has its own department chooser; do not duplicate the shortcut here.
  const tileColor={issued:'issued',additional:'additional',returns:'actual',search:'search',totals:'search',master:'manager',materialHistory:'manager'};
- const entries=Object.entries(sections).filter(([,s])=>!s.managerOnly||canManage()).map(([key,s])=>
+ const entries=Object.entries(sections).filter(([key,s])=>key!=='master'&&(!s.managerOnly||canManage())).map(([key,s])=>
   '<button type="button" class="mc-cons-tile '+tileColor[key]+'" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
-  '<b>'+escapeHtml(s.title)+'</b><small>'+escapeHtml(s.desc)+'</small></button>').join('');
- open('','<p class="mc-cons-muted">Mechanical materials are final when issued. No separate Actual Materials or finalisation step. Painting material records remain separate.</p>'+
-  '<div class="mc-cons-list">'+entries+'</div>'+
-  '<div class="mc-cons-card"><b>Mechanical unit examples</b><p class="mc-cons-muted">Engine Oil 5W-30, 20W-40, 5W-40 — Litre (L)<br>WD-40 — Piece (can)<br>Coolant — gallon container (pack size identified in material name)</p></div>'+ 
-  '<p class="mc-cons-alert">Mechanical issuing and immediate stock deduction are not connected yet. All issue screens remain read-only until the secure Mechanical Job Card and stock integration is enabled.</p>');
+  '<span class="cons-menu-icon" aria-hidden="true">'+({issued:'📦',additional:'＋',returns:'↩',search:'⌕',totals:'▤',materialHistory:'◷'}[key]||'◇')+'</span><b>'+escapeHtml(s.title)+'</b></button>').join('');
+ open('',consDepartmentMenuStyle+'<div class="mc-cons-list cons-department-menu">'+entries+'</div>'+
+  (canIssue()?'':'<p class="mc-cons-alert">Mechanical issuing is not active on this server.</p>'));
 }
 function catalog(){
  return '<label for="mcConsFilter">Search material or brand</label>'+

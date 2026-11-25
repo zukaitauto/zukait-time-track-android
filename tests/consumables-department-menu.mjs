@@ -1,0 +1,20 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const paint=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');
+const mech=fs.readFileSync('app/src/main/assets/mechanical_consumables_ui.js','utf8');
+const begin=paint.indexOf('const consDepartmentMenuStyle='),stop=paint.indexOf('function consFinalMaterialPendingRows()',begin);
+const start=paint.indexOf('window.openPaintingConsumables=function()'),end=paint.indexOf('window.openTotalConsumables=function()',start);
+let markup='',r='Manager';
+const ctx={window:{},role:()=>r,consFinalMaterialPendingRows:()=>[{},{}],modal:(title,body)=>{markup=body}};
+vm.runInNewContext(paint.slice(begin,stop)+paint.slice(start,end),ctx);
+const actions=['openFinalMaterialPending()',"openConsumablesEntry('issued')","openConsumablesEntry('actual')","openConsumablesEntry('additional')",'openConsumablesSearch()','openTotalConsumables()',"openConsumablesManager('material')","openConsumablesManager('reports')","openConsumablesManager('history')"];
+for(const role of ['Manager','Supervisor','Employee']){r=role;markup='';ctx.window.openPaintingConsumables();const count=role==='Manager'?9:role==='Supervisor'?6:0;assert.equal((markup.match(/class="cons-action /g)||[]).length,count);for(const a of actions.slice(0,count))assert.ok(markup.includes('onclick="'+a+'"'));assert.doesNotMatch(markup,/<small>/);}
+let output='',calls=0;
+const state={consumables:{materials:[{id:'paint',name:'Primer',department:'Painting'},{id:'oil',name:'Engine Oil',department:'Mechanical'},{id:'shared',name:'Cleaning Solvent',department:'Both'},{id:'legacy',name:'Old Paint'}],brands:[{id:'brand',name:'Brand A'}],prices:['paint','oil','shared','legacy'].map(materialId=>({materialId,brandId:'brand'}))}};
+const node={innerHTML:''};
+const c={me:{role:'Manager'},state,window:{openModal:x=>{output=x},zukaitCloud:{stockRequest(){calls++;throw Error('unexpected write')}}},document:{getElementById:id=>id==='mcConsRows'?node:id==='mcConsFilter'?{value:''}:null}};
+vm.runInNewContext(mech,c);
+c.window.openMechanicalConsumables();assert.match(output,/cons-department-menu/);assert.doesNotMatch(output,/Brands &amp; Price|Actual Materials|Mechanical unit examples|<small>/);assert.match(output,/Issued Materials/);
+await c.window.openMechanicalConsumablesSection('search');assert.match(node.innerHTML,/Engine Oil/);assert.match(node.innerHTML,/Cleaning Solvent/);assert.doesNotMatch(node.innerHTML,/Primer|Old Paint/);assert.equal(calls,0);
+const getStyle=s=>s.match(/const consDepartmentMenuStyle=(.*?);\n/)[1];assert.equal(getStyle(paint),getStyle(mech));
+assert.match(paint,/if\(!m\|\|!b\|\|m.department==='Mechanical'\)return/);
+console.log('PASS: same department card palette, unchanged Painting handlers and role scope, Mechanical shared material visibility and disabled write safety');
