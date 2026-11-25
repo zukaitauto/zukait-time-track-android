@@ -96,7 +96,7 @@ function viewCss(){return `
 @media print{.jce-view{background:#fff;border-radius:0;padding:0}.jce-view .jce-view-header{background:#fff;color:#172f43;box-shadow:none;border-radius:0;border-bottom:2px solid #126b70;padding:0 0 12px}.jce-view .jce-view-header h3{color:#172f43!important}.jce-view .jce-view-header small{color:#496579}.jce-view .jce-view-section{box-shadow:none;border-radius:0}.jce-view .jce-view-field{padding:7px 10px}.jce-view .jce-view-value{font-size:11px}}
 
 
-.jce-audit-entry{border-bottom:1px solid #dce3e9;padding:10px 0}.jce-audit-entry summary{cursor:pointer;overflow-wrap:anywhere}.jce-audit-entry pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:260px;overflow:auto}#jce-history-panel[hidden]{display:none!important}@media print{#jce-history-panel{display:none!important}}
+.jce-audit-entry{border-bottom:1px solid #dce3e9;padding:10px 0}.jce-audit-entry summary{cursor:pointer;overflow-wrap:anywhere}.jce-audit-entry pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:260px;overflow:auto}#jce-history-panel[hidden],#jce-materials-panel[hidden]{display:none!important}.jce-material-record{border-bottom:1px solid #dce3e9;padding:10px 0}.jce-material-record summary{cursor:pointer;overflow-wrap:anywhere}.jce-material-line{margin:6px 0;overflow-wrap:anywhere}@media print{#jce-history-panel,#jce-materials-panel{display:none!important}}
 /* Compact, bold A4 document: scoped to the read-only Job Card view. */
 .jce-view.jce-view-document{width:100%;max-width:210mm;padding:12px;font-size:13px;line-height:1.35}
 .jce-view-document .jce-view-header{padding:12px 15px;gap:9px;border-radius:10px}
@@ -143,12 +143,12 @@ function viewHtml(j,actions=true){
  const vehicle=jobName(j.vehicle||[first('make','vehicleMake','brand'),first('model','vehicleModel')].filter(Boolean).join(' '));
  const work=['workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','notes','jobNotes','remarks'];
  const descriptions=[...new Set(work.map(k=>j[k]).filter(v=>v!=null&&v!=='').map(viewValue))];
- return '<section class="jce-view jce-view-document" data-job-card="'+esc(j.no)+'"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Job Card · '+esc(j.no)+'</h3><div>'+esc(vehicle||'—')+'</div>'+(j.delivered?'<strong class="jce-delivered-status" style="display:inline-block;margin-top:8px;padding:5px 9px;border-radius:7px;background:#dcfce7;color:#166534">Delivered'+(j.deliveryDate||j.deliveredAt?' · '+esc(jobDate(j.deliveredAt||j.deliveryDate)):'')+'</strong>':'')+'</div>'+(actions?'<nav class="jce-view-nav"><button type="button" id="jce-view-back">← Back</button><button type="button" id="jce-view-print">Print</button>'+(actor()?.role==='Manager'?'<button type="button" id="jce-view-history">History</button>':'')+'<button type="button" id="jce-view-close">Close</button></nav>':'')+'</header>'+ 
+ return '<section class="jce-view jce-view-document" data-job-card="'+esc(j.no)+'"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Job Card · '+esc(j.no)+'</h3><div>'+esc(vehicle||'—')+'</div>'+(j.delivered?'<strong class="jce-delivered-status" style="display:inline-block;margin-top:8px;padding:5px 9px;border-radius:7px;background:#dcfce7;color:#166534">Delivered'+(j.deliveryDate||j.deliveredAt?' · '+esc(jobDate(j.deliveredAt||j.deliveryDate)):'')+'</strong>':'')+'</div>'+(actions?'<nav class="jce-view-nav"><button type="button" id="jce-view-back">← Back</button><button type="button" id="jce-view-print">Print</button>'+(actor()?.role==='Manager'?'<button type="button" id="jce-view-history">History</button><button type="button" id="jce-view-materials">Materials</button>':'')+'<button type="button" id="jce-view-close">Close</button></nav>':'')+'</header>'+ 
  section('Job Details', [['Job Card number',j.no],['Created · Oman time',jobDate(j.createdAt)],['Job type',jobName(j.jobType)],['Status',j.delivered?'Delivered':jobName(j.status||(j.completed?'Completed':'Open'))],['Promise date',j.promiseDate],['Linked Reception Checklist',j.receptionNo]])+
  section('Vehicle Details', [['Make',jobName(first('make','vehicleMake','brand'))],['Model',jobName(first('model','vehicleModel'))],['Year',first('year','modelYear','vehicleYear')],['Registration',first('reg','registration','registrationNo')],['Vehicle',vehicle,true],['VIN / Chassis',String(first('vin','VIN','vinNumber','chassis','chassisNo')).toUpperCase(),true],['Vehicle colour',jobName(first('color','colour'))],['Paint colour code',first('colorCode','colourCode')],['Intake odometer',first('jobIntakeOdometer','odometer')],['Odometer unit',first('jobIntakeOdometerUnit','jobIntakeUnit','odometerUnit')]])+
  section('Customer Details', [['Customer',jobName(first('customer','customerName')),true],['Contact',first('mobile','customerMobile','customerContact','contact','phone','tel')],['Email',j.email],['Customer address',first('customerAddress','address'),true]])+
  section(jobType==='INSURANCE'?'Insurance & Payment':'Payment Details', [...(jobType==='INSURANCE'?[['Insurance company',jobName(first('insuranceCompany','insurance'))],['Claim number',first('claimNo','claimNumber','claim')]]:[]),['Amount',money(j.amount)],['Final invoice amount',money(j.finalInvoiceAmount??j.invoiceAmount)],['Invoice date',j.invoiceDate],...(jobType==='CREDIT'?[['Credit account / reference',j.creditAccount]]:[]),['Delivered · Oman time',j.deliveredAt||j.deliveryDate?jobDate(j.deliveredAt||j.deliveryDate):'Not delivered']])+
- '<section class="jce-view-section"><h4>Work Descriptions / Notes</h4><div class="jce-view-work">'+esc(descriptions.join('\n\n')||'No work description recorded.')+'</div></section>'+(actions&&j.delivered&&typeof window.zukaitDeliveredMaterialsSummary==='function'?window.zukaitDeliveredMaterialsSummary(j.no,'job-view'):'')+(actions&&actor()?.role==='Manager'?'<section id="jce-history-panel" class="jce-view-section" hidden></section>':'')+'</section>';
+ '<section class="jce-view-section"><h4>Work Descriptions / Notes</h4><div class="jce-view-work">'+esc(descriptions.join('\n\n')||'No work description recorded.')+'</div></section>'+(actions&&j.delivered&&typeof window.zukaitDeliveredMaterialsSummary==='function'?window.zukaitDeliveredMaterialsSummary(j.no,'job-view'):'')+(actions&&actor()?.role==='Manager'?'<section id="jce-history-panel" class="jce-view-section" hidden></section><section id="jce-materials-panel" class="jce-view-section" hidden></section>':'')+'</section>';
 }
 function printView(j){
  const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Job Card '+esc(j.no)+'</title><style>'+viewCss()+'</style></head><body>'+viewHtml(j,false)+'</body></html>';
@@ -208,6 +208,59 @@ function printView(j){
   }
   trigger.onclick=()=>{if(!valid())return;if(started){panel.hidden=!panel.hidden;return;}started=true;load();};
  }
+
+ // Fetch only the selected job's materials on demand. Read-only: never replace
+ // the authoritative state, reprice a line, or use these records for a write.
+ function bindMaterials(j,id){
+  const trigger=document.getElementById('jce-view-materials'),panel=document.getElementById('jce-materials-panel');
+  if(!trigger||!panel)return;
+  const token=window.zukaitAuth?.getToken?.()||'',actorId=actor()?.id;
+  const valid=()=>id===loadId&&panel.isConnected&&actor()?.role==='Manager'&&actor()?.id===actorId&&Boolean(token)&&window.zukaitAuth?.getToken?.()===token;
+  const key=String(j.no).trim().toUpperCase();
+  const localData=()=>typeof state!=='undefined'?state?.consumables:window.state?.consumables;
+  const sameJob=row=>row&&String(row.jobCard??'').trim().toUpperCase()===key;
+  const money=v=>v==null||v===''||!Number.isFinite(Number(v))?'Not recorded':'OMR '+Number(v).toFixed(3);
+  let busy=false,loaded=false;
+  const record=(row,kind)=>{
+   const masters=localData()||{};
+   const lines=Array.isArray(row.lines)?row.lines:[];
+   const status=row.voided?'Voided':kind==='actual'?(row.locked?'Finalized':'Not finalized'):'Issued';
+   return '<details class="jce-material-record"><summary><b>'+esc(row.department||'Consumables')+'</b> · '+esc(status)+' · '+esc(jobDate(row.actualAt||row.createdAt))+(kind==='actual'?' · '+esc(money(row.totalCost)):'')+'</summary>'+
+    lines.map(l=>{
+     const material=(masters.materials||[]).find(x=>x.id===l.materialId),brand=(masters.brands||[]).find(x=>x.id===l.brandId);
+     const name=[l.materialName||material?.name||l.materialId,l.brandName||brand?.name||l.brandId].filter(Boolean).join(' / ');
+     const quantity=kind==='actual'?l.actualQuantity??l.quantity:l.quantity??l.issuedQuantity;
+     return '<div class="jce-material-line"><b>'+esc(name||'Material')+'</b> · '+esc(quantity??'Not recorded')+' '+esc(l.unit||'')+(kind==='actual'?' · Saved unit price '+esc(money(l.unitPriceSnapshot??l.unitPrice))+' · Saved line cost '+esc(money(l.lineCost)):'')+'</div>';
+    }).join('')+'</details>';
+  };
+  function show(rows,notice){
+   if(!valid())return;
+   const group=(title,kind,list)=>'<h5>'+title+'</h5>'+(list.length?list.map(r=>record(r,kind)).join(''):'<p>No records.</p>');
+   panel.hidden=false;
+   panel.innerHTML='<h4>Job Consumables</h4><div class="jce-view-work"><p role="status">'+esc(notice)+'</p>'+group('Issued / Additional','issue',rows.issues)+group('Actual Materials','actual',rows.actuals)+'<button type="button" id="jce-materials-refresh">Refresh</button></div>';
+   panel.querySelector('#jce-materials-refresh')?.addEventListener('click',load);
+  }
+  async function load(){
+   if(busy||!valid())return;busy=true;panel.hidden=false;
+   panel.innerHTML='<h4>Job Consumables</h4><div class="jce-view-work" role="status">Loading materials…</div>';
+   try{
+    const r=await api({action:'job_consumables_read',jobCard:String(j.no)});
+    if(!valid())return;
+    if(!Number.isSafeInteger(r.revision)||!Array.isArray(r.issues)||!Array.isArray(r.actuals)||![...r.issues,...r.actuals].every(sameJob))throw Error('Invalid material response');
+    show(r,'Server records · recorded prices and costs · revision '+r.revision);loaded=true;
+   }catch(e){
+    if(!valid())return;
+    if(e.status===401||e.status===403||['invalid_session','consumables_forbidden'].includes(e.code)){
+     panel.innerHTML='<h4>Job Consumables</h4><p role="status">Materials access denied. Sign in again if needed.</p>';
+    }else{
+     const c=localData()||{};
+     show({issues:(Array.isArray(c.issues)?c.issues:[]).filter(sameJob),actuals:(Array.isArray(c.actuals)?c.actuals:[]).filter(sameJob)},'Server records unavailable. Cached records only; they may be incomplete.');
+    }
+    loaded=true;
+   }finally{busy=false;}
+  }
+  trigger.onclick=()=>{if(!valid())return;if(loaded||busy){panel.hidden=!panel.hidden;return;}load();};
+ }
 async function view(no,options={}){
  if(!['Manager','Supervisor','Receptionist'].includes(actor()?.role))return;
  const id=++loadId;draft=null;viewStyle();
@@ -224,6 +277,7 @@ async function view(no,options={}){
   document.getElementById('jce-view-close').onclick=close;
   document.getElementById('jce-view-print').onclick=()=>printView(j);
    bindHistory(j,id);
+   bindMaterials(j,id);
  }catch(e){if(id===loadId){alert(e.message);await back()}}
 }
 window.zukaitJobEdit={open,save,view};
