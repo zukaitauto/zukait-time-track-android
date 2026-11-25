@@ -104,6 +104,39 @@ function validate(approval,record) {
    assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12);
    continue;
   }
+  // One-time V424 owner-directed release exception. No deferred check is a pass.
+  if(approval.v424AcceptanceDeferral) {
+   const waiver=approval.v424AcceptanceDeferral;
+   assert.equal(approval.versionName,'V424','Exception limited to V424');
+   assert.equal(approval.versionCode,387);
+   assert.equal(approval.releaseScope,'standard');
+   assert.equal(approval.sourceCommit,'20d8364f4c63897000da4270fc4a322113d85a92');
+   assert.equal(approval.signedAcceptanceRun,45633682402);
+   assert.equal(approval.verificationRun,45633682330);
+   assert.equal(approval.productionBackendChanges,false);
+   assert.equal(approval.backendDeploymentRequired,false);
+   assert.equal(approval.ownerPublicationRequested,true);
+   assert.equal(approval.ownerRequestedImmediateRelease,true);
+   assert.equal(approval.phase2ActivationApproved,false);
+   assert.equal(approval.previousPublishedRelease?.versionName,'V423');
+   assert.deepEqual(waiver.checks,required);
+   assert.equal(waiver.status,'DEFERRED_BY_OWNER_NOT_PERFORMED');
+   assert.equal(waiver.versionName,approval.versionName);
+   assert.equal(waiver.versionCode,approval.versionCode);
+   assert.equal(waiver.sourceCommit,approval.sourceCommit);
+   assert.equal(waiver.signedAcceptanceRun,approval.signedAcceptanceRun);
+   assert.equal(waiver.authorizedBy,'Owner in this conversation');
+   assert.equal(waiver.instruction,"Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.");
+   assert.equal(waiver.recordedDate,'2026-11-25');
+   assert.equal(approval.physicalAcceptanceStatus,waiver.status);
+   assert.equal(approval.freshProductionBackupRestoreStatus,waiver.status);
+   assert.equal(approval.productionAuthenticatedAcceptance,waiver.status);
+   assert.equal(check?.passed,false,'Deferred check must remain not passed: '+key);
+   assert.equal(check?.status,waiver.status);
+   assert.deepEqual(check?.ownerWaiver,waiver,'V424 exception records must match');
+   assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12);
+   continue;
+  }
   if(['client_https_restart','physical_safari'].includes(key) && approval.ownerBrowserBuildWaiver) {
    const waiver=approval.ownerBrowserBuildWaiver;
    assert.equal(approval.versionName,'V376','Browser waiver is limited to V376');
@@ -222,6 +255,7 @@ if(require.main===module) {
  const record=JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8'));
  validate(approval,record);
  console.log('V305 acceptance requirements satisfied for approved source '+approval.sourceCommit);
+ if(approval.v424AcceptanceDeferral) console.log('OWNER-DEFERRED: V424 seven manual acceptance gates NOT PERFORMED; signed source and publication integrity checks remain mandatory.');
  if(approval.v423AcceptanceDeferral) console.log('OWNER-DEFERRED: V423 seven manual acceptance gates NOT PERFORMED; signed source and publication integrity checks remain mandatory.');
  if(approval.v421AcceptanceDeferral) console.log('OWNER-DEFERRED: V421 seven manual acceptance gates NOT PERFORMED; signed source and publication integrity checks remain mandatory.');
  if(approval.ownerBrowserBuildWaiver) console.log('OWNER-DEFERRED: exact browser build verification; owner reports V376 browser tests.');

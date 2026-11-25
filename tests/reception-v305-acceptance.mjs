@@ -141,3 +141,20 @@ if(request.versionName==='V423'&&request.v423AcceptanceDeferral){
  }
  console.log('PASS: V423 exception is exact-source, owner-directed and cannot fabricate acceptance.');
 }
+
+if(request.versionName==='V424'&&request.v424AcceptanceDeferral){
+ const approved={...request,approvedForStaff:true,approvedAt:'2026-11-25T08:00:00Z',publishNonce:'fixture-v424-owner-defer'};
+ assert.equal(validate(approved,actual),true);
+ assert.throws(()=>validate({...approved,v424AcceptanceDeferral:undefined},actual),/client_https_restart/);
+ for(const key of required){
+  const fake=structuredClone(actual);fake.checks[key].passed=true;
+  assert.throws(()=>validate(approved,fake),/must remain not passed/);
+  const missing=structuredClone(actual);delete missing.checks[key].ownerWaiver;
+  assert.throws(()=>validate(approved,missing),/records must match/);
+ }
+ for(const [key,value] of Object.entries({versionName:'V425',versionCode:388,sourceCommit:'b'.repeat(40),signedAcceptanceRun:1})){
+  const altered={...approved,[key]:value};
+  assert.throws(()=>validate(altered,{...actual,[key]:value}));
+ }
+ console.log('PASS: V424 exception is exact-source, owner-directed and cannot fabricate acceptance.');
+}
