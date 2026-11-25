@@ -271,7 +271,7 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve exact approved signed APK (see recorded acceptance status)' }}
+      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true' || env.SOURCE_VERSION_NAME == 'V421') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve the exact physically accepted signed APK' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
