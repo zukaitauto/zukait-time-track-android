@@ -12,6 +12,7 @@ on:
         options:
           - coordinated-release
           - accounts-visual-preview
+          - accountant-stock-web-repair
 
 permissions:
   contents: write
@@ -25,7 +26,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2' && inputs.publication_mode != 'accounts-visual-preview'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2' && inputs.publication_mode == 'coordinated-release'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -663,4 +664,41 @@ jobs:
         with:
           name: accounts-web-preview-evidence
           path: artifacts/accounts-preview/
+          retention-days: 14
+
+  accountant-stock-web-repair:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/architecture-v2' && inputs.publication_mode == 'accountant-stock-web-repair'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: https://zukaitauto.github.io/zukait-time-track-android/accountant.html
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify source-bound V421 web repair
+        run: |
+          git merge-base --is-ancestor 5e02808249f536505d115d2f054651c161617408 "$GITHUB_SHA"
+          python3 scripts/accountant-stock-web-repair.py selftest
+          python3 scripts/accountant-stock-web-repair.py prepare
+          node --check _site/accountant_stock.js
+          node --check _site/accountant.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Publish V421 web-only asset repair
+        uses: actions/deploy-pages@v4
+      - name: Verify repaired Accountant scripts and preserved site
+        run: python3 scripts/accountant-stock-web-repair.py verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accountant-stock-web-repair-evidence
+          path: artifacts/accountant-stock-web-repair/
           retention-days: 14
