@@ -1,0 +1,19 @@
+{
+  "project": "pjknotnjkufadqavcmii",
+  "backendVersion": 154,
+  "previousBackendVersion": 153,
+  "sourceCommit": "7c9e38cc5b0b56bc606c1fb6ce28ded690f24ae8",
+  "databaseMigrationApplied": true,
+  "migration": "accountant_stock_scoped_parity",
+  "verified": true,
+  "verification": {
+    "deployedSourceMatches": true,
+    "stockInstallationReady": true,
+    "stockRpcServiceOnly": true,
+    "isolatedStockRoleGateRun": 45581304913,
+    "isolatedAccountantAcceptanceRun": 45581304373,
+    "productionAuthenticatedAcceptance": "NOT_RUN"
+  },
+  "apkUnchanged": true,
+  "productionBusinessRecordsModified": false
+}
