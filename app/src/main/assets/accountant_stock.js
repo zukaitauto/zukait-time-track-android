@@ -101,7 +101,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    const report=r.report;
    let body='<h3>'+({balance:'Stock Balance',history:'Stock History',reports:'Stock Reports'}[which])+'</h3>'+btn('Refresh',which)+(department?'<p>Shared materials use one balance across both departments. Do not add department totals together.</p>':'');
    if(which==='reports'){
-    body+=report?'<div class="as-row"><b>Current stock valuation</b><p>'+esc(money(report.valuation))+'</p></div><div class="as-row">Tracked material / brand pairs: '+esc(number(report.items))+'</div><div class="as-row">Low stock: '+esc(number(report.low))+'</div><div class="as-row">Out of stock: '+esc(number(report.out))+'</div><p>Server totals may include uncounted stock. Verify opening counts before interpreting zero quantities.</p>':'<p>Stock report unavailable.</p>';
+    body+=report?'<div class="as-row"><b>Current stock valuation</b><p>'+esc(money(report.valuation))+'</p></div><div class="as-row">Tracked material / brand pairs: '+esc(number(report.items))+'</div><div class="as-row">Low stock: '+esc(number(report.low))+'</div><div class="as-row">Out of stock: '+esc(number(report.out))+'</div><p>Opening count status: '+esc(number(report.uncounted))+' not counted. In stock: '+esc(number(report.in_stock))+'.</p>':'<p>Stock report unavailable.</p>';
    }else{
     body+=list.length?list.map(x=>{
      const counted=x.initialised===true;
