@@ -23,7 +23,7 @@
   let cloudPushing=false;
   let managerEditInFlight=false;
   let pushTimer=null;
-  let dashboardRenderTimer=null;
+  let dashboardRenderTimer=null,dashboardRenderPending=false;
   let pollTimer=null;
   let livePollTimer=null;
   let pollGeneration=0,pollActive=false;
@@ -148,10 +148,17 @@
       try{window.zukaitLiveStatusAuthority?.apply?.()}catch(_){}
       return;
     }
+    dashboardRenderPending=true;
+    queueDashboardRender();
+  }
+
+  function queueDashboardRender(){
+    if(!dashboardRenderPending||!me||document.visibilityState==='hidden')return;
     clearTimeout(dashboardRenderTimer);
     dashboardRenderTimer=setTimeout(()=>{
       dashboardRenderTimer=null;
       if(!me||document.visibilityState==='hidden')return;
+      dashboardRenderPending=false;
       try{render()}catch(e){console.error('Render after sync failed',e)}
     },180);
   }
@@ -1438,7 +1445,7 @@
     clearTimeout(pollTimer);pollTimer=null;
     clearTimeout(livePollTimer);livePollTimer=null;
     clearTimeout(pushTimer);pushTimer=null;
-    clearTimeout(dashboardRenderTimer);dashboardRenderTimer=null;
+    clearTimeout(dashboardRenderTimer);dashboardRenderTimer=null;dashboardRenderPending=false;
   }
 
 
@@ -1469,6 +1476,7 @@
   document.addEventListener('visibilitychange',()=>{
     if(pollActive)beginPolling(++pollGeneration);
     if(document.visibilityState==='visible')refreshVisibleSharedState();
+    if(document.visibilityState==='visible')queueDashboardRender();
   });
   window.addEventListener('focus',refreshVisibleSharedState);
 
