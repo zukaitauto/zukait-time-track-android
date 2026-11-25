@@ -222,7 +222,7 @@ window.consPurchaseLoadHistory=async function(page=0){
 window.consPurchaseEdit=function(index,mode){
  if(role()!=='Manager'||consPurchaseBusy||!['header','lines','cancel'].includes(mode))return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice?.id||!Number.isInteger(invoice.revision))return alert('Reload invoice history first.');
- consPurchaseEditing={invoice,mode};
+ consPurchaseEditing={invoice,mode,owner:consPurchaseOwnerId()};
  if(consCorrectionHasPending(invoice.id))return window.consPurchaseRetryCorrection(index);
  if(consReconcileHasPending(invoice.id))return window.consPurchaseRetryReconciliation(index);
  if(invoice.status==='cancelled')return alert('Invoice already cancelled.');
@@ -287,16 +287,16 @@ window.consPurchaseRetryCorrection=function(index){
  const invoice=consPurchaseHistoryRows[index],owner=consPurchaseOwnerId();if(!invoice||!owner)return;
  try{
   const pending=consCorrectionRead(owner,invoice.id);if(!pending)return;
-  consPurchaseEditing={invoice,mode:pending.mode,retry:pending};
+  consPurchaseEditing={invoice,mode:pending.mode,retry:pending,owner};
   modal('Retry Invoice Correction',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+'</b><p>Previous correction is unconfirmed. Retry the exact saved request without editing.</p><button type="button" id="cpEditSave" class="cp-finish" onclick="consPurchaseSaveCorrection()">RETRY ORIGINAL CORRECTION</button><div id="cpEditStatus" class="cp-info" role="status"></div></div>','consOpenPurchaseInvoices()');
  }catch(e){alert(String(e?.message||e))}
 };
 window.consPurchaseSaveCorrection=async function(){
  if(role()!=='Manager'||consPurchaseBusy||!consPurchaseEditing)return;
- const {invoice,mode,retry}=consPurchaseEditing,owner=consPurchaseOwnerId(),button=document.getElementById('cpEditSave'),out=document.getElementById('cpEditStatus');if(!button||button.disabled)return;
+ const {invoice,mode,retry,owner:editingOwner}=consPurchaseEditing,owner=consPurchaseOwnerId(),button=document.getElementById('cpEditSave'),out=document.getElementById('cpEditStatus');if(!button||button.disabled)return;
  const val=id=>String(document.getElementById(id)?.value||'').trim(),reason=val('cpEditReason');
  try{
-  if(!owner)throw Error('Staff identity unavailable');
+  if(!owner||editingOwner!==owner)throw Error('Staff session changed. Reopen invoice history.');
   const storageKey=consCorrectionKey(owner,invoice.id);let saved=consCorrectionRead(owner,invoice.id);const wasPending=Boolean(saved);
   let data;
   if(retry){if(!saved||saved.id!==retry.id)throw Error('Saved correction changed; reopen invoice history');data=saved.data;}
@@ -322,6 +322,7 @@ window.consPurchaseSaveCorrection=async function(){
   const pending=saved,key=invoice.id+'|'+mode;
   consPurchaseBusy=true;button.disabled=true;out.textContent='Saving correction…';
   const r=await consPurchaseApi({operation:mode==='cancel'?'INVOICE_CANCEL':mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',requestId:pending.id,data});
+  if(owner!==consPurchaseOwnerId())return;
   if(!r?.ok||!r.invoice?.id){
    const code=String(r?.code||'invoice_correction_unconfirmed');
    if(!wasPending&&code==='invoice_price_reconciliation_required'){
@@ -344,7 +345,7 @@ window.consPurchaseSaveCorrection=async function(){
   if(owner!==consPurchaseOwnerId())return;
   consPurchaseCorrectionPending.delete(key);consPurchaseEditing=null;consPurchaseBusy=false;
   alert(mode==='cancel'?'Invoice cancelled with audit record.':'Invoice correction saved with audit record.');window.consOpenPurchaseInvoices();
- }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);try{const saved=consCorrectionRead(owner,invoice.id);if(saved){consPurchaseEditing={invoice,mode:saved.mode,retry:saved};button.textContent='RETRY ORIGINAL CORRECTION';}}catch(_){button.disabled=true;}}}
+ }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);try{const saved=consCorrectionRead(owner,invoice.id);if(saved){consPurchaseEditing={invoice,mode:saved.mode,retry:saved,owner};button.textContent='RETRY ORIGINAL CORRECTION';}}catch(_){button.disabled=true;}}}
  finally{consPurchaseBusy=false}
 };
 let consPurchasePriceSelection=null;
