@@ -4,7 +4,7 @@
   "releaseScope": "standard",
   "approvedForStaff": false,
   "ownerPublicationRequested": true,
-  "ownerRequestedImmediateRelease": false,
+  "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": false,
   "releaseHeldByOwner": false,
   "productionBackendChanges": true,
@@ -19,10 +19,11 @@
     "releaseTag": "release-V421-architecture-v2",
     "sourceCommit": "5e02808249f536505d115d2f054651c161617408"
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
+  "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
+  "signedAcceptanceRun": 45593239658,
+  "verificationRun": 45593239138,
   "approvedAt": null,
   "publishNonce": null,
-  "productionAuthenticatedAcceptance": "WAIVED_BY_OWNER_NOT_RUN"
+  "productionAuthenticatedAcceptance": "WAIVED_BY_OWNER_NOT_RUN",
+  "accountantVerificationRun": 45593239082
 }
