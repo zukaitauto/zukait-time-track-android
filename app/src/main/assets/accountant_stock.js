@@ -29,7 +29,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    .replace(/onclick="([^"]+)"/g,(_,handler)=>{if(!Object.prototype.hasOwnProperty.call(actions,handler))throw Error('Unmapped purchase action');return 'data-as="'+actions[handler]+'"'})
    .replace(/on(?:input|change)="[^"]+"/g,'');
  };
- let purchasePair=null,purchaseMethod='unit';
+ let purchasePair=null,purchaseMethod='unit',openingPair=null;
  const homeMenu=()=>sharedMenu('');
  const departmentMenu=()=>sharedMenu(department);
  const nav=()=>'<header class="as-toolbar">'+(tab==='home'?'':btn('← '+(department&&tab!=='department'?'Department':'Stock'),'back'))+'<span>▣ ZUKAIT · STOCK</span>'+btn('✕ Close','close')+'</header>';
@@ -39,13 +39,14 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   dialog.onclick=e=>{const b=e.target.closest('[data-as]');if(b)act(b.dataset.as).catch(err=>status(err.message));};
   dialog.oninput=e=>{
    if(e.target.id==='as-balance-search'){const q=e.target.value.trim().toLowerCase();let n=0;for(const row of dialog.querySelectorAll('[data-balance-entry]')){row.hidden=!String(row.dataset.balanceName||'').toLowerCase().includes(q);if(!row.hidden)n++;}const empty=field('zs-balance-search-empty');if(empty)empty.hidden=n>0;}
-   if(e.target.id==='as-search'){if(tab==='purchase'){purchasePair=null;if(field('as-line-editor'))field('as-line-editor').hidden=true;if(field('as-selected'))field('as-selected').innerHTML='';}filterCatalog();}
+   if(e.target.id==='as-search'){if(tab==='opening'){openingPair=null;if(field('as-opening-hint'))field('as-opening-hint').textContent='Tap a search result to choose the exact material and brand.';}if(tab==='purchase'){purchasePair=null;if(field('as-line-editor'))field('as-line-editor').hidden=true;if(field('as-selected'))field('as-selected').innerHTML='';}filterCatalog();}
    if(['as-qty','as-price','as-unit-price','as-total-price'].includes(e.target.id))calculate();
   };
+  dialog.onfocusin=e=>{if(tab==='opening'&&e.target.id==='as-search')filterCatalog();};
   dialog.onchange=e=>{if(e.target.id==='as-method'){if(tab==='purchase')changePurchaseMethod();else calculate();}};
   const p=pending();if(p&&['home','opening','purchase','edit','adjust','master-create','master-price','master-correct','master-review','price-review'].includes(tab)){field('as-body').innerHTML='<div class="as-row"><b>Previous stock transaction awaiting confirmation</b><p>'+esc(p.operation)+' · '+esc(p.data?.invoiceNumber||p.data?.invoiceId||p.data?.materialId||'')+'</p>'+btn('Retry exact saved request','retry')+'</div>';status('Resolve the previous transaction before entering another.');}
  }
- function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;readinessError='';checking=null;tab='home';department='';catalog=[];lines=[];editing=null;masterMaterials=[];masterPrices=[];masterSelected=null;masterReview=null;priceIntent=null;purchasePair=null;invoiceFilters={query:'',from:'',to:''};}
+ function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;readinessError='';checking=null;tab='home';department='';catalog=[];lines=[];editing=null;masterMaterials=[];masterPrices=[];masterSelected=null;masterReview=null;priceIntent=null;purchasePair=null;openingPair=null;invoiceFilters={query:'',from:'',to:''};}
  async function open(){
   if(!identity())return;
   if(dialog){dialog.focus();return;}
@@ -71,6 +72,12 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  }
  function filterCatalog(){
   const q=val('as-search').toLowerCase().split(/\s+/).filter(Boolean),select=field('as-pair');
+  if(tab==='opening'){
+   const out=field('as-opening-results');if(!out)return;
+   const matches=catalog.map((x,i)=>({x,i})).filter(({x})=>q.every(k=>(x.material+' '+x.brand+' '+x.unit).toLowerCase().includes(k))).slice(0,12);
+   out.innerHTML=matches.map(({x,i})=>'<button type="button" class="zs-pair-choice" data-as="opening-pair:'+i+'">'+esc(x.material)+' — '+esc(x.brand)+'<small>'+esc(x.unit)+'</small></button>').join('')||(q.length?'<p class="zs-muted">No matching items on this loaded page.</p>':'');
+   out.hidden=false;field('as-search').setAttribute('aria-expanded','true');return;
+  }
   if(tab==='purchase'){
    const out=field('as-results');if(!out)return;
    const matches=q.length?catalog.map((x,i)=>({x,i})).filter(({x})=>q.every(k=>(x.material+' '+x.brand+' '+x.unit).toLowerCase().includes(k))).slice(0,30):[];
@@ -88,7 +95,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  }
  const lineFields=()=>'<label>Search Material + Brand<input id="as-search" type="search" autocomplete="off"></label><label>Material and brand<select id="as-pair"></select></label>'+(moreCatalog?btn('Load more materials','catalog-more'):'')+'<label>Quantity<input id="as-qty" type="number" min="0" step="0.0001"></label><label>Price method<select id="as-method"><option value="unit">Price per Unit</option><option value="total">Total Amount</option></select></label><label>Amount (OMR)<input id="as-price" type="number" min="0" step="0.001"></label><p id="as-calculated"></p>';
  function getLine(){
-  const i=val('as-pair'),x=tab==='purchase'?purchasePair:i===''?null:catalog[Number(i)];if(!x)throw Error('Select exact material and brand.');
+  const i=val('as-pair'),x=tab==='purchase'?purchasePair:tab==='opening'?openingPair:i===''?null:catalog.find(x=>x.materialId+'|'+x.brandId===i);if(!x)throw Error('Select exact material and brand.');
   const method=val('as-method');
   return {...window.ZukaitStockCore.purchaseLine({materialId:x.materialId,brandId:x.brandId,unit:x.unit,quantity:val('as-qty'),priceMethod:method,price:val(tab==='purchase'?(method==='unit'?'as-unit-price':'as-total-price'):'as-price')}),material:x.material,brand:x.brand};
  }
@@ -110,9 +117,9 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  }
  const header=(i={})=>'<label>Invoice number<input id="as-number" maxlength="100" value="'+esc(i.invoice_number||'')+'"></label><label>Supplier<input id="as-supplier" maxlength="160" value="'+esc(i.supplier||'')+'"></label><label>Invoice date<input id="as-date" type="date" max="'+today()+'" value="'+esc(i.invoice_date||today())+'"></label>';
  function renderEntry(){
-  if(tab==='opening'){show('<h3>Opening Stock (one time only)</h3><p>Physical count only. No supplier or invoice number.</p>'+lineFields()+'<label><input id="as-count" type="checkbox" style="width:auto"> Physical count confirmed</label><label>Count reference<input id="as-reason" maxlength="180"></label>'+btn('Confirm Opening Stock','save-opening'));}
+  if(tab==='opening'){openingPair=null;const v=window.zukaitSharedStockWrite({page:'opening',pairs:catalog,hasMore:moreCatalog});show(v.styles+'<div class="zs">'+v.html+'</div>');}
   else{purchasePair=null;purchaseMethod='unit';show(purchaseMarkup(window.ZukaitStockCore.purchaseEntryMarkup({invoiceNumber:'',supplier:'',invoiceDate:today()},today())));renderLines();}
-  filterCatalog();
+  if(tab!=='opening')filterCatalog();
  }
  let invoiceFilters={query:'',from:'',to:''},balanceRows=[],balanceNames=new Map();
  async function readPage(which,page=0){
@@ -248,10 +255,10 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(['balance','invoices','history','reports'].includes(op))return readPage(op,op==='history'?(index||0):Number(index||0));
   if(op==='adjust'){
    tab='adjust';const g=++generation,who=owner;show('<h2>Stock Adjustment</h2><p>Loading department catalog…</p>');
-   try{if(!await loadCatalog()||!valid(g,who))return;show('<h2>'+departmentTitle()+' · Stock Adjustment</h2><label>Search Material + Brand<input id="as-search" type="search"></label><label>Material and brand<select id="as-pair"></select></label>'+(moreCatalog?btn('Load more materials','catalog-more'):'')+'<label>Counted quantity<input id="as-counted" type="number" min="0" step="0.0001"></label><label>Minimum quantity<input id="as-minimum" type="number" min="0" step="0.0001"></label><label>Reason<input id="as-reason" maxlength="160"></label>'+btn('Save physical count','save-adjust')+btn('Save minimum','save-minimum'));filterCatalog();}catch(e){if(valid(g,who))status(e.message);}return;
+   try{if(!await loadCatalog()||!valid(g,who))return;const v=window.zukaitSharedStockWrite({page:'adjust',pairs:catalog,hasMore:moreCatalog});show(v.styles+'<div class="zs">'+v.html+'</div>');}catch(e){if(valid(g,who))status(e.message);}return;
   }
   if(op==='save-adjust'||op==='save-minimum'){
-   const idx=val('as-pair'),x=idx===''?null:catalog[Number(idx)],raw=val(op==='save-adjust'?'as-counted':'as-minimum'),reason=val('as-reason');
+   const idx=val('as-pair'),x=idx===''?null:catalog.find(x=>x.materialId+'|'+x.brandId===idx),raw=val(op==='save-adjust'?'as-counted':'as-minimum'),reason=val('as-reason');
    if(!x||raw===''||!Number.isFinite(Number(raw))||Number(raw)<0||reason.length<5)throw Error('Select material and brand, enter a valid quantity and reason.');
    return send({operation:'WRITE',command:op==='save-adjust'?'ADJUST':'MINIMUM',data:{materialId:x.materialId,brandId:x.brandId,[op==='save-adjust'?'countedQuantity':'minimum']:Number(raw),reason}});
   }
@@ -266,11 +273,22 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    catch(e){if(valid(g,who)){show('<h2>'+title+'</h2>'+history+'<p>Unable to load the material catalog.</p>'+btn('Retry loading',op));status(e.message);}return;}
    await refreshReadiness();
    if(!valid(g,who))return;
+   if(op==='opening'&&field('as-opening-save')&&!ready)field('as-opening-save').disabled=true;
    if(op==='purchase'&&field('as-finish')){field('as-finish').disabled=!invoiceReady;field('as-save-status').textContent=invoiceReady?'Save posts invoice lines and stock movements together. Historical costing prices are not changed.':readinessError||'Purchase invoice posting is not enabled.';}
    if(op==='opening'&&!ready||op==='purchase'&&!invoiceReady)status(readinessError||'Entry cannot be saved until the server enables it. Existing records can still be viewed.');
    return;
   }
-  if(op==='catalog-more'){const before=field(tab==='purchase'?'as-results':'as-pair');if(await loadCatalog(catalogPage+1)&&before===field(tab==='purchase'?'as-results':'as-pair')){filterCatalog();if(!moreCatalog)dialog.querySelector('[data-as="catalog-more"]')?.remove();}return;}
+  if(op==='catalog-more'){
+   const id=tab==='purchase'?'as-results':tab==='opening'?'as-opening-results':'as-pair',before=field(id);
+   if(await loadCatalog(catalogPage+1)&&before===field(id)){
+    if(tab==='adjust'){const selected=before.value;before.innerHTML='<option value="">Select exact material and brand</option>'+catalog.map(x=>'<option value="'+esc(x.materialId+'|'+x.brandId)+'">'+esc(x.material+' — '+x.brand+' · '+x.unit)+'</option>').join('');before.value=selected;}
+    else filterCatalog();
+    if(!moreCatalog)dialog.querySelector('[data-as="catalog-more"]')?.remove();
+   }return;
+  }
+  if(op==='opening-pair'&&tab==='opening'){
+   const x=catalog[Number(index)];if(!x)return;openingPair=x;field('as-search').value=x.material+' — '+x.brand;field('as-opening-results').hidden=true;field('as-search').setAttribute('aria-expanded','false');field('as-opening-hint').textContent='Selected '+x.material+' — '+x.brand;field('as-qty').step=x.unit==='Piece'?'1':'0.0001';calculate();return;
+  }
   if(op==='select-pair'&&tab==='purchase'){
    const x=catalog[Number(index)];if(!x)return;purchasePair=x;purchaseMethod='unit';
    field('as-results').innerHTML='';field('as-search').value=x.material+' · '+x.brand;field('as-selected').innerHTML='<b>'+esc(x.material)+' · '+esc(x.brand)+'</b><div class="cp-info">Unit: '+esc(x.unit)+'</div>';

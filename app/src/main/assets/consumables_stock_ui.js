@@ -261,6 +261,64 @@ window.zukaitSharedStockRead=({page,rows=[],report=null,hasMore=false,moreAction
  if(previousAction)html+='<button class="zs-btn secondary" data-as="'+esc(previousAction)+'">Previous page</button>';
  return {html,styles:css+previewHomeCss};
 };
+function stockOpeningMarkup({choices,selected=null,query='',hasMore=false,busy=false,legacy=false,privileged=true,nameOf=label}){
+    const noAssignedItems=Boolean(!choices.length);
+    const pairChoices=choices.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(nameOf(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(nameOf(x))+
+      '<small>'+esc(x.unit||'')+(x.needsMasterLink?' · New stock item':'')+'</small></button>').join(''),
+      pairName=selected?nameOf(selected):String(query||'');
+    return '<h3>'+(legacy?'Add / Open Stock':'Opening Stock (one time only)')+'</h3>'+
+     (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs available.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
+       (privileged?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
+     '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
+     (legacy?(privileged?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':''):'<input type="hidden" id="zs-entrytype" value="OPENING">')+
+     '<label for="zs-material-brand-search">Search Material + Brand</label>'+
+     '<div class="zs-pair-picker"><input id="zs-material-brand-search" type="search" inputmode="search" autocomplete="off" autocapitalize="none" aria-controls="zs-pair-results" aria-expanded="false" placeholder="'+(noAssignedItems?'Link a material + brand first':'Type material or brand to search')+'" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled':'')+' oninput="zukStockResolvePair()" onfocus="zukStockShowPairChoices()">'+
+     '<div id="zs-pair-results" class="zs-pair-results" role="group" aria-label="Matching stock materials and saved Master pairs" hidden>'+pairChoices+
+     '<p id="zs-pair-empty" class="zs-muted" hidden>No matching items on this loaded page. '+(hasMore?'Load more linked materials below to continue searching.':'Check the material and brand name.')+'</p></div>'+
+     '<p id="zs-pair-hint" class="zs-muted" role="status">'+(selected?'Selected '+esc(nameOf(selected)):'Tap a search result to choose the exact material and brand.')+'</p>'+
+     (hasMore?'<button type="button" id="zs-pair-more" class="zs-btn secondary zs-pair-more" onclick="zukStockPairMore()">Load next 100 linked materials</button>':'')+'</div>'+
+     '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
+     '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
+     '<label>Price method</label><select id="zs-method" onchange="zukStockCalculatePurchase()"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
+     '<label id="zs-price-label">'+(legacy?'Purchase amount (OMR)':'Counted amount (OMR)')+'</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost" oninput="zukStockCalculatePurchase()">'+
+     '<div class="zs-card zs-calculation-card"><b>Calculated amount</b><div id="zs-price-calculated" role="status">Enter quantity and purchase amount.</div></div>'+
+     '<div id="zs-opening-fields" style="display:'+(legacy?'none':'block')+'" class="zs-card">'+
+     '<p class="zs-warning">Opening Stock is recorded once for this material and brand. Use the physical count, never an estimated stock number.</p>'+
+     '<label><input id="zs-count-confirmed" type="checkbox" style="width:auto" /> I have physically counted this material and brand</label>'+
+     '<label>Count reference / reason</label><textarea id="zs-opening-note" rows="2" maxlength="180" placeholder="e.g. Verified opening count, 21 Nov"></textarea></div>'+
+     '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
+     '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(busy||noAssignedItems?' disabled':'')+ '>'+(legacy?'Save Purchased Stock':'Confirm Opening Stock')+'</button>';
+}
+function stockAdjustmentMarkup({rows,busy=false,nameOf=label}){return '<h3>Stock Adjustment</h3>'+
+     '<label>Stock item</label><select id="zs-item">'+rows.map(r=>{
+       const id=String(r.material_id)+'|'+String(r.brand_id);
+       return '<option value="'+esc(id)+'">'+esc(nameOf(r))+ ' · Current '+(counted(r)?fmt(r.physical):'—')+' '+esc(r.unit)+'</option>';
+     }).join('')+'</select>'+
+     '<label>Actual counted quantity (same unit)</label><input id="zs-count" type="number" min="0" step="any" placeholder="Enter counted quantity">'+
+     '<label>Reason (required)</label><textarea id="zs-reason" rows="2" placeholder="Physical stock count difference"></textarea>'+
+     '<p class="zs-muted">The database rejects corrections below already-reserved stock and records an audit entry.</p>'+
+     '<button class="zs-btn" onclick="zukStockSaveAdjustment()"'+(busy?' disabled':'')+'>Save Adjustment</button>';}
+// Shared write forms expose presentation only; caller must enforce authenticated permissions.
+window.zukaitSharedStockWrite=({page,pairs=[],hasMore=false})=>{
+ const rows=pairs.map(x=>({material_id:x.materialId,brand_id:x.brandId,unit:x.unit,name:x.material+' — '+x.brand,physical:x.physical,initialised:x.initialised}));
+ const nameOf=x=>x.name;
+ let html=page==='opening'?stockOpeningMarkup({choices:rows,hasMore,privileged:false,nameOf}):page==='adjust'?stockAdjustmentMarkup({rows,nameOf}):null;
+ if(html===null)throw Error('Unknown Stock form');
+ if(page==='adjust'){
+  // Retain the scoped minimum-stock operation already supported by Accountant.
+  html=html.replace('<select id="zs-item">','<select id="zs-item"><option value="">Select exact material and brand</option>')+
+   '<label>Minimum quantity (same unit)</label><input id="as-minimum" type="number" min="0" step="any"><button class="zs-btn secondary" data-as="save-minimum">Save minimum</button>'+
+   (hasMore?'<button class="zs-btn secondary" data-as="catalog-more">Load more materials</button>':'');
+ }
+ const ids={'zs-material-brand-search':'as-search','zs-pair-results':'as-opening-results','zs-pair-empty':'as-opening-empty','zs-pair-hint':'as-opening-hint','zs-qty':'as-qty','zs-method':'as-method','zs-price':'as-price','zs-price-calculated':'as-calculated','zs-count-confirmed':'as-count','zs-opening-note':'as-reason','zs-item':'as-pair','zs-count':'as-counted','zs-reason':'as-reason','zs-save-entry':'as-opening-save'};
+ html=html.replace(/(id|for|aria-controls)="([^"]+)"/g,(_,attr,id)=>attr+'="'+(ids[id]||id)+'"')
+ .replace(/onclick="([^"]+)"/g,(_,fn)=>{
+  const pair=fn.match(/^zukStockChoosePair\((\d+)\)$/);if(pair)return 'data-as="opening-pair:'+pair[1]+'"';
+  const map={'zukStockPairMore()':'catalog-more','zukStockSavePurchase()':'save-opening','zukStockSaveAdjustment()':'save-adjust'};
+  if(!map[fn])throw Error('Unmapped Stock write form action');return 'data-as="'+map[fn]+'"';
+ }).replace(/on(?:input|change|focus)="[^"]+"/g,'');
+ return {html,styles:css+previewHomeCss};
+};
 function render(){
  if(!allowed())return;
  if(view.loading){draw('<div class="zs-card">Loading the selected stock screen…</div>');return}
@@ -341,48 +399,13 @@ function render(){
    return;
  }
  if(view.page==='add'){
-    const choices=addStockChoices(),selected=choices.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
-    const noAssignedItems=Boolean(!choices.length);
-    const pairChoices=choices.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(label(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(label(x))+
-      '<small>'+esc(x.unit||'')+(x.needsMasterLink?' · New stock item':'')+'</small></button>').join(''),
-      pairName=selected?label(selected):String(view.pairQuery||'');
-    draw('<h3>'+(legacyEntryQA()?'Add / Open Stock':'Opening Stock (one time only)')+'</h3>'+
-     (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs available.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
-       (manager()?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
-     '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
-     (legacyEntryQA()?(manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':''):'<input type="hidden" id="zs-entrytype" value="OPENING">')+
-     '<label for="zs-material-brand-search">Search Material + Brand</label>'+
-     '<div class="zs-pair-picker"><input id="zs-material-brand-search" type="search" inputmode="search" autocomplete="off" autocapitalize="none" aria-controls="zs-pair-results" aria-expanded="false" placeholder="'+(noAssignedItems?'Link a material + brand first':'Type material or brand to search')+'" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled':'')+' oninput="zukStockResolvePair()" onfocus="zukStockShowPairChoices()">'+
-     '<div id="zs-pair-results" class="zs-pair-results" role="group" aria-label="Matching stock materials and saved Master pairs" hidden>'+pairChoices+
-     '<p id="zs-pair-empty" class="zs-muted" hidden>No matching items on this loaded page. '+(view.itemsHasMore?'Load more linked materials below to continue searching.':'Check the material and brand name.')+'</p></div>'+
-     '<p id="zs-pair-hint" class="zs-muted" role="status">'+(selected?'Selected '+esc(label(selected)):'Tap a search result to choose the exact material and brand.')+'</p>'+
-     (view.itemsHasMore?'<button type="button" id="zs-pair-more" class="zs-btn secondary zs-pair-more" onclick="zukStockPairMore()">Load next 100 linked materials</button>':'')+'</div>'+
-     '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
-     '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
-     '<label>Price method</label><select id="zs-method" onchange="zukStockCalculatePurchase()"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
-     '<label id="zs-price-label">'+(legacyEntryQA()?'Purchase amount (OMR)':'Counted amount (OMR)')+'</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost" oninput="zukStockCalculatePurchase()">'+
-     '<div class="zs-card zs-calculation-card"><b>Calculated amount</b><div id="zs-price-calculated" role="status">Enter quantity and purchase amount.</div></div>'+
-     '<div id="zs-opening-fields" style="display:'+(legacyEntryQA()?'none':'block')+'" class="zs-card">'+
-     '<p class="zs-warning">Opening Stock is recorded once for this material and brand. Use the physical count, never an estimated stock number.</p>'+
-     '<label><input id="zs-count-confirmed" type="checkbox" style="width:auto" /> I have physically counted this material and brand</label>'+
-     '<label>Count reference / reason</label><textarea id="zs-opening-note" rows="2" maxlength="180" placeholder="e.g. Verified opening count, 21 Nov"></textarea></div>'+
-     '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
-     '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy||noAssignedItems?' disabled':'')+ '>'+(legacyEntryQA()?'Save Purchased Stock':'Confirm Opening Stock')+'</button>');
-    return;
-  }
+  const choices=addStockChoices(),selected=choices.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
+  draw(stockOpeningMarkup({choices,selected,query:view.pairQuery,hasMore:view.itemsHasMore,busy:view.busy,legacy:legacyEntryQA(),privileged:manager()}));return;
+ }
   if(view.page==='history'){draw(stockHistoryMarkup(view.history,view.historyHasMore));return;}
  if(view.page==='adjust'){
-   if(!manager()){draw('<div class="zs-warning">Only Manager can correct physical stock. Supervisors can add purchases and see history.</div>');return}
-   draw('<h3>Manager Stock Adjustment</h3>'+
-     '<label>Stock item</label><select id="zs-item">'+view.items.map(r=>{
-       const id=String(r.material_id)+'|'+String(r.brand_id);
-       return '<option value="'+esc(id)+'">'+esc(label(r))+' · Current '+fmt(r.physical)+' '+esc(r.unit)+'</option>';
-     }).join('')+'</select>'+
-     '<label>Actual counted quantity (same unit)</label><input id="zs-count" type="number" min="0" step="any" placeholder="Enter counted quantity">'+
-     '<label>Reason (required)</label><textarea id="zs-reason" rows="2" placeholder="Physical stock count difference"></textarea>'+
-     '<p class="zs-muted">The database rejects corrections below already-reserved stock and records an audit entry.</p>'+
-     '<button class="zs-btn" onclick="zukStockSaveAdjustment()"'+(view.busy?' disabled':'')+'>Save Adjustment</button>');
-   return;
+  if(!manager()){draw('<p class="zs-warning">Only Manager can correct physical stock.</p>');return;}
+  draw(stockAdjustmentMarkup({rows:view.items,busy:view.busy}));return;
  }
  if(view.page==='reports'){draw(stockReportMarkup(view.report));}
 

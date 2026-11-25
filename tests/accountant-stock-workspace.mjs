@@ -46,7 +46,7 @@ await click('department:Mechanical');await click('balance');assert.equal(calls.a
 await click('opening');
 assert.equal(d.querySelector('#as-number'),null);
 assert.equal(d.querySelector('#as-supplier'),null);
-d.querySelector('#as-pair').value='0';d.querySelector('#as-qty').value='2';d.querySelector('#as-price').value='3';d.querySelector('#as-count').checked=true;d.querySelector('#as-reason').value='Physical count verified';
+const os=d.querySelector('#as-search');os.value='Primer';os.dispatchEvent(new w.Event('input',{bubbles:true}));await click('opening-pair:0');d.querySelector('#as-qty').value='2';d.querySelector('#as-price').value='3';d.querySelector('#as-count').checked=true;d.querySelector('#as-reason').value='Physical count verified';
 await click('save-opening');assert.match(d.body.textContent,/Unconfirmed/);assert.equal(panel.blocked(),true);
 const before=calls.at(-1);assert.equal(before.command,'OPENING');assert.equal(before.data.quantity,2);
 await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
@@ -60,7 +60,7 @@ await click('add-line');assert.match(d.querySelector('#as-total').textContent,/6
 await click('invoices');d.querySelector('#as-history-query').value='QA1';await click('invoice-search');assert.equal(calls.at(-1).data.query,'QA1');await click('audit:0');assert.match(d.body.textContent,/A1/);
 await click('audit:0:1');assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).data.invoiceId,'inv');
 await click('audit:0:0');assert.equal(calls.at(-1).page,0);
-await click('back');await click('department:Painting');await click('adjust');d.querySelector('#as-pair').value='0';d.querySelector('#as-counted').value='3';d.querySelector('#as-reason').value='QA recount';await click('save-adjust');assert.equal(calls.at(-1).command,'ADJUST');assert.equal(calls.at(-1).data.countedQuantity,3);
+await click('back');await click('department:Painting');await click('adjust');d.querySelector('#as-pair').value='m|b';d.querySelector('#as-counted').value='3';d.querySelector('#as-reason').value='QA recount';await click('save-adjust');assert.equal(calls.at(-1).command,'ADJUST');assert.equal(calls.at(-1).data.countedQuantity,3);
 await click('purchase');await click('invoices');await click('cancel:0');d.querySelector('#as-reason').value='Wrong QA invoice';await click('save-edit');assert.equal(calls.at(-1).operation,'INVOICE_CANCEL');
 await click('purchase');await click('invoices');await click('header:0');
 d.querySelector('#as-supplier').value='Updated supplier';d.querySelector('#as-reason').value='Invoice correction';await click('save-edit');
