@@ -1,14 +1,14 @@
 {
-  "versionName": "V422",
-  "versionCode": 385,
-  "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
+  "versionName": "V423",
+  "versionCode": 386,
+  "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "evidence": "V422 exact-source acceptance not yet verified.",
+      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+      "evidence": "Owner explicitly deferred this V423 manual check; not performed.",
       "verifiedBy": null,
       "verifiedAt": null,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
       "ownerWaiver": {
         "checks": [
           "client_https_restart",
@@ -20,21 +20,21 @@
           "production_backend_smoke"
         ],
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V422",
-        "versionCode": 385,
-        "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-        "signedAcceptanceRun": 45593239658,
+        "versionName": "V423",
+        "versionCode": 386,
+        "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+        "signedAcceptanceRun": 45618137923,
         "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
+        "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
         "recordedDate": "2026-11-25"
       }
     },
     "physical_android": {
       "passed": false,
-      "evidence": "V422 exact-source acceptance not yet verified.",
+      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+      "evidence": "Owner explicitly deferred this V423 manual check; not performed.",
       "verifiedBy": null,
       "verifiedAt": null,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
       "ownerWaiver": {
         "checks": [
           "client_https_restart",
@@ -46,21 +46,21 @@
           "production_backend_smoke"
         ],
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V422",
-        "versionCode": 385,
-        "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-        "signedAcceptanceRun": 45593239658,
+        "versionName": "V423",
+        "versionCode": 386,
+        "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+        "signedAcceptanceRun": 45618137923,
         "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
+        "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
         "recordedDate": "2026-11-25"
       }
     },
     "physical_safari": {
       "passed": false,
-      "evidence": "V422 exact-source acceptance not yet verified.",
+      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+      "evidence": "Owner explicitly deferred this V423 manual check; not performed.",
       "verifiedBy": null,
       "verifiedAt": null,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
       "ownerWaiver": {
         "checks": [
           "client_https_restart",
@@ -72,21 +72,21 @@
           "production_backend_smoke"
         ],
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V422",
-        "versionCode": 385,
-        "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-        "signedAcceptanceRun": 45593239658,
+        "versionName": "V423",
+        "versionCode": 386,
+        "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+        "signedAcceptanceRun": 45618137923,
         "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
+        "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
         "recordedDate": "2026-11-25"
       }
     },
     "full_data_preservation": {
       "passed": false,
-      "evidence": "V422 exact-source acceptance not yet verified.",
+      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+      "evidence": "Owner explicitly deferred this V423 manual check; not performed.",
       "verifiedBy": null,
       "verifiedAt": null,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
       "ownerWaiver": {
         "checks": [
           "client_https_restart",
@@ -98,21 +98,21 @@
           "production_backend_smoke"
         ],
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V422",
-        "versionCode": 385,
-        "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-        "signedAcceptanceRun": 45593239658,
+        "versionName": "V423",
+        "versionCode": 386,
+        "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+        "signedAcceptanceRun": 45618137923,
         "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
+        "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
         "recordedDate": "2026-11-25"
       }
     },
     "fresh_backup_restored": {
       "passed": false,
-      "evidence": "V422 exact-source acceptance not yet verified.",
+      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+      "evidence": "Owner explicitly deferred this V423 manual check; not performed.",
       "verifiedBy": null,
       "verifiedAt": null,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
       "ownerWaiver": {
         "checks": [
           "client_https_restart",
@@ -124,21 +124,21 @@
           "production_backend_smoke"
         ],
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V422",
-        "versionCode": 385,
-        "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-        "signedAcceptanceRun": 45593239658,
+        "versionName": "V423",
+        "versionCode": 386,
+        "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+        "signedAcceptanceRun": 45618137923,
         "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
+        "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
         "recordedDate": "2026-11-25"
       }
     },
     "pc_site_reconciled": {
       "passed": false,
-      "evidence": "V422 exact-source acceptance not yet verified.",
+      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+      "evidence": "Owner explicitly deferred this V423 manual check; not performed.",
       "verifiedBy": null,
       "verifiedAt": null,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
       "ownerWaiver": {
         "checks": [
           "client_https_restart",
@@ -150,21 +150,21 @@
           "production_backend_smoke"
         ],
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V422",
-        "versionCode": 385,
-        "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-        "signedAcceptanceRun": 45593239658,
+        "versionName": "V423",
+        "versionCode": 386,
+        "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+        "signedAcceptanceRun": 45618137923,
         "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
+        "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
         "recordedDate": "2026-11-25"
       }
     },
     "production_backend_smoke": {
       "passed": false,
-      "evidence": "Partial verification on 2026-11-25 at 10:21 UTC. Production workshop-api V154 was active with no workshop-api source differences between its recorded deployment commit and the V422 candidate. Read-only calls as service_role returned 41 Painting items, 2 counted, 39 uncounted and 20.000 OMR valuation. Mechanical returned zero items. The first history pages contained 2 Painting movements and 0 Mechanical movements. Live staff sign-in was waived. Authenticated end-to-end production smoke was not run.",
+      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+      "evidence": "Partial verification: backend V155 deployed and source readback matched; stock installation readiness true; direct anon and authenticated legacy RPC denied; owner reported Purchase Entry enabled. Complete authenticated production smoke not performed.",
       "verifiedBy": null,
       "verifiedAt": null,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
       "ownerWaiver": {
         "checks": [
           "client_https_restart",
@@ -176,12 +176,12 @@
           "production_backend_smoke"
         ],
         "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V422",
-        "versionCode": 385,
-        "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-        "signedAcceptanceRun": 45593239658,
+        "versionName": "V423",
+        "versionCode": 386,
+        "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+        "signedAcceptanceRun": 45618137923,
         "authorizedBy": "Owner in this conversation",
-        "instruction": "Bypass and publish",
+        "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
         "recordedDate": "2026-11-25"
       }
     }

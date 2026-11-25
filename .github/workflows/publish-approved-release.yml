@@ -94,6 +94,8 @@ jobs:
 
       - name: Verify approved source commit
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           APPROVED=$(jq -r '.approvedForStaff // false' release-request.json)
           SOURCE_COMMIT=$(jq -r '.sourceCommit // empty' release-request.json)
@@ -162,6 +164,16 @@ jobs:
              [ "$(jq -r '.v422AcceptanceDeferral.status' release-request.json)" = "DEFERRED_BY_OWNER_NOT_PERFORMED" ]; then
             test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "c2b8289ece01a95baf8ca55e251ddce2a9a3ee73"
             test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "bdaae55ed4d765fbff14ee3342085caac590aba9"
+            EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude)tests/reception-v305-acceptance.mjs' ':(exclude).github/workflows/publish-approved-release.yml')
+          fi
+          # V423 owner-directed acceptance exception: only pinned publication control files may differ.
+          if [ "$(jq -r '.versionName' release-request.json)" = "V423" ] &&
+             [ "$SOURCE_COMMIT" = "84038ef89c235c0e056dc47bbadbed24992e2547" ] &&
+             [ "$(jq -r '.v423AcceptanceDeferral.status' release-request.json)" = "DEFERRED_BY_OWNER_NOT_PERFORMED" ]; then
+            test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "4799140c0f306a82e2bd1486364965d6a3dd730b"
+            test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "fba7fe5b8c138b3cbfe6795a53df90e05aabf6ec"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/45618137889" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .conclusion=="success" and .path==".github/workflows/reception-check.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/45618137977" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .conclusion=="success" and .path==".github/workflows/accountant-qa.yml"'
             EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude)tests/reception-v305-acceptance.mjs' ':(exclude).github/workflows/publish-approved-release.yml')
           fi
           if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . "${EXCLUDES[@]}"; then
@@ -280,7 +292,7 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true' || env.SOURCE_VERSION_NAME == 'V421' || env.SOURCE_VERSION_NAME == 'V422') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve the exact physically accepted signed APK' }}
+      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true' || env.SOURCE_VERSION_NAME == 'V421' || env.SOURCE_VERSION_NAME == 'V422' || env.SOURCE_VERSION_NAME == 'V423') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve the exact physically accepted signed APK' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

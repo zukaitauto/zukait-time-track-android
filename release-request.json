@@ -2,7 +2,7 @@
   "versionName": "V423",
   "versionCode": 386,
   "releaseScope": "standard",
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
@@ -10,19 +10,39 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "productionAuthenticatedAcceptance": "NOT_RUN",
-  "reason": "Shared Manager and Accountant Stock candidate. Backend V155 deployed and source verified; production invoice flag and authenticated acceptance remain pending.",
+  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "productionAuthenticatedAcceptance": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "reason": "Owner explicitly authorized coordinated publication with manual acceptance deferred; all seven exact-source CI workflows passed. Owner reports Purchase Entry warning resolved after enabling production invoice secret. Full live authenticated acceptance not performed.",
   "previousPublishedRelease": {
     "versionName": "V422",
     "versionCode": 385,
     "releaseTag": "release-V422-architecture-v2",
     "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d"
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "approvedAt": null,
-  "publishNonce": null
+  "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+  "signedAcceptanceRun": 45618137923,
+  "verificationRun": 45618137889,
+  "approvedAt": "2026-11-25T13:07:22Z",
+  "publishNonce": "v423-20261125-130722-84038ef8",
+  "accountantVerificationRun": 45618137977,
+  "v423AcceptanceDeferral": {
+    "checks": [
+      "client_https_restart",
+      "physical_android",
+      "physical_safari",
+      "full_data_preservation",
+      "fresh_backup_restored",
+      "pc_site_reconciled",
+      "production_backend_smoke"
+    ],
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "versionName": "V423",
+    "versionCode": 386,
+    "sourceCommit": "84038ef89c235c0e056dc47bbadbed24992e2547",
+    "signedAcceptanceRun": 45618137923,
+    "authorizedBy": "Owner in this conversation",
+    "instruction": "Defer all remaining manual acceptance checks and backup restore verification, and publish V423 Android and web.",
+    "recordedDate": "2026-11-25"
+  }
 }

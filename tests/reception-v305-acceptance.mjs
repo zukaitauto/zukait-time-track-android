@@ -25,7 +25,7 @@ else if (request.remainingAcceptanceDeferral) {
 } else if (required.some(key=>actual.checks[key]?.passed!==true)) {
  assert.throws(()=>validate(request,actual),'Incomplete evidence must not validate under another release scope');
 } else assert.equal(validate(request,actual),true);
-const good={...request,v422AcceptanceDeferral:undefined,v421AcceptanceDeferral:undefined,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
+const good={...request,v423AcceptanceDeferral:undefined,v422AcceptanceDeferral:undefined,v421AcceptanceDeferral:undefined,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
 const complete={...actual,versionName:good.versionName,versionCode:good.versionCode,sourceCommit:good.sourceCommit,checks:Object.fromEntries(required.map(k=>[k,{passed:true,evidence:'docs/QA-'+k+'.md',verifiedBy:'QA Reviewer',verifiedAt:'2026-10-10T05:00:00Z'}]))};
 assert.equal(validate(good,complete),true,'Synthetic complete attestation must validate');
 for(const key of required) {
@@ -123,4 +123,21 @@ if(request.versionName==='V422'&&request.v422AcceptanceDeferral){
   assert.throws(()=>validate(altered,{...actual,[key]:value}));
  }
  console.log('PASS: V422 exception is exact-source, owner-directed and cannot fabricate acceptance.');
+}
+
+if(request.versionName==='V423'&&request.v423AcceptanceDeferral){
+ const approved={...request,approvedForStaff:true,approvedAt:'2026-11-25T08:00:00Z',publishNonce:'fixture-v423-owner-defer'};
+ assert.equal(validate(approved,actual),true);
+ assert.throws(()=>validate({...approved,v423AcceptanceDeferral:undefined},actual),/client_https_restart/);
+ for(const key of required){
+  const fake=structuredClone(actual);fake.checks[key].passed=true;
+  assert.throws(()=>validate(approved,fake),/must remain not passed/);
+  const missing=structuredClone(actual);delete missing.checks[key].ownerWaiver;
+  assert.throws(()=>validate(approved,missing),/records must match/);
+ }
+ for(const [key,value] of Object.entries({versionName:'V424',versionCode:387,sourceCommit:'b'.repeat(40),signedAcceptanceRun:1})){
+  const altered={...approved,[key]:value};
+  assert.throws(()=>validate(altered,{...actual,[key]:value}));
+ }
+ console.log('PASS: V423 exception is exact-source, owner-directed and cannot fabricate acceptance.');
 }
