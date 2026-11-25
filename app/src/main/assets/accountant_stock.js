@@ -7,7 +7,9 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  let dialog=null,owner='',generation=0,busy=false,ready=false,invoiceReady=false,readinessError='',checking=null,tab='home',department='',catalog=[],catalogPage=0,moreCatalog=false,lines=[],invoices=[],editing=null,masterMaterials=[],masterPrices=[],masterSelected=null,masterReview=null,priceIntent=null;
  const identity=()=>{const u=getUser();return ['Manager','Accountant'].includes(u?.role)?String(u.id)+'|'+u.role:''};
  const key=who=>'zukait-account-stock-intent-v1:'+encodeURIComponent(project)+':'+encodeURIComponent(who);
- const pending=()=>{const raw=localStorage.getItem(key(identity()));return raw?JSON.parse(raw):null};
+ const pending=()=>{const who=identity();if(!who)return null;const raw=localStorage.getItem(key(who));if(!raw)return null;const p=JSON.parse(raw);if(!p?.requestId||!p.operation||!p.data)throw Error('Saved transaction requires review');return p};
+ const unresolved=()=>{try{return Boolean(pending())}catch{return true}};
+ const sameIntent=(k,p)=>{try{return JSON.parse(localStorage.getItem(k)||'null')?.requestId===p.requestId}catch{return false}};
  const current=()=>dialog&&identity()&&identity()===owner;
  const field=id=>dialog?.querySelector('#'+id);
  const val=id=>String(field(id)?.value||'').trim();
@@ -44,12 +46,12 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   };
   dialog.onfocusin=e=>{if(tab==='opening'&&e.target.id==='as-search')filterCatalog();};
   dialog.onchange=e=>{if(e.target.id==='as-method'){if(tab==='purchase')changePurchaseMethod();else calculate();}};
-  const p=pending();if(p&&['home','opening','purchase','edit','adjust','master-create','master-price','master-correct','master-review','price-review'].includes(tab)){field('as-body').innerHTML='<div class="as-row"><b>Previous stock transaction awaiting confirmation</b><p>'+esc(p.operation)+' · '+esc(p.data?.invoiceNumber||p.data?.invoiceId||p.data?.materialId||'')+'</p>'+btn('Retry exact saved request','retry')+'</div>';status('Resolve the previous transaction before entering another.');}
+  let p;try{p=pending()}catch{field('as-body').innerHTML='<div class="as-row">Saved stock transaction storage requires review. New writes are blocked.</div>';status('Saved receipt unavailable.');return;}if(p&&['home','opening','purchase','edit','adjust','master-create','master-price','master-correct','master-review','price-review'].includes(tab)){field('as-body').innerHTML='<div class="as-row"><b>Previous stock transaction awaiting confirmation</b><p>'+esc(p.operation)+' · '+esc(p.data?.invoiceNumber||p.data?.invoiceId||p.data?.materialId||'')+'</p>'+btn('Retry exact saved request','retry')+'</div>';status('Resolve the previous transaction before entering another.');}
  }
  function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;readinessError='';checking=null;tab='home';department='';catalog=[];lines=[];editing=null;masterMaterials=[];masterPrices=[];masterSelected=null;masterReview=null;priceIntent=null;purchasePair=null;openingPair=null;invoiceFilters={query:'',from:'',to:''};}
  async function open(){
   if(!identity())return;
-  if(dialog){dialog.focus();return;}
+  if(dialog&&owner!==identity())reset();if(dialog){dialog.focus();return;}
   owner=identity();dialog=document.createElement('dialog');dialog.id='as-dialog';dialog.setAttribute('aria-label','Accounts Stock');document.body.appendChild(dialog);
   dialog.addEventListener('cancel',e=>{e.preventDefault();if(!busy)reset()});
   dialog.showModal();show(homeMenu());status('Checking Stock permissions…');
@@ -165,12 +167,12 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  const rejection=new Set(['invoice_price_apply_not_enabled','invoice_price_reconciliation_not_enabled','invalid_price_application','invalid_price_reconciliation','stale_price_reconciliation_review','invoice_price_application_not_found','invoice_price_already_reconciled','invoice_price_already_applied_reconciliation_required','invoice_price_changed_since_application','invoice_price_actual_changed_since_application','invoice_price_reconciliation_no_fallback','price_review_blocked','no_price_changes','master_invalid_input','stock_master_not_enabled','material_duplicate','brand_duplicate','material_not_found','brand_not_found','invalid_price','price_date_duplicate','price_not_found','invoice_price_owned','master_no_change','stale_workshop_revision','stale_price_review','request_id_conflict','invalid_material_department','paint_only_material','invalid_unit','effective_date_required','stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled','invalid_invoice','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','invoice_reference_required','duplicate_invoice','duplicate_material_brand','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','invoice_revision_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','count_below_reserved','invalid_minimum','manager_only','no_invoice_change','invoice_cancelled','invalid_invoice_correction','invalid_stock_identity','invoice_not_found','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','opening_already_recorded','stock_master_key_not_found','reason_required','invalid_stock_payload']);
  async function send(command,retry=false){
   if(busy||!current()||!canWrite())throw Error('Finish other pending financial work first.');
-  const who=owner,k=key(who);let p=pending();
-  if(!retry){if(p)throw Error('Retry the saved request first.');await refreshReadiness();if(!current()||owner!==who||busy)throw Error('Account changed or another request is running.');if(command.operation!=='MASTER_SAVE'&&(command.operation==='WRITE'?!ready:!invoiceReady))throw Error(readinessError||'Stock write permission unavailable.');p={...command,requestId:crypto.randomUUID()};if(p.operation.startsWith('PRICE_'))p.data={...p.data,requestId:p.requestId};if(!confirm('Confirm this stock transaction?'))return;localStorage.setItem(k,JSON.stringify(p));}
+  const who=owner,k=key(who);let p=pending();const wasPending=Boolean(p);
+  if(!retry){if(p)throw Error('Retry the saved request first.');await refreshReadiness();if(!current()||owner!==who||busy)throw Error('Account changed or another request is running.');if(command.operation!=='MASTER_SAVE'&&(command.operation==='WRITE'?!ready:!invoiceReady))throw Error(readinessError||'Stock write permission unavailable.');p={...command,requestId:crypto.randomUUID()};if(p.operation.startsWith('PRICE_'))p.data={...p.data,requestId:p.requestId};if(!confirm('Confirm this stock transaction?'))return;localStorage.setItem(k,JSON.stringify(p));if(!sameIntent(k,p))throw Error('Cannot preserve retry receipt');}
   if(!p)throw Error('No pending request.');
   busy=true;show('');status('Submitting saved request…');
-  try{const r=await request(p);if(p.operation==='PRICE_APPLY_APPLY'?r.ok!==true: ['WRITE','MASTER_SAVE'].includes(p.operation)?!r.receipt:!r.invoice?.id)throw Error('Confirmation unavailable');localStorage.removeItem(k);if(current()&&owner===who){lines=[];editing=null;tab='home';department='';show(homeMenu());status('Saved successfully.');}}
-  catch(e){if(rejection.has(e.message)){localStorage.removeItem(k);if(current()&&owner===who){show('<p>Server rejected transaction. Reopen the entry and check the values.</p>');status(e.message==='invoice_price_reconciliation_required'?'Price reconciliation is required. Reopen the invoice and review the costing changes. No invoice change was made.':e.message);}}else if(current()&&owner===who){status('Unconfirmed: '+e.message+' · Retry the exact saved request.');}}
+  try{const r=await request(p);if(p.operation==='PRICE_APPLY_APPLY'?r.ok!==true||r.invoiceId!==p.data.invoiceId||r.requestId!==p.requestId||r.invoiceRevision!==p.data.invoiceRevision:p.operation==='PRICE_RECONCILE_APPLY'?r.ok!==true||r.invoice?.id!==p.data.correction.invoiceId||r.reconciliation?.requestId!==p.requestId||r.invoice?.revision!==p.data.correction.expectedRevision+1:['WRITE','MASTER_SAVE'].includes(p.operation)?!r.receipt:!r.invoice?.id)throw Error('Confirmation unavailable');if(sameIntent(k,p))localStorage.removeItem(k);if(current()&&owner===who){lines=[];editing=null;tab='home';department='';show(homeMenu());status('Saved successfully.');}}
+  catch(e){if(!wasPending&&rejection.has(e.message)){if(sameIntent(k,p))localStorage.removeItem(k);if(current()&&owner===who){show('<p>Server rejected transaction. Reopen the entry and check the values.</p>');status(e.message==='invoice_price_reconciliation_required'?'Price reconciliation is required. Reopen the invoice and review the costing changes. No invoice change was made.':e.message);}}else if(current()&&owner===who){status('Unconfirmed: '+e.message+' · Retry the exact saved request.');}}
   finally{busy=false;}
  }
  function masterFrame(section,body){
@@ -375,6 +377,6 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    show('<h3>Audit history · '+esc(i.invoice_number)+'</h3>'+rows+prev+next);
   }
  }
- return {open,reset,blocked:()=>busy||Boolean(identity()&&pending())||Boolean(dialog)};
+ return {open,reset,blocked:()=>busy||Boolean(identity()&&unresolved())||Boolean(dialog)};
 };
 })();
