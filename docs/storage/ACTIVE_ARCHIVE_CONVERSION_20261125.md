@@ -7,3 +7,15 @@ Read-only catalog and indexed revision metadata checked in production.
 - Staged candidate: at most four originals per transaction; verify every reconstructed record via production-compatible reader before commit. Process older side descending and newer side ascending so later batches are not stranded inside the archive range. Keep exact cutoff, metadata, existing lock, rollback and stop behavior.
 - Before production: obtain current verified recovery/backup including private archive/deltas, inspect disk I/O headroom, check exact live source/ACL and maintenance window. No full scans or VACUUM FULL during work hours. Existing conversion retains logical revisions but removes redundant full copies after reconstruction; this PR does not authorize deletion or production writes.
 - Verify current and historical reconstruction; finish bounded conversion then qualify additional write paths and scope extension. No paid resources requested.
+
+## Verified repeated state fields (25 November 2026)
+Read-only production comparison of consecutive revisions 18056, 18057 and 18058 confirmed JSON equality of `jobEdits` and `consumables` across both adjacent pairs; the overall snapshot differed. This establishes avoidable repetition, not a measured disk-reclamation estimate.
+
+Latest revision 18058 expanded JSON measurements: `jobEdits` ~8,666,691 bytes (9,412 array entries); `consumables` ~1,097,624 bytes, dominated by audit (~442,635), actuals (~394,472), and issues (~220,794). These are logical JSON component sizes, **not** per-snapshot physical storage or immediately reclaimable bytes.
+
+### Safe implementation requirements
+- Preserve exact JSON value and ordering for `jobEdits` and `consumables`, including nested audit, issue, actual, price-effective-date, and material/brand records. No trimming or deletion.
+- Reuse the existing reversible checkpoint/delta archive and production reader; do not create a parallel history system or remove fields from the current workshop state API.
+- Verify reconstruction equality of full payload and both fields on every converted revision; test unchanged, appended, modified, removed, and empty arrays, nested object changes, and transitions across batch/checkpoint boundaries.
+- Do not activate cron or execute production conversion until isolated rollback rehearsal, complete recovery backup (including private archive), and I/O headroom checks pass. The staged four-revision function is not published.
+- Validate all history consumers and historical job-cost calculations before release; conversion must preserve manager, accountant, painting and mechanical workflows.
