@@ -29,6 +29,7 @@ node tests/accountant-stock-workspace.mjs
 node tests/consumables-stock-retry-safety.mjs
 node tests/consumables-invoice-price-reconcile-client.mjs
 node tests/consumables-invoice-price-client.mjs
+node tests/consumables-purchase-role-recovery.mjs
 node tests/manager-profit-performance.mjs
 node tests/accounts-five-options.mjs
 node tests/accounts-parts-list-profit.mjs

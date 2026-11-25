@@ -44,6 +44,7 @@ jobs:
           node tests/accountant-stock-workspace.mjs
           node tests/consumables-invoice-price-reconcile-client.mjs
           node tests/consumables-invoice-price-client.mjs
+          node tests/consumables-purchase-role-recovery.mjs
       - name: Normal staff app cannot activate via URL
         run: node tests/consumables-stock-live-readiness.mjs
       - name: Confirm live Stock activation remains disabled

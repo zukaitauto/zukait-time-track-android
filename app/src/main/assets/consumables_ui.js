@@ -38,10 +38,22 @@ window.openConsumablesModule=function(){
 let consPurchaseDraft=null,consPurchaseBusy=false,consPurchasePending=null,consPurchaseHistorySeq=0;
 let consPurchaseHistoryRows=[],consPurchaseEditing=null;const consPurchaseCorrectionPending=new Map();
 let consPurchaseOwner='',consPurchaseRecoveryBlocked=false;
-const consPurchaseOwnerId=()=>String(typeof me!=='undefined'?me?.id||'':'');
+// Purchase entry can be used by two roles. Never restore a previous role's draft.
+const consPurchaseStaffId=()=>String(typeof me!=='undefined'?me?.id||'':'');
+const consPurchaseActor=()=>{const id=consPurchaseStaffId(),r=role();return id&&['Manager','Supervisor'].includes(r)?JSON.stringify([id,r]):''};
+// Correction/price/reconciliation journals have always been Manager-only.
+const consPurchaseOwnerId=()=>role()==='Manager'?consPurchaseStaffId():'';
 const consPurchaseStorageKey=id=>'zukait-purchase-pending-v1:'+id;
-function consPurchaseRestore(){
- const owner=consPurchaseOwnerId();if(!owner)return false;
+function consPurchaseOtherReceipt(owner){
+ const id=consPurchaseStaffId();if(!id||owner!==consPurchaseActor())throw Error('Staff session changed');
+ // An old ID-only receipt did not record its originating role: do not silently
+ // claim it for either role or discard it. Block new writes until reviewed.
+ if(window.localStorage.getItem(consPurchaseStorageKey(id))!==null)return true;
+ const other=JSON.stringify([id,role()==='Manager'?'Supervisor':'Manager']);
+ return window.localStorage.getItem(consPurchaseStorageKey(other))!==null;
+}
+function consPurchaseRestore(forWrite=true){
+ const owner=consPurchaseActor();if(!owner)return false;
  if(owner!==consPurchaseOwner){
   consPurchaseRecoveryBlocked=false;
   consPurchaseOwner=owner;consPurchaseDraft=null;consPurchasePending=null;consPurchaseEditing=null;consPurchaseHistoryRows=[];consPurchaseCorrectionPending.clear();consPurchaseHistorySeq++;
@@ -49,13 +61,18 @@ function consPurchaseRestore(){
    if(saved){if(saved.owner!==owner||!saved.pending?.id||!saved.pending?.fingerprint||!saved.draft)throw Error('Invalid saved invoice receipt');consPurchaseDraft=saved.draft;consPurchasePending=saved.pending;}
   }catch(_){consPurchaseRecoveryBlocked=true;}
  }
- if(consPurchaseRecoveryBlocked){alert('Saved invoice receipt requires review. New purchase invoices are blocked on this device until recovery is possible.');return false;}
+ if(forWrite){
+  if(consPurchaseRecoveryBlocked){alert('Saved invoice receipt requires review. New purchase invoices are blocked on this device until recovery is possible.');return false;}
+  try{if(consPurchaseOtherReceipt(owner)){alert('An unconfirmed invoice belongs to another role or an older app version. Restore the original role or ask Manager to reconcile the saved receipt. New purchase invoices are blocked; history is still available.');return false;}}
+  catch(_){alert('Invoice receipt storage is unavailable. New purchase invoices are blocked.');return false;}
+ }
  return true;
 }
 function consPurchasePersist(){
- if(!consPurchaseOwner||consPurchaseOwner!==consPurchaseOwnerId())throw Error('Staff session changed.');
+ if(!consPurchaseOwner||consPurchaseOwner!==consPurchaseActor())throw Error('Staff session changed.');
  if(!consPurchasePending||!consPurchaseDraft)return;
  // Fail closed if storage is unavailable; do not send a transaction whose retry ID would be lost.
+ if(consPurchaseOtherReceipt(consPurchaseOwner))throw Error('Another role has an unconfirmed invoice');
  window.localStorage.setItem(consPurchaseStorageKey(consPurchaseOwner),JSON.stringify({owner:consPurchaseOwner,pending:consPurchasePending,draft:consPurchaseDraft}));
 }
 function consPurchaseLockForm(locked){
@@ -167,6 +184,7 @@ window.consPurchaseSave=async function(){
  if(!button||button.disabled)return;
  if(!consPurchaseRestore())return;
  const owner=consPurchaseOwner;
+ if(!consPurchaseDraft||owner!==consPurchaseActor())return;
  if(!consPurchasePending)consPurchaseHeader();
  try{
   if(consPurchaseDraft.selected)throw Error('Add or remove the selected item before saving.');
@@ -190,7 +208,7 @@ window.consPurchaseSave=async function(){
    throw Error(code);
   }
   consPurchaseClearPending(owner);
-  if(owner!==consPurchaseOwnerId())return;
+  if(owner!==consPurchaseActor())return;
   consPurchaseDraft=null;consPurchaseBusy=false;
   alert(r.invoice.status==='cancelled'?'Invoice was already saved and subsequently cancelled. No stock was added again.':'Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
   window.consOpenPurchaseInvoices();
@@ -199,7 +217,7 @@ window.consPurchaseSave=async function(){
  }finally{consPurchaseBusy=false}
 };
 window.consOpenPurchaseInvoices=function(){
- if(!consPurchaseAllowed()||!consPurchaseRestore()||consPurchaseBusy)return;consPurchaseHeader();
+ if(!consPurchaseAllowed()||!consPurchaseRestore(false)||consPurchaseBusy)return;consPurchaseHeader();
  modal('Purchase Invoice List',consPurchaseStyle+window.ZukaitStockCore.purchaseHistoryMarkup(),'consOpenPurchaseEntry()');
  window.consPurchaseLoadHistory(0);
 };
@@ -215,7 +233,7 @@ window.consPurchaseLoadHistory=async function(page=0){
   if(seq!==consPurchaseHistorySeq||document.getElementById('cpHistory')!==out)return;
   if(!r?.ok||!Array.isArray(r.invoices))throw Error(r?.code||'Invoice history unavailable');
   consPurchaseHistoryRows=r.invoices;
-  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button><button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Review Brands &amp; Price</button>':'')+(consCorrectionHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryCorrection('+index+')">Retry Original Invoice Correction</button>':'')+(consReconcileHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryReconciliation('+index+')">Retry Price Reconciliation</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
+  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button>':'')+(consPriceHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Retry Original Price Application</button>':i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Review Brands &amp; Price</button>':'')+(consCorrectionHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryCorrection('+index+')">Retry Original Invoice Correction</button>':'')+(consReconcileHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryReconciliation('+index+')">Retry Price Reconciliation</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
   out.innerHTML+='<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page+1)+')">Next</button>':'')+'</div>';
  }catch(e){if(seq===consPurchaseHistorySeq&&document.getElementById('cpHistory')===out)out.textContent=String(e?.message||e);}
 };
@@ -350,13 +368,15 @@ window.consPurchaseSaveCorrection=async function(){
 };
 let consPurchasePriceSelection=null;
 const consPricePendingKey=(owner,invoiceId)=>'zukait-invoice-price-pending-v1:'+owner+':'+invoiceId;
+function consPriceHasPending(id){const owner=consPurchaseOwnerId();if(!owner)return false;try{return window.localStorage.getItem(consPricePendingKey(owner,id))!==null}catch{return true}}
 window.consPurchasePriceReview=function(index){
- if(role()!=='Manager'||!consPurchaseRestore()||consPurchaseBusy)return;
+ if(role()!=='Manager'||!consPurchaseRestore(false)||consPurchaseBusy)return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice)return;
  try{
   const owner=consPurchaseOwnerId(),key=consPricePendingKey(owner,invoice.id);
   const pending=JSON.parse(window.localStorage.getItem(key)||'null');
   if(pending&&(pending.invoiceId!==invoice.id||!pending.requestId||!Array.isArray(pending.review)))throw Error('Invalid pending price application. Contact Manager support.');
+  if(!pending&&invoice.status==='cancelled')throw Error('Cancelled invoice: no new price application is allowed.');
   const rows=pending?pending.review:C().invoicePriceReview(state,invoice,me);
   consPurchasePriceSelection={owner,invoice,rows,key,pending};
   const changes=rows.filter(p=>p.action==='create'||p.action==='correct');
@@ -384,6 +404,7 @@ window.consPurchaseApplyPrices=async function(){
  try{
   let pending=JSON.parse(window.localStorage.getItem(key)||'null');const wasPending=Boolean(pending);
   if(!pending){
+   if(selection.pending||invoice.status==='cancelled')throw Error('Original saved request is unavailable. Reopen invoice history; no new price application sent.');
    if(rows.some(p=>p.action==='blocked')||!rows.some(p=>p.action==='create'||p.action==='correct'))throw Error('No eligible price changes.');
    const reason=String(document.getElementById('cpPriceReason')?.value||'').trim();
    if(reason.length<5||reason.length>500)throw Error('Enter a reason (5–500 characters).');
@@ -416,7 +437,7 @@ window.consPurchaseApplyPrices=async function(){
  }finally{consPurchaseBusy=false;}
 };
 window.consPurchaseAudit=async function(index,page=0){
- if(role()!=='Manager'||!consPurchaseRestore()||!Number.isInteger(page)||page<0||page>100)return;
+ if(role()!=='Manager'||!consPurchaseRestore(false)||!Number.isInteger(page)||page<0||page>100)return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice?.id)return;
  const owner=consPurchaseOwnerId();
  modal('Invoice Audit History',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · '+esc(invoice.supplier)+'</b><div id="cpAudit" class="cp-panel">Loading history…</div></div>','consOpenPurchaseInvoices()');

@@ -12,8 +12,11 @@ ctx.window=ctx;vm.createContext(ctx);vm.runInContext(block,ctx);
 ctx.consPurchasePriceReview(0);assert.match(ctx.html,/APPLY REVIEWED PRICES/);
 accept=false;await ctx.consPurchaseApplyPrices();assert.equal(calls.length,0);assert.equal(storage.size,0);
 accept=true;await ctx.consPurchaseApplyPrices();assert.equal(calls.length,1);assert.equal(storage.size,1);assert.equal(elements.cpPriceApply.disabled,false);
-ctx.consPurchasePriceReview(0);assert.match(ctx.html,/RETRY PRICE APPLICATION/);fail=false;await ctx.consPurchaseApplyPrices();
+ctx.consPurchaseHistoryRows[0]={...invoice,status:'cancelled',revision:2};assert.equal(vm.runInContext("consPriceHasPending('inv')",ctx),true);ctx.consPurchasePriceReview(0);assert.match(ctx.html,/RETRY PRICE APPLICATION/);fail=false;await ctx.consPurchaseApplyPrices();
 assert.equal(calls.length,2);assert.equal(JSON.stringify(calls[0]),JSON.stringify(calls[1]));assert.equal(storage.size,0);assert.match(elements.cpPriceStatus.textContent,/Prices saved/);
 role='Supervisor';await ctx.consPurchaseApplyPrices();assert.equal(calls.length,2);
-role='Manager';ctx.consPurchasePriceReview(0);owner='m2';await ctx.consPurchaseApplyPrices();assert.equal(calls.length,2);
+role='Manager';ctx.consPurchaseHistoryRows[0]=invoice;ctx.consPurchasePriceReview(0);owner='m2';await ctx.consPurchaseApplyPrices();assert.equal(calls.length,2);
 console.log('Manager price button: consent, durable retry, confirmation, account and role guards PASS');
+
+role='Manager';owner='m1';ctx.consPurchaseHistoryRows[0]={...invoice,status:'cancelled',revision:2};ctx.consPurchasePriceReview(0);assert.match(ctx.alert,/Cancelled invoice/);assert.equal(calls.length,2);assert.equal(vm.runInContext("consPriceHasPending('inv')",ctx),false);
+assert.ok(source.includes('consPriceHasPending(i.id)?'), 'Cancelled invoice history must expose saved retry independent of status');
