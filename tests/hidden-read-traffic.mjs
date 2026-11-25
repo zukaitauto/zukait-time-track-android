@@ -21,10 +21,10 @@ const c={document:{visibilityState:'hidden'},pollGeneration:1,pollActive:false,p
 Math:Object.assign(Object.create(Math),{random:()=>0}),api:{retryAfter:()=>backoff},clearTimeout(){},setTimeout:(fn,ms)=>(tasks.push({fn,ms}),tasks.length),
 sessionToken:()=>true,navigator:{onLine:true},probeRevision:async()=>{probes++;return changed},pullLiveStatus:async()=>live++,liveRole:()=>true};
 vm.createContext(c);vm.runInContext(cloud.slice(start,end)+'beginPolling(1);',c);
-assert.equal(tasks[0].ms,120000);await tasks[0].fn();await tasks[1].fn();assert.equal(probes,1);assert.equal(live,0,'hidden periodic live reads are paused');
+assert.equal(tasks[0].ms,120000);await tasks[0].fn();await tasks[1].fn();assert.equal(probes,0,'hidden periodic revision reads are paused');assert.equal(live,0,'hidden periodic live reads are paused');
 c.document.visibilityState='visible';vm.runInContext('beginPolling(++pollGeneration);',c);const fresh=tasks.slice(-2);assert.equal(fresh[0].ms,5000);assert.equal(fresh[1].ms,15000);
 await fresh[0].fn();assert.equal(tasks.at(-1).ms,5000);
-await tasks.at(-1).fn();await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,8000,'quiet foreground adapts to slower polling');
+await tasks.at(-1).fn();await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,12000,'quiet foreground adapts to slower polling');
 changed=true;await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,5000,'changed revision restores faster polling');
 backoff=45000;await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,45000,'server retry deadline governs next poll');
 await fresh[1].fn();assert.equal(live,0,'live polling respects cooldown');assert.equal(tasks.at(-1).ms,45000);
