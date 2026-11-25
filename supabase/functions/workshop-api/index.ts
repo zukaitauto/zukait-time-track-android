@@ -1253,6 +1253,17 @@ Deno.serve(async (req: Request) => {
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
+    // Manager-only job-specific consumables projection. This route is read-only.
+    if (action === "job_consumables_read") {
+      if (user.role !== "Manager") return reply({ok:false,code:"consumables_forbidden"},403);
+      if (Object.keys(body).some(k=>!["action","jobCard"].includes(k)) ||
+          typeof body.jobCard !== "string" || !body.jobCard.trim() || body.jobCard.length > 80)
+        return reply({ok:false,code:"invalid_job_card"},400);
+      const {data,error}=await admin.rpc("zukait_job_consumables_read",{p_job_no:body.jobCard.trim()});
+      if (error || !data?.ok) return reply({ok:false,code:"consumables_unavailable"},503);
+      return reply({ok:true,revision:data.revision,issues:data.issues,actuals:data.actuals});
+    }
+
     // Read-only, opt-in history endpoint. Keep legacy load/save responses unchanged
     // until the archived-prefix cutover and old-client compatibility are proven.
     if (action === "job_edit_audit_page") {
