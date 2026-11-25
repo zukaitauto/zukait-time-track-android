@@ -145,7 +145,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
      const c=await request({operation:'ENTRY_CATALOG',page:p,...(department?{department}:{})});
      if(!valid(g,who))return;
      for(const x of c.items||[])names.set(JSON.stringify([String(x.materialId),String(x.brandId)]),x);
-     if(!c.hasMore)break;
+     if(!c.hasMore||list.every(x=>x.material_name&&x.brand_name||names.has(JSON.stringify([String(x.material_id),String(x.brand_id)]))))break;
     }
    }
    const title=x=>{const n=names.get(JSON.stringify([String(x.material_id),String(x.brand_id)]));return (x.material_name||n?.material||x.material_id)+' · '+(x.brand_name||n?.brand||x.brand_id);};
@@ -283,7 +283,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(['balance','invoices','history','reports'].includes(op))return readPage(op,op==='history'?(index||0):Number(index||0));
   if(op==='adjust'){
    tab='adjust';const g=++generation,who=owner;show('<h2>Stock Adjustment</h2><p>Loading department catalog…</p>');
-   try{if(!await loadCatalog()||!valid(g,who))return;const v=window.zukaitSharedStockWrite({page:'adjust',pairs:catalog,hasMore:moreCatalog});show(v.styles+'<div class="zs">'+v.html+'</div>');}catch(e){if(valid(g,who))status(e.message);}return;
+   try{if(!await loadCatalog()||!valid(g,who))return;const balances=await request({operation:'LIST',page:0,...(department?{department}:{})});if(!valid(g,who))return;const byPair=new Map((balances.items||[]).map(x=>[JSON.stringify([String(x.material_id),String(x.brand_id)]),x]));const pairs=catalog.map(x=>({...x,...byPair.get(JSON.stringify([String(x.materialId),String(x.brandId)]))}));const v=window.zukaitSharedStockWrite({page:'adjust',pairs,hasMore:moreCatalog});show(v.styles+'<div class="zs">'+v.html+'</div>');}catch(e){if(valid(g,who))status(e.message);}return;
   }
   if(op==='save-adjust'||op==='save-minimum'){
    const idx=val('as-pair'),x=idx===''?null:catalog.find(x=>x.materialId+'|'+x.brandId===idx),raw=val(op==='save-adjust'?'as-counted':'as-minimum'),reason=val('as-reason');

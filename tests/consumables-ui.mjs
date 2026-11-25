@@ -19,6 +19,7 @@ vm.runInContext('let me=window.me; delete window.me;',ctx);
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 const vehicleFormatter=html.slice(html.indexOf('function formatVehicleName('),html.indexOf('const KEY='));
 vm.runInContext(vehicleFormatter,ctx);
+vm.runInContext(fs.readFileSync('app/src/main/assets/consumables_stock_core.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8'),ctx);
 const fill=values=>Object.entries(values).forEach(([id,value])=>element(id).value=value);
 fill({cmNewMaterial:'Primer',cmNewUnit:'Liter',cmNewCategory:'Consumable',cmNewDepartment:'Painting'});

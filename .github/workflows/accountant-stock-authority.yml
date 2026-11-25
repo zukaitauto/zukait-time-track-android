@@ -1,7 +1,7 @@
 name: Accountant Stock role gate
 on:
   push:
-    branches: [architecture-v2]
+    branches: [architecture-v2, fix/shared-stock-manager-menu-accountant]
     paths:
       - 'supabase/functions/workshop-api/extensions/stock_master_api.js'
       - 'supabase/functions/workshop-api/extensions/invoice_price_core.js'
@@ -33,6 +33,10 @@ jobs:
       - run: npm ci
       - run: |
           node --check app/src/main/assets/accountant_stock.js
+          node --check app/src/main/assets/consumables_stock_ui.js
+          node --check app/src/main/assets/consumables_stock_core.js
+          node --check app/src/main/assets/consumables_ui.js
+          node tests/shared-stock-renderers.mjs
           node tests/accountant-stock-workspace.mjs
           node tests/accountant-stock-authority.mjs
           node tests/accountant-stock-master-api.mjs

@@ -120,6 +120,8 @@ const available=x=>Number(x.physical)-Number(x.reserved);
 // Older servers omit this flag; treat the status as unknown, never as zero.
 const countStatus=x=>x?.initialised===true?'counted':x?.initialised===false?'uncounted':'unknown';
 const counted=x=>countStatus(x)==='counted';
+const knownStockNumber=x=>x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x));
+const stockNumber=(x,formatter)=>knownStockNumber(x)?formatter(x):'—';
 const css='<style>'+
  '.zs{font-family:inherit;color:#15253c;max-width:1150px;margin:auto}.zs *{box-sizing:border-box}'+
  '.zs-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}'+
@@ -195,7 +197,7 @@ function balanceUnknown(){
  return balanceCell('—')+balanceCell('—')+balanceCell('—')+balanceCell('—');
 }
 function rowCard(r,name=label(r)){
- const unit=r.unit||'Liter',isCounted=counted(r),a=available(r),status=countStatus(r);
+ const unit=r.unit||'',isCounted=counted(r)&&[r.physical,r.reserved,r.stock_value].every(knownStockNumber),a=available(r),status=countStatus(r);
  const ids=esc(String(r.material_id)+'|'+String(r.brand_id));
  const statusLabel=status==='uncounted'?'Opening stock not counted':'Opening count status unverified';
  const avg=OMR(Number(r.physical)>0?Number(r.stock_value)/Number(r.physical):0)+' OMR/'+unit;
@@ -203,8 +205,8 @@ function rowCard(r,name=label(r)){
   balanceCell(fmt(a)+' '+unit,'zs-available')+balanceCell(avg,'','Average '+avg):balanceUnknown();
  return '<button type="button" class="zs-balance-line zs-balance-linked" data-id="'+ids+
   '" onclick="zukStockDetail(this.dataset.id)">'+balanceCell(name,'zs-balance-name',name)+
-  quantities+balanceStatus(!isCounted?statusLabel:a<=0?'Out of stock':a<Number(r.minimum)?'Low stock':'In stock',
-   !isCounted?'pending':a<=0?'out':a<Number(r.minimum)?'pending':'ok')+'</button>';
+  quantities+balanceStatus(!isCounted?statusLabel:a<=0?'Out of stock':knownStockNumber(r.minimum)&&a<Number(r.minimum)?'Low stock':'In stock',
+   !isCounted?'pending':a<=0?'out':knownStockNumber(r.minimum)&&a<Number(r.minimum)?'pending':'ok')+'</button>';
 }
 function masterStockCard(x,status){
  const name=x.name+' — '+x.brand;
@@ -228,13 +230,13 @@ function stockHistoryMarkup(rows,hasMore,nameOf=label){return '<div class="zs-ro
    (rows.length?rows.map(x=>'<div class="zs-card"><div class="zs-row"><b>'+esc(x.action)+' — '+esc(nameOf(x))+'</b>'+
       '<span class="zs-muted">'+esc(String(x.recorded_at||'').slice(0,10))+'</span></div>'+
       '<div class="zs-muted">Physical '+fmt(x.physical_delta)+' · Reserved '+fmt(x.reserved_delta)+
-      ' · Value '+OMR(x.cost_delta)+' OMR</div><div class="zs-muted">'+esc(x.job_card||'')+' '+esc(x.note||'')+'</div></div>').join(''):
+      ' · Value '+OMR(x.cost_delta)+' OMR</div><div class="zs-muted">'+esc(x.job_card||'')+' '+esc(x.note||'')+(x.actor_id?' · Staff '+esc(x.actor_id):'')+'</div></div>').join(''):
       '<p class="zs-card">No stock transactions found.</p>')+
     (hasMore?'<button class="zs-btn secondary" onclick="zukStockMoreHistory()">Load older 50 records</button>':'');}
 function stockReportMarkup(r){return '<div class="zs-row"><h3>Stock Reports</h3><button class="zs-btn secondary" onclick="zukStockNav(\'reports\',true)">Refresh</button></div>'+
      (r?'<div class="zs-card">'+
      '<p class="zs-muted">Opening stock not counted: '+esc(r.uncounted??'Unavailable')+' · In stock: '+esc(r.in_stock??'Unavailable')+'.</p>'+
-     '<div class="zs-row"><span>Current stock valuation</span><b>'+OMR(r.valuation)+' OMR</b></div>'+
+     '<div class="zs-row"><span>Current stock valuation</span><b>'+stockNumber(r.valuation,v=>OMR(v)+' OMR')+'</b></div>'+
      '<div class="zs-row"><span>Tracked material and brand pairs</span><b>'+esc(r.items)+'</b></div>'+
      '<div class="zs-row"><span>Low stock</span><b>'+esc(r.low)+'</b></div>'+
      '<div class="zs-row"><span>Out of stock</span><b>'+esc(r.out)+'</b></div></div>':
@@ -268,7 +270,7 @@ function stockOpeningMarkup({choices,selected=null,query='',hasMore=false,busy=f
       pairName=selected?nameOf(selected):String(query||'');
     return '<h3>'+(legacy?'Add / Open Stock':'Opening Stock (one time only)')+'</h3>'+
      (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs available.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
-       (privileged?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
+       (privileged?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Create or review the material and brand in Material Setup before recording stock.')+'</div>':'')+
      '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
      (legacy?(privileged?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':''):'<input type="hidden" id="zs-entrytype" value="OPENING">')+
      '<label for="zs-material-brand-search">Search Material + Brand</label>'+
