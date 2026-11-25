@@ -5,6 +5,10 @@ on:
       - 'supabase/functions/workshop-api/extensions/consumables_stock_api.js'
       - 'supabase/staged/ACCOUNTANT_STOCK_ENTRY_AUTHORITY.sql'
       - 'tests/accountant-stock-authority.mjs'
+      - 'tests/accountant-stock-workspace.mjs'
+      - 'app/src/main/assets/accountant_stock.js'
+      - 'app/src/main/assets/accountant.js'
+      - 'app/src/main/assets/accountant.html'
       - '.github/workflows/accountant-stock-authority.yml'
 permissions:
   contents: read
@@ -16,6 +20,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci
       - run: |
+          node --check app/src/main/assets/accountant_stock.js
+          node tests/accountant-stock-workspace.mjs
           node tests/accountant-stock-authority.mjs
           node tests/consumables-stock-api.mjs
