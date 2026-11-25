@@ -35,7 +35,7 @@ assert.match(markup,/>2<\/strong>/);
 assert.match(markup,/>1<\/strong>/);
 assert.doesNotMatch(markup,/>186<\/strong>|>42<\/strong>/,'Never hardcode mockup totals');
 assert.match(markup,/Material Setup/);
-assert.equal((markup.match(/class="zs-department-card /g)||[]).length,2);
+assert.equal((markup.match(/class="zs-department-card /g)||[]).length,4);
 assert.equal((markup.match(/class="zs-(?:create-item|materials-btn)" onclick/g)||[]).length,2);
 assert.match(markup,/onclick="zukStockSelectDepartment\(this.dataset.department\)"/);
 assert.match(markup,/onclick="zukStockCreateItem\(\)"/);
@@ -75,9 +75,9 @@ try{
       text:getComputedStyle(document.querySelector('.zs-screen-toolbar>.zs-ghost:first-child')).color}
    };
   });
-  assert.equal(m.cards,4,'four actions at '+width);
-  assert.deepEqual(m.sectionCols,width<350?[1,1]:[2,2],'responsive columns '+width);
-  assert.deepEqual(m.labels,['Paint Consumables','Mechanical Consumables','Create Material','Brand & Price']);
+  assert.equal(m.cards,6,'six central and departmental actions at '+width);
+  assert.deepEqual(m.sectionCols,width<350?[1,1,1]:[2,2,2],'responsive columns '+width);
+  assert.deepEqual(m.labels,['Purchase Entry','Add Stock','Paint Consumables','Mechanical Consumables','Create Material','Brand & Price']);
   assert.ok(m.titleSizes.every(x=>x>=16),'tiny card titles at '+width);
   assert.ok(m.subtitleSizes.every(x=>x>=13),'tiny help text at '+width);
   assert.ok(m.cardMinHeights.every(x=>x>=120),'touch cards too short at '+width);
@@ -110,4 +110,4 @@ ctx.window.zukStockPreviewExit('dashboard');
 ctx.window.openStockManagement();
 assert.equal(screen,null,'Employee must not access Stock chooser');
 assert.equal(networkCalls,0,'home redesign must never write or read stock');
-console.log('PASS: approved pastel Stock home with real material/brand counts, accessible contrast, four responsive cards 320–1280px, Manager-only setup and zero stock API writes');
+console.log('PASS: approved pastel Stock home with real material/brand counts, accessible contrast, six responsive cards 320–1280px, Manager-only setup and zero stock API writes');

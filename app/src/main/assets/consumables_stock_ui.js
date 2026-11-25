@@ -304,15 +304,15 @@ function render(){
  }
  if(view.page==='add'){
     const choices=addStockChoices(),selected=choices.find(x=>String(x.material_id)+'|'+String(x.brand_id)===view.selected);
-    const noAssignedItems=Boolean(department&&!choices.length);
+    const noAssignedItems=Boolean(!choices.length);
     const pairChoices=choices.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(label(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(label(x))+
       '<small>'+esc(x.unit||'')+(x.needsMasterLink?' · New stock item':'')+'</small></button>').join(''),
       pairName=selected?label(selected):String(view.pairQuery||'');
-    draw('<h3>Add / Open Stock</h3>'+
-     (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs for this department.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
+    draw('<h3>'+(legacyEntryQA()?'Add / Open Stock':'Opening Stock (one time only)')+'</h3>'+
+     (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs available.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
        (manager()?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
      '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
-     (manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':'')+
+     (legacyEntryQA()?(manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':''):'<input type="hidden" id="zs-entrytype" value="OPENING">')+
      '<label for="zs-material-brand-search">Search Material + Brand</label>'+
      '<div class="zs-pair-picker"><input id="zs-material-brand-search" type="search" inputmode="search" autocomplete="off" autocapitalize="none" aria-controls="zs-pair-results" aria-expanded="false" placeholder="'+(noAssignedItems?'Link a material + brand first':'Type material or brand to search')+'" value="'+esc(pairName)+'"'+(noAssignedItems?' disabled':'')+' oninput="zukStockResolvePair()" onfocus="zukStockShowPairChoices()">'+
      '<div id="zs-pair-results" class="zs-pair-results" role="group" aria-label="Matching stock materials and saved Master pairs" hidden>'+pairChoices+
@@ -322,14 +322,14 @@ function render(){
      '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
      '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
      '<label>Price method</label><select id="zs-method" onchange="zukStockCalculatePurchase()"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
-     '<label id="zs-price-label">Purchase amount (OMR)</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost" oninput="zukStockCalculatePurchase()">'+
+     '<label id="zs-price-label">'+(legacyEntryQA()?'Purchase amount (OMR)':'Counted amount (OMR)')+'</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost" oninput="zukStockCalculatePurchase()">'+
      '<div class="zs-card zs-calculation-card"><b>Calculated amount</b><div id="zs-price-calculated" role="status">Enter quantity and purchase amount.</div></div>'+
-     '<div id="zs-opening-fields" style="display:none" class="zs-card">'+
+     '<div id="zs-opening-fields" style="display:'+(legacyEntryQA()?'none':'block')+'" class="zs-card">'+
      '<p class="zs-warning">Opening Stock is recorded once for this material and brand. Use the physical count, never an estimated stock number.</p>'+
      '<label><input id="zs-count-confirmed" type="checkbox" style="width:auto" /> I have physically counted this material and brand</label>'+
      '<label>Count reference / reason</label><textarea id="zs-opening-note" rows="2" maxlength="180" placeholder="e.g. Verified opening count, 21 Nov"></textarea></div>'+
      '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
-     '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy||noAssignedItems?' disabled':'')+'>Save Purchased Stock</button>');
+     '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(view.busy||noAssignedItems?' disabled':'')+ '>'+(legacyEntryQA()?'Save Purchased Stock':'Confirm Opening Stock')+'</button>');
     return;
   }
   if(view.page==='history'){
@@ -664,7 +664,7 @@ function previewAdd(c){
    'Prices may be entered per unit or as a total purchase amount. Nothing is posted in preview.</p>'+
    '<div class="zs-formgrid"><label class="zs-field">Entry type<select id="zs-preview-entry">'+
    (manager()?'<option value="OPENING">Opening Stock (verified physical count)</option>':'')+
-   '<option value="PURCHASE">Purchased Stock</option></select></label>'+
+   (legacyEntryQA()?'<option value="PURCHASE">Purchased Stock</option>':'')+'</select></label>'+
    '<label class="zs-field">Search Material + Brand<input id="zs-preview-add-pair" list="zs-preview-add-pairs" autocomplete="off" placeholder="Type material or brand name"></label>'+
    '<datalist id="zs-preview-add-pairs">'+options+'</datalist>'+
    '<label class="zs-field">Quantity (existing material unit)<input id="zs-preview-qty" type="number" min="0" step="any" placeholder="Enter quantity" oninput="zukStockPreviewPrice()"></label>'+
@@ -673,7 +673,7 @@ function previewAdd(c){
    '<label class="zs-field" id="zs-preview-price-label">Total Purchase Price (OMR)<input id="zs-preview-price" type="number" min="0" step="any" placeholder="Enter price" oninput="zukStockPreviewPrice()"></label></div>'+
    '<div class="zs-panel zs-calculation-card" style="margin:12px 0">'+
    '<b>Calculated preview only</b><div class="zs-preview-note" id="zs-preview-calculated" role="status">Enter quantity and price to calculate a preview.</div></div>'+
-   '<label class="zs-field">Opening count reference / purchase note<textarea rows="2" placeholder="Physical stock confirmation or purchase reference"></textarea></label>'+
+   '<label class="zs-field">Opening count reference<textarea rows="2" placeholder="Physical stock confirmation"></textarea></label>'+
    '<div class="zs-actions"><button type="button" class="zs-disabled" disabled>Save Stock — Not Active</button></div></div>';
  }
 function previewHistory(){
@@ -953,6 +953,8 @@ const stockMasterActions=()=>manager()?
  '<button type="button" class="zs-materials-btn" onclick="zukStockOpenMaterials()">'+
  '<span class="zs-entry-card-top"><span class="zs-action-icon" aria-hidden="true">◇</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span>'+
  '<strong>Brand &amp; Price</strong><small>Assign brands and effective-dated prices.</small></button></div></div>':'';
+const legacyEntryQA=()=>window.ZUKAIT_STOCK_QA_SIMULATION===true||isolatedStockPilot();
+const departmentTiles=()=>previewHomeTiles.filter(t=>t[0]!=='add'||legacyEntryQA());
 function departmentMenu(){
  // Counts describe the saved Material Master, NOT verified physical stock.
  // No mockup example values, remote requests or fabricated inventory.
@@ -964,6 +966,9 @@ function departmentMenu(){
   '<span class="zs-entry-hero-icon" aria-hidden="true">▱</span>'+
   '<div class="zs-entry-hero-text"><h2>Consumables Stock Management</h2>'+
   '<p>Manage paint and mechanical consumables, materials, brands and pricing.</p></div></div>'+
+  '<div class="zs-entry-section"><h3>Central Stock Entry</h3><div class="zs-department-grid" aria-label="Central Stock Entry">'+
+  '<button type="button" class="zs-department-card painting" onclick="zukStockCentralPurchase()"><span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">🛒</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span><strong>Purchase Entry</strong><small>Purchase invoices</small></button>'+
+  (manager()?'<button type="button" class="zs-department-card mechanical" onclick="zukStockCentralOpening()"><span class="zs-entry-card-top"><span class="zs-department-icon" aria-hidden="true">＋</span><span class="zs-entry-arrow" aria-hidden="true">›</span></span><strong>Add Stock</strong><small>Opening stock · physical count</small></button>':'')+'</div></div>'+
   '<div class="zs-entry-section zs-entry-department-section">'+
   '<div class="zs-entry-section-head"><div>'+
   '<h3>Stock</h3><p>Open and manage stock for each department.</p></div></div>'+
@@ -986,7 +991,7 @@ function departmentMenu(){
 function showLiveHome(){
  if(!allowed()||!liveStockReady())return;
  const choosing=!department;
- const tiles=choosing?'':previewHomeTiles.map(t=>
+ const tiles=choosing?'':departmentTiles().map(t=>
   '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockLiveNavigate(\''+t[0]+'\')">'+
   '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
   '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
@@ -1016,16 +1021,19 @@ window.zukStockCreateItem=()=>{
  window.zukStockPreviewExit('dashboard');
  window.consOpenMaster?.(department||'','create');
 };
+window.zukStockCentralPurchase=()=>{if(!allowed()||view.busy||view.loading)return;window.zukStockPreviewExit('dashboard');window.consOpenPurchaseEntry?.();};
+window.zukStockCentralOpening=()=>{if(!allowed()||!manager()||view.busy||view.loading)return;department='';view.items=[];view.selected='';view.pairQuery='';view.itemsHasMore=false;view.itemsNextPage=1;if(previewOnly()){preview.page='add';showPreview();return;}return load('add',true);};
 window.zukStockLiveHome=()=>showLiveHome();
 window.zukStockLiveNavigate=page=>{
  if(!allowed()||!liveStockReady()||!['balance','add','history','adjust','reports'].includes(page))return;
+ if(page==='add'&&!legacyEntryQA())return window.zukStockCentralOpening();
  return load(page,true);
 };
 function previewHome(){
  if(!department)return departmentMenu();
  return trialControls()+'<div class="zs-home-hero"><h3>'+esc(departmentTitle())+'</h3>'+
   '<p class="zs-preview-note">Choose a stock function. Saved master materials are not yet verified department stock.</p></div>'+
-  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+previewHomeTiles.map(t=>
+  '<div class="zs-home-grid" aria-label="'+esc(departmentTitle())+' Stock Management menu">'+departmentTiles().map(t=>
     '<button type="button" class="zs-home-tile '+t[4]+'" onclick="zukStockPreviewNavigate(\''+t[0]+'\')">'+
     '<span class="zs-home-icon" aria-hidden="true">'+t[1]+'</span>'+
     '<span class="zs-home-info"><strong>'+t[2]+'</strong><small>'+t[3]+'</small></span>'+
@@ -1076,6 +1084,7 @@ window.zukStockPreviewExit=destination=>{
 };
 window.zukStockPreviewNavigate=page=>{
  if(!allowed()||!['home','balance','add','history','adjust','reports','suggest','return'].includes(page))return;
+ if(page==='add'&&!legacyEntryQA())return window.zukStockCentralOpening();
  if(!department&&page!=='home')return;
  preview.page=page;showPreview();
 };
@@ -1155,7 +1164,7 @@ function applyBalanceFilters(){
 }
 window.zukStockBalanceSearch=value=>{view.balanceQuery=String(value||'').slice(0,180);if(view.page==='balance')applyBalanceFilters();};
 window.zukStockBalanceFilter=value=>{if(!['all','linked','unlinked','unpriced'].includes(value))return;view.balanceFilter=value;if(view.page==='balance')applyBalanceFilters();};
-window.zukStockNav=(page,force=false)=>previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
+window.zukStockNav=(page,force=false)=>page==='add'&&!legacyEntryQA()?window.zukStockCentralOpening():previewOnly()?window.zukStockPreviewNavigate(page):load(page,force);
 window.zukStockDetail=id=>{view.selected=String(id||'');view.page='detail';render()};
 window.zukStockMore=async()=>{
   if(view.loading)return;view.loading=true;
@@ -1352,7 +1361,8 @@ window.zukStockSavePurchase=()=>{
     price:Number(d.getElementById('zs-price')?.value)};
  if(!data.materialId||!data.brandId||!(data.quantity>0)||!(data.price>0))
    {view.error='Enter material, brand, positive quantity and purchase price.';render();return}
- const type=manager()?d.getElementById('zs-entrytype')?.value:'PURCHASE';
+ const type=legacyEntryQA()?(manager()?d.getElementById('zs-entrytype')?.value:'PURCHASE'):'OPENING';
+ if(!legacyEntryQA()&&(!manager()||department))return;
  if(type==='OPENING'){
    const confirmed=d.getElementById('zs-count-confirmed')?.checked===true;
    const reason=String(d.getElementById('zs-opening-note')?.value||'').trim();
