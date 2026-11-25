@@ -35,3 +35,13 @@ assert.match(cloud,/if\(cloudDirty&&!cloudPushing\)await push\(0\)/,'resume flus
 assert.match(cloud,/if\(document.visibilityState==='visible'\)refreshVisibleSharedState\(\)/,'visibility resume retains immediate shared-state refresh');
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=2026112501/);assert.match(html,/notifications\/center\.js\?v=20261110-server-receipts/);
 console.log('Hidden read traffic: no hidden report/live requests, foreground cadence, resume, offline/login and timer generation passed.');
+
+// Exercise the actual live reader, not only the scheduler stub.
+const liveStart=cloud.indexOf('  async function pullLiveStatus('),liveEnd=cloud.indexOf('  function payloadState(',liveStart);
+let now=100000,requests=0;
+const lc={Date:{now:()=>now},liveStatusLastFetchedAt:now-1000,sessionEpoch:1,liveInFlight:false,sessionToken:()=>true,navigator:{onLine:true},liveRole:()=>true,api:async()=>{requests++;return {ok:true,revision:1,rows:[]}},stale:()=>false,liveStatusRevision:0,liveStatusRows:[],liveStatusServerTime:0,pollWarnings:new Set(),publishLiveStatus(){},warnPoll(){}};
+vm.createContext(lc);vm.runInContext(cloud.slice(liveStart,liveEnd),lc);
+await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,0,'scheduled read reuses recent confirmed live status');
+await vm.runInContext('pullLiveStatus()',lc);assert.equal(requests,1,'explicit refresh is never suppressed');
+now+=7000;await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,2,'expired live status is refreshed');
+lc.liveStatusLastFetchedAt=0;await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,3,'new session must fetch');
