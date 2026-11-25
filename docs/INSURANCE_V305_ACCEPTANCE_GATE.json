@@ -1,189 +1,56 @@
 {
-  "versionName": "V424",
-  "versionCode": 387,
-  "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
+  "versionName": "V425",
+  "versionCode": 388,
+  "sourceCommit": null,
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this V424 manual check; not performed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V424",
-        "versionCode": 387,
-        "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
-        "signedAcceptanceRun": 45633682402,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "physical_android": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this V424 manual check; not performed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V424",
-        "versionCode": 387,
-        "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
-        "signedAcceptanceRun": 45633682402,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "physical_safari": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this V424 manual check; not performed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V424",
-        "versionCode": 387,
-        "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
-        "signedAcceptanceRun": 45633682402,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "full_data_preservation": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this V424 manual check; not performed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V424",
-        "versionCode": 387,
-        "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
-        "signedAcceptanceRun": 45633682402,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "fresh_backup_restored": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this V424 manual check; not performed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V424",
-        "versionCode": 387,
-        "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
-        "signedAcceptanceRun": 45633682402,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "pc_site_reconciled": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this V424 manual check; not performed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V424",
-        "versionCode": 387,
-        "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
-        "signedAcceptanceRun": 45633682402,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     },
     "production_backend_smoke": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this V424 manual check; not performed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V424",
-        "versionCode": 387,
-        "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92",
-        "signedAcceptanceRun": 45633682402,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "Defer V424 manual acceptance and backup restore verification, and publish V424 Android and web.",
-        "recordedDate": "2026-11-25"
-      }
+      "verifiedAt": null
     }
   }
 }

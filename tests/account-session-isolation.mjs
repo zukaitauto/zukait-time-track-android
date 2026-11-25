@@ -93,7 +93,8 @@ for(const action of ['load','save','live_status']){
 // Cleanup removes general caches but retains author-scoped uncertain receipts.
 {
  const b=boot();await b.w.login();const journal='zukait_accountant_pending_v1:qa:M1';b.w.localStorage.setItem(journal,'receipt');b.w.localStorage.setItem('zukait_v2_event_queue_v1','old');b.w.sessionStorage.setItem('detail','private');
- await b.w.logout();assert.equal(b.w.localStorage.getItem(journal),'receipt');assert.equal(b.w.localStorage.getItem('zukait_v2_event_queue_v1'),null);assert.equal(b.w.sessionStorage.length,0);b.close();
+ const invoiceJournals=['zukait-account-stock-intent-v1:qa:M1','zukait-purchase-pending-v1:M1','zukait-invoice-reconcile-pending-v1:M1:inv','zukait-invoice-price-pending-v1:M1:inv','zukait-invoice-correction-pending-v1:M1:inv','zukait_stock_write_pending_v1:M1','zukait_mechanical_stock_pending_v1:M1'];for(const k of invoiceJournals)b.w.localStorage.setItem(k,'exact-receipt');
+ await b.w.logout();for(const k of invoiceJournals)assert.equal(b.w.localStorage.getItem(k),'exact-receipt');assert.equal(b.w.localStorage.getItem(journal),'receipt');assert.equal(b.w.localStorage.getItem('zukait_v2_event_queue_v1'),null);assert.equal(b.w.sessionStorage.length,0);b.close();
 }
 // Mid-task transport failures recover through an authenticated read without
 // resetting the document, current identity, task or uncertain command journal.

@@ -8,7 +8,7 @@ w.confirm=()=>true;
 w.eval(fs.readFileSync('app/src/main/assets/consumables_stock_core.js','utf8'));
 w.eval(fs.readFileSync('app/src/main/assets/consumables_stock_ui.js','utf8'));
 w.eval(fs.readFileSync('app/src/main/assets/accountant_stock.js','utf8'));
-let user={id:'A1',role:'Accountant'},calls=[],fail=true,ready=true,catalogFailure=false;
+let user={id:'A1',role:'Accountant'},calls=[],fail=true,ready=true,catalogFailure=false,retryRejected=false;
 const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:()=>true,notify:()=>{},request:async x=>{
  calls.push(JSON.parse(JSON.stringify(x)));
  if(x.operation==='STATUS')return {ready,writes:ready};
@@ -21,7 +21,7 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
  if(x.operation==='REPORTS')return {report:{valuation:12,items:1,low:0,out:0,uncounted:0,in_stock:1}};
  if(x.operation==='ENTRY_CATALOG'&&catalogFailure)throw Error('catalog unavailable');
  if(x.operation==='ENTRY_CATALOG')return {items:[{materialId:'m',brandId:'b',material:'Primer',brand:'Brand A',department:'Both',unit:'Liter'}],hasMore:false};
- if(x.operation==='WRITE'){if(fail){fail=false;throw Error('timeout');}return {receipt:{final:true}}}
+ if(x.operation==='WRITE'){if(retryRejected)throw Error('stock_write_not_enabled');if(fail){fail=false;throw Error('timeout');}return {receipt:{final:true}}}
  if(x.operation==='INVOICE_LIST')return {invoices:[{id:'inv',invoice_number:'QA1',supplier:'Test',invoice_date:'2026-11-20',status:'active',revision:1,total_amount:2,lines:[{materialId:'m',brandId:'b',materialName:'Primer',brandName:'Brand A',unit:'Liter',quantity:1,priceMethod:'unit',price:2,totalAmount:2}]}],hasMore:false};
  if(x.operation==='PRICE_RECONCILE_PREVIEW')return {required:false};
  if(x.operation==='PRICE_APPLY_REVIEW')return {review:[{action:'create',materialName:'Primer',brandName:'Brand A',date:'2026-11-25',rate:2,affected:0}]};
@@ -49,7 +49,8 @@ assert.equal(d.querySelector('#as-supplier'),null);
 const os=d.querySelector('#as-search');os.value='Primer';os.dispatchEvent(new w.Event('input',{bubbles:true}));await click('opening-pair:0');d.querySelector('#as-qty').value='2';d.querySelector('#as-price').value='3';d.querySelector('#as-count').checked=true;d.querySelector('#as-reason').value='Physical count verified';
 await click('save-opening');assert.match(d.body.textContent,/Unconfirmed/);assert.equal(panel.blocked(),true);
 const before=calls.at(-1);assert.equal(before.command,'OPENING');assert.equal(before.data.quantity,2);
-await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
+retryRejected=true;await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Unconfirmed/);assert.equal(w.localStorage.length,1,'A later rejection must not discard an uncertain original receipt');
+ panel.reset();user={id:'A2',role:'Accountant'};await panel.open();assert.equal(d.querySelector('[data-as="retry"]'),null);panel.reset();user={id:'A1',role:'Accountant'};await panel.open();retryRejected=false;await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
 await click('purchase');
 assert.ok(d.querySelector('.cp-entry'),'Manager Purchase Entry template is reused');
 assert.equal(d.querySelector('#as-finish').disabled,false);
