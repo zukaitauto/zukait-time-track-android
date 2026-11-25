@@ -11,11 +11,19 @@ w.closeModal=()=>w.document.querySelector('#modal').replaceChildren();
 w.alert=message=>{throw Error(message)};
 w.state={jobEdits:[{job:'JC1',at:1,reason:'Cached record'},{job:'JC2',reason:'Other job'}]};
 let calls=[],mode='normal';
+const savedActual={jobCard:'JC1',department:'Painting',locked:true,totalCost:2.450,lines:[{materialId:'QA-M',brandId:'QA-B',actualQuantity:2,unit:'L',unitPriceSnapshot:1.225,lineCost:2.450,materialName:'<img src=x onerror=alert(1)>'}]};
+const savedIssue={jobCard:'JC1',department:'Mechanical',lines:[{materialId:'QA-M',quantity:3}]};
+w.state.consumables={actuals:[savedActual,{jobCard:'JC2',totalCost:999}],issues:[savedIssue]};
 const item=(audit_position,reason)=>({audit_position,payload:{job:'JC1',at:1,reason,old:{notes:'before'},newValue:{notes:'after'}}});
 w.fetch=async(_url,opts)=>{
  const body=JSON.parse(opts.body);calls.push(body);
  if(body.operation==='GET')return {ok:true,status:200,json:async()=>({ok:true,job:{no:'JC1'}})};
  let status=200,result;
+ if(body.action==='job_consumables_read'){
+  if(mode==='denied')return {ok:false,status:403,json:async()=>({ok:false,code:'consumables_forbidden'})};
+  if(mode==='offline')return {ok:false,status:503,json:async()=>({ok:false,code:'consumables_unavailable'})};
+  return {ok:true,status:200,json:async()=>({ok:true,revision:7,issues:[savedIssue],actuals:[savedActual]})};
+ }
  if(mode==='denied'){status=403;result={ok:false,code:'job_edit_forbidden'};}
  else if(mode==='offline'){status=503;result={ok:false,code:'audit_history_unavailable'};}
  else if(mode==='stale'&&body.before_position){status=409;result={ok:false,code:'audit_revision_changed'};}
@@ -49,7 +57,22 @@ try{
  mode='denied';await w.zukaitJobEdit.view('JC1');await click('jce-view-history');
  assert.match(panel().textContent,/History access denied/);
  assert.equal(panel().querySelectorAll('details').length,0);
+ mode='normal';await w.zukaitJobEdit.view('JC1');
+ assert.equal(w.document.getElementById('jce-materials-panel').hidden,true);
+ const cachedBefore=JSON.stringify(w.state.consumables);
+ await click('jce-view-materials');
+ const mp=()=>w.document.getElementById('jce-materials-panel');
+ assert.deepEqual(calls.at(-1),{action:'job_consumables_read',jobCard:'JC1'});
+ assert.match(mp().textContent,/OMR 2\.450/);
+ assert.match(mp().textContent,/OMR 1\.225/);
+ assert.match(mp().textContent,/Mechanical/);
+ assert.match(mp().textContent,/Painting/);
+ assert.equal(mp().querySelector('img'),null);
+ assert.equal(JSON.stringify(w.state.consumables),cachedBefore);
+ mode='offline';await click('jce-materials-refresh');assert.match(mp().textContent,/cached records only/i);assert.doesNotMatch(mp().textContent,/999/);
+ mode='denied';await click('jce-materials-refresh');assert.match(mp().textContent,/Materials access denied/);assert.equal(mp().querySelectorAll('details').length,0);
  w.me.role='Supervisor';await w.zukaitJobEdit.view('JC1');
+ assert.equal(w.document.getElementById('jce-view-materials'),null);
  assert.equal(w.document.getElementById('jce-view-history'),null);
  console.log('Job edit audit history: lazy load, pagination, stale reset, fallback, permission denial and escaped output passed.');
 }finally{dom.window.close();}
