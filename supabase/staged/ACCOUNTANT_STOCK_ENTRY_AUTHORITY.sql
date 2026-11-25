@@ -314,10 +314,26 @@ begin
     join public.staff_credentials sc on sc.user_id=ss.user_id
    where ss.token_hash=p_session_hash
      and ss.revoked_at is null and sc.active=true and coalesce(sc.must_change,false)=false;
-  if v_actor is null or (v_role not in ('Manager','Supervisor','Accountant') or (v_role='Accountant' and v_op<>'OPENING'))
+  if v_actor is null or (v_role not in ('Manager','Supervisor','Accountant') or (v_role='Accountant' and v_op not in ('OPENING','PURCHASE')))
     then raise exception 'STOCK_FORBIDDEN' using errcode='42501'; end if;
   if v_op in ('OPENING','ADJUST','MINIMUM') and v_role<>'Manager' and not (v_role='Accountant' and v_op='OPENING')
     then raise exception 'MANAGER_ONLY' using errcode='42501'; end if;
+  -- Accountant PURCHASE is permitted only inside an in-progress atomic invoice.
+  -- A completed invoice cannot authorize another stock movement.
+  if v_role='Accountant' and v_op='PURCHASE' and not exists (
+    select 1 from public.zukait_purchase_invoices i
+    cross join lateral (
+      select x, row_number() over(order by x->>'materialId',x->>'brandId') as idx
+      from jsonb_array_elements(i.fingerprint->'lines') x
+    ) l
+    where i.actor_id=v_actor and i.status='posted' and i.lines='[]'::jsonb
+      and i.total_amount=0
+      and p_request_id='invoice:'||i.id::text||':'||l.idx::text
+      and p_data=jsonb_build_object('materialId',l.x->>'materialId','brandId',l.x->>'brandId',
+          'quantity',(l.x->>'quantity')::numeric,'priceMethod','total','price',
+          case when l.x->>'priceMethod'='unit' then round((l.x->>'quantity')::numeric*(l.x->>'price')::numeric,3)
+          else (l.x->>'price')::numeric end,'reason','Purchase invoice '||i.id::text)
+  ) then raise exception 'STOCK_FORBIDDEN' using errcode='42501'; end if;
   if length(v_note)>240 then raise exception 'STOCK_REASON_TOO_LONG' using errcode='22023'; end if;
   -- Prevent simultaneous identical request IDs from both inserting.
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('zukait-stock:'||p_request_id,0));
