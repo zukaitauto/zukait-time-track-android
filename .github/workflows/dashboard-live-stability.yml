@@ -20,6 +20,6 @@ jobs:
           node-version: '22'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: node tests/cash-monthly-pulse.mjs && node tests/shared-dashboard-read.mjs && node tests/manager-overdue-time-review.cjs && node tests/sync-traffic-compatibility.mjs
+      - run: node tests/cash-monthly-pulse.mjs && node tests/shared-dashboard-read.mjs && node tests/manager-overdue-time-review.cjs && node --experimental-vm-modules tests/sync-traffic-compatibility.mjs
       - run: node tests/monthly-followup-responsive.mjs
       - run: node tests/dashboard-live-stability.mjs
