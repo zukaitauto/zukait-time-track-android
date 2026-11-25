@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const source=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');
-const block=source.slice(source.indexOf('let consPurchaseDraft=null'),source.indexOf('function consPurchaseLockForm('));
+const block=source.slice(source.indexOf('let consPurchaseDraft=null'),source.indexOf('const consPurchaseApi='));
 const storage=new Map(),alerts=[];let role='Manager';const ctx={me:{id:'M1'},role:()=>role,alert:x=>alerts.push(x),window:{localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}}};
 vm.createContext(ctx);vm.runInContext(block,ctx);const run=s=>vm.runInContext(s,ctx);
 assert.equal(run('consPurchaseRestore()'),true);
@@ -14,3 +14,14 @@ storage.clear();storage.set('zukait-purchase-pending-v1:M1',JSON.stringify({owne
 assert.equal(run('consPurchaseRestore()'),false);assert.equal(storage.size,1);
 role='Supervisor';assert.equal(run('consPurchaseRestore()'),false);assert.equal(run('consPurchaseRestore(false)'),true);assert.equal(storage.size,1);
 console.log('PASS Manager/Supervisor purchase recovery role isolation and legacy receipt preservation');
+
+role='Manager';storage.clear();run("consPurchasePending={id:'original',fingerprint:'receipt'};consPurchaseDraft={lines:[]};consPurchasePersist()");
+const remove=ctx.window.localStorage.removeItem;
+ctx.window.localStorage.removeItem=()=>{throw Error('storage unavailable')};
+assert.throws(()=>run('consPurchaseClearPending(consPurchaseOwner)'),/cleanup failed/);
+assert.equal(run('consPurchasePending.id'),'original');assert.equal(storage.size,1);
+ctx.window.localStorage.removeItem=()=>{};
+assert.throws(()=>run('consPurchaseClearPending(consPurchaseOwner)'),/cleanup failed/);
+ctx.window.localStorage.removeItem=remove;
+run('consPurchaseClearPending(consPurchaseOwner)');assert.equal(storage.size,0);assert.equal(run('consPurchasePending'),null);
+console.log('PASS durable receipt cleanup failure guard');
