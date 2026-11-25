@@ -17,6 +17,8 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
  if(x.operation==='MASTER_REVIEW')return {revision:12,impact:{affected:1,oldTotal:2,newTotal:3}};
  if(x.operation==='MASTER_SAVE')return {receipt:{id:'m'}};
  if(x.operation==='LIST')return {items:[],hasMore:false};
+ if(x.operation==='HISTORY')return {history:[],hasMore:false};
+ if(x.operation==='REPORTS')return {report:{valuation:12,items:1,low:0,out:0,uncounted:0,in_stock:1}};
  if(x.operation==='ENTRY_CATALOG'&&catalogFailure)throw Error('catalog unavailable');
  if(x.operation==='ENTRY_CATALOG')return {items:[{materialId:'m',brandId:'b',material:'Primer',brand:'Brand A',department:'Both',unit:'Liter'}],hasMore:false};
  if(x.operation==='WRITE'){if(fail){fail=false;throw Error('timeout');}return {receipt:{final:true}}}
@@ -39,7 +41,7 @@ assert.deepEqual([...d.querySelectorAll('.as-shared-menu button strong')].map(x=
 assert.ok(d.querySelector('.zs-entry-home'),'Manager menu markup is used');
 await click('master-create');d.querySelector('#as-material-name').value='QA';d.querySelector('#as-department').value='Both';d.querySelector('#as-reason').value='QA material';await click('master-create-review');assert.match(d.body.textContent,/Affected Actual Materials/);await click('master-save');assert.equal(calls.at(-1).operation,'MASTER_SAVE');
 await click('master-list');await click('master-material:0');assert.match(d.body.textContent,/Brand A/);await click('master-correct:0');d.querySelector('#as-master-rate').value='3';d.querySelector('#as-reason').value='QA correction';await click('master-correct-review:0');await click('master-save');assert.equal(calls.at(-1).data.command,'CORRECT_PRICE');
-await click('department:Painting');await click('balance');assert.equal(calls.at(-1).department,'Painting');await click('back');await click('back');
+await click('department:Painting');await click('balance');assert.equal(calls.at(-1).department,'Painting');assert.ok(d.querySelector('#as-balance-search'));await click('back');await click('history');assert.match(d.body.textContent,/No stock transactions found/);await click('back');await click('reports');assert.match(d.body.textContent,/12.000 OMR/);await click('back');await click('back');
 await click('department:Mechanical');await click('balance');assert.equal(calls.at(-1).department,'Mechanical');await click('back');await click('back');
 await click('opening');
 assert.equal(d.querySelector('#as-number'),null);

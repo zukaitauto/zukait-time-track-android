@@ -38,6 +38,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   dialog.innerHTML='<style>#as-dialog{position:fixed;box-sizing:border-box;width:100%;max-width:none;height:100%;max-height:none;inset:0;margin:0;overflow:auto;border:0;border-radius:0;background:#f5f8fc;color:#173653;padding:16px}#as-dialog .as-toolbar{position:sticky;top:0;z-index:10;background:#f5f8fc;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 16px}#as-dialog .as-toolbar span{font-size:12px;font-weight:800;margin-right:auto}#as-dialog #as-body{max-width:1040px;margin:auto}#as-dialog .as-hero{display:flex;align-items:center;gap:14px;border:1px solid #dce6f1;background:white;border-radius:16px;padding:16px;margin-bottom:24px}#as-dialog .as-hero h2{font-size:23px;line-height:1.2;margin:0}#as-dialog .as-hero-icon{font-size:30px;color:#376caa}#as-dialog h3{font-size:18px;margin:24px 0 12px}#as-dialog .as-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#as-dialog .as-grid .as-tile{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;min-width:0;min-height:154px;padding:15px;border-radius:16px;overflow-wrap:anywhere}#as-dialog .as-tile-top{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:20px}#as-dialog .as-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#2878ca;color:white}#as-dialog .as-tile strong{font-size:16px;line-height:1.25}#as-dialog .as-tile small{font-size:12px;font-weight:500;color:#4f6479;line-height:1.4}#as-dialog .as-tile.blue{background:#eaf2ff;border-color:#c6d9f5}#as-dialog .as-tile.green{background:#edf7e9;border-color:#cfe3c9}#as-dialog .as-tile.green .as-icon{background:#58a43d}#as-dialog .as-tile.purple{background:#f2edfa;border-color:#ddd1f0}#as-dialog .as-tile.purple .as-icon{background:#8056b6}#as-dialog .as-tile.amber{background:#fff5e4;border-color:#ead9b9}#as-dialog .as-tile.amber .as-icon{background:#bd792c}#as-dialog .as-tile:disabled{opacity:.75}#as-dialog #as-status:not(:empty){position:sticky;top:56px;z-index:9;max-width:1040px;margin:0 auto 12px;color:#183e61;background:#fff5dd;border:1px solid #e2c987;padding:12px;border-radius:8px;font-size:15px;font-weight:700}#as-dialog button{min-height:42px;border:1px solid #b8d3e7;border-radius:9px;background:#eaf2fb;color:#173653;padding:9px;font-weight:700}#as-dialog label{display:grid;gap:4px;margin:9px 0;font-weight:700}#as-dialog input,#as-dialog select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #b8cde0;border-radius:8px;padding:7px;color:#173653;background:white}#as-dialog .as-row{border:1px solid #d4e2ee;border-radius:10px;padding:10px;margin:7px 0;background:#f7fafc;overflow-wrap:anywhere}#as-dialog pre{white-space:pre-wrap;overflow-wrap:anywhere}#as-dialog button:disabled{opacity:.5}#as-dialog .as-close{float:right}</style>'+nav()+'<p id="as-status" role="status" aria-live="polite"></p><section id="as-body">'+body+'</section>';dialog.scrollTop=0;
   dialog.onclick=e=>{const b=e.target.closest('[data-as]');if(b)act(b.dataset.as).catch(err=>status(err.message));};
   dialog.oninput=e=>{
+   if(e.target.id==='as-balance-search'){const q=e.target.value.trim().toLowerCase();let n=0;for(const row of dialog.querySelectorAll('[data-balance-entry]')){row.hidden=!String(row.dataset.balanceName||'').toLowerCase().includes(q);if(!row.hidden)n++;}const empty=field('zs-balance-search-empty');if(empty)empty.hidden=n>0;}
    if(e.target.id==='as-search'){if(tab==='purchase'){purchasePair=null;if(field('as-line-editor'))field('as-line-editor').hidden=true;if(field('as-selected'))field('as-selected').innerHTML='';}filterCatalog();}
    if(['as-qty','as-price','as-unit-price','as-total-price'].includes(e.target.id))calculate();
   };
@@ -113,7 +114,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   else{purchasePair=null;purchaseMethod='unit';show(purchaseMarkup(window.ZukaitStockCore.purchaseEntryMarkup({invoiceNumber:'',supplier:'',invoiceDate:today()},today())));renderLines();}
   filterCatalog();
  }
- let invoiceFilters={query:'',from:'',to:''};
+ let invoiceFilters={query:'',from:'',to:''},balanceRows=[],balanceNames=new Map();
  async function readPage(which,page=0){
   const g=++generation,who=owner;tab=which;
   show('<p>Loading verified Stock records…</p>');
@@ -141,25 +142,12 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
     }
    }
    const title=x=>{const n=names.get(JSON.stringify([String(x.material_id),String(x.brand_id)]));return (x.material_name||n?.material||x.material_id)+' · '+(x.brand_name||n?.brand||x.brand_id);};
-   const report=r.report;
-   let body='<h3>'+({balance:'Stock Balance',history:'Stock History',reports:'Stock Reports'}[which])+'</h3>'+btn('Refresh',which)+(department?'<p>Shared materials use one balance across both departments. Do not add department totals together.</p>':'');
-   if(which==='reports'){
-    body+=report?'<div class="as-row"><b>Current stock valuation</b><p>'+esc(money(report.valuation))+'</p></div><div class="as-row">Tracked material / brand pairs: '+esc(number(report.items))+'</div><div class="as-row">Low stock: '+esc(number(report.low))+'</div><div class="as-row">Out of stock: '+esc(number(report.out))+'</div><p>Opening count status: '+esc(number(report.uncounted))+' not counted. In stock: '+esc(number(report.in_stock))+'.</p>':'<p>Stock report unavailable.</p>';
-   }else{
-    body+=list.length?list.map(x=>{
-     const counted=x.initialised===true;
-     const a=counted&&known(x.physical)&&known(x.reserved)?Number(x.physical)-Number(x.reserved):null;
-     const unit=x.unit||names.get(JSON.stringify([String(x.material_id),String(x.brand_id)]))?.unit||'';
-     const qty=v=>esc(number(v)+(known(v)&&unit?' '+unit:''));
-     return '<div class="as-row"><b>'+esc(title(x))+'</b>'+(which==='balance'?
-      '<p>Physical: '+qty(counted?x.physical:null)+' · Reserved: '+qty(counted?x.reserved:null)+' · Available: '+qty(a)+'</p><p>Stock value: '+esc(money(counted?x.stock_value:null))+' · Minimum: '+qty(x.minimum)+'</p><p>'+esc(!counted?(x.initialised===false?'Opening stock not counted':'Opening count status unverified'):a===null?'Quantity unavailable':a<=0?'Out of stock':known(x.minimum)&&a<Number(x.minimum)?'Low stock':'In stock')+'</p>':
-      '<p>'+esc(x.action)+' · '+esc(x.recorded_at?new Date(x.recorded_at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Date unavailable')+'</p><p>Physical change: '+qty(x.physical_delta)+' · Reserved change: '+qty(x.reserved_delta)+' · Value: '+esc(money(x.cost_delta))+'</p><p>'+esc([x.job_card,x.note,x.actor_id?'Staff ID '+x.actor_id:''].filter(Boolean).join(' · '))+'</p>')+'</div>';
-    }).join(''):'<p>No stock records found.</p>';
-    if(which==='balance'&&page>0)body+=btn('Previous page','balance:'+(page-1));
-    if(r.hasMore&&which==='balance')body+=btn('Next page','balance:'+(page+1));
-    if(r.hasMore&&which==='history'&&list.length)body+=btn('Older movements','history:'+list.at(-1).id);
-   }
-   show(body);
+   const view=window.zukaitSharedStockRead({page:which,rows:list,report:r.report,hasMore:r.hasMore===true,
+    names:[...names.values()],moreAction:which==='balance'?'balance:'+(page+1):which==='history'&&list.length?'history:'+String(list.at(-1).id):'',
+    previousAction:which==='balance'&&page>0?'balance:'+(page-1):''});
+   if(which==='balance'){balanceRows=list;balanceNames=names;}
+   show(view.styles+'<div class="zs"><p class="zs-muted">Shared materials use one physical balance in both departments.</p>'+view.html+'</div>');
+
   }
  }
  function edit(i,mode){
@@ -249,6 +237,13 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(op==='master-save'&&masterReview)return send({operation:'MASTER_SAVE',...masterReview});
   if(op==='department'&&['Painting','Mechanical'].includes(index)){generation++;department=index;tab='department';show(departmentMenu());return;}
   if(op==='back'){if(tab==='purchase'&&lines.length&&!confirm('Discard unsaved invoice items?'))return;generation++;if(department&&tab!=='department'){tab='department';show(departmentMenu());}else{department='';tab='home';show(homeMenu());}return;}
+  if(op==='balance-detail'&&tab==='balance'){
+   const r=balanceRows[Number(index)];if(!r)return;const x=balanceNames.get(JSON.stringify([String(r.material_id),String(r.brand_id)]));const title=(r.material_name||x?.material||r.material_id)+' — '+(r.brand_name||x?.brand||r.brand_id);
+   const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));const counted=r.initialised===true;const qty=v=>known(v)?Number(v).toFixed(2)+' '+(r.unit||''):'—';
+   const pairs=[['Physical',counted?qty(r.physical):'—'],['Reserved',counted?qty(r.reserved):'—'],['Available',counted&&known(r.physical)&&known(r.reserved)?qty(Number(r.physical)-Number(r.reserved)):'—'],['Stock value',counted&&known(r.stock_value)?omr(r.stock_value)+' OMR':'—'],['Minimum stock',qty(r.minimum)]];
+   const styles=window.zukaitSharedStockRead({page:'reports'}).styles;
+   show(styles+'<div class="zs"><button class="zs-btn secondary" data-as="balance">← Stock Balance</button><div class="zs-card"><h3>'+esc(title)+'</h3>'+pairs.map(([k,v])=>'<div class="zs-row"><span class="zs-muted">'+esc(k)+'</span><b>'+esc(v)+'</b></div>').join('')+'</div><button class="zs-btn secondary" data-as="adjust">Stock Adjustment</button></div>');return;
+  }
   if(op==='invoice-search'){invoiceFilters={query:val('as-history-query'),from:val('as-history-from'),to:val('as-history-to')};return readPage('invoices',0);}
   if(['balance','invoices','history','reports'].includes(op))return readPage(op,op==='history'?(index||0):Number(index||0));
   if(op==='adjust'){
