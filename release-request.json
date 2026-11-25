@@ -1,8 +1,8 @@
 {
-  "versionName": "V422",
-  "versionCode": 385,
+  "versionName": "V423",
+  "versionCode": 386,
   "releaseScope": "standard",
-  "approvedForStaff": true,
+  "approvedForStaff": false,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
@@ -10,39 +10,14 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Publish the verified signed V422 Stock candidate with the remaining manual acceptance checks explicitly deferred by the owner.",
+  "physicalAcceptanceStatus": "NOT_RUN",
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "productionAuthenticatedAcceptance": "NOT_RUN",
+  "reason": "Shared Manager and Accountant Stock candidate. Backend V155 deployed and source verified; production invoice flag and authenticated acceptance remain pending.",
   "previousPublishedRelease": {
-    "versionName": "V421",
-    "versionCode": 384,
-    "releaseTag": "release-V421-architecture-v2",
-    "sourceCommit": "5e02808249f536505d115d2f054651c161617408"
-  },
-  "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-  "signedAcceptanceRun": 45593239658,
-  "verificationRun": 45593239138,
-  "approvedAt": "2026-11-25T10:22:44.309Z",
-  "publishNonce": "v422-stock-4f390af88fea04b2",
-  "productionAuthenticatedAcceptance": "WAIVED_BY_OWNER_NOT_RUN",
-  "accountantVerificationRun": 45593239082,
-  "v422AcceptanceDeferral": {
-    "checks": [
-      "client_https_restart",
-      "physical_android",
-      "physical_safari",
-      "full_data_preservation",
-      "fresh_backup_restored",
-      "pc_site_reconciled",
-      "production_backend_smoke"
-    ],
-    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
     "versionName": "V422",
     "versionCode": 385,
-    "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
-    "signedAcceptanceRun": 45593239658,
-    "authorizedBy": "Owner in this conversation",
-    "instruction": "Bypass and publish",
-    "recordedDate": "2026-11-25"
+    "releaseTag": "release-V422-architecture-v2",
+    "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d"
   }
 }
