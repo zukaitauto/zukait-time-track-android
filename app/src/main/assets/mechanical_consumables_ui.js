@@ -179,6 +179,7 @@ function renderDraft(){
    draftLines.map((x,i)=>'<div class="mc-cons-toolbar" style="padding:8px 0;border-bottom:1px solid #dce6f1">'+
    '<span><b>'+escapeHtml(x.material)+'</b> — '+escapeHtml(x.brand)+' · '+escapeHtml(x.quantity)+' '+escapeHtml(x.unit)+'</span>'+
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesRemoveLine('+i+')">Remove</button></div>').join('');
+ const retry=document.getElementById('mcConsRetry');if(retry)retry.innerHTML=issueNotice();
  const submit=document.getElementById('mcConsSubmit');
  if(submit)submit.disabled=!canIssue()||draftLines.length===0||sending||!!pendingIssue;
 }
@@ -266,7 +267,7 @@ function issueForm(){
    '<input id="mcConsQuantity" inputmode="decimal" type="number" min="0.0001" step="any" placeholder="Enter quantity">'+
    '<p id="mcConsUnit" class="mc-cons-muted">Unit: '+escapeHtml(first?.unit||'—')+'</p>'+
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesAddLine()">+ Add Material</button>'+
-   '<p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
+   '<div id="mcConsRetry"></div><p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
    '<div id="mcConsDraft"></div>'+
    '<p id="mcConsAvailable" class="mc-cons-muted">'+(canIssue()?'Checking available stock…':'Available stock will show when issuing is enabled.')+'</p>'+ 
    '<button id="mcConsSubmit" type="button" '+(canIssue()?'onclick="mechanicalConsumablesSubmitIssue()"':'title="Secure stock issuing is not enabled yet"')+' disabled style="display:block;width:100%;background:#64748b;color:white;padding:12px;margin-top:12px">ISSUE MATERIALS'+(canIssue()?'':' (not enabled)')+'</button>'+ 
@@ -314,7 +315,7 @@ async function section(id){
  if(sending)return;
  draftLines.length=0;pendingIssue=null;currentIssueKind=id;
  if(canIssue()){try{pendingIssue=readIssue(issueOwner())}catch(_){pendingIssue={blocked:true}}}
- open(s.title,back+issueNotice()+issueForm()+
+ open(s.title,back+issueForm()+
    (canIssue()?'':'<div class="mc-cons-alert">Preview only: no materials have been issued or deducted from stock.</div>'));
  renderDraft();loadBalance();
 }

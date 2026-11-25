@@ -1,10 +1,11 @@
 // Mechanical Estimate -> reviewed Cash Job Card, UI-only synthetic regression.
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import {JSDOM} from 'jsdom';
+import {JSDOM,VirtualConsole} from 'jsdom';
 import {mountMechanicalSection} from '../app/src/main/assets/mechanical_sections.js';
 const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
-const page=new JSDOM('<main><iframe id="estimate" src="https://qa.invalid/mechanical_estimate.html"></iframe><div id="job"></div></main>',{url:'https://qa.invalid/mechanical_supervisor.html',pretendToBeVisual:true,runScripts:'outside-only'});
+const errors=[];const virtualConsole=new VirtualConsole();virtualConsole.on('jsdomError',e=>errors.push(e));
+const page=new JSDOM('<main><iframe id="estimate" src="https://qa.invalid/mechanical_estimate.html"></iframe><div id="job"></div></main>',{url:'https://qa.invalid/mechanical_supervisor.html',pretendToBeVisual:true,runScripts:'outside-only',virtualConsole});
 const outer=page.window,child=outer.document.getElementById('estimate').contentWindow;
 child.document.open();child.document.write('<!doctype html><html><head></head><body><p id="estimate-notice"></p><div id="modal"><div class="modal-box"></div></div></body></html>');child.document.close();
 child.me={id:'SUP003',role:'Mechanical Supervisor'};
@@ -107,5 +108,5 @@ assert.equal(command.command.command.details.registration,'32621-M');
 assert.equal(command.command.command.details.customer,'Test Customer');
 assert.match(command.command.command.reason,/Replace brake pads/);
 assert.doesNotMatch(JSON.stringify(command),/Brake pad set/i);
-section.destroy();page.window.close();
+section.destroy();page.window.close();await tick();assert.deepEqual(errors,[],'Estimate observer must not access a destroyed document');
 console.log('PASS Mechanical saved-estimate-only Job Card prefill, LS/PL toggles, required indicators, +Add blank rows, no parts posting, confirmation required');
