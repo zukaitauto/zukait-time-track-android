@@ -291,7 +291,7 @@ function stockOpeningMarkup({choices,selected=null,query='',hasMore=false,busy=f
      '<p class="zs-muted">The server calculates weighted average cost after saving. Existing master prices are not overwritten.</p>'+
      '<button class="zs-btn" id="zs-save-entry" onclick="zukStockSavePurchase()"'+(busy||noAssignedItems?' disabled':'')+ '>'+(legacy?'Save Purchased Stock':'Confirm Opening Stock')+'</button>';
 }
-function stockAdjustmentMarkup({rows,busy=false,nameOf=label}){return '<h3>Stock Adjustment</h3>'+
+function stockAdjustmentMarkup({rows,busy=false,nameOf=label,title='Manager Stock Adjustment'}){return '<h3>'+esc(title)+'</h3>'+
      '<label>Stock item</label><select id="zs-item">'+rows.map(r=>{
        const id=String(r.material_id)+'|'+String(r.brand_id);
        return '<option value="'+esc(id)+'">'+esc(nameOf(r))+ ' · Current '+(counted(r)?fmt(r.physical):'—')+' '+esc(r.unit)+'</option>';
@@ -304,7 +304,7 @@ function stockAdjustmentMarkup({rows,busy=false,nameOf=label}){return '<h3>Stock
 window.zukaitSharedStockWrite=({page,pairs=[],hasMore=false})=>{
  const rows=pairs.map(x=>({material_id:x.materialId,brand_id:x.brandId,unit:x.unit,name:x.material+' — '+x.brand,physical:x.physical,initialised:x.initialised}));
  const nameOf=x=>x.name;
- let html=page==='opening'?stockOpeningMarkup({choices:rows,hasMore,privileged:false,nameOf}):page==='adjust'?stockAdjustmentMarkup({rows,nameOf}):null;
+ let html=page==='opening'?stockOpeningMarkup({choices:rows,hasMore,privileged:false,nameOf}):page==='adjust'?stockAdjustmentMarkup({rows,nameOf,title:'Stock Adjustment'}):null;
  if(html===null)throw Error('Unknown Stock form');
  if(page==='adjust'){
   // Retain the scoped minimum-stock operation already supported by Accountant.
@@ -406,7 +406,7 @@ function render(){
  }
   if(view.page==='history'){draw(stockHistoryMarkup(view.history,view.historyHasMore));return;}
  if(view.page==='adjust'){
-  if(!manager()){draw('<p class="zs-warning">Only Manager can correct physical stock.</p>');return;}
+  if(!manager()){draw('<div class="zs-warning">Only Manager can correct physical stock. Supervisors can add purchases and see history.</div>');return;}
   draw(stockAdjustmentMarkup({rows:view.items,busy:view.busy}));return;
  }
  if(view.page==='reports'){draw(stockReportMarkup(view.report));}
