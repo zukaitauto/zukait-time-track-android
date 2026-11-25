@@ -1,7 +1,7 @@
 {
   "versionName": "V422",
   "versionCode": 385,
-  "sourceCommit": null,
+  "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d",
   "checks": {
     "client_https_restart": {
       "passed": false,
@@ -41,7 +41,7 @@
     },
     "production_backend_smoke": {
       "passed": false,
-      "evidence": "V422 exact-source acceptance not yet verified.",
+      "evidence": "Partial verification on 2026-11-25 at 10:21 UTC. Production workshop-api V154 was active with no workshop-api source differences between its recorded deployment commit and the V422 candidate. Read-only calls as service_role returned 41 Painting items, 2 counted, 39 uncounted and 20.000 OMR valuation. Mechanical returned zero items. The first history pages contained 2 Painting movements and 0 Mechanical movements. Live staff sign-in was waived. Authenticated end-to-end production smoke was not run.",
       "verifiedBy": null,
       "verifiedAt": null
     }
