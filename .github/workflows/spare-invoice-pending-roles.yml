@@ -1,0 +1,22 @@
+name: Spare invoice pending role regression
+on:
+  pull_request:
+    paths:
+      - 'app/src/main/assets/v2/features/spare-parts/main_module.js'
+      - 'tests/spare-invoice-pending-roles.mjs'
+      - '.github/workflows/spare-invoice-pending-roles.yml'
+permissions:
+  contents: read
+jobs:
+  roles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node --check app/src/main/assets/v2/features/spare-parts/main_module.js
+          node tests/spare-invoice-pending-roles.mjs
+          node tests/spare-invoice-vehicle-label.mjs
+          node tests/v161-spare-parts-actual-cost.mjs
