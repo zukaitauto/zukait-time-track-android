@@ -84,8 +84,39 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   }else{
    const operation=which==='balance'?'LIST':which==='history'?'HISTORY':'REPORTS';
    const r=await request({operation,...(department?{department}:{}),...(which==='balance'?{page}:which==='history'&&page?{cursor:String(page)}:{})});if(!valid(g,who))return;
-   const list=r.items||r.history||[];let body=which==='reports'?'<h3>Stock Reports</h3><pre>'+esc(JSON.stringify(r.report,null,2))+'</pre>':'<h3>'+ (which==='balance'?'Stock Balance':'Stock History')+'</h3>'+list.map(x=>'<div class="as-row"><b>'+esc(x.material_name||x.material_id)+' · '+esc(x.brand_name||x.brand_id)+'</b><p>'+esc(which==='balance'?'Physical '+x.physical+' · Reserved '+x.reserved+' · Value OMR '+omr(x.stock_value):x.action+' · Quantity '+x.physical_delta+' · OMR '+omr(x.cost_delta)+' · '+x.recorded_at+' · Staff '+x.actor_id)+'</p></div>').join('');
-   if(r.hasMore&&which==='balance')body+=btn('Next page','balance:'+(page+1));if(r.hasMore&&which==='history'&&list.length)body+=btn('Older movements','history:'+list.at(-1).id);show(body);
+   const list=r.items||r.history||[];
+   const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
+   const number=v=>known(v)?String(Number(v)):'—';
+   const money=v=>known(v)?Number(v).toFixed(3)+' OMR':'—';
+   const names=new Map();
+   if(which!=='reports'&&list.length){
+    for(let p=0;p<21;p++){
+     const c=await request({operation:'ENTRY_CATALOG',page:p,...(department?{department}:{})});
+     if(!valid(g,who))return;
+     for(const x of c.items||[])names.set(JSON.stringify([String(x.materialId),String(x.brandId)]),x);
+     if(!c.hasMore)break;
+    }
+   }
+   const title=x=>{const n=names.get(JSON.stringify([String(x.material_id),String(x.brand_id)]));return (x.material_name||n?.material||x.material_id)+' · '+(x.brand_name||n?.brand||x.brand_id);};
+   const report=r.report;
+   let body='<h3>'+({balance:'Stock Balance',history:'Stock History',reports:'Stock Reports'}[which])+'</h3>'+btn('Refresh',which)+(department?'<p>Shared materials use one balance across both departments. Do not add department totals together.</p>':'');
+   if(which==='reports'){
+    body+=report?'<div class="as-row"><b>Current stock valuation</b><p>'+esc(money(report.valuation))+'</p></div><div class="as-row">Tracked material / brand pairs: '+esc(number(report.items))+'</div><div class="as-row">Low stock: '+esc(number(report.low))+'</div><div class="as-row">Out of stock: '+esc(number(report.out))+'</div><p>Server totals may include uncounted stock. Verify opening counts before interpreting zero quantities.</p>':'<p>Stock report unavailable.</p>';
+   }else{
+    body+=list.length?list.map(x=>{
+     const counted=x.initialised===true;
+     const a=counted&&known(x.physical)&&known(x.reserved)?Number(x.physical)-Number(x.reserved):null;
+     const unit=x.unit||names.get(JSON.stringify([String(x.material_id),String(x.brand_id)]))?.unit||'';
+     const qty=v=>esc(number(v)+(known(v)&&unit?' '+unit:''));
+     return '<div class="as-row"><b>'+esc(title(x))+'</b>'+(which==='balance'?
+      '<p>Physical: '+qty(counted?x.physical:null)+' · Reserved: '+qty(counted?x.reserved:null)+' · Available: '+qty(a)+'</p><p>Stock value: '+esc(money(counted?x.stock_value:null))+' · Minimum: '+qty(x.minimum)+'</p><p>'+esc(!counted?(x.initialised===false?'Opening stock not counted':'Opening count status unverified'):a===null?'Quantity unavailable':a<=0?'Out of stock':known(x.minimum)&&a<Number(x.minimum)?'Low stock':'In stock')+'</p>':
+      '<p>'+esc(x.action)+' · '+esc(x.recorded_at?new Date(x.recorded_at).toLocaleString('en-GB',{timeZone:'Asia/Muscat'}):'Date unavailable')+'</p><p>Physical change: '+qty(x.physical_delta)+' · Reserved change: '+qty(x.reserved_delta)+' · Value: '+esc(money(x.cost_delta))+'</p><p>'+esc([x.job_card,x.note,x.actor_id?'Staff ID '+x.actor_id:''].filter(Boolean).join(' · '))+'</p>')+'</div>';
+    }).join(''):'<p>No stock records found.</p>';
+    if(which==='balance'&&page>0)body+=btn('Previous page','balance:'+(page-1));
+    if(r.hasMore&&which==='balance')body+=btn('Next page','balance:'+(page+1));
+    if(r.hasMore&&which==='history'&&list.length)body+=btn('Older movements','history:'+list.at(-1).id);
+   }
+   show(body);
   }
  }
  function edit(i,mode){
