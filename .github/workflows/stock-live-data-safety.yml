@@ -49,10 +49,11 @@ jobs:
             request.approvedForStaff===false && request.productionBackendChanges===true &&
             request.backendDeploymentRequired===true && request.approvedAt===null &&
             request.publishNonce===null;
-          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase))
+          const heldParity=request.releaseScope==='standard' && request.versionName==='V422' && request.versionCode===385 && request.approvedForStaff===false && request.approvedAt===null && request.publishNonce===null && request.productionBackendChanges===true && request.backendDeploymentRequired===true;
+          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase && !heldParity))
             throw Error('Unexpected Stock backend activation or release scope');
           const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
           if(!html.includes('window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true'))
             throw Error('Stock preview safety missing from normal app');
-          console.log('PASS: UI-only or explicitly unapproved V420 preparation; stock activation is not approved.');
+          console.log('PASS: UI-only or explicitly unapproved release preparation; stock activation is not approved.');
           NODE

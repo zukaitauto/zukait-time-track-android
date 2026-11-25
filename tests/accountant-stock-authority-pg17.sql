@@ -62,3 +62,33 @@ begin
  if has_function_privilege('authenticated','public.zukait_purchase_invoice_save(text,text,jsonb)','execute') or has_function_privilege('anon','public.zukait_stock_command(text,text,text,jsonb)','execute') then raise exception 'public RPC exposure';end if;
 end $$;
 select 'PASS: actual PostgreSQL opening, atomic invoice, exact retries, duplicate prevention, corrections, actor audit and permission denial' as result;
+
+-- Real PostgreSQL master-link transaction tests. The fixture CAS has the
+-- production signature; the link and authorization functions are real SQL.
+create table public.workshop_state(id text primary key,revision bigint,data jsonb);
+insert into public.workshop_state values('main',1,'{"jobs":[{"id":"unchanged"}],"consumables":{"materials":[],"brands":[],"prices":[],"issues":[],"actuals":[],"audit":[]}}');
+create function public.zukait_commit_workshop_state_v2(p_expected_revision bigint,p_data jsonb,p_changed_by text,p_live jsonb) returns jsonb language plpgsql as $cas$
+begin
+ update public.workshop_state set data=p_data,revision=revision+1 where id='main' and revision=p_expected_revision;
+ if not found then return jsonb_build_object('ok',false,'code','conflict');end if;
+ return jsonb_build_object('ok',true,'revision',p_expected_revision+1);
+end $cas$;
+\ir ../supabase/staged/ACCOUNTANT_STOCK_MASTER_ATOMIC_LINK.sql
+do $test$
+declare c jsonb; r jsonb;
+begin
+ c:='{"materials":[{"id":"new-m","name":"QA material","unit":"Piece","category":"Consumable","department":"Both","active":true}],"brands":[{"id":"new-b","name":"QA brand","active":true}],"prices":[{"id":"new-p","materialId":"new-m","brandId":"new-b","pricePerUnit":2,"effectiveFrom":1795550400000}],"issues":[],"actuals":[],"audit":[]}';
+ begin perform public.zukait_stock_master_commit('token-S1',1,c,'[]','new-m','new-b','new-p');raise exception 'unauthorized master write';exception when insufficient_privilege then null;end;
+ begin perform public.zukait_stock_master_commit('token-A1',1,c,'[]','new-m','new-b','wrong');raise exception 'invalid price accepted';exception when invalid_parameter_value then null;end;
+ if (select revision from public.workshop_state where id='main')<>1 then raise exception 'failed link modified master';end if;
+ r:=public.zukait_stock_master_commit('token-A1',1,c,'[]','new-m','new-b','new-p');
+ if r->>'ok'<>'true' or not exists(select 1 from public.zukait_stock_balances where material_id='new-m' and brand_id='new-b' and physical=0 and reserved=0 and stock_value=0) then raise exception 'missing zero-balance link';end if;
+ if (select department from public.zukait_stock_material_keys where material_id='new-m')<>'Both' then raise exception 'shared scope lost';end if;
+ if (select data->'jobs' from public.workshop_state where id='main')<>'[{"id":"unchanged"}]'::jsonb then raise exception 'unrelated state changed';end if;
+ if (public.zukait_stock_master_commit('token-A1',1,c,'[]','new-m','new-b','new-p')->>'code')<>'conflict' then raise exception 'stale revision accepted';end if;
+ perform public.zukait_stock_command('token-A1','new-opening','OPENING','{"materialId":"new-m","brandId":"new-b","quantity":2,"unitCost":3,"countConfirmed":true,"reason":"QA physical count"}');
+ perform public.zukait_stock_master_commit('token-A1',2,c,'[]','new-m','new-b','new-p');
+ if (select physical from public.zukait_stock_balances where material_id='new-m' and brand_id='new-b')<>2 then raise exception 'link changed counted quantity';end if;
+ if has_function_privilege('anon','public.zukait_stock_master_commit(text,bigint,jsonb,jsonb,text,text,text)','execute') or has_function_privilege('authenticated','public.zukait_stock_link_master(text,text,text,text)','execute') then raise exception 'public master RPC access';end if;
+end $test$;
+select 'PASS atomic shared material link, stock preservation and role denial' as result;

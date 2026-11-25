@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {stockMasterApi as api} from '../supabase/functions/workshop-api/extensions/stock_master_api.js';
 const actor={id:'A1',role:'Accountant'},opts={enabled:true,sessionHash:'test',computeLiveStatus:()=>[{}]};
 let revision=1,data={jobs:[{id:'unchanged'}],consumables:{materials:[],brands:[],prices:[],issues:[],actuals:[],audit:[]}},writes=0;
-const db={from:()=>({select:()=>({eq:()=>({single:async()=>({data:{revision,data}})})})}),rpc:async(name,args)=>{assert.equal(name,'zukait_commit_workshop_state_v2');assert.equal(args.p_expected_revision,revision);assert.equal(args.p_changed_by,'A1');data=args.p_data;revision++;writes++;return {data:{ok:true}}}};
+const db={from:()=>({select:()=>({eq:()=>({single:async()=>({data:{revision,data}})})})}),rpc:async(name,args)=>{assert.equal(name,'zukait_stock_master_commit');assert.equal(args.p_expected_revision,revision);assert.equal(args.p_session_hash,'test');if(args.p_price_id){assert.ok(args.p_material_id);assert.ok(args.p_brand_id);}data={...data,consumables:args.p_consumables};revision++;writes++;return {data:{ok:true}}}};
 const invoke=(body,user=actor,options=opts)=>api(db,user,body,options);
 const command={command:'CREATE_MATERIAL',name:'QA primer',unit:'Liter',category:'Consumable',department:'Both',reason:'QA material'};
 async function save(d,key){const review=await invoke({operation:'MASTER_REVIEW',data:d});assert.equal(review.status,200,JSON.stringify(review));const body={operation:'MASTER_SAVE',data:d,requestId:key,expectedRevision:review.body.revision,impact:review.body.impact};const result=await invoke(body);assert.equal(result.status,200,JSON.stringify(result));return {body,result};}

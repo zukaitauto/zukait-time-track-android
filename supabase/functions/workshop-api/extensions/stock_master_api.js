@@ -8,7 +8,7 @@ const same=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
 const id=x=>typeof x==='string'&&/^[a-zA-Z0-9_.:-]{1,128}$/.test(x);
 const str=(x,max)=>typeof x==='string'&&x.trim().length>0&&x.trim().length<=max;
 const oman=t=>new Date(Number(t)+14400000).toISOString().slice(0,10);
-const allowed=new Set(['MATERIAL_NAME_REQUIRED','INVALID_UNIT','INVALID_MATERIAL_DEPARTMENT','PAINT_ONLY_MATERIAL','MATERIAL_DUPLICATE','BRAND_DUPLICATE','BRAND_NAME_REQUIRED','MATERIAL_NOT_FOUND','BRAND_NOT_FOUND','INVALID_PRICE','EFFECTIVE_DATE_REQUIRED','REASON_REQUIRED','PRICE_DATE_DUPLICATE','PRICE_NOT_FOUND','INVOICE_PRICE_OWNED','MASTER_INVALID_INPUT','MASTER_NO_CHANGE']);
+const allowed=new Set(['MATERIAL_NAME_REQUIRED','INVALID_UNIT','INVALID_MATERIAL_DEPARTMENT','PAINT_ONLY_MATERIAL','MATERIAL_DUPLICATE','BRAND_DUPLICATE','BRAND_NAME_REQUIRED','MATERIAL_NOT_FOUND','BRAND_NOT_FOUND','INVALID_PRICE','EFFECTIVE_DATE_REQUIRED','REASON_REQUIRED','PRICE_DATE_DUPLICATE','PRICE_NOT_FOUND','INVOICE_PRICE_OWNED','MASTER_INVALID_INPUT','MASTER_NO_CHANGE','MASTER_SCOPE_MISMATCH','STOCK_UNIT_CONFLICT','PAINT_ONLY_MASTER','INVALID_MASTER','MASTER_NOT_SAVED']);
 function prepare(data,d,user){
  const state=clone(data),c=C.ensureState(state);let row;
  if(!d||typeof d!=='object'||Array.isArray(d)||!str(d.reason,500)||d.reason.trim().length<5)throw Error('MASTER_INVALID_INPUT');
@@ -77,8 +77,9 @@ export async function stockMasterApi(admin,user,body,{enabled=false,sessionHash=
   if(!same(without(data),without(staged.state)))return bad('stock_master_scope_violation',500);
   const live=computeLiveStatus(staged.state,revision+1,user.id);
   if(!Array.isArray(live)||!live.length)return bad('stock_master_live_unavailable',503);
-  const saved=await admin.rpc('zukait_commit_workshop_state_v2',{p_expected_revision:revision,p_data:staged.state,p_changed_by:user.id,p_live:live});
-  if(saved.error)return bad('stock_master_commit_failed',503);
+  const link=body.data.command!=='CREATE_MATERIAL';
+  const saved=await admin.rpc('zukait_stock_master_commit',{p_session_hash:sessionHash,p_expected_revision:revision,p_consumables:staged.state.consumables,p_live:live,p_material_id:link?staged.row.materialId:null,p_brand_id:link?staged.row.brandId:null,p_price_id:link?staged.row.id:null});
+  if(saved.error){const code=String(saved.error.message||'');return bad(allowed.has(code)?code.toLowerCase():code==='STOCK_FORBIDDEN'?'stock_forbidden':'stock_master_commit_failed',allowed.has(code)?409:code==='STOCK_FORBIDDEN'?403:503);}
   if(saved.data?.ok!==true)return bad(saved.data?.code==='conflict'?'stale_workshop_revision':'stock_master_unconfirmed',saved.data?.code==='conflict'?409:503);
   return good({receipt});
  }catch(e){const code=String(e?.message||'');return bad(allowed.has(code)?code.toLowerCase():'stock_master_unavailable',allowed.has(code)?409:503);}
