@@ -131,14 +131,15 @@ assert.match(markup(),/<strong>Create Material<\/strong>/);
 assert.match(markup(),/<strong>Brand &amp; Price<\/strong>/);
 ctx.window.zukStockSelectDepartment('Painting');
 assert.equal(current(),'home');
-assert.equal(cards(),5,'Five colored Paint Stock menu boxes');
+assert.equal(cards(),4,'Four departmental stock actions; entry centralized');
+assert.doesNotMatch(markup(),/onclick="zukStockPreviewNavigate\(\'add\'\)"/);
 assert.doesNotMatch(markup(),/<button[^>]*zs-(?:create-item|materials-btn)/,
  'Approved Paint Stock dashboard must contain only the five stock actions');
 assert.match(markup(),/Paint Consumables/);
 assert.match(markup(),/zs-home-grid/);
 assert.match(markup(),/Consumables Stock Management/);
 for(const [key,title] of [
- ['balance','Stock Balance'],['add','Add Stock'],['history','Stock History'],
+ ['balance','Stock Balance'],['history','Stock History'],
  ['adjust','Stock Adjustment'],['reports','Stock Reports']
 ]){
  assert.match(markup(),new RegExp('onclick="zukStockPreviewNavigate\\(\\\''+key+'\\\'\\)"'),
@@ -172,10 +173,14 @@ assert.doesNotMatch(markup(),/OMR 9\.2/,'Master prices are not inventory valuati
 
 ctx.window.zukStockPreviewNavigate('home');
 assert.equal(current(),'home');
-assert.equal(cards(),5,'Back to Stock Management restores only menu cards');
+assert.equal(cards(),4,'Back to Stock Management restores only menu cards');
 assert.doesNotMatch(markup(),/<table aria-label="Stock Balance preview">/);
 
-ctx.window.zukStockNav('add');
+ctx.window.zukStockResetDepartment();
+assert.match(markup(),/Central Stock Entry/);
+assert.match(markup(),/onclick="zukStockCentralPurchase\(\)"/);
+assert.match(markup(),/onclick="zukStockCentralOpening\(\)"/);
+ctx.window.zukStockCentralOpening();
 assert.equal(current(),'add');
 assert.equal(cards(),0);
 assert.match(markup(),/Add Stock — Preview/);
@@ -186,6 +191,7 @@ assert.match(markup(),/Search Material \+ Brand/,'Add Stock must use one searcha
 assert.match(markup(),/id="zs-preview-add-pairs"/);
 assert.doesNotMatch(markup(),/zs-preview-add-brand|>Brand<\/select>/,'Brand is not selected in a separate dropdown');
 assert.match(markup(),/Save Stock — Not Active/);
+assert.doesNotMatch(markup(),/<option value="PURCHASE">/);
 assert.match(markup(),/<button[^>]+disabled>/);
 set('zs-preview-qty','20');
 set('zs-preview-price','120');
@@ -201,6 +207,7 @@ assert.match(fields['zs-preview-calculated'].textContent,/120\.000 OMR/);
 ctx.window.zukStockSavePurchase();
 assert.equal(calls.length,0);
 
+ctx.window.zukStockSelectDepartment('Painting');
 ctx.window.zukStockNav('history');
 assert.equal(current(),'history');
 assert.match(markup(),/No stock ledger is active/);
@@ -237,11 +244,12 @@ assert.match(markup(),/Water Paper 800/);
 assert.doesNotMatch(markup(),/<td><b>2K Primer<\/b><\/td>/);
 
 ctx.window.zukStockPreviewNavigate('home');
-assert.equal(cards(),5);
+assert.equal(cards(),4);
 ctx.window.zukStockResetDepartment();
 assert.equal(cards(),0,'Back to departments must hide the stock action cards');
 ctx.window.zukStockSelectDepartment('Mechanical');
-assert.equal(cards(),5,'Mechanical gets its own five-card menu');
+assert.equal(cards(),4,'Mechanical gets four stock actions');
+assert.doesNotMatch(markup(),/onclick="zukStockPreviewNavigate\(\'add\'\)"/);
 assert.doesNotMatch(markup(),/<button[^>]*zs-(?:create-item|materials-btn)/,
  'Mechanical Stock dashboard must contain only the five stock actions');
 assert.match(markup(),/Mechanical Consumables/);
