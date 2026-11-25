@@ -117,11 +117,11 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  }
  const header=(i={})=>'<label>Invoice number<input id="as-number" maxlength="100" value="'+esc(i.invoice_number||'')+'"></label><label>Supplier<input id="as-supplier" maxlength="160" value="'+esc(i.supplier||'')+'"></label><label>Invoice date<input id="as-date" type="date" max="'+today()+'" value="'+esc(i.invoice_date||today())+'"></label>';
  function renderEntry(){
-  if(tab==='opening'){openingPair=null;const v=window.zukaitSharedStockWrite({page:'opening',pairs:catalog,hasMore:moreCatalog});show(v.styles+'<div class="zs">'+v.html+'</div>');}
+  if(tab==='opening'){openingPair=null;const v=window.zukaitSharedStockWrite({page:'opening',pairs:catalog,hasMore:moreCatalog});show(v.styles+'<div class="zs">'+v.html+btn('Review &amp; Link Existing Materials','legacy:0')+'</div>');}
   else{purchasePair=null;purchaseMethod='unit';show(purchaseMarkup(window.ZukaitStockCore.purchaseEntryMarkup({invoiceNumber:'',supplier:'',invoiceDate:today()},today())));renderLines();}
   if(tab!=='opening')filterCatalog();
  }
- let invoiceFilters={query:'',from:'',to:''},balanceRows=[],balanceNames=new Map();
+ let invoiceFilters={query:'',from:'',to:''},balanceRows=[],balanceNames=new Map(),legacyRows=[],legacyPage=0;
  async function readPage(which,page=0){
   const g=++generation,who=owner;tab=which;
   show('<p>Loading verified Stock records…</p>');
@@ -153,7 +153,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
     names:[...names.values()],moreAction:which==='balance'?'balance:'+(page+1):which==='history'&&list.length?'history:'+String(list.at(-1).id):'',
     previousAction:which==='balance'&&page>0?'balance:'+(page-1):''});
    if(which==='balance'){balanceRows=list;balanceNames=names;}
-   show(view.styles+'<div class="zs"><p class="zs-muted">Shared materials use one physical balance in both departments.</p>'+view.html+'</div>');
+   show(view.styles+'<div class="zs"><p class="zs-muted">Shared materials use one physical balance in both departments.</p>'+(which==='balance'?btn('One-time: Review Older Materials','legacy:0'):'')+view.html+'</div>');
 
   }
  }
@@ -237,10 +237,30 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    show('<h2>Review Brands &amp; Price · '+esc(i.invoice_number)+'</h2>'+r.review.map(p=>'<div class="as-row"><b>'+esc(p.materialName)+' · '+esc(p.brandName)+'</b><p>'+esc(p.action)+' · '+esc(p.date)+' · OMR '+omr(p.oldRate)+' → '+omr(p.rate)+'</p><p>Affected records: '+esc(p.affected||0)+'</p><p>'+esc(p.reason||'')+'</p></div>').join('')+(eligible?'<label>Reason<input id="as-reason" maxlength="500"></label>'+btn('Confirm price change','price-confirm'):'<p>No eligible price change. Resolve blocked periods before proceeding.</p>')+btn('Back to invoice list','invoices'));
   }catch(e){if(valid(g,who))status(e.message);}
  }
+ async function legacyReview(page=0){
+  if(!Number.isInteger(page)||page<0||page>49)return;
+  tab='legacy';const g=++generation,who=owner;legacyPage=page;
+  show('<h3>Older Materials — One-time Setup</h3><p>Loading saved material and brand pairs…</p>');
+  try{const r=await request({operation:'LEGACY_PREVIEW',page});if(!valid(g,who))return;
+   legacyRows=r.preview?.items||[];
+   const styles=window.zukaitSharedStockRead({page:'reports'}).styles;
+   show(styles+'<div class="zs"><h3>Older Materials — One-time Setup</h3><p class="zs-muted">Linking does not record a physical count or change a price. Unassigned legacy materials require Manager classification.</p>'+
+    legacyRows.map((x,i)=>{const scope=x.savedDepartment||x.stockDepartment;return '<div class="zs-card"><b>'+esc(x.name)+' — '+esc(x.brand)+'</b><p class="zs-muted">'+esc(x.unit)+' · '+esc(scope||'Unassigned')+'</p>'+
+     (x.linked?'<p>Already linked to Stock — no setup needed</p>':scope&&['Painting','Mechanical','Both'].includes(scope)?'<button class="zs-btn" data-as="legacy-link:'+i+'">Review &amp; Link</button>':'<p class="zs-warning">Manager classification required</p>')+'</div>'}).join('')+
+    (legacyRows.length?'':'<p>No saved material and brand pairs found.</p>')+(page?btn('Previous','legacy:'+(page-1)):'')+(r.preview?.hasMore?btn('Next','legacy:'+(page+1)):'')+'</div>');
+  }catch(e){if(valid(g,who))status(e.message);}
+ }
  async function act(action){
   if(!current()||busy)return;
   if(action==='close'){reset();return;}if(action==='retry')return send(null,true);
   const [op,index]=action.split(':');
+  if(op==='legacy')return legacyReview(Number(index||0));
+  if(op==='legacy-link'&&tab==='legacy'){
+   const x=legacyRows[Number(index)],scope=x?.savedDepartment||x?.stockDepartment;if(!x||x.linked||!['Painting','Mechanical','Both'].includes(scope))return;
+   if(!canWrite()||!confirm('Link '+x.name+' — '+x.brand+' to '+scope+' Stock? No stock quantity or price will be changed.'))return;
+   const g=generation,who=owner;busy=true;try{const r=await request({operation:'MASTER_LINK',materialId:x.materialId,brandId:x.brandId,origin:scope});if(!r.linked?.linked)throw Error('Link confirmation unavailable. Refresh before retrying.');}finally{busy=false;}
+   if(valid(g,who))return legacyReview(legacyPage);return;
+  }
   if(op==='price-review')return reviewInvoicePrice(invoices[Number(index)]);
   if(op==='price-confirm'&&priceIntent){const p=priceIntent;if(p.operation==='PRICE_APPLY_APPLY'){const reason=val('as-reason');if(reason.length<5)throw Error('Enter a reason.');return send({...p,data:{...p.data,reason}});}return send(p);}
   if(op==='master-create'){

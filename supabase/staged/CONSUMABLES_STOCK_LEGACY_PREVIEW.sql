@@ -1,4 +1,4 @@
--- STAGED ONLY: Manager-only, one-time read of existing saved consumables master.
+-- STAGED ONLY: Manager and Accountant scoped, one-time read of existing saved consumables master.
 -- Returns <=20 priced material/brand pairs; does NOT link, write, reprice or
 -- create a balance. No workshop history tables or whole-state response.
 create or replace function public.zukait_stock_legacy_preview(
@@ -19,7 +19,7 @@ begin
  join public.staff_credentials sc on sc.user_id=ss.user_id
  where ss.token_hash=p_session_hash and ss.revoked_at is null
    and sc.active=true and coalesce(sc.must_change,false)=false;
- if v_actor is null or v_role<>'Manager'
+ if v_actor is null or v_role not in ('Manager','Accountant')
  then raise exception 'MANAGER_ONLY' using errcode='42501';end if;
  select ws.data->'consumables' into v_master
  from public.workshop_state ws where ws.id='main';
@@ -52,6 +52,8 @@ begin
      coalesce(m.item->>'category','Consumable') as category,
      b.item->>'id' as brand_id,b.item->>'name' as brand_name,
      coalesce(mk.department,nullif(nullif(m.item->>'department',''),'Unassigned'),'Painting') as department,
+     nullif(nullif(m.item->>'department',''),'Unassigned') as saved_department,
+     case when mk.active and mk.department in ('Painting','Mechanical','Both') then mk.department end as stock_department,
      bal.material_id is not null as has_balance
    from active_pairs a
    join materials m on m.item->>'id'=a.mid
@@ -71,7 +73,7 @@ begin
        'materialId',x.material_id,'name',x.material_name,
        'brandId',x.brand_id,'brand',x.brand_name,
        'unit',x.unit,'category',x.category,
-       'department',x.department,'linked',x.has_balance
+       'department',x.department,'savedDepartment',x.saved_department,'stockDepartment',x.stock_department,'linked',x.has_balance
      ) order by x.rn
    ) filter (where x.rn<=20),'[]'::jsonb),
    count(*)>20
