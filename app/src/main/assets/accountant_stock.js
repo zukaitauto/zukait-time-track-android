@@ -20,7 +20,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   '<h3>Central Stock Entry</h3><div class="as-grid">'+tile('Purchase Entry','Purchase invoices','🛒','blue','purchase')+tile('Add Stock','Opening stock · physical count','＋','green','opening')+'</div>'+
   '<h3>Stock</h3><div class="as-grid">'+tile('Paint Consumables','Painting materials and shared stock','🎨','blue','department:Painting')+tile('Mechanical Consumables','Mechanical materials and shared stock','⚙','green','department:Mechanical')+'</div>'+
   '<h3>Material Setup</h3><div class="as-grid">'+tile('Create Material','Manager only','＋','purple','',true)+tile('Brand &amp; Price','Manager only','◇','amber','',true)+'</div>';
- const departmentMenu=()=>'<h2>'+departmentTitle()+'</h2><div class="as-grid">'+tile('Stock Balance','Available, reserved and total stock','📦','blue','balance')+tile('Stock History','Stock movement history','◷','purple','history')+tile('Stock Adjustment','Manager only','⚖','amber','',true)+tile('Stock Reports','Stock valuation and consumption','▤','green','reports')+'</div>';
+ const departmentMenu=()=>'<h2>'+departmentTitle()+'</h2><div class="as-grid">'+tile('Stock Balance','Available, reserved and total stock','📦','blue','balance')+tile('Stock History','Stock movement history','◷','purple','history')+tile('Stock Adjustment','Physical count and minimum stock','⚖','amber','adjust')+tile('Stock Reports','Stock valuation and consumption','▤','green','reports')+'</div>';
  const nav=()=>'<header class="as-toolbar">'+(tab==='home'?'':btn('← '+(department&&tab!=='department'?'Department':'Stock'),'back'))+'<span>▣ ZUKAIT · STOCK</span>'+btn('✕ Close','close')+'</header>';
  function show(body){
   if(!current())return;
@@ -59,7 +59,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if([...select.options].some(o=>o.value===selected))select.value=selected;
  }
  async function loadCatalog(page=0){
-  const g=generation,who=owner;const r=await request({operation:'ENTRY_CATALOG',page});if(!valid(g,who))return false;
+  const g=generation,who=owner;const r=await request({operation:'ENTRY_CATALOG',page,...(tab==='adjust'&&department?{department}:{})});if(!valid(g,who))return false;
   catalog=page===0?r.items:catalog.concat(r.items);catalogPage=page;moreCatalog=r.hasMore===true;return true;
  }
  const lineFields=()=>'<label>Search Material + Brand<input id="as-search" type="search" autocomplete="off"></label><label>Material and brand<select id="as-pair"></select></label>'+(moreCatalog?btn('Load more materials','catalog-more'):'')+'<label>Quantity<input id="as-qty" type="number" min="0" step="0.0001"></label><label>Price method<select id="as-method"><option value="unit">Price per Unit</option><option value="total">Total Amount</option></select></label><label>Amount (OMR)<input id="as-price" type="number" min="0" step="0.001"></label><p id="as-calculated"></p>';
@@ -80,7 +80,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   const g=++generation,who=owner;tab=which;
   show('<p>Loading verified Stock records…</p>');
   if(which==='invoices'){const r=await request({operation:'INVOICE_LIST',page,data:{}});if(!valid(g,who))return;invoices=r.invoices;
-   show('<h3>Invoice List</h3>'+invoices.map((i,k)=>'<details class="as-row"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b> · OMR '+omr(i.total_amount)+'</summary><p>'+esc(i.invoice_date)+' · '+esc(i.status)+'</p>'+(i.lines||[]).map(l=>'<p>'+esc(l.materialName)+' · '+esc(l.brandName)+' · '+esc(l.quantity)+' '+esc(l.unit)+' · OMR '+omr(l.totalAmount)+'</p>').join('')+(i.status==='cancelled'?'':btn('Edit invoice details','header:'+k)+btn('Correct quantity / price','lines:'+k))+btn('Audit history','audit:'+k)+'</details>').join('')+(page?btn('Previous','invoices:'+ (page-1)):'')+(r.hasMore?btn('Next','invoices:'+ (page+1)):''));
+   show('<h3>Invoice List</h3>'+invoices.map((i,k)=>'<details class="as-row"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b> · OMR '+omr(i.total_amount)+'</summary><p>'+esc(i.invoice_date)+' · '+esc(i.status)+'</p>'+(i.lines||[]).map(l=>'<p>'+esc(l.materialName)+' · '+esc(l.brandName)+' · '+esc(l.quantity)+' '+esc(l.unit)+' · OMR '+omr(l.totalAmount)+'</p>').join('')+(i.status==='cancelled'?'':btn('Edit invoice details','header:'+k)+btn('Correct quantity / price','lines:'+k)+btn('Cancel invoice','cancel:'+k))+btn('Audit history','audit:'+k)+'</details>').join('')+(page?btn('Previous','invoices:'+ (page-1)):'')+(r.hasMore?btn('Next','invoices:'+ (page+1)):''));
   }else{
    const operation=which==='balance'?'LIST':which==='history'?'HISTORY':'REPORTS';
    const r=await request({operation,...(department?{department}:{}),...(which==='balance'?{page}:which==='history'&&page?{cursor:String(page)}:{})});if(!valid(g,who))return;
@@ -91,9 +91,9 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  function edit(i,mode){
   if(!i?.id||i.status==='cancelled'||!Number.isInteger(i.revision))throw Error('Reload invoice history.');
   editing={i,mode};tab='edit';
-  show('<h3>Edit invoice · '+esc(i.invoice_number)+'</h3>'+(mode==='header'?header(i):i.lines.map((l,k)=>'<div class="as-row"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><label>Quantity<input id="as-eq'+k+'" type="number" step="0.0001" value="'+esc(l.quantity)+'"></label><label>Price method<select id="as-em'+k+'"><option value="unit"'+(l.priceMethod==='unit'?' selected':'')+'>Unit</option><option value="total"'+(l.priceMethod==='total'?' selected':'')+'>Total</option></select></label><label>Amount<input id="as-ep'+k+'" type="number" step="0.001" value="'+esc(l.price)+'"></label></div>').join(''))+'<label>Reason (required)<input id="as-reason" maxlength="500"></label>'+btn('Save correction','save-edit'));
+  show('<h3>Edit invoice · '+esc(i.invoice_number)+'</h3>'+(mode==='cancel'?'<p>Cancel this invoice only if the stock can be reversed safely. A price-applied invoice requires reconciliation first.</p>':mode==='header'?header(i):i.lines.map((l,k)=>'<div class="as-row"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><label>Quantity<input id="as-eq'+k+'" type="number" step="0.0001" value="'+esc(l.quantity)+'"></label><label>Price method<select id="as-em'+k+'"><option value="unit"'+(l.priceMethod==='unit'?' selected':'')+'>Unit</option><option value="total"'+(l.priceMethod==='total'?' selected':'')+'>Total</option></select></label><label>Amount<input id="as-ep'+k+'" type="number" step="0.001" value="'+esc(l.price)+'"></label></div>').join(''))+'<label>Reason (required)<input id="as-reason" maxlength="500"></label>'+btn('Save correction','save-edit'));
  }
- const rejection=new Set(['stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled','invalid_invoice','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','invoice_reference_required','duplicate_invoice','duplicate_material_brand','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','invoice_revision_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','no_invoice_change','invoice_cancelled','invalid_invoice_correction','opening_already_recorded','stock_master_key_not_found','reason_required','invalid_stock_payload']);
+ const rejection=new Set(['stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled','invalid_invoice','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','invoice_reference_required','duplicate_invoice','duplicate_material_brand','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','invoice_revision_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','count_below_reserved','invalid_minimum','manager_only','no_invoice_change','invoice_cancelled','invalid_invoice_correction','opening_already_recorded','stock_master_key_not_found','reason_required','invalid_stock_payload']);
  async function send(command,retry=false){
   if(busy||!current()||!canWrite())throw Error('Finish other pending financial work first.');
   const who=owner,k=key(who);let p=pending();
@@ -111,6 +111,15 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(op==='department'&&['Painting','Mechanical'].includes(index)){generation++;department=index;tab='department';show(departmentMenu());return;}
   if(op==='back'){if(tab==='purchase'&&lines.length&&!confirm('Discard unsaved invoice items?'))return;generation++;if(department&&tab!=='department'){tab='department';show(departmentMenu());}else{department='';tab='home';show(homeMenu());}return;}
   if(['balance','invoices','history','reports'].includes(op))return readPage(op,op==='history'?(index||0):Number(index||0));
+  if(op==='adjust'){
+   tab='adjust';const g=++generation,who=owner;show('<h2>Stock Adjustment</h2><p>Loading department catalog…</p>');
+   try{if(!await loadCatalog()||!valid(g,who))return;show('<h2>'+departmentTitle()+' · Stock Adjustment</h2><label>Search Material + Brand<input id="as-search" type="search"></label><label>Material and brand<select id="as-pair"></select></label>'+(moreCatalog?btn('Load more materials','catalog-more'):'')+'<label>Counted quantity<input id="as-counted" type="number" min="0" step="0.0001"></label><label>Minimum quantity<input id="as-minimum" type="number" min="0" step="0.0001"></label><label>Reason<input id="as-reason" maxlength="160"></label>'+btn('Save physical count','save-adjust')+btn('Save minimum','save-minimum'));filterCatalog();}catch(e){if(valid(g,who))status(e.message);}return;
+  }
+  if(op==='save-adjust'||op==='save-minimum'){
+   const idx=val('as-pair'),x=idx===''?null:catalog[Number(idx)],raw=val(op==='save-adjust'?'as-counted':'as-minimum'),reason=val('as-reason');
+   if(!x||raw===''||!Number.isFinite(Number(raw))||Number(raw)<0||reason.length<5)throw Error('Select material and brand, enter a valid quantity and reason.');
+   return send({operation:'WRITE',command:op==='save-adjust'?'ADJUST':'MINIMUM',data:{materialId:x.materialId,brandId:x.brandId,[op==='save-adjust'?'countedQuantity':'minimum']:Number(raw),reason}});
+  }
   if(op==='opening'||op==='purchase'){
    department='';tab=op;lines=[];const g=++generation,who=owner;
    // Open the selected workspace immediately, independent of readiness or catalog failures.
@@ -136,10 +145,11 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    const supplier=val('as-supplier'),invoiceNumber=val('as-number'),invoiceDate=val('as-date');if(!supplier||!invoiceNumber||!invoiceDate||invoiceDate>today()||!lines.length)throw Error('Complete invoice details and add items.');
    return send({operation:'INVOICE_SAVE',data:{supplier,invoiceNumber,invoiceDate,lines:lines.map(rawLine)}});
   }
-  if(op==='header'||op==='lines'){if(pending())throw Error('Resolve the saved request first.');return edit(invoices[Number(index)],op);}
+  if(op==='header'||op==='lines'||op==='cancel'){if(pending())throw Error('Resolve the saved request first.');return edit(invoices[Number(index)],op);}
   if(op==='save-edit'&&editing){
    const {i,mode}=editing,reason=val('as-reason');if(reason.length<5)throw Error('Enter a correction reason.');
    const data={invoiceId:i.id,expectedRevision:i.revision,reason};
+   if(mode==='cancel')return send({operation:'INVOICE_CANCEL',data});
    if(mode==='header'){Object.assign(data,{supplier:val('as-supplier'),invoiceNumber:val('as-number'),invoiceDate:val('as-date')});if(!data.supplier||!data.invoiceNumber||!data.invoiceDate||data.invoiceDate>today())throw Error('Complete invoice fields.');}
    else data.lines=i.lines.map((l,k)=>rawLine(window.ZukaitStockCore.purchaseLine({...l,quantity:val('as-eq'+k),priceMethod:val('as-em'+k),price:val('as-ep'+k)})));
    return send({operation:mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',data});

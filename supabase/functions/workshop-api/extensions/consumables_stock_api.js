@@ -29,9 +29,9 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       masterLink:ready&&masterLinkEnabled});
   }
   if(!enabled)return bad('stock_not_enabled',503);
-  // Accounts may read inventory and post opening counts / purchase invoices, not issue, return, adjust, cancel or alter master prices.
-  if(user.role==='Accountant'&&!['LIST','BALANCE','HISTORY','REPORTS','ENTRY_CATALOG','INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_AUDIT','WRITE'].includes(operation))return bad('stock_forbidden',403);
-  if(user.role==='Accountant'&&operation==='WRITE'&&String(body.command||'').toUpperCase()!=='OPENING')return bad('stock_forbidden',403);
+  // Accountant Stock administration: scoped reads, opening counts, adjustments, minimums and invoice lifecycle. Job issue/return and master price actions remain separate.
+  if(user.role==='Accountant'&&!['LIST','BALANCE','HISTORY','REPORTS','ENTRY_CATALOG','INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL','INVOICE_AUDIT','WRITE'].includes(operation))return bad('stock_forbidden',403);
+  if(user.role==='Accountant'&&operation==='WRITE'&&!['OPENING','ADJUST','MINIMUM'].includes(String(body.command||'').toUpperCase()))return bad('stock_forbidden',403);
   const department=body.department;
   if(department!==undefined&&!['Painting','Mechanical'].includes(department))
     return bad('stock_invalid_department');
@@ -71,7 +71,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       return good({audit:data.slice(0,50),page,hasMore:data.length>50});
     }
     if(['INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL'].includes(operation)){
-      if(!['Manager','Accountant'].includes(user.role)||operation==='INVOICE_CANCEL'&&user.role!=='Manager')return bad('manager_only',403);
+      if(!['Manager','Accountant'].includes(user.role))return bad('manager_only',403);
       if(!writesEnabled)return bad('stock_write_not_enabled',423);
       const requestId=safeId(body.requestId,128),data=body.data;
       if(!requestId||!data||typeof data!=='object'||Array.isArray(data)||JSON.stringify(data).length>65536)return bad('invalid_invoice_correction');
@@ -283,7 +283,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     const command=String(body.command||'').toUpperCase();
     if(invoiceEnabled&&command==='PURCHASE')return bad('purchase_invoice_required',409);
     if(!allowedCommands.has(command))return bad('stock_unknown_command');
-    if(managerActions.has(command)&&user.role!=='Manager'&&!(user.role==='Accountant'&&command==='OPENING'))return bad('manager_only',403);
+    if(managerActions.has(command)&&!['Manager','Accountant'].includes(user.role))return bad('manager_only',403);
     if(command==='MECHANICAL_ISSUE'||command==='MECHANICAL_RETURN') {
       if(!['Manager','Mechanical Supervisor'].includes(user.role))return bad('mechanical_stock_forbidden',403);
       if(!mechanicalWritesEnabled)return bad('mechanical_stock_not_enabled',423);
@@ -304,7 +304,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
       const codes=new Set(['STOCK_FORBIDDEN','MANAGER_ONLY','INSUFFICIENT_STOCK',
         'OPENING_STOCK_REQUIRED','STOCK_MASTER_KEY_NOT_FOUND','OPENING_ALREADY_RECORDED',
         'RESERVATION_CLOSED','RESERVATION_NOT_FOUND','FINALISATION_REQUIRED',
-        'RETURN_EXCEEDS_ACTUAL','COUNT_BELOW_RESERVED','INVALID_ACTUAL_QUANTITY',
+        'RETURN_EXCEEDS_ACTUAL','COUNT_BELOW_RESERVED','INVALID_MINIMUM','INVALID_ACTUAL_QUANTITY',
         'REQUEST_ID_CONFLICT','STOCK_VALUATION_CONFLICT','REASON_REQUIRED',
         'MECHANICAL_STOCK_FORBIDDEN','MECHANICAL_JOB_NOT_FOUND','INVALID_MECHANICAL_JOB',
         'INVALID_ISSUE_LINES','INVALID_ISSUE_LINE','INVALID_ISSUE_KIND',

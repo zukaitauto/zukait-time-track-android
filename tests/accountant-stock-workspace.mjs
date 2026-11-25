@@ -17,6 +17,7 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
  if(x.operation==='ENTRY_CATALOG')return {items:[{materialId:'m',brandId:'b',material:'Primer',brand:'Brand A',department:'Both',unit:'Liter'}],hasMore:false};
  if(x.operation==='WRITE'){if(fail){fail=false;throw Error('timeout');}return {receipt:{final:true}}}
  if(x.operation==='INVOICE_LIST')return {invoices:[{id:'inv',invoice_number:'QA1',supplier:'Test',invoice_date:'2026-11-20',status:'active',revision:1,total_amount:2,lines:[{materialId:'m',brandId:'b',materialName:'Primer',brandName:'Brand A',unit:'Liter',quantity:1,priceMethod:'unit',price:2,totalAmount:2}]}],hasMore:false};
+ if(x.operation==='INVOICE_CANCEL')return {invoice:{id:'inv',status:'cancelled'}};
  if(x.operation==='INVOICE_AUDIT')return {audit:[{actor_id:'A1',reason:'Created',event_type:'CREATED',before_header:null,after_header:{invoice_number:'QA1'}}],hasMore:false};
  throw Error('Unexpected '+x.operation);
 }});
@@ -35,6 +36,8 @@ await click('save-opening');assert.match(d.body.textContent,/Unconfirmed/);asser
 const before=calls.at(-1);assert.equal(before.command,'OPENING');assert.equal(before.data.quantity,2);
 await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
 await click('purchase');await click('invoices');await click('audit:0');assert.match(d.body.textContent,/A1/);
+await click('back');await click('department:Painting');await click('adjust');d.querySelector('#as-pair').value='0';d.querySelector('#as-counted').value='3';d.querySelector('#as-reason').value='QA recount';await click('save-adjust');assert.equal(calls.at(-1).command,'ADJUST');assert.equal(calls.at(-1).data.countedQuantity,3);
+await click('purchase');await click('invoices');await click('cancel:0');d.querySelector('#as-reason').value='Wrong QA invoice';await click('save-edit');assert.equal(calls.at(-1).operation,'INVOICE_CANCEL');
 panel.reset();assert.equal(d.querySelector('#as-dialog'),null);
 ready=false;await panel.open();await click('purchase');assert.ok(d.querySelector('#as-number'),'Purchase page opens even when write readiness is false');assert.match(d.querySelector('#as-status').textContent,/disabled|not ready/);await click('invoices');assert.match(d.body.textContent,/QA1/);panel.reset();
 catalogFailure=true;await panel.open();await click('purchase');assert.match(d.body.textContent,/Unable to load the material catalog/);assert.ok(d.querySelector('[data-as="invoices"]'));await click('invoices');assert.match(d.body.textContent,/QA1/);panel.reset();

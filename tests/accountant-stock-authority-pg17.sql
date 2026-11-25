@@ -13,6 +13,7 @@ insert into public.staff_sessions(token_hash,user_id) select 'token-'||user_id,u
 create table public.zukait_invoice_price_applications(request_id text primary key,invoice_id uuid,actor_id text,fingerprint jsonb,receipt jsonb,created_at timestamptz default now(),reconciled_at timestamptz);
 create table public.zukait_invoice_price_reconciliations(request_id text primary key,invoice_id uuid,actor_id text,fingerprint jsonb,receipt jsonb,created_at timestamptz default now());
 \ir ../supabase/staged/ACCOUNTANT_STOCK_ENTRY_AUTHORITY.sql
+\ir ../supabase/staged/ACCOUNTANT_STOCK_ADJUST_CANCEL_AUTHORITY.sql
 insert into public.zukait_stock_material_keys(material_id,display_name,department,unit) values('m','Primer','Both','Liter');
 insert into public.zukait_stock_brand_keys(brand_id,display_name) values('b','QA brand');
 insert into public.zukait_stock_balances(material_id,brand_id,unit) values('m','b','Liter');
@@ -41,8 +42,22 @@ begin
  if jsonb_array_length(public.zukait_purchase_invoice_audit_list('token-A1',id,0))<>3 then raise exception 'missing audit';end if;
  if exists(select 1 from public.zukait_stock_movements where actor_id<>'A1') or exists(select 1 from public.zukait_purchase_invoice_audit where actor_id<>'A1') then raise exception 'actor mismatch';end if;
  begin perform public.zukait_purchase_invoice_save('token-P1','p1',purchase);raise exception 'Purchaser invoice accepted';exception when insufficient_privilege then null;end;
- begin perform public.zukait_stock_command('token-A1','adjust-1','ADJUST',opening);raise exception 'Accountant adjustment accepted';exception when insufficient_privilege then null;end;
- begin perform public.zukait_purchase_invoice_cancel('token-A1','cancel-1',jsonb_build_object('invoiceId',id,'expectedRevision',3,'reason','QA cancellation'));raise exception 'Accountant cancel accepted';exception when insufficient_privilege then null;end;
+ insert into public.zukait_invoice_price_applications(request_id,invoice_id,actor_id) values('price-test',id,'A1');
+ change:=jsonb_build_object('invoiceId',id,'expectedRevision',3,'reason','QA cancellation');
+ begin perform public.zukait_purchase_invoice_cancel('token-A1','cancel-guard',change);raise exception 'Price-applied invoice cancelled';exception when raise_exception then if sqlerrm<>'INVOICE_PRICE_RECONCILIATION_REQUIRED' then raise;end if;end;
+ update public.zukait_invoice_price_applications set reconciled_at=now() where request_id='price-test';
+ begin perform public.zukait_purchase_invoice_cancel('token-S1','cancel-denied',change);raise exception 'Supervisor cancel accepted';exception when insufficient_privilege then null;end;
+ result:=public.zukait_purchase_invoice_cancel('token-A1','cancel-1',change);
+ if result->>'status'<>'cancelled' or public.zukait_purchase_invoice_cancel('token-A1','cancel-1',change) is distinct from result then raise exception 'cancel replay mismatch';end if;
+ if (select physical from public.zukait_stock_balances where material_id='m' and brand_id='b')<>2 then raise exception 'cancel stock mismatch';end if;
+ change:='{"materialId":"m","brandId":"b","countedQuantity":3,"reason":"QA recount"}';
+ begin perform public.zukait_stock_command('token-S1','adjust-denied','ADJUST',change);raise exception 'Supervisor adjustment accepted';exception when insufficient_privilege then null;end;
+ result:=public.zukait_stock_command('token-A1','adjust-1','ADJUST',change);
+ if public.zukait_stock_command('token-A1','adjust-1','ADJUST',change) is distinct from result then raise exception 'adjust replay mismatch';end if;
+ if (select physical from public.zukait_stock_balances where material_id='m' and brand_id='b')<>3 then raise exception 'adjust count mismatch';end if;
+ perform public.zukait_stock_command('token-A1','minimum-1','MINIMUM','{"materialId":"m","brandId":"b","minimum":1,"reason":"QA threshold"}');
+ if (select minimum from public.zukait_stock_balances where material_id='m' and brand_id='b')<>1 then raise exception 'minimum mismatch';end if;
+ if exists(select 1 from public.zukait_stock_movements where actor_id<>'A1') or exists(select 1 from public.zukait_purchase_invoice_audit where actor_id<>'A1') then raise exception 'actor mismatch after adjustment/cancel';end if;
  begin perform public.zukait_purchase_invoice_audit_list('token-S1',id,0);raise exception 'Supervisor audit accepted';exception when insufficient_privilege then null;end;
  if has_function_privilege('authenticated','public.zukait_purchase_invoice_save(text,text,jsonb)','execute') or has_function_privilege('anon','public.zukait_stock_command(text,text,text,jsonb)','execute') then raise exception 'public RPC exposure';end if;
 end $$;
