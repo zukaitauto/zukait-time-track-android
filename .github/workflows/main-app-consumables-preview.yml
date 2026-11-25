@@ -8,6 +8,7 @@ on:
       - 'app/src/main/assets/consumables_stock_ui.js'
       - 'app/src/main/assets/mechanical_consumables_ui.js'
       - 'app/src/main/assets/offline_test.html'
+      - 'tests/consumables-department-menu.mjs'
       - 'tests/consumables-main-app-preview.mjs'
       - 'tests/consumables-stock-live-readiness.mjs'
       - '.github/workflows/main-app-consumables-preview.yml'
@@ -41,6 +42,8 @@ jobs:
         run: node tests/consumables-main-app-preview.mjs
       - name: Stock live-data activation remains server-gated
         run: node tests/consumables-stock-live-readiness.mjs
+      - name: Department menu parity and shared material scope
+        run: node tests/consumables-department-menu.mjs
       - name: Existing Painting/Consumables regression
         run: node tests/consumables-ui.mjs
       - name: No backend or release source changed by UI preview
