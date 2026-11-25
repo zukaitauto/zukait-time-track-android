@@ -73,3 +73,6 @@ assert.equal(queued.length,0);assert.equal(hidden.dashboardRenderPending,true);
 hidden.document.visibilityState='visible';vm.runInContext('queueDashboardRender()',hidden);assert.equal(queued.length,1);
 queued.shift()();assert.equal(redraws,1);assert.equal(hidden.dashboardRenderPending,false);
 vm.runInContext('queueDashboardRender()',hidden);assert.equal(queued.length,0);
+
+// Integrated regression: execute the shared report reader fixture as well.
+await import('./shared-dashboard-read.mjs');
