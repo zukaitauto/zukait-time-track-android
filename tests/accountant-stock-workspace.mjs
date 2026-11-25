@@ -48,7 +48,14 @@ d.querySelector('#as-pair').value='0';d.querySelector('#as-qty').value='2';d.que
 await click('save-opening');assert.match(d.body.textContent,/Unconfirmed/);assert.equal(panel.blocked(),true);
 const before=calls.at(-1);assert.equal(before.command,'OPENING');assert.equal(before.data.quantity,2);
 await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
-await click('purchase');await click('invoices');await click('audit:0');assert.match(d.body.textContent,/A1/);
+await click('purchase');
+assert.ok(d.querySelector('.cp-entry'),'Manager Purchase Entry template is reused');
+assert.equal(d.querySelector('#as-finish').disabled,false);
+const search=d.querySelector('#as-search');search.value='Primer Brand';search.dispatchEvent(new w.Event('input',{bubbles:true}));
+await click('select-pair:0');d.querySelector('#as-qty').value='2';d.querySelector('#as-unit-price').value='3';d.querySelector('#as-unit-price').dispatchEvent(new w.Event('input',{bubbles:true}));
+assert.equal(d.querySelector('#as-total-price').value,'6.000');
+await click('add-line');assert.match(d.querySelector('#as-total').textContent,/6.000/);
+await click('invoices');d.querySelector('#as-history-query').value='QA1';await click('invoice-search');assert.equal(calls.at(-1).data.query,'QA1');await click('audit:0');assert.match(d.body.textContent,/A1/);
 await click('audit:0:1');assert.equal(calls.at(-1).page,1);assert.equal(calls.at(-1).data.invoiceId,'inv');
 await click('audit:0:0');assert.equal(calls.at(-1).page,0);
 await click('back');await click('department:Painting');await click('adjust');d.querySelector('#as-pair').value='0';d.querySelector('#as-counted').value='3';d.querySelector('#as-reason').value='QA recount';await click('save-adjust');assert.equal(calls.at(-1).command,'ADJUST');assert.equal(calls.at(-1).data.countedQuantity,3);

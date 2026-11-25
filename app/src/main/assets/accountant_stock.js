@@ -21,6 +21,15 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   return menu.styles+'<style>#as-dialog #as-body:has(.as-shared-menu){max-width:none}#as-dialog .as-shared-menu #zs-stock-screen{position:static;overflow:visible;min-height:0;background:none}#as-dialog .as-shared-menu .zs-preview{min-height:0}</style>'+
    '<div class="as-shared-menu"><div id="zs-stock-screen"><section class="zs zs-preview" data-stock-view="home">'+menu.html+'</section></div></div>';
  };
+ // The Manager templates are shared; only the host-specific action bindings differ.
+ const purchaseMarkup=(html)=>{
+  const ids={cpInvoice:'as-number',cpSupplier:'as-supplier',cpDate:'as-date',cpSearch:'as-search',cpResults:'as-results',cpSelected:'as-selected',cpLineEditor:'as-line-editor',cpQty:'as-qty',cpMethod:'as-method',cpUnit:'as-unit-price',cpAmount:'as-total-price',cpLines:'as-lines',cpTotal:'as-total',cpFinish:'as-finish',cpSaveStatus:'as-save-status',cpError:'as-line-error',cpHistoryQuery:'as-history-query',cpHistoryFrom:'as-history-from',cpHistoryTo:'as-history-to',cpHistory:'as-invoice-history'};
+  const actions={'consOpenPurchaseInvoices()':'invoices','consOpenPurchaseEntry()':'purchase','consPurchaseAddLine()':'add-line','consPurchaseSave()':'save-invoice','consPurchaseLoadHistory(0)':'invoice-search'};
+  return window.ZukaitStockCore.purchaseStyle+html.replace(/id="([^"]+)"/g,(_,id)=>'id="'+(ids[id]||id)+'"')
+   .replace(/onclick="([^"]+)"/g,(_,handler)=>{if(!Object.prototype.hasOwnProperty.call(actions,handler))throw Error('Unmapped purchase action');return 'data-as="'+actions[handler]+'"'})
+   .replace(/on(?:input|change)="[^"]+"/g,'');
+ };
+ let purchasePair=null,purchaseMethod='unit';
  const homeMenu=()=>sharedMenu('');
  const departmentMenu=()=>sharedMenu(department);
  const nav=()=>'<header class="as-toolbar">'+(tab==='home'?'':btn('← '+(department&&tab!=='department'?'Department':'Stock'),'back'))+'<span>▣ ZUKAIT · STOCK</span>'+btn('✕ Close','close')+'</header>';
@@ -28,10 +37,14 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(!current())return;
   dialog.innerHTML='<style>#as-dialog{position:fixed;box-sizing:border-box;width:100%;max-width:none;height:100%;max-height:none;inset:0;margin:0;overflow:auto;border:0;border-radius:0;background:#f5f8fc;color:#173653;padding:16px}#as-dialog .as-toolbar{position:sticky;top:0;z-index:10;background:#f5f8fc;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 16px}#as-dialog .as-toolbar span{font-size:12px;font-weight:800;margin-right:auto}#as-dialog #as-body{max-width:1040px;margin:auto}#as-dialog .as-hero{display:flex;align-items:center;gap:14px;border:1px solid #dce6f1;background:white;border-radius:16px;padding:16px;margin-bottom:24px}#as-dialog .as-hero h2{font-size:23px;line-height:1.2;margin:0}#as-dialog .as-hero-icon{font-size:30px;color:#376caa}#as-dialog h3{font-size:18px;margin:24px 0 12px}#as-dialog .as-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#as-dialog .as-grid .as-tile{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;min-width:0;min-height:154px;padding:15px;border-radius:16px;overflow-wrap:anywhere}#as-dialog .as-tile-top{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:20px}#as-dialog .as-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#2878ca;color:white}#as-dialog .as-tile strong{font-size:16px;line-height:1.25}#as-dialog .as-tile small{font-size:12px;font-weight:500;color:#4f6479;line-height:1.4}#as-dialog .as-tile.blue{background:#eaf2ff;border-color:#c6d9f5}#as-dialog .as-tile.green{background:#edf7e9;border-color:#cfe3c9}#as-dialog .as-tile.green .as-icon{background:#58a43d}#as-dialog .as-tile.purple{background:#f2edfa;border-color:#ddd1f0}#as-dialog .as-tile.purple .as-icon{background:#8056b6}#as-dialog .as-tile.amber{background:#fff5e4;border-color:#ead9b9}#as-dialog .as-tile.amber .as-icon{background:#bd792c}#as-dialog .as-tile:disabled{opacity:.75}#as-dialog #as-status:not(:empty){position:sticky;top:56px;z-index:9;max-width:1040px;margin:0 auto 12px;color:#183e61;background:#fff5dd;border:1px solid #e2c987;padding:12px;border-radius:8px;font-size:15px;font-weight:700}#as-dialog button{min-height:42px;border:1px solid #b8d3e7;border-radius:9px;background:#eaf2fb;color:#173653;padding:9px;font-weight:700}#as-dialog label{display:grid;gap:4px;margin:9px 0;font-weight:700}#as-dialog input,#as-dialog select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #b8cde0;border-radius:8px;padding:7px;color:#173653;background:white}#as-dialog .as-row{border:1px solid #d4e2ee;border-radius:10px;padding:10px;margin:7px 0;background:#f7fafc;overflow-wrap:anywhere}#as-dialog pre{white-space:pre-wrap;overflow-wrap:anywhere}#as-dialog button:disabled{opacity:.5}#as-dialog .as-close{float:right}</style>'+nav()+'<p id="as-status" role="status" aria-live="polite"></p><section id="as-body">'+body+'</section>';dialog.scrollTop=0;
   dialog.onclick=e=>{const b=e.target.closest('[data-as]');if(b)act(b.dataset.as).catch(err=>status(err.message));};
-  dialog.oninput=e=>{if(e.target.id==='as-search')filterCatalog();if(e.target.id==='as-qty'||e.target.id==='as-price'||e.target.id==='as-method')calculate();};
+  dialog.oninput=e=>{
+   if(e.target.id==='as-search'){if(tab==='purchase'){purchasePair=null;if(field('as-line-editor'))field('as-line-editor').hidden=true;if(field('as-selected'))field('as-selected').innerHTML='';}filterCatalog();}
+   if(['as-qty','as-price','as-unit-price','as-total-price'].includes(e.target.id))calculate();
+  };
+  dialog.onchange=e=>{if(e.target.id==='as-method'){if(tab==='purchase')changePurchaseMethod();else calculate();}};
   const p=pending();if(p&&['home','opening','purchase','edit','adjust','master-create','master-price','master-correct','master-review','price-review'].includes(tab)){field('as-body').innerHTML='<div class="as-row"><b>Previous stock transaction awaiting confirmation</b><p>'+esc(p.operation)+' · '+esc(p.data?.invoiceNumber||p.data?.invoiceId||p.data?.materialId||'')+'</p>'+btn('Retry exact saved request','retry')+'</div>';status('Resolve the previous transaction before entering another.');}
  }
- function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;readinessError='';checking=null;tab='home';department='';catalog=[];lines=[];editing=null;masterMaterials=[];masterPrices=[];masterSelected=null;masterReview=null;priceIntent=null;}
+ function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;readinessError='';checking=null;tab='home';department='';catalog=[];lines=[];editing=null;masterMaterials=[];masterPrices=[];masterSelected=null;masterReview=null;priceIntent=null;purchasePair=null;invoiceFilters={query:'',from:'',to:''};}
  async function open(){
   if(!identity())return;
   if(dialog){dialog.focus();return;}
@@ -56,7 +69,15 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   checking=p;void p.finally(()=>{if(checking===p)checking=null;});return p;
  }
  function filterCatalog(){
-  const q=val('as-search').toLowerCase().split(/\s+/).filter(Boolean),select=field('as-pair');if(!select)return;
+  const q=val('as-search').toLowerCase().split(/\s+/).filter(Boolean),select=field('as-pair');
+  if(tab==='purchase'){
+   const out=field('as-results');if(!out)return;
+   const matches=q.length?catalog.map((x,i)=>({x,i})).filter(({x})=>q.every(k=>(x.material+' '+x.brand+' '+x.unit).toLowerCase().includes(k))).slice(0,30):[];
+   out.innerHTML=(matches.map(({x,i})=>'<button type="button" data-as="select-pair:'+i+'"><b>'+esc(x.material)+' · '+esc(x.brand)+'</b><small>'+esc(x.unit)+'</small></button>').join('')||(q.length?'<div class="cp-info">No matching material and brand on loaded pages.</div>':''));
+   if(moreCatalog)out.innerHTML+=btn('Load more materials','catalog-more');
+   return;
+  }
+  if(!select)return;
   const selected=select.value;select.innerHTML='<option value="">Select exact material and brand</option>'+catalog.map((x,i)=>({x,i})).filter(({x})=>q.every(k=>(x.material+' '+x.brand+' '+x.department).toLowerCase().includes(k))).map(({x,i})=>'<option value="'+i+'">'+esc(x.material)+' · '+esc(x.brand)+' · '+esc(x.unit)+'</option>').join('');
   if([...select.options].some(o=>o.value===selected))select.value=selected;
  }
@@ -66,23 +87,43 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  }
  const lineFields=()=>'<label>Search Material + Brand<input id="as-search" type="search" autocomplete="off"></label><label>Material and brand<select id="as-pair"></select></label>'+(moreCatalog?btn('Load more materials','catalog-more'):'')+'<label>Quantity<input id="as-qty" type="number" min="0" step="0.0001"></label><label>Price method<select id="as-method"><option value="unit">Price per Unit</option><option value="total">Total Amount</option></select></label><label>Amount (OMR)<input id="as-price" type="number" min="0" step="0.001"></label><p id="as-calculated"></p>';
  function getLine(){
-  const i=val('as-pair'),x=i===''?null:catalog[Number(i)];if(!x)throw Error('Select exact material and brand.');
-  return {...window.ZukaitStockCore.purchaseLine({materialId:x.materialId,brandId:x.brandId,unit:x.unit,quantity:val('as-qty'),priceMethod:val('as-method'),price:val('as-price')}),material:x.material,brand:x.brand};
+  const i=val('as-pair'),x=tab==='purchase'?purchasePair:i===''?null:catalog[Number(i)];if(!x)throw Error('Select exact material and brand.');
+  const method=val('as-method');
+  return {...window.ZukaitStockCore.purchaseLine({materialId:x.materialId,brandId:x.brandId,unit:x.unit,quantity:val('as-qty'),priceMethod:method,price:val(tab==='purchase'?(method==='unit'?'as-unit-price':'as-total-price'):'as-price')}),material:x.material,brand:x.brand};
  }
- function calculate(){try{const l=getLine();field('as-calculated').textContent='Unit OMR '+omr(l.unitPrice)+' · Total OMR '+omr(l.totalAmount)}catch{if(field('as-calculated'))field('as-calculated').textContent='';}}
+ function calculate(){
+  if(tab==='purchase'){const out=field(val('as-method')==='unit'?'as-total-price':'as-unit-price');if(!out)return;try{const l=getLine();out.value=omr(val('as-method')==='unit'?l.totalAmount:l.unitPrice);}catch{out.value='';}return;}
+  try{const l=getLine();field('as-calculated').textContent='Unit OMR '+omr(l.unitPrice)+' · Total OMR '+omr(l.totalAmount)}catch{if(field('as-calculated'))field('as-calculated').textContent='';}
+ }
+ function changePurchaseMethod(){
+  const select=field('as-method'),method=select.value,unit=field('as-unit-price'),total=field('as-total-price');
+  if(method!==purchaseMethod&&purchasePair&&unit.value&&total.value){
+   try{const p={...purchasePair,quantity:val('as-qty')},before=window.ZukaitStockCore.purchaseLine({...p,priceMethod:purchaseMethod,price:purchaseMethod==='unit'?unit.value:total.value}),after=getLine();if(before.totalMills!==after.totalMills&&!confirm('Changing price method changes the invoice total. Continue?')){select.value=purchaseMethod;return;}}catch{}
+  }
+  purchaseMethod=method;unit.readOnly=method!=='unit';total.readOnly=method!=='total';calculate();
+ }
  const rawLine=({materialId,brandId,unit,quantity,priceMethod,price})=>({materialId,brandId,unit,quantity,priceMethod,price});
- function renderLines(){const out=field('as-lines');if(!out)return;out.innerHTML=lines.map((l,i)=>'<div class="as-row">'+esc(l.material)+' · '+esc(l.brand)+' · '+esc(l.quantity)+' '+esc(l.unit)+' · OMR '+omr(l.totalAmount)+btn('Remove','remove:'+i)+'</div>').join('')+'<b>Total OMR '+omr(lines.reduce((a,l)=>a+l.totalMills,0)/1000)+'</b>';}
+ function renderLines(){const out=field('as-lines');if(!out)return;
+  out.innerHTML=lines.length?'<div class="cp-line"><b>Material / Brand</b><b>Qty</b><b>Rate</b><b>OMR</b><span></span></div>'+lines.map((l,i)=>'<div class="cp-line"><b>'+esc(l.material)+' · '+esc(l.brand)+'</b><span>'+esc(l.quantity)+'</span><span>'+omr(l.unitPrice)+'</span><b>'+omr(l.totalAmount)+'</b><button type="button" class="cp-action" data-as="remove:'+i+'" aria-label="Remove item">×</button></div>').join(''):'<p class="cp-info">No items added.</p>';
+  if(field('as-total'))field('as-total').textContent='Total Invoice Amount: OMR '+omr(lines.reduce((n,l)=>n+l.totalMills,0)/1000);
+ }
  const header=(i={})=>'<label>Invoice number<input id="as-number" maxlength="100" value="'+esc(i.invoice_number||'')+'"></label><label>Supplier<input id="as-supplier" maxlength="160" value="'+esc(i.supplier||'')+'"></label><label>Invoice date<input id="as-date" type="date" max="'+today()+'" value="'+esc(i.invoice_date||today())+'"></label>';
  function renderEntry(){
   if(tab==='opening'){show('<h3>Opening Stock (one time only)</h3><p>Physical count only. No supplier or invoice number.</p>'+lineFields()+'<label><input id="as-count" type="checkbox" style="width:auto"> Physical count confirmed</label><label>Count reference<input id="as-reason" maxlength="180"></label>'+btn('Confirm Opening Stock','save-opening'));}
-  else{show('<h3>Purchase Entry</h3>'+btn('Invoice List','invoices')+header()+lineFields()+btn('Add item','add-line')+'<div id="as-lines"></div>'+btn('Finish &amp; Save','save-invoice'));renderLines();}
+  else{purchasePair=null;purchaseMethod='unit';show(purchaseMarkup(window.ZukaitStockCore.purchaseEntryMarkup({invoiceNumber:'',supplier:'',invoiceDate:today()},today())));renderLines();}
   filterCatalog();
  }
+ let invoiceFilters={query:'',from:'',to:''};
  async function readPage(which,page=0){
   const g=++generation,who=owner;tab=which;
   show('<p>Loading verified Stock records…</p>');
-  if(which==='invoices'){const r=await request({operation:'INVOICE_LIST',page,data:{}});if(!valid(g,who))return;invoices=r.invoices;
-   show('<h3>Invoice List</h3>'+invoices.map((i,k)=>'<details class="as-row"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b> · OMR '+omr(i.total_amount)+'</summary><p>'+esc(i.invoice_date)+' · '+esc(i.status)+'</p>'+(i.lines||[]).map(l=>'<p>'+esc(l.materialName)+' · '+esc(l.brandName)+' · '+esc(l.quantity)+' '+esc(l.unit)+' · OMR '+omr(l.totalAmount)+'</p>').join('')+(i.status==='cancelled'?'':btn('Edit invoice details','header:'+k)+btn('Correct quantity / price','lines:'+k)+btn('Cancel invoice','cancel:'+k)+btn('Review Brands &amp; Price','price-review:'+k))+btn('Audit history','audit:'+k)+'</details>').join('')+(page?btn('Previous','invoices:'+ (page-1)):'')+(r.hasMore?btn('Next','invoices:'+ (page+1)):''));
+  if(which==='invoices'){
+   const filters=invoiceFilters;
+   show(purchaseMarkup(window.ZukaitStockCore.purchaseHistoryMarkup()));
+   field('as-history-query').value=filters.query;field('as-history-from').value=filters.from;field('as-history-to').value=filters.to;
+   const r=await request({operation:'INVOICE_LIST',page,data:filters});if(!valid(g,who))return;invoices=r.invoices||[];
+   const action=(label,id)=>'<button type="button" class="cp-action" data-as="'+id+'">'+label+'</button>';
+   field('as-invoice-history').innerHTML=(invoices.length?invoices.map((i,k)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+omr(i.total_amount)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+omr(l.unitPrice)+'</span><b>'+omr(l.totalAmount)+'</b></div>').join('')+'</div><div class="cp-two">'+(i.status==='cancelled'?'':action('Edit Invoice Details','header:'+k)+action('Correct Quantity / Price','lines:'+k)+action('Cancel Invoice','cancel:'+k)+action('Review Brands &amp; Price','price-review:'+k))+action('Audit History','audit:'+k)+'</div></details>').join(''):'No invoices found.')+'<div class="cp-head">'+(page?action('Previous','invoices:'+(page-1)):'')+(r.hasMore?action('Next','invoices:'+(page+1)):'')+'</div>';
   }else{
    const operation=which==='balance'?'LIST':which==='history'?'HISTORY':'REPORTS';
    const r=await request({operation,...(department?{department}:{}),...(which==='balance'?{page}:which==='history'&&page?{cursor:String(page)}:{})});if(!valid(g,who))return;
@@ -208,6 +249,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(op==='master-save'&&masterReview)return send({operation:'MASTER_SAVE',...masterReview});
   if(op==='department'&&['Painting','Mechanical'].includes(index)){generation++;department=index;tab='department';show(departmentMenu());return;}
   if(op==='back'){if(tab==='purchase'&&lines.length&&!confirm('Discard unsaved invoice items?'))return;generation++;if(department&&tab!=='department'){tab='department';show(departmentMenu());}else{department='';tab='home';show(homeMenu());}return;}
+  if(op==='invoice-search'){invoiceFilters={query:val('as-history-query'),from:val('as-history-from'),to:val('as-history-to')};return readPage('invoices',0);}
   if(['balance','invoices','history','reports'].includes(op))return readPage(op,op==='history'?(index||0):Number(index||0));
   if(op==='adjust'){
    tab='adjust';const g=++generation,who=owner;show('<h2>Stock Adjustment</h2><p>Loading department catalog…</p>');
@@ -229,11 +271,18 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    catch(e){if(valid(g,who)){show('<h2>'+title+'</h2>'+history+'<p>Unable to load the material catalog.</p>'+btn('Retry loading',op));status(e.message);}return;}
    await refreshReadiness();
    if(!valid(g,who))return;
+   if(op==='purchase'&&field('as-finish')){field('as-finish').disabled=!invoiceReady;field('as-save-status').textContent=invoiceReady?'Save posts invoice lines and stock movements together. Historical costing prices are not changed.':readinessError||'Purchase invoice posting is not enabled.';}
    if(op==='opening'&&!ready||op==='purchase'&&!invoiceReady)status(readinessError||'Entry cannot be saved until the server enables it. Existing records can still be viewed.');
    return;
   }
-  if(op==='catalog-more'){const before=field('as-pair');if(await loadCatalog(catalogPage+1)&&before===field('as-pair')){filterCatalog();if(!moreCatalog)dialog.querySelector('[data-as="catalog-more"]')?.remove();}return;}
-  if(op==='add-line'){const l=getLine();if(lines.length>=50||lines.some(x=>x.materialId===l.materialId&&x.brandId===l.brandId))throw Error('Duplicate pair or maximum 50 lines.');lines.push(l);renderLines();field('as-qty').value='';return;}
+  if(op==='catalog-more'){const before=field(tab==='purchase'?'as-results':'as-pair');if(await loadCatalog(catalogPage+1)&&before===field(tab==='purchase'?'as-results':'as-pair')){filterCatalog();if(!moreCatalog)dialog.querySelector('[data-as="catalog-more"]')?.remove();}return;}
+  if(op==='select-pair'&&tab==='purchase'){
+   const x=catalog[Number(index)];if(!x)return;purchasePair=x;purchaseMethod='unit';
+   field('as-results').innerHTML='';field('as-search').value=x.material+' · '+x.brand;field('as-selected').innerHTML='<b>'+esc(x.material)+' · '+esc(x.brand)+'</b><div class="cp-info">Unit: '+esc(x.unit)+'</div>';
+   field('as-line-editor').hidden=false;field('as-qty').value='';field('as-qty').step=x.unit==='Piece'?'1':'0.0001';
+   field('as-method').value='unit';field('as-unit-price').value='';field('as-total-price').value='';field('as-unit-price').readOnly=false;field('as-total-price').readOnly=true;return;
+  }
+  if(op==='add-line'){const l=getLine();if(lines.length>=50||lines.some(x=>x.materialId===l.materialId&&x.brandId===l.brandId))throw Error('Duplicate pair or maximum 50 lines.');lines.push(l);renderLines();field('as-qty').value='';if(tab==='purchase'){purchasePair=null;field('as-search').value='';field('as-selected').innerHTML='';field('as-line-editor').hidden=true;filterCatalog();}return;}
   if(op==='remove'){lines.splice(Number(index),1);renderLines();return;}
   if(op==='save-opening'){
    const l=getLine(),reason=val('as-reason');if(!field('as-count').checked||reason.length<5)throw Error('Confirm physical count and enter a count reference.');
