@@ -95,6 +95,40 @@ function viewCss(){return `
 @media(max-width:550px){.jce-view{padding:10px;border-radius:12px}.jce-view .jce-view-header{padding:16px}.jce-view .jce-view-header h3{font-size:21px}.jce-view .jce-view-nav{width:100%}.jce-view .jce-view-nav button{flex:1}.jce-view .jce-view-field{padding:10px}.jce-editor .grid{grid-template-columns:1fr;gap:14px}}
 @media print{.jce-view{background:#fff;border-radius:0;padding:0}.jce-view .jce-view-header{background:#fff;color:#172f43;box-shadow:none;border-radius:0;border-bottom:2px solid #126b70;padding:0 0 12px}.jce-view .jce-view-header h3{color:#172f43!important}.jce-view .jce-view-header small{color:#496579}.jce-view .jce-view-section{box-shadow:none;border-radius:0}.jce-view .jce-view-field{padding:7px 10px}.jce-view .jce-view-value{font-size:11px}}
 
+
+/* Compact, bold A4 document: scoped to the read-only Job Card view. */
+.jce-view.jce-view-document{width:100%;max-width:210mm;padding:12px;font-size:13px;line-height:1.35}
+.jce-view-document .jce-view-header{padding:12px 15px;gap:9px;border-radius:10px}
+.jce-view-document .jce-view-header h3{font-size:21px;margin:3px 0}
+.jce-view-document .jce-view-header>div>div{font-weight:800}
+.jce-view-document .jce-view-nav{gap:6px}
+.jce-view-document .jce-view-nav button{min-height:38px;padding:6px 10px}
+.jce-view-document .jce-view-section{margin:8px 0;border-radius:8px;box-shadow:none}
+.jce-view-document .jce-view-section h4{font-size:13px;font-weight:800;padding:7px 10px}
+.jce-view-document .jce-view-fields{grid-template-columns:repeat(4,minmax(0,1fr))}
+.jce-view-document .jce-view-field{padding:6px 9px;border-right:1px solid #e7edf2}
+.jce-view-document .jce-view-field b{font-size:10px;line-height:1.25;font-weight:700;color:#496579}
+.jce-view-document .jce-view-value{font-size:13px;line-height:1.3;font-weight:800;margin:3px 0 0;color:#172f43;white-space:pre-wrap;overflow-wrap:anywhere}
+.jce-view-document .jce-view-wide{grid-column:span 2}
+.jce-view-document .jce-view-work{padding:8px 10px;min-height:45px;font-weight:700;font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+@media screen and (max-width:600px){.jce-view.jce-view-document{padding:7px}.jce-view-document .jce-view-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.jce-view-document .jce-view-field{padding:6px 7px}.jce-view-document .jce-view-header{padding:10px}.jce-view-document .jce-view-header h3{font-size:19px}.jce-view-document .jce-view-nav button{min-height:42px}}
+@page{size:A4 portrait;margin:10mm}
+@media print{
+ html,body{margin:0!important;padding:0!important;background:#fff!important}
+ .jce-view.jce-view-document{width:100%;max-width:none;padding:0;background:#fff;border-radius:0;font-size:10pt;line-height:1.25}
+ .jce-view-document .jce-view-header{padding:0 0 3mm;border-bottom:1.5pt solid #126b70;background:#fff!important;color:#172f43!important;box-shadow:none;border-radius:0;break-inside:avoid}
+ .jce-view-document .jce-view-header h3{font-size:17pt;color:#172f43!important;margin:2px 0}
+ .jce-view-document .jce-view-header small{font-size:9pt;color:#496579}
+ .jce-view-document .jce-view-nav{display:none!important}
+ .jce-view-document .jce-view-section{margin:2mm 0;overflow:visible;box-shadow:none;border-radius:0;break-inside:auto}
+ .jce-view-document .jce-view-section h4{font-size:10pt;padding:1.5mm 2mm;break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .jce-view-document .jce-view-fields{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .jce-view-document .jce-view-field{padding:1.5mm 2mm;break-inside:avoid}
+ .jce-view-document .jce-view-field b{font-size:8pt}
+ .jce-view-document .jce-view-value{font-size:10pt;font-weight:800;line-height:1.25;overflow:visible!important}
+ .jce-view-document .jce-view-wide{grid-column:span 2}
+ .jce-view-document .jce-view-work{min-height:16mm;padding:2mm;font-size:10pt;font-weight:700;line-height:1.35;overflow:visible!important;break-inside:auto}
+}
 `}
 function viewValue(value){if(value==null||value==='')return '—';if(typeof value==='object')return JSON.stringify(value,null,2);return String(value)}
 function jobDate(value){if(value==null||value==='')return 'Not recorded';const n=typeof value==='number'?value:/^\d+$/.test(String(value))?Number(value):Date.parse(value);return Number.isFinite(n)?new Date(n).toLocaleString('en-GB',{timeZone:'Asia/Muscat',dateStyle:'medium',timeStyle:'short'}):String(value)}
@@ -108,9 +142,9 @@ function viewHtml(j,actions=true){
  const vehicle=jobName(j.vehicle||[first('make','vehicleMake','brand'),first('model','vehicleModel')].filter(Boolean).join(' '));
  const work=['workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','notes','jobNotes','remarks'];
  const descriptions=[...new Set(work.map(k=>j[k]).filter(v=>v!=null&&v!=='').map(viewValue))];
- return '<section class="jce-view" data-job-card="'+esc(j.no)+'"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Job Card · '+esc(j.no)+'</h3><div>'+esc(vehicle||'—')+'</div>'+(j.delivered?'<strong class="jce-delivered-status" style="display:inline-block;margin-top:8px;padding:5px 9px;border-radius:7px;background:#dcfce7;color:#166534">Delivered'+(j.deliveryDate||j.deliveredAt?' · '+esc(jobDate(j.deliveredAt||j.deliveryDate)):'')+'</strong>':'')+'</div>'+(actions?'<nav class="jce-view-nav"><button type="button" id="jce-view-back">← Back</button><button type="button" id="jce-view-print">Print</button><button type="button" id="jce-view-close">Close</button></nav>':'')+'</header>'+ 
+ return '<section class="jce-view jce-view-document" data-job-card="'+esc(j.no)+'"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Job Card · '+esc(j.no)+'</h3><div>'+esc(vehicle||'—')+'</div>'+(j.delivered?'<strong class="jce-delivered-status" style="display:inline-block;margin-top:8px;padding:5px 9px;border-radius:7px;background:#dcfce7;color:#166534">Delivered'+(j.deliveryDate||j.deliveredAt?' · '+esc(jobDate(j.deliveredAt||j.deliveryDate)):'')+'</strong>':'')+'</div>'+(actions?'<nav class="jce-view-nav"><button type="button" id="jce-view-back">← Back</button><button type="button" id="jce-view-print">Print</button><button type="button" id="jce-view-close">Close</button></nav>':'')+'</header>'+ 
  section('Job Details', [['Job Card number',j.no],['Created · Oman time',jobDate(j.createdAt)],['Job type',jobName(j.jobType)],['Status',j.delivered?'Delivered':jobName(j.status||(j.completed?'Completed':'Open'))],['Promise date',j.promiseDate],['Linked Reception Checklist',j.receptionNo]])+
- section('Vehicle Details', [['Make',jobName(first('make','vehicleMake','brand'))],['Model',jobName(first('model','vehicleModel'))],['Vehicle',vehicle],['Year',first('year','modelYear','vehicleYear')],['Registration',first('reg','registration','registrationNo')],['VIN / Chassis',String(first('vin','VIN','vinNumber','chassis','chassisNo')).toUpperCase(),true],['Vehicle colour',jobName(first('color','colour'))],['Paint colour code',first('colorCode','colourCode')],['Intake odometer',first('jobIntakeOdometer','odometer')],['Odometer unit',first('jobIntakeOdometerUnit','jobIntakeUnit','odometerUnit')]])+
+ section('Vehicle Details', [['Make',jobName(first('make','vehicleMake','brand'))],['Model',jobName(first('model','vehicleModel'))],['Year',first('year','modelYear','vehicleYear')],['Registration',first('reg','registration','registrationNo')],['Vehicle',vehicle,true],['VIN / Chassis',String(first('vin','VIN','vinNumber','chassis','chassisNo')).toUpperCase(),true],['Vehicle colour',jobName(first('color','colour'))],['Paint colour code',first('colorCode','colourCode')],['Intake odometer',first('jobIntakeOdometer','odometer')],['Odometer unit',first('jobIntakeOdometerUnit','jobIntakeUnit','odometerUnit')]])+
  section('Customer Details', [['Customer',jobName(first('customer','customerName')),true],['Contact',first('mobile','customerMobile','customerContact','contact','phone','tel')],['Email',j.email],['Customer address',first('customerAddress','address'),true]])+
  section(jobType==='INSURANCE'?'Insurance & Payment':'Payment Details', [...(jobType==='INSURANCE'?[['Insurance company',jobName(first('insuranceCompany','insurance'))],['Claim number',first('claimNo','claimNumber','claim')]]:[]),['Amount',money(j.amount)],['Final invoice amount',money(j.finalInvoiceAmount??j.invoiceAmount)],['Invoice date',j.invoiceDate],...(jobType==='CREDIT'?[['Credit account / reference',j.creditAccount]]:[]),['Delivered · Oman time',j.deliveredAt||j.deliveryDate?jobDate(j.deliveredAt||j.deliveryDate):'Not delivered']])+
  '<section class="jce-view-section"><h4>Work Descriptions / Notes</h4><div class="jce-view-work">'+esc(descriptions.join('\n\n')||'No work description recorded.')+'</div></section>'+(actions&&j.delivered&&typeof window.zukaitDeliveredMaterialsSummary==='function'?window.zukaitDeliveredMaterialsSummary(j.no,'job-view'):'')+'</section>';
