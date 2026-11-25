@@ -7,12 +7,13 @@ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
 w.confirm=()=>true;
 w.eval(fs.readFileSync('app/src/main/assets/consumables_stock_core.js','utf8'));
 w.eval(fs.readFileSync('app/src/main/assets/accountant_stock.js','utf8'));
-let user={id:'A1',role:'Accountant'},calls=[],fail=true;
+let user={id:'A1',role:'Accountant'},calls=[],fail=true,ready=true,catalogFailure=false;
 const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:()=>true,notify:()=>{},request:async x=>{
  calls.push(JSON.parse(JSON.stringify(x)));
- if(x.operation==='STATUS')return {ready:true,writes:true};
- if(x.operation==='INVOICE_STATUS')return {ready:true};
+ if(x.operation==='STATUS')return {ready,writes:ready};
+ if(x.operation==='INVOICE_STATUS')return {ready};
  if(x.operation==='LIST')return {items:[],hasMore:false};
+ if(x.operation==='ENTRY_CATALOG'&&catalogFailure)throw Error('catalog unavailable');
  if(x.operation==='ENTRY_CATALOG')return {items:[{materialId:'m',brandId:'b',material:'Primer',brand:'Brand A',department:'Both',unit:'Liter'}],hasMore:false};
  if(x.operation==='WRITE'){if(fail){fail=false;throw Error('timeout');}return {receipt:{final:true}}}
  if(x.operation==='INVOICE_LIST')return {invoices:[{id:'inv',invoice_number:'QA1',supplier:'Test',invoice_date:'2026-11-20',status:'active',revision:1,total_amount:2,lines:[{materialId:'m',brandId:'b',materialName:'Primer',brandName:'Brand A',unit:'Liter',quantity:1,priceMethod:'unit',price:2,totalAmount:2}]}],hasMore:false};
@@ -35,6 +36,8 @@ const before=calls.at(-1);assert.equal(before.command,'OPENING');assert.equal(be
 await click('retry');assert.deepEqual(calls.at(-1),before);assert.match(d.body.textContent,/Saved successfully/);
 await click('purchase');await click('invoices');await click('audit:0');assert.match(d.body.textContent,/A1/);
 panel.reset();assert.equal(d.querySelector('#as-dialog'),null);
+ready=false;await panel.open();await click('purchase');assert.ok(d.querySelector('#as-number'),'Purchase page opens even when write readiness is false');assert.match(d.querySelector('#as-status').textContent,/disabled|not ready/);await click('invoices');assert.match(d.body.textContent,/QA1/);panel.reset();
+catalogFailure=true;await panel.open();await click('purchase');assert.match(d.body.textContent,/Unable to load the material catalog/);assert.ok(d.querySelector('[data-as="invoices"]'));await click('invoices');assert.match(d.body.textContent,/QA1/);panel.reset();
 user={id:'E1',role:'Employee'};await panel.open();assert.equal(d.querySelector('#as-dialog'),null);
 console.log('PASS Accounts stock workspace: physical count only, exact retry, audit, role isolation');
 dom.window.close();

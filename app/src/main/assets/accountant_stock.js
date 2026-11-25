@@ -4,14 +4,14 @@
 window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notify}){
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const omr=x=>Number(x||0).toFixed(3),today=()=>new Date(Date.now()+14400000).toISOString().slice(0,10);
- let dialog=null,owner='',generation=0,busy=false,ready=false,invoiceReady=false,tab='home',department='',catalog=[],catalogPage=0,moreCatalog=false,lines=[],invoices=[],editing=null;
+ let dialog=null,owner='',generation=0,busy=false,ready=false,invoiceReady=false,readinessError='',checking=null,tab='home',department='',catalog=[],catalogPage=0,moreCatalog=false,lines=[],invoices=[],editing=null;
  const identity=()=>{const u=getUser();return ['Manager','Accountant'].includes(u?.role)?String(u.id)+'|'+u.role:''};
  const key=who=>'zukait-account-stock-intent-v1:'+encodeURIComponent(project)+':'+encodeURIComponent(who);
  const pending=()=>{const raw=localStorage.getItem(key(identity()));return raw?JSON.parse(raw):null};
  const current=()=>dialog&&identity()&&identity()===owner;
  const field=id=>dialog?.querySelector('#'+id);
  const val=id=>String(field(id)?.value||'').trim();
- const status=x=>{if(current()&&field('as-status'))field('as-status').textContent=x};
+ const status=x=>{if(current()&&field('as-status')){field('as-status').textContent=x;field('as-status').hidden=!x;}};
  const valid=(g,who)=>current()&&generation===g&&owner===who;
  const btn=(label,action)=>'<button type="button" data-as="'+action+'">'+label+'</button>';
  const departmentTitle=()=>department==='Painting'?'Paint Consumables':department==='Mechanical'?'Mechanical Consumables':'Consumables Stock Management';
@@ -24,21 +24,34 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  const nav=()=>'<header class="as-toolbar">'+(tab==='home'?'':btn('← '+(department&&tab!=='department'?'Department':'Stock'),'back'))+'<span>▣ ZUKAIT · STOCK</span>'+btn('✕ Close','close')+'</header>';
  function show(body){
   if(!current())return;
-  dialog.innerHTML='<style>#as-dialog{box-sizing:border-box;width:100%;max-width:none;height:100%;max-height:none;inset:0;margin:0;overflow:auto;border:0;border-radius:0;background:#f5f8fc;color:#173653;padding:16px}#as-dialog .as-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 16px}#as-dialog .as-toolbar span{font-size:12px;font-weight:800;margin-right:auto}#as-dialog #as-body{max-width:1040px;margin:auto}#as-dialog .as-hero{display:flex;align-items:center;gap:14px;border:1px solid #dce6f1;background:white;border-radius:16px;padding:16px;margin-bottom:24px}#as-dialog .as-hero h2{font-size:23px;line-height:1.2;margin:0}#as-dialog .as-hero-icon{font-size:30px;color:#376caa}#as-dialog h3{font-size:18px;margin:24px 0 12px}#as-dialog .as-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#as-dialog .as-grid .as-tile{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;min-width:0;min-height:154px;padding:15px;border-radius:16px;overflow-wrap:anywhere}#as-dialog .as-tile-top{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:20px}#as-dialog .as-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#2878ca;color:white}#as-dialog .as-tile strong{font-size:16px;line-height:1.25}#as-dialog .as-tile small{font-size:12px;font-weight:500;color:#4f6479;line-height:1.4}#as-dialog .as-tile.blue{background:#eaf2ff;border-color:#c6d9f5}#as-dialog .as-tile.green{background:#edf7e9;border-color:#cfe3c9}#as-dialog .as-tile.green .as-icon{background:#58a43d}#as-dialog .as-tile.purple{background:#f2edfa;border-color:#ddd1f0}#as-dialog .as-tile.purple .as-icon{background:#8056b6}#as-dialog .as-tile.amber{background:#fff5e4;border-color:#ead9b9}#as-dialog .as-tile.amber .as-icon{background:#bd792c}#as-dialog .as-tile:disabled{opacity:.75}#as-dialog #as-status:not(:empty){max-width:1040px;margin:0 auto 12px;color:#315777;font-size:14px}#as-dialog button{min-height:42px;border:1px solid #b8d3e7;border-radius:9px;background:#eaf2fb;color:#173653;padding:9px;font-weight:700}#as-dialog label{display:grid;gap:4px;margin:9px 0;font-weight:700}#as-dialog input,#as-dialog select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #b8cde0;border-radius:8px;padding:7px;color:#173653;background:white}#as-dialog .as-row{border:1px solid #d4e2ee;border-radius:10px;padding:10px;margin:7px 0;background:#f7fafc;overflow-wrap:anywhere}#as-dialog pre{white-space:pre-wrap;overflow-wrap:anywhere}#as-dialog button:disabled{opacity:.5}#as-dialog .as-close{float:right}</style>'+nav()+'<p id="as-status" role="status" aria-live="polite"></p><section id="as-body">'+body+'</section>';
+  dialog.innerHTML='<style>#as-dialog{position:fixed;box-sizing:border-box;width:100%;max-width:none;height:100%;max-height:none;inset:0;margin:0;overflow:auto;border:0;border-radius:0;background:#f5f8fc;color:#173653;padding:16px}#as-dialog .as-toolbar{position:sticky;top:0;z-index:10;background:#f5f8fc;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 16px}#as-dialog .as-toolbar span{font-size:12px;font-weight:800;margin-right:auto}#as-dialog #as-body{max-width:1040px;margin:auto}#as-dialog .as-hero{display:flex;align-items:center;gap:14px;border:1px solid #dce6f1;background:white;border-radius:16px;padding:16px;margin-bottom:24px}#as-dialog .as-hero h2{font-size:23px;line-height:1.2;margin:0}#as-dialog .as-hero-icon{font-size:30px;color:#376caa}#as-dialog h3{font-size:18px;margin:24px 0 12px}#as-dialog .as-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#as-dialog .as-grid .as-tile{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;min-width:0;min-height:154px;padding:15px;border-radius:16px;overflow-wrap:anywhere}#as-dialog .as-tile-top{display:flex;justify-content:space-between;align-items:center;width:100%;font-size:20px}#as-dialog .as-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:#2878ca;color:white}#as-dialog .as-tile strong{font-size:16px;line-height:1.25}#as-dialog .as-tile small{font-size:12px;font-weight:500;color:#4f6479;line-height:1.4}#as-dialog .as-tile.blue{background:#eaf2ff;border-color:#c6d9f5}#as-dialog .as-tile.green{background:#edf7e9;border-color:#cfe3c9}#as-dialog .as-tile.green .as-icon{background:#58a43d}#as-dialog .as-tile.purple{background:#f2edfa;border-color:#ddd1f0}#as-dialog .as-tile.purple .as-icon{background:#8056b6}#as-dialog .as-tile.amber{background:#fff5e4;border-color:#ead9b9}#as-dialog .as-tile.amber .as-icon{background:#bd792c}#as-dialog .as-tile:disabled{opacity:.75}#as-dialog #as-status:not(:empty){position:sticky;top:56px;z-index:9;max-width:1040px;margin:0 auto 12px;color:#183e61;background:#fff5dd;border:1px solid #e2c987;padding:12px;border-radius:8px;font-size:15px;font-weight:700}#as-dialog button{min-height:42px;border:1px solid #b8d3e7;border-radius:9px;background:#eaf2fb;color:#173653;padding:9px;font-weight:700}#as-dialog label{display:grid;gap:4px;margin:9px 0;font-weight:700}#as-dialog input,#as-dialog select{width:100%;min-width:0;box-sizing:border-box;min-height:42px;border:1px solid #b8cde0;border-radius:8px;padding:7px;color:#173653;background:white}#as-dialog .as-row{border:1px solid #d4e2ee;border-radius:10px;padding:10px;margin:7px 0;background:#f7fafc;overflow-wrap:anywhere}#as-dialog pre{white-space:pre-wrap;overflow-wrap:anywhere}#as-dialog button:disabled{opacity:.5}#as-dialog .as-close{float:right}</style>'+nav()+'<p id="as-status" role="status" aria-live="polite"></p><section id="as-body">'+body+'</section>';dialog.scrollTop=0;
   dialog.onclick=e=>{const b=e.target.closest('[data-as]');if(b)act(b.dataset.as).catch(err=>status(err.message));};
   dialog.oninput=e=>{if(e.target.id==='as-search')filterCatalog();if(e.target.id==='as-qty'||e.target.id==='as-price'||e.target.id==='as-method')calculate();};
-  const p=pending();if(p){field('as-body').innerHTML='<div class="as-row"><b>Previous stock transaction awaiting confirmation</b><p>'+esc(p.operation)+' · '+esc(p.data?.invoiceNumber||p.data?.invoiceId||p.data?.materialId||'')+'</p>'+btn('Retry exact saved request','retry')+'</div>';status('Resolve the previous transaction before entering another.');}
+  const p=pending();if(p&&['home','opening','purchase','edit'].includes(tab)){field('as-body').innerHTML='<div class="as-row"><b>Previous stock transaction awaiting confirmation</b><p>'+esc(p.operation)+' · '+esc(p.data?.invoiceNumber||p.data?.invoiceId||p.data?.materialId||'')+'</p>'+btn('Retry exact saved request','retry')+'</div>';status('Resolve the previous transaction before entering another.');}
  }
- function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;tab='home';department='';catalog=[];lines=[];editing=null;}
+ function reset(){generation++;if(dialog){dialog.remove();dialog=null;}owner='';ready=false;invoiceReady=false;readinessError='';checking=null;tab='home';department='';catalog=[];lines=[];editing=null;}
  async function open(){
   if(!identity())return;
   if(dialog){dialog.focus();return;}
   owner=identity();dialog=document.createElement('dialog');dialog.id='as-dialog';dialog.setAttribute('aria-label','Accounts Stock');document.body.appendChild(dialog);
   dialog.addEventListener('cancel',e=>{e.preventDefault();if(!busy)reset()});
   dialog.showModal();show(homeMenu());status('Checking Stock permissions…');
-  const opened=dialog,who=owner;generation++;
-  const stillOpen=()=>dialog===opened&&current()&&owner===who;
-  try{const r=await request({operation:'STATUS'});if(!stillOpen())return;ready=r.ready===true&&r.writes===true;const v=r.ready===true?await request({operation:'INVOICE_STATUS'}):{};if(!stillOpen())return;invoiceReady=v.ready===true;if(tab==='home'){show(homeMenu());status(ready?'Stock server connected.':'Stock entry is not enabled on this server.');}}catch(e){if(stillOpen())status(e.message);}
+  generation++;await refreshReadiness();
+ }
+ function refreshReadiness(){
+  if(checking)return checking;
+  const opened=dialog,who=owner;const stillOpen=()=>dialog===opened&&current()&&owner===who;
+  const p=(async()=>{
+   let stock=false,invoice=false,err='';
+   try{const r=await request({operation:'STATUS'});stock=r.ready===true&&r.writes===true;if(!stock)err='Stock writes are disabled or the server is not ready.';}catch(e){err='Stock status: '+e.message;}
+   if(!stillOpen())return;
+   // Invoice readiness is separate. A failed general Stock check must not hide invoice history.
+   try{const v=await request({operation:'INVOICE_STATUS'});invoice=v.ready===true;if(!invoice&&!err)err='Purchase invoice writes are disabled.';}catch(e){if(!err)err='Invoice status: '+e.message;}
+   if(!stillOpen())return;
+   ready=stock;invoiceReady=invoice;readinessError=err;
+   if(tab==='home')status(err||'');
+  })();
+  checking=p;void p.finally(()=>{if(checking===p)checking=null;});return p;
  }
  function filterCatalog(){
   const q=val('as-search').toLowerCase().split(/\s+/).filter(Boolean),select=field('as-pair');if(!select)return;
@@ -84,7 +97,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  async function send(command,retry=false){
   if(busy||!current()||!canWrite())throw Error('Finish other pending financial work first.');
   const who=owner,k=key(who);let p=pending();
-  if(!retry){if(p)throw Error('Retry the saved request first.');p={...command,requestId:crypto.randomUUID()};if(!confirm('Confirm this stock transaction?'))return;localStorage.setItem(k,JSON.stringify(p));}
+  if(!retry){if(p)throw Error('Retry the saved request first.');await refreshReadiness();if(!current()||owner!==who||busy)throw Error('Account changed or another request is running.');if(command.operation==='WRITE'?!ready:!invoiceReady)throw Error(readinessError||'Stock write permission unavailable.');p={...command,requestId:crypto.randomUUID()};if(!confirm('Confirm this stock transaction?'))return;localStorage.setItem(k,JSON.stringify(p));}
   if(!p)throw Error('No pending request.');
   busy=true;show('');status('Submitting saved request…');
   try{const r=await request(p);if(p.operation==='WRITE'?!r.receipt:!r.invoice?.id)throw Error('Confirmation unavailable');localStorage.removeItem(k);if(current()&&owner===who){lines=[];editing=null;tab='home';department='';show(homeMenu());status('Saved successfully.');}}
@@ -93,14 +106,24 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
  }
  async function act(action){
   if(!current()||busy)return;
-  if(action==='close'){reset();return;}if(action==='retry')return send(null,true);if(pending()){show('');return;}
+  if(action==='close'){reset();return;}if(action==='retry')return send(null,true);
   const [op,index]=action.split(':');
   if(op==='department'&&['Painting','Mechanical'].includes(index)){generation++;department=index;tab='department';show(departmentMenu());return;}
   if(op==='back'){if(tab==='purchase'&&lines.length&&!confirm('Discard unsaved invoice items?'))return;generation++;if(department&&tab!=='department'){tab='department';show(departmentMenu());}else{department='';tab='home';show(homeMenu());}return;}
   if(['balance','invoices','history','reports'].includes(op))return readPage(op,op==='history'?(index||0):Number(index||0));
-  if(op==='opening'||op==='purchase'){department='';
-   if(op==='opening'&&!ready||op==='purchase'&&!invoiceReady){status('Entry not enabled on this server.');return;}
-   tab=op;lines=[];generation++;show('<p>Loading material catalog…</p>');if(await loadCatalog())renderEntry();return;
+  if(op==='opening'||op==='purchase'){
+   department='';tab=op;lines=[];const g=++generation,who=owner;
+   // Open the selected workspace immediately, independent of readiness or catalog failures.
+   const title=op==='opening'?'Add Stock':'Purchase Entry';
+   const history=op==='purchase'?btn('Invoice List','invoices'):'';
+   show('<h2>'+title+'</h2>'+history+'<p>Loading material catalog…</p>');
+   if(pending())return;
+   try{if(!await loadCatalog()||!valid(g,who))return;renderEntry();}
+   catch(e){if(valid(g,who)){show('<h2>'+title+'</h2>'+history+'<p>Unable to load the material catalog.</p>'+btn('Retry loading',op));status(e.message);}return;}
+   await refreshReadiness();
+   if(!valid(g,who))return;
+   if(op==='opening'&&!ready||op==='purchase'&&!invoiceReady)status(readinessError||'Entry cannot be saved until the server enables it. Existing records can still be viewed.');
+   return;
   }
   if(op==='catalog-more'){const before=field('as-pair');if(await loadCatalog(catalogPage+1)&&before===field('as-pair')){filterCatalog();if(!moreCatalog)dialog.querySelector('[data-as="catalog-more"]')?.remove();}return;}
   if(op==='add-line'){const l=getLine();if(lines.length>=50||lines.some(x=>x.materialId===l.materialId&&x.brandId===l.brandId))throw Error('Duplicate pair or maximum 50 lines.');lines.push(l);renderLines();field('as-qty').value='';return;}
@@ -113,7 +136,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    const supplier=val('as-supplier'),invoiceNumber=val('as-number'),invoiceDate=val('as-date');if(!supplier||!invoiceNumber||!invoiceDate||invoiceDate>today()||!lines.length)throw Error('Complete invoice details and add items.');
    return send({operation:'INVOICE_SAVE',data:{supplier,invoiceNumber,invoiceDate,lines:lines.map(rawLine)}});
   }
-  if(op==='header'||op==='lines')return edit(invoices[Number(index)],op);
+  if(op==='header'||op==='lines'){if(pending())throw Error('Resolve the saved request first.');return edit(invoices[Number(index)],op);}
   if(op==='save-edit'&&editing){
    const {i,mode}=editing,reason=val('as-reason');if(reason.length<5)throw Error('Enter a correction reason.');
    const data={invoiceId:i.id,expectedRevision:i.revision,reason};
@@ -122,7 +145,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
    return send({operation:mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',data});
   }
   if(op==='audit'){
-   const i=invoices[Number(index)];if(!i)return;const g=++generation,who=owner;const r=await request({operation:'INVOICE_AUDIT',page:0,data:{invoiceId:i.id}});if(!valid(g,who))return;show('<h3>Audit history · '+esc(i.invoice_number)+'</h3>'+r.audit.map(a=>'<details class="as-row"><summary>'+esc(a.event_type)+' · '+esc(a.reason)+' · '+esc(a.actor_id)+' · '+esc(a.created_at)+'</summary><pre>'+esc(JSON.stringify({before:a.before_header,after:a.after_header},null,2))+'</pre></details>').join('')+(r.hasMore?'<p>First 50 audit entries shown.</p>':''));
+   const i=invoices[Number(index)];if(!i)return;tab='audit';const g=++generation,who=owner;const r=await request({operation:'INVOICE_AUDIT',page:0,data:{invoiceId:i.id}});if(!valid(g,who))return;show('<h3>Audit history · '+esc(i.invoice_number)+'</h3>'+r.audit.map(a=>'<details class="as-row"><summary>'+esc(a.event_type)+' · '+esc(a.reason)+' · '+esc(a.actor_id)+' · '+esc(a.created_at)+'</summary><pre>'+esc(JSON.stringify({before:a.before_header,after:a.after_header},null,2))+'</pre></details>').join('')+(r.hasMore?'<p>First 50 audit entries shown.</p>':''));
   }
  }
  return {open,reset,blocked:()=>busy||Boolean(identity()&&pending())||Boolean(dialog)};
