@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner explicitly deferred backup restore and physical-device acceptance for V420. Exact signed candidate and ten CI workflows passed. Production schema installed; production staff workshop-api V152 deployed on 2026-11-25 with exact canary bundle verified. Five new invoice tables have RLS and no client read grants; ten invoice RPCs restricted to service role. Authenticated production workflow smoke, full data preservation, PC-site reconciliation and HTTPS restart acceptance remain outstanding. Staff publication approval remains false.",
+  "reason": "Production V152 deployed but subsequent owner-reported connection interruption corroborated by HTTP 503 and PostgreSQL statement timeout. Exact V151 rollback bundle not yet recovered. Hold staff publication until connectivity is restored and verified. Previously authorized backup and physical deferrals remain recorded.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -77,6 +77,18 @@
       "purchaseInvoicesAfter": 0,
       "priceApplicationsAfter": 0,
       "fullDataPreservationVerified": false
+    },
+    "connectivityIncident": {
+      "status": "OPEN",
+      "reportedDate": "2026-11-25",
+      "backendVersion": 152,
+      "observedHttp503": 11,
+      "observedPostgresStatementTimeout": 1,
+      "observationWindowStart": "2026-11-25T04:33:19Z",
+      "databaseResponding": true,
+      "fullRollbackVerified": false,
+      "ownerReported": "Connection interrupted after initial connectivity",
+      "staffReleaseHold": true
     }
   },
   "correctedSignedCandidate": {
