@@ -20,6 +20,11 @@ const done=Date.parse('2026-10-04T21:30:00Z');
 state.assign[0].completedAt=done;
 assert.equal(api.overdueTimeRows()[0].workCompletedAt,done);
 assert.ok(api.completedTimeHtml().includes('Work completed: <b>05 Oct 2026</b>'));
+const cardMarkup=api.completedTimeHtml();
+assert.match(cardMarkup,/<div class="wo-overdue-actions"><button class="wo-overdue-review wo-overdue-primary"[^>]*data-workshop-action="overdue-review"[^>]*>REVIEW[\s\S]*?<\/button><button class="wo-overdue-review"[^>]*data-workshop-action="overdue-staff"[^>]*>OPEN TIME REVIEW[\s\S]*?<\/button><\/div>/,'Both review actions share one row without changing their handlers');
+assert.match(source,/\.wo-overdue-actions\{display:grid;grid-template-columns:minmax\(0,0\.85fr\) minmax\(0,1\.4fr\)/);
+assert.match(source,/\.wo-overdue-review\.wo-overdue-primary\{background:linear-gradient\(145deg,#bb5514,#98400d\)/);
+
 delete state.assign[0].completedAt;
 assert.ok(api.completedTimeHtml().includes('Work completed: <b>Not recorded</b>'),'Never infer completion from a closed pause');
 state.sessions[0].finished=true;
