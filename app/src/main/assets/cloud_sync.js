@@ -438,7 +438,10 @@
     }catch(_){}
   }
 
-  async function pullLiveStatus(){
+  async function pullLiveStatus(scheduled=false){
+    // Only scheduled reads may reuse a recently confirmed live projection.
+    // Explicit action, revision and resume refreshes retain their existing behavior.
+    if(scheduled&&liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000)return false;
     const epoch=sessionEpoch;
     if(liveInFlight||!sessionToken()||!navigator.onLine||!liveRole())return false;
     liveInFlight=true;
@@ -1376,7 +1379,7 @@
       livePollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
         try{
-          if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0))await pullLiveStatus();
+          if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0))await pullLiveStatus(true);
         }finally{scheduleLive();}
       },delay(liveMs(),'live_status'));
     };
