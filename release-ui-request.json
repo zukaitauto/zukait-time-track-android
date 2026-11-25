@@ -1,6 +1,6 @@
 {
-  "versionName": "V422",
-  "versionCode": 385,
+  "versionName": "V423",
+  "versionCode": 386,
   "releaseScope": "standard",
   "approvedForStaff": false,
   "ownerPublicationRequested": false,
@@ -12,12 +12,13 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "reason": "Held V422 Accountant Stock parity: scoped API, database authorization and atomic master-link changes require integrated acceptance and backend deployment. Not approved for publication.",
+  "productionAuthenticatedAcceptance": "NOT_RUN",
+  "reason": "V423 coordinated Stock candidate; UI and APK remain unapproved until signed acceptance and live checks.",
   "previousPublishedRelease": {
-    "versionName": "V421",
-    "versionCode": 384,
-    "releaseTag": "release-V421-architecture-v2",
-    "sourceCommit": "5e02808249f536505d115d2f054651c161617408"
+    "versionName": "V422",
+    "versionCode": 385,
+    "releaseTag": "release-V422-architecture-v2",
+    "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d"
   },
   "sourceCommit": null,
   "signedAcceptanceRun": null,

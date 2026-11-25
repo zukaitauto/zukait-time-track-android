@@ -19,5 +19,10 @@
     "versionCode": 385,
     "releaseTag": "release-V422-architecture-v2",
     "sourceCommit": "4f390af88fea04b28f72cb5b063ed549916f110d"
-  }
+  },
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "approvedAt": null,
+  "publishNonce": null
 }
