@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 concurrency:
@@ -31,6 +32,20 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
+      - name: Wait for uploaded Pages artifact to become visible
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" | jq -e '.artifacts | any(.name == "github-pages" and .expired == false)' >/dev/null; then
+              echo "Pages artifact indexed"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::GitHub Pages artifact not indexed"
+          exit 1
       - name: Publish V421 web-only asset repair
         uses: actions/deploy-pages@v4
       - name: Verify repaired Accountant scripts and preserved site
