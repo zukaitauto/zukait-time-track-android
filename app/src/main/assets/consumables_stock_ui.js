@@ -359,7 +359,7 @@ function render(){
    const r=view.report;
    draw('<div class="zs-row"><h3>Stock Reports</h3><button class="zs-btn secondary" onclick="zukStockNav(\'reports\',true)">Refresh</button></div>'+
      (r?'<div class="zs-card">'+
-     '<p class="zs-muted">Report totals are server-reported. Verify opening-count status separately before interpreting a zero balance as physically out of stock.</p>'+
+     '<p class="zs-muted">Opening stock not counted: '+esc(r.uncounted??'Unavailable')+' · In stock: '+esc(r.in_stock??'Unavailable')+'.</p>'+
      '<div class="zs-row"><span>Current stock valuation</span><b>'+OMR(r.valuation)+' OMR</b></div>'+
      '<div class="zs-row"><span>Tracked material and brand pairs</span><b>'+esc(r.items)+'</b></div>'+
      '<div class="zs-row"><span>Low stock</span><b>'+esc(r.low)+'</b></div>'+
