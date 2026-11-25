@@ -1511,7 +1511,7 @@ Deno.serve(async (req: Request) => {
       if (capError) throw capError;
       if (!cap?.allowed) return reply({ok:false,code:"reception_forbidden"},403);
       const {data:state,error:stateError}=await admin.from("workshop_state")
-        .select("revision,data").eq("id","main").single();
+        .select("jobs:data->jobs,assign:data->assign,sessions:data->sessions").eq("id","main").single();
       if (stateError) throw stateError;
       // Page through authoritative Reception cases; never silently drop old
       // checklist numbers from totals or searches.
@@ -1532,7 +1532,8 @@ Deno.serve(async (req: Request) => {
       if(linkError)throw linkError;
       const linkByRc=new Map((existingLinks||[]).map((x:any)=>[String(x.rc_no),String(x.job_card)]));
       const safeCases=receptionRows.map(r=>({...r,job_card:r.job_card||linkByRc.get(String(r.rc_no))||null,manually_linked:linkByRc.has(String(r.rc_no)),insurance_company:insuranceById.get(String(r.insurance_id))||""}));
-      const projected=receptionDashboardProjection(state.data,safeCases,{
+      const dashboardState=Object.hasOwn(state,"jobs")?{jobs:state.jobs,assign:state.assign,sessions:state.sessions}:state.data;
+      const projected=receptionDashboardProjection(dashboardState,safeCases,{
         section:body.section,search:body.search,month:body.month,from:body.from,to:body.to,
         page:body.page,missing_only:body.missing_only,dated_only:body.dated_only,checklist_status:body.checklist_status,company_filter:body.company_filter
       });
@@ -1677,8 +1678,8 @@ Deno.serve(async (req: Request) => {
     if(action==='reception_estimate'){
       if(!['Manager','Supervisor','Receptionist'].includes(String(user.role)))return reply({ok:false,code:'reception_forbidden'},403);
       if(!body.command||typeof body.command!=='object'||Array.isArray(body.command)||JSON.stringify(body.command).length>64000)return reply({ok:false,code:'reception_invalid_command'},400);
-      const {data:estimateState,error:estimateStateError}=await admin.from('workshop_state').select('data').eq('id','main').single();if(estimateStateError)throw estimateStateError;
-      const deletedDrafts=estimateState.data?.estimateDraftDeletes||[];
+      const {data:estimateState,error:estimateStateError}=await admin.from('workshop_state').select('estimateDraftDeletes:data->estimateDraftDeletes').eq('id','main').single();if(estimateStateError)throw estimateStateError;
+      const deletedDrafts=(Object.hasOwn(estimateState,'estimateDraftDeletes')?estimateState.estimateDraftDeletes:estimateState.data?.estimateDraftDeletes)||[];
       if(['SAVE','ALLOCATE'].includes(body.command.operation)&&deletedDrafts.some((e:any)=>String(e.estimateId)===String(body.command.client_key)))return reply({ok:false,code:'estimate_draft_deleted'},409);
       const {data,error}=await admin.rpc('zukait_reception_estimate_command',{p_actor_id:String(user.id),p_command:body.command});
       if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0]||'reception_unavailable';return reply({ok:false,code},/forbidden/.test(code)?403:409);}
@@ -1707,8 +1708,8 @@ Deno.serve(async (req: Request) => {
       }
       let response=user.role === "Receptionist" ? receptionistProjection(data) : data;
       if(String(command.operation||"").toUpperCase()==="GET"&&data?.record?.job_card){
-        const {data:snapshot,error:deliveryError}=await admin.from("workshop_state").select("data").eq("id","main").single();
-        const job=!deliveryError?(snapshot?.data?.jobs||[]).find((j:any)=>String(j.no)===String(data.record.job_card)):null;
+        const {data:snapshot,error:deliveryError}=await admin.from("workshop_state").select("jobs:data->jobs").eq("id","main").single();
+        const job=!deliveryError?((snapshot?.jobs??snapshot?.data?.jobs)||[]).find((j:any)=>String(j.no)===String(data.record.job_card)):null;
         response=job?{...response,linked_job:{no:job.no,delivered:job.delivered===true,status:job.delivered?"Delivered":String(job.status||"Open"),deliveredAt:job.deliveredAt||null,deliveryDate:job.deliveryDate||null}}:{...response,delivery_status_unavailable:true};
       }
       return reply(response);
@@ -1827,14 +1828,16 @@ Deno.serve(async (req: Request) => {
           return reply({ok:false,code:saved.code},/forbidden|manager_required/.test(saved.code)?403:409);
         }
       }
+      if(body.operation==="GET"){
+        const {data:current,error:readError}=await admin.from("workshop_state").select("jobs:data->jobs").eq("id","main").single();
+        if(readError)throw readError;
+        const job=((current.jobs??current.data?.jobs)||[]).find(j=>String(j.no).trim().toUpperCase()===String(body.jobCard).trim().toUpperCase());
+        if(!job||job.deleted||job.archived||job.cancelled||job.no==="ID001")return reply({ok:false,code:"job_not_available"},404);
+        return reply({ok:true,job:await jobViewWithIntakeDescription(admin,job),invoice_locked:job.finalInvoiceAmount!=null&&job.finalInvoiceAmount!==""});
+      }
       for(let attempt=0;attempt<8;attempt++){
         const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
         if(readError)throw readError;
-        if(body.operation==="GET"){
-          const job=(current.data.jobs||[]).find(j=>String(j.no).trim().toUpperCase()===String(body.jobCard).trim().toUpperCase());
-          if(!job||job.deleted||job.archived||job.cancelled||job.no==="ID001")return reply({ok:false,code:"job_not_available"},404);
-          return reply({ok:true,job:await jobViewWithIntakeDescription(admin,job),invoice_locked:job.finalInvoiceAmount!=null&&job.finalInvoiceAmount!==""});
-        }
         const result=jobEditTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code},/forbidden|manager_required/.test(result.code)?403:409);
         const directEdit=Boolean(result.job.directReceptionJob)&&user.role==="Manager";
@@ -1964,9 +1967,10 @@ Deno.serve(async (req: Request) => {
       const clientKey=String(body?.client_key||"").trim();
       if(!jobCard) return reply({ok:false,code:"job_card_required"},400);
       if(!clientKey) return reply({ok:false,code:"client_key_required"},400);
-      const {data:workshop,error:workshopError}=await admin.from("workshop_state").select("data").eq("id","main").single();
+      const {data:workshop,error:workshopError}=await admin.from("workshop_state").select("jobs:data->jobs").eq("id","main").single();
       if(workshopError) throw workshopError;
-      const existingJob=(Array.isArray(workshop?.data?.jobs)?workshop.data.jobs:[]).find((j:any)=>String(j?.no||"").trim().toUpperCase()===jobCard);
+      const jobs=workshop?.jobs??workshop?.data?.jobs;
+      const existingJob=(Array.isArray(jobs)?jobs:[]).find((j:any)=>String(j?.no||"").trim().toUpperCase()===jobCard);
       if(!existingJob) return reply({ok:false,code:"job_card_not_found"},404);
       const {data,error}=await admin.rpc("zukait_v2_allocate_spare_part_list",{p_job_card:jobCard,p_actor_id:String(user.id),p_client_key:clientKey});
       if(error){console.error("spare_part_allocator_failed",error);return reply({ok:false,code:"spare_part_allocator_unavailable"},503);}
