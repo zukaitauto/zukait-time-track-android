@@ -15,6 +15,7 @@ function fixture(role='Manager',linked=true){
    brands:[{id:'b',name:'Brand A',active:true}]
   }},
   window:{
+   localStorage:{getItem(k){return this[k]??null},setItem(k,v){this[k]=String(v)},removeItem(k){delete this[k]}},
    openModal(s){html=s},
    ZukaitConsumables:{ensureState(s){return s.consumables}},
    zukaitCloud:{async stockRequest(req){

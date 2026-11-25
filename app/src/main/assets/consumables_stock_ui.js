@@ -24,6 +24,27 @@ const previewOnly=()=>window.ZUKAIT_STOCK_UI_PREVIEW_ONLY===true&&
 const api=x=>previewOnly()?Promise.reject(Error('Stock preview: transactions not enabled')):
   window.zukaitCloud?.stockRequest?.(x)||Promise.reject(Error('Stock server connection not ready'));
 const stockRead=request=>api(department?{...request,department}:request);
+
+// Persist only the exact transaction payload and receipt ID, scoped to the staff identity.
+const stockWriteOwner=()=>allowed()&&me?.id?String(me.id)+'|'+me.role:'';
+const stockPendingKey=owner=>'zukait_stock_write_pending_v1:'+encodeURIComponent(owner);
+function readStockPending(owner){
+ if(!owner)throw Error('Staff identity unavailable');
+ const raw=window.localStorage.getItem(stockPendingKey(owner));
+ if(!raw)return null;
+ const entry=JSON.parse(raw);
+ if(entry.owner!==owner||!entry.requestId||!['OPENING','PURCHASE','ADJUST'].includes(entry.command)||!entry.data||
+    entry.fingerprint!==JSON.stringify({command:entry.command,data:entry.data}))throw Error('Saved stock receipt needs review');
+ return entry;
+}
+function stockPendingNotice(){
+ if(!stockWriteOwner())return '';
+ try{
+  const entry=readStockPending(stockWriteOwner());
+  return entry?'<div role="alert" class="zs-warning">Unconfirmed stock transaction: '+esc(entry.command)+' · '+esc(entry.data.materialId)+' / '+esc(entry.data.brandId)+'. Retry the original transaction before submitting another. <button type="button" class="zs-btn" onclick="zukStockRetryPending()"'+(view.busy?' disabled':'')+'>Retry original transaction</button></div>':'';
+ }catch(_){return '<div role="alert" class="zs-warning">Saved stock receipt storage unavailable. Stock writes are blocked until it can be read.</div>';}
+}
+
 window.zukaitStockPickerEnabled=()=>!previewOnly()&&(
   isolatedStockPilot()||
   (liveStockReady()&&window.ZUKAIT_DEPARTMENT_PICKERS_ENABLED===true));
@@ -182,7 +203,7 @@ function draw(body) {
     (department?'<p class="zs-muted">Shared items use the same stock balance in both departments.</p>':'')+
     (live?'':'<div class="zs-nav">'+nav+'</div>');
   const message=view.error?'<div class="zs-warning">'+esc(view.error)+'</div>':'';
-  const markup=css+header+message+(body||'')+'</div>';
+  const markup=css+header+message+stockPendingNotice()+(body||'')+'</div>';
   if(live){renderStockScreen(previewHomeCss+markup,view.page);return;}
   window.openModal(markup);
 }
@@ -1075,7 +1096,7 @@ function showLiveHome(){
     '<button type="button" class="zs-ghost" onclick="zukStockResetDepartment()">← Departments</button>')+
   '<strong class="zs-screen-brand">▣ ZUKAIT · STOCK</strong>'+
   '<button type="button" class="zs-ghost" onclick="zukStockPreviewExit(\'dashboard\')">✕ Close</button></header>'+
-  content+'</section>';
+  stockPendingNotice()+content+'</section>';
  renderStockScreen(markup,'home');
 }
 window.zukStockOpenMaterials=()=>{
@@ -1253,23 +1274,31 @@ window.zukStockMoreHistory=async()=>{
 };
 const request=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():
   'stock-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-async function write(command,data){
- if(view.busy)return;
+async function write(command,data,retry=false){
+ if(view.busy||!allowed()||previewOnly())return;
+ if(['OPENING','ADJUST'].includes(command)&&!manager())return;
  if(!navigator.onLine){view.error='Offline: stock was not changed.';render();return}
+ const owner=stockWriteOwner(),session=currentStockSession();
+ const current=()=>owner===stockWriteOwner()&&session===currentStockSession();
  const fields=['entrytype','material','brand','qty','method','price','count-confirmed','opening-note','item','count','reason'];
  const form=fields.flatMap(key=>{
    const input=document.getElementById('zs-'+key);
    return input?[[key,input.value,input.checked]]:[];
  });
- view.busy=true;view.error='';render();
- // Keep a stable receipt ID if the first request timed out. Never silently retry with a NEW ID.
- const fingerprint=JSON.stringify({command,data});
- if(!view.pending||view.pending.fingerprint!==fingerprint)
-   view.pending={fingerprint,requestId:request()};
+ let entry,wasPending=false;
  try{
-   // Link only the exact, already-saved pair after the user submits a validated
-   // stock entry. The existing authenticated Manager RPC validates master IDs,
-   // department and unit. A retry reuses the same transaction receipt ID.
+   entry=readStockPending(owner);wasPending=!!entry;
+   const fingerprint=JSON.stringify({command,data});
+   if(entry&&entry.fingerprint!==fingerprint)throw Error('An earlier stock transaction is unconfirmed. Retry the original transaction first');
+   if(!entry){
+     if(retry)throw Error('No saved transaction to retry');
+     entry={owner,command,data,fingerprint,requestId:request()};
+     window.localStorage.setItem(stockPendingKey(owner),JSON.stringify(entry));
+     if(readStockPending(owner)?.requestId!==entry.requestId)throw Error('Cannot preserve transaction receipt');
+   }
+ }catch(e){view.error=String(e.message||e)+'. No new stock request sent.';render();return}
+ view.busy=true;view.error='';render();
+ try{
    if(['OPENING','PURCHASE'].includes(command)&&manager()){
      const selected=addStockChoices().find(x=>String(x.material_id)===String(data.materialId)&&String(x.brand_id)===String(data.brandId));
      if(selected?.needsMasterLink){
@@ -1278,20 +1307,23 @@ async function write(command,data){
        pickerRequests.clear();
      }
    }
-   const reply=await api({operation:'WRITE',command,requestId:view.pending.requestId,data});
-   if(!reply.ok){
-     if(reply.code==='purchase_invoice_required'){
-       view.pending=null;view.busy=false;
-       if(typeof window.consOpenPurchaseEntry==='function'){
-        window.zukStockPreviewExit('dashboard');window.consOpenPurchaseEntry();return;
-       }
-       throw Error('Use Consumables → Purchase Entry for purchases.');
+   if(!current())throw Error('Staff session changed; retry under the original account');
+   const reply=await api({operation:'WRITE',command,requestId:entry.requestId,data:entry.data});
+   if(!reply?.ok){
+     // Never discard an uncertain prior request based on a later authorization/availability rejection.
+     const definitive=['purchase_invoice_required','manager_only','stock_forbidden','stock_unknown_command','stock_invalid_payload','stock_write_not_enabled','insufficient_stock','opening_stock_required','stock_master_key_not_found','opening_already_recorded','count_below_reserved','reason_required','stock_unit_conflict'];
+     if(!wasPending&&definitive.includes(reply?.code))window.localStorage.removeItem(stockPendingKey(owner));
+     if(!wasPending&&reply?.code==='purchase_invoice_required'&&current()&&typeof window.consOpenPurchaseEntry==='function'){
+       view.busy=false;window.zukStockPreviewExit('dashboard');window.consOpenPurchaseEntry();return;
      }
-     throw Error(reply.code||'STOCK_WRITE_FAILED');
+     throw Error(reply?.code||'STOCK_WRITE_FAILED');
    }
-   view.pending=null;view.items=[];view.history=[];view.report=null;view.busy=false;
+   if(readStockPending(owner)?.requestId===entry.requestId)window.localStorage.removeItem(stockPendingKey(owner));
+   if(!current())return;
+   view.items=[];view.history=[];view.report=null;view.busy=false;
    await load('balance',true);
  }catch(e){
+   if(!current())return;
    view.error=String(e.message||e)+'. No success has been confirmed by the server.';
    view.busy=false;render();
    for(const [key,value,checked] of form){
@@ -1299,8 +1331,16 @@ async function write(command,data){
      if(input){input.value=value;if(typeof checked==='boolean')input.checked=checked;}
    }
    window.zukStockSetEntryType();
- }
+ }finally{view.busy=false}
 }
+window.zukStockRetryPending=async()=>{
+ if(view.busy||!allowed()||previewOnly())return;
+ try{
+   const entry=readStockPending(stockWriteOwner());if(!entry)return;
+   if(typeof window.confirm==='function'&&!window.confirm('Retry the original '+entry.command+' transaction for '+entry.data.materialId+' / '+entry.data.brandId+'?'))return;
+   return await write(entry.command,entry.data,true);
+ }catch(e){view.error=String(e.message||e);render();}
+};
 function filterPairChoices(){
  const root=document.getElementById('zs-pair-results'),input=document.getElementById('zs-material-brand-search');
  if(!root||typeof root.querySelectorAll!=='function')return;

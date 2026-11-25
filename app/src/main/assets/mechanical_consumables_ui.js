@@ -74,7 +74,7 @@ function menu(){
   '<button type="button" class="mc-cons-tile '+tileColor[key]+'" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
   consMenuIcon(({totals:'total',materialHistory:'history'})[key]||key)+'<b>'+escapeHtml(s.title)+'</b>'+consMenuArrow+'</button>').join('');
  open('',consDepartmentMenuStyle+'<div class="mc-cons-list cons-department-menu">'+entries+'</div>'+
-  (canIssue()?'':'<p class="mc-cons-alert">Mechanical issuing is not active on this server.</p>'));
+  issueNotice()+(canIssue()?'':'<p class="mc-cons-alert">Mechanical issuing is not active on this server.</p>'));
 }
 function catalog(){
  return '<label for="mcConsFilter">Search material or brand</label>'+
@@ -131,6 +131,22 @@ const canIssue=()=>{
    window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true&&
    typeof window.zukaitCloud?.stockRequest==='function';
 };
+
+const issueOwner=()=>{const u=typeof me!=='undefined'&&me?me:window.me;return u?.id&&['Manager','Mechanical Supervisor'].includes(u.role)?String(u.id)+'|'+u.role:''};
+const issueKey=owner=>'zukait_mechanical_stock_pending_v1:'+encodeURIComponent(owner);
+function readIssue(owner){
+ if(!owner)throw Error('Staff identity unavailable');
+ const raw=window.localStorage.getItem(issueKey(owner));if(!raw)return null;
+ const entry=JSON.parse(raw);
+ if(entry.owner!==owner||!entry.requestId||!entry.data||entry.fingerprint!==JSON.stringify(entry.data))throw Error('Saved issue receipt needs review');
+ return entry;
+}
+function issueNotice(){
+ if(!canIssue()||!issueOwner())return '';
+ try{const entry=readIssue(issueOwner());return entry?'<div class="mc-cons-alert" role="alert">Unconfirmed material issue: '+escapeHtml(entry.data.jobCard)+'. Retry the original issue before creating another. <button type="button" onclick="mechanicalConsumablesRetryIssue()"'+(sending?' disabled':'')+'>Retry original issue</button></div>':'';}
+ catch(_){return '<div class="mc-cons-alert">Saved issue storage unavailable. Material issuing is blocked.</div>';}
+}
+
 function addIssueLine(){
  if(!canView())return;
  if(pendingIssue||sending)return;
@@ -142,7 +158,7 @@ function addIssueLine(){
  const warn=document.getElementById('mcConsWarning');
  const fail=msg=>{if(warn)warn.textContent=msg};
  if(!row||!b)return fail('Choose a material and its brand.');
- if(!raw||!Number.isFinite(n)||n<=0||!Number.isInteger(n*10000))
+ if(!/^(?:\d+(?:\.\d{1,4})?|\.\d{1,4})$/.test(raw)||!Number.isFinite(n)||n<=0||n>Number.MAX_SAFE_INTEGER/10000)
    return fail('Enter a valid quantity, up to four decimal places.');
  if(row.unit==='Piece'&&!Number.isInteger(n))return fail('Pieces must be whole numbers.');
  if(draftLines.length>=20)return fail('Maximum 20 lines per issue.');
@@ -163,8 +179,9 @@ function renderDraft(){
    draftLines.map((x,i)=>'<div class="mc-cons-toolbar" style="padding:8px 0;border-bottom:1px solid #dce6f1">'+
    '<span><b>'+escapeHtml(x.material)+'</b> — '+escapeHtml(x.brand)+' · '+escapeHtml(x.quantity)+' '+escapeHtml(x.unit)+'</span>'+
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesRemoveLine('+i+')">Remove</button></div>').join('');
+ const retry=document.getElementById('mcConsRetry');if(retry)retry.innerHTML=issueNotice();
  const submit=document.getElementById('mcConsSubmit');
- if(submit)submit.disabled=!canIssue()||draftLines.length===0||sending;
+ if(submit)submit.disabled=!canIssue()||draftLines.length===0||sending||!!pendingIssue;
 }
 
 async function loadBalance(){
@@ -186,40 +203,54 @@ async function loadBalance(){
    if(generation===balanceRead&&out)out.textContent='Stock unavailable. No issue has been made.';
  }
 }
+async function sendIssue(data,retry=false){
+ if(!canIssue()||sending)return;
+ const owner=issueOwner(),session=String(window.zukaitAuth?.getToken?.()||'');
+ const current=()=>owner===issueOwner()&&session===String(window.zukaitAuth?.getToken?.()||'');
+ const warn=document.getElementById('mcConsWarning');
+ const message=msg=>{if(current()&&warn&&document.getElementById('mcConsWarning')===warn)warn.textContent=msg;else if(current())window.alert?.(msg)};
+ if(typeof navigator!=='undefined'&&navigator.onLine===false){message('Offline. No new request sent.');return}
+ let entry,wasPending=false;
+ try{
+  entry=readIssue(owner);wasPending=!!entry;
+  const fingerprint=JSON.stringify(data);
+  if(entry&&entry.fingerprint!==fingerprint)throw Error('Earlier issue is unconfirmed. Retry the original issue first');
+  if(!entry){
+    if(retry)throw Error('No saved issue to retry');
+    entry={owner,data,fingerprint,requestId:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'mechanical-'+Date.now()+'-'+Math.random().toString(36).slice(2)};
+    window.localStorage.setItem(issueKey(owner),JSON.stringify(entry));
+    if(readIssue(owner)?.requestId!==entry.requestId)throw Error('Cannot preserve issue receipt');
+  }
+ }catch(e){message(String(e.message||e)+'. No new issue sent.');return}
+ pendingIssue=entry;sending=true;renderDraft();
+ try{
+   if(!current())throw Error('Staff session changed');
+   const r=await window.zukaitCloud.stockRequest({operation:'WRITE',command:'MECHANICAL_ISSUE',requestId:entry.requestId,data:entry.data});
+   if(!r?.ok||r.receipt?.final!==true||String(r.receipt.jobCard)!==entry.data.jobCard||Number(r.receipt.lineCount)!==entry.data.lines.length){
+     const definitive=['mechanical_stock_forbidden','mechanical_stock_not_enabled','stock_write_not_enabled','mechanical_job_not_found','invalid_mechanical_job','invalid_issue_lines','invalid_issue_line','invalid_issue_kind','duplicate_material_brand','piece_whole_required','insufficient_stock','opening_stock_required','stock_master_key_not_found','stock_unit_conflict'];
+     if(!wasPending&&definitive.includes(r?.code)){window.localStorage.removeItem(issueKey(owner));pendingIssue=null;}
+     throw Error(r?.code||'No confirmed issue receipt');
+   }
+   if(readIssue(owner)?.requestId===entry.requestId)window.localStorage.removeItem(issueKey(owner));
+   if(!current())return;
+   draftLines.length=0;pendingIssue=null;
+   message('ISSUED — '+entry.data.jobCard+' · '+Number(r.receipt.totalCost||0).toFixed(3)+' OMR. Final.');
+   if(!warn)menu();else loadBalance();
+ }catch(e){message('Issue not confirmed: '+String(e?.message||e)+'. Retry uses the original receipt.');}
+ finally{sending=false;if(current())renderDraft()}
+}
 async function submitIssue(){
  if(!canIssue()||sending||!draftLines.length)return;
  const jc=String(document.getElementById('mcConsJc')?.value||'').trim().toUpperCase();
  const warn=document.getElementById('mcConsWarning');
  if(!/^[A-Z0-9_. -]{1,36}$/.test(jc)){if(warn)warn.textContent='Enter a valid Mechanical Job Card number.';return}
- if(typeof navigator!=='undefined'&&navigator.onLine===false){
-   if(warn)warn.textContent='Offline. Nothing was issued.';return;
- }
- const data={jobCard:jc,kind:currentIssueKind,
-    lines:draftLines.map(x=>({materialId:x.materialId,brandId:x.brandId,quantity:x.quantity}))};
- const fingerprint=JSON.stringify(data);
- if(pendingIssue&&pendingIssue.fingerprint!==fingerprint){
-   if(warn)warn.textContent='Issue details changed after an uncertain save. Reopen the screen and review the Job Card before retrying.';return;
- }
- if(!pendingIssue){
-   const id=(typeof crypto!=='undefined'&&crypto.randomUUID)?
-     crypto.randomUUID():'mechanical-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-   pendingIssue={requestId:id,fingerprint};
- }
- sending=true;renderDraft();
- try{
-   const r=await window.zukaitCloud.stockRequest({
-     operation:'WRITE',command:'MECHANICAL_ISSUE',
-     requestId:pendingIssue.requestId,data
-   });
-   if(!r?.ok||r.receipt?.final!==true||String(r.receipt.jobCard)!==jc
-      ||Number(r.receipt.lineCount)!==draftLines.length)throw Error(r?.code||'No confirmed issue receipt');
-   draftLines.length=0;pendingIssue=null;
-   if(warn)warn.textContent='ISSUED — '+jc+' · '+Number(r.receipt.totalCost||0).toFixed(3)+' OMR. Final.';
-   loadBalance();
- }catch(e){
-   if(warn)warn.textContent='Issue not confirmed: '+String(e?.message||e)+'. Retry uses the same request ID.';
- }finally{sending=false;renderDraft()}
+ return sendIssue({jobCard:jc,kind:currentIssueKind,lines:draftLines.map(x=>({materialId:x.materialId,brandId:x.brandId,quantity:x.quantity}))});
 }
+window.mechanicalConsumablesRetryIssue=async()=>{
+ if(!canIssue()||sending)return;
+ try{const entry=readIssue(issueOwner());if(!entry)return;if(typeof window.confirm==='function'&&!window.confirm('Retry original material issue for '+entry.data.jobCard+'?'))return;return await sendIssue(entry.data,true);}
+ catch(e){window.alert?.(String(e.message||e))}
+};
 function issueForm(){
  // Local draft only; stock and JC costs are not changed until a server transaction is available.
  const rows=master(),first=rows[0],unique=[...new Map(rows.map(x=>[String(x.id),x])).values()];
@@ -236,7 +267,7 @@ function issueForm(){
    '<input id="mcConsQuantity" inputmode="decimal" type="number" min="0.0001" step="any" placeholder="Enter quantity">'+
    '<p id="mcConsUnit" class="mc-cons-muted">Unit: '+escapeHtml(first?.unit||'—')+'</p>'+
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesAddLine()">+ Add Material</button>'+
-   '<p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
+   '<div id="mcConsRetry"></div><p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
    '<div id="mcConsDraft"></div>'+
    '<p id="mcConsAvailable" class="mc-cons-muted">'+(canIssue()?'Checking available stock…':'Available stock will show when issuing is enabled.')+'</p>'+ 
    '<button id="mcConsSubmit" type="button" '+(canIssue()?'onclick="mechanicalConsumablesSubmitIssue()"':'title="Secure stock issuing is not enabled yet"')+' disabled style="display:block;width:100%;background:#64748b;color:white;padding:12px;margin-top:12px">ISSUE MATERIALS'+(canIssue()?'':' (not enabled)')+'</button>'+ 
@@ -281,7 +312,9 @@ async function section(id){
      '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">Browse Material Master</button>');
    return;
  }
- draftLines.length=0;pendingIssue=null;sending=false;currentIssueKind=id;
+ if(sending)return;
+ draftLines.length=0;pendingIssue=null;currentIssueKind=id;
+ if(canIssue()){try{pendingIssue=readIssue(issueOwner())}catch(_){pendingIssue={blocked:true}}}
  open(s.title,back+issueForm()+
    (canIssue()?'':'<div class="mc-cons-alert">Preview only: no materials have been issued or deducted from stock.</div>'));
  renderDraft();loadBalance();
