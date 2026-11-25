@@ -1,0 +1,18 @@
+name: Delivered review completion date
+on:
+  pull_request:
+    paths:
+      - 'app/src/main/assets/workshop_overview.js'
+      - 'tests/manager-overdue-time-review.cjs'
+      - '.github/workflows/delivered-review-date.yml'
+permissions:
+  contents: read
+jobs:
+  review-date:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/manager-overdue-time-review.cjs
