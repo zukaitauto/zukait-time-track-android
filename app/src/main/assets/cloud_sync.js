@@ -1378,9 +1378,13 @@
       clearTimeout(livePollTimer);
       livePollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
+        let nextDelay;
         try{
-          if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0))await pullLiveStatus(true);
-        }finally{scheduleLive(document.visibilityState!=='hidden'&&liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000?Math.max(1000,7000-(Date.now()-liveStatusLastFetchedAt)):undefined);}
+          if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0)){
+            if(liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000)nextDelay=Math.max(1000,7000-(Date.now()-liveStatusLastFetchedAt));
+            else await pullLiveStatus(true);
+          }
+        }finally{scheduleLive(nextDelay);}
       },delay(nextDelay??liveMs(),'live_status'));
     };
     schedulePoll();scheduleLive();
