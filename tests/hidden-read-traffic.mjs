@@ -17,7 +17,7 @@ ctx.navigator.onLine=true;window.me=null;await window.zukaitNotificationCenter.r
 const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const start=cloud.indexOf('  function beginPolling('),end=cloud.indexOf('  async function init(',start);
 let probes=0,live=0,backoff=0,changed=false;const tasks=[];
-const c={document:{visibilityState:'hidden'},pollGeneration:1,pollActive:false,pollTimer:null,livePollTimer:null,revisionProbeInFlight:false,
+const c={document:{visibilityState:'hidden'},pollGeneration:1,pollActive:false,pollTimer:null,livePollTimer:null,revisionProbeInFlight:false,liveStatusLastFetchedAt:0,Date:{now:()=>100000},
 Math:Object.assign(Object.create(Math),{random:()=>0}),api:{retryAfter:()=>backoff},clearTimeout(){},setTimeout:(fn,ms)=>(tasks.push({fn,ms}),tasks.length),
 sessionToken:()=>true,navigator:{onLine:true},probeRevision:async()=>{probes++;return changed},pullLiveStatus:async()=>live++,liveRole:()=>true};
 vm.createContext(c);vm.runInContext(cloud.slice(start,end)+'beginPolling(1);',c);
@@ -30,8 +30,21 @@ backoff=45000;await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,45000,'server
 await fresh[1].fn();assert.equal(live,0,'live polling respects cooldown');assert.equal(tasks.at(-1).ms,45000);
 backoff=0;c.revisionProbeInFlight=true;await tasks.at(-1).fn();assert.equal(live,0,'live refresh cannot overlap revision probe');
 c.revisionProbeInFlight=false;await tasks.at(-1).fn();assert.equal(live,1);
+assert.equal(tasks.at(-1).ms,15000,'normal live cadence retained');
+c.liveStatusLastFetchedAt=98000;await tasks.at(-1).fn();assert.equal(live,1,'recent live status skips scheduled read');assert.equal(tasks.at(-1).ms,5000,'skipped read rescheduled at freshness expiry');
+c.liveStatusLastFetchedAt=93000;await tasks.at(-1).fn();assert.equal(live,2,'expired live status fetched');assert.equal(tasks.at(-1).ms,15000,'normal cadence resumes');
 const previous=probes;await tasks[0].fn();assert.equal(probes,previous,'old-generation timer cannot duplicate polling');
 assert.match(cloud,/if\(cloudDirty&&!cloudPushing\)await push\(0\)/,'resume flushes queued actions');
 assert.match(cloud,/if\(document.visibilityState==='visible'\)refreshVisibleSharedState\(\)/,'visibility resume retains immediate shared-state refresh');
 const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=2026112501/);assert.match(html,/notifications\/center\.js\?v=20261110-server-receipts/);
 console.log('Hidden read traffic: no hidden report/live requests, foreground cadence, resume, offline/login and timer generation passed.');
+
+// Exercise the actual live reader, not only the scheduler stub.
+const liveStart=cloud.indexOf('  async function pullLiveStatus('),liveEnd=cloud.indexOf('  function payloadState(',liveStart);
+let now=100000,requests=0;
+const lc={Date:{now:()=>now},liveStatusLastFetchedAt:now-1000,sessionEpoch:1,liveInFlight:false,sessionToken:()=>true,navigator:{onLine:true},liveRole:()=>true,api:async()=>{requests++;return {ok:true,revision:1,rows:[]}},stale:()=>false,liveStatusRevision:0,liveStatusRows:[],liveStatusServerTime:0,pollWarnings:new Set(),publishLiveStatus(){},warnPoll(){}};
+vm.createContext(lc);vm.runInContext(cloud.slice(liveStart,liveEnd),lc);
+await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,0,'scheduled read reuses recent confirmed live status');
+await vm.runInContext('pullLiveStatus()',lc);assert.equal(requests,1,'explicit refresh is never suppressed');
+now+=7000;await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,2,'expired live status is refreshed');
+lc.liveStatusLastFetchedAt=0;await vm.runInContext('pullLiveStatus(true)',lc);assert.equal(requests,3,'new session must fetch');
