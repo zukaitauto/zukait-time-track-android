@@ -1,5 +1,14 @@
 name: Accountant Stock role gate
 on:
+  push:
+    branches: [architecture-v2]
+    paths:
+      - 'supabase/functions/workshop-api/extensions/stock_master_api.js'
+      - 'supabase/functions/workshop-api/extensions/invoice_price_core.js'
+      - 'supabase/staged/ACCOUNTANT_STOCK*'
+      - 'tests/accountant-stock*'
+      - 'app/src/main/assets/accountant_stock.js'
+      - '.github/workflows/accountant-stock-authority.yml'
   pull_request:
     paths:
       - 'supabase/functions/workshop-api/extensions/consumables_stock_api.js'
@@ -26,6 +35,7 @@ jobs:
           node --check app/src/main/assets/accountant_stock.js
           node tests/accountant-stock-workspace.mjs
           node tests/accountant-stock-authority.mjs
+          node tests/accountant-stock-master-api.mjs
           node tests/consumables-stock-api.mjs
   database-transactions:
     runs-on: ubuntu-latest
