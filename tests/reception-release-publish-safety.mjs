@@ -68,7 +68,7 @@ if (updater.versionCode < release.versionCode) {
  assert.equal(updater.sourceCommit,release.sourceCommit);
  assert.match(updater.apkSha256,/^[a-f0-9]{64}$/);
  assert.equal(updater.releaseTag,'release-'+release.versionName+'-architecture-v2');
-} else if(release.releaseScope==='standard') {
+} else if(release.releaseScope==='standard'||release.releaseScope==='purchase-invoice-coordinated') {
  require('../scripts/verify-v305-acceptance.cjs').validate(release,JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8')));
  require('../scripts/verify-pc-pages-publication.cjs').validate(release,updater,'refs/heads/architecture-v2');
  assert.equal(updater.sourceCommit,release.sourceCommit);
