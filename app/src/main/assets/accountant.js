@@ -803,6 +803,6 @@ async function prepareForUpdate(){
  const clean=()=>verified&&!busy&&!accountStock?.blocked()&&navigator.onLine!==false&&localStorage.getItem(pendingKey())===null&&!hasBillPending()&&$('entry').hidden&&!$('cash-entry-dialog').open&&$('correction').hidden&&$('account-password-form').hidden;
  try{if(!clean())return false;token();await request('workshop-api',{action:'accountant_dashboard',limit:1});return clean();}catch{return false;}
 }
-const accountStock=window.zukaitCreateAccountStock?.({request:body=>request('workshop-api',{...body,action:'consumables_stock'}),getUser:()=>verified?{...user}:null,project:url,canWrite:()=>verified&&!busy&&!pending()&&!hasBillPending(),notify:say});
+const accountStock=window.zukaitCreateAccountStock?.({request:body=>request('workshop-api',{...body,action:String(body.operation||'').startsWith('MASTER_')?'consumables_stock_master':'consumables_stock'}),getUser:()=>verified?{...user}:null,project:url,canWrite:()=>verified&&!busy&&!pending()&&!hasBillPending(),notify:say});
 window.zukaitAccountant={load,openJob,switchReport,submit,exportRows,changePassword,prepareForUpdate,submitBill,getUser:()=>verified?{...user}:null,formatNormalDutyHours};boot();
 })();

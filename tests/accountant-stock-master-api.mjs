@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {stockMasterApi as api} from '../supabase/functions/workshop-api/extensions/stock_master_api.js';
+const actor={id:'A1',role:'Accountant'},opts={enabled:true,sessionHash:'test',computeLiveStatus:()=>[{}]};
+let revision=1,data={jobs:[{id:'unchanged'}],consumables:{materials:[],brands:[],prices:[],issues:[],actuals:[],audit:[]}},writes=0;
+const db={from:()=>({select:()=>({eq:()=>({single:async()=>({data:{revision,data}})})})}),rpc:async(name,args)=>{assert.equal(name,'zukait_commit_workshop_state_v2');assert.equal(args.p_expected_revision,revision);assert.equal(args.p_changed_by,'A1');data=args.p_data;revision++;writes++;return {data:{ok:true}}}};
+const invoke=(body,user=actor,options=opts)=>api(db,user,body,options);
+const command={command:'CREATE_MATERIAL',name:'QA primer',unit:'Liter',category:'Consumable',department:'Both',reason:'QA material'};
+async function save(d,key){const review=await invoke({operation:'MASTER_REVIEW',data:d});assert.equal(review.status,200,JSON.stringify(review));const body={operation:'MASTER_SAVE',data:d,requestId:key,expectedRevision:review.body.revision,impact:review.body.impact};const result=await invoke(body);assert.equal(result.status,200,JSON.stringify(result));return {body,result};}
+assert.equal((await invoke({operation:'MASTER_LIST'},{id:'E1',role:'Employee'})).status,403);
+assert.equal((await invoke({operation:'MASTER_LIST'},actor,{...opts,enabled:false})).status,423);
+assert.equal((await invoke({operation:'MASTER_LIST'},actor,{...opts,sessionHash:''})).status,401);
+const a=await save(command,'create-1');assert.equal(data.consumables.materials[0].department,'Both');assert.deepEqual(await invoke(a.body),a.result);assert.equal(writes,1);
+assert.equal((await invoke({...a.body,data:{...command,name:'Different'}})).status,409);
+const mid=a.result.body.receipt.id;
+const p=await save({command:'SET_PRICE',materialId:mid,brandName:'QA brand',price:2.5,date:'2026-11-25',reason:'QA period'},'price-1');
+assert.equal(data.consumables.prices[0].pricePerUnit,2.5);
+assert.equal((await invoke({operation:'MASTER_REVIEW',data:p.body.data})).body.code,'price_date_duplicate');
+await save({command:'CORRECT_PRICE',priceId:p.result.body.receipt.id,price:3,reason:'QA correction'},'correct-1');
+assert.deepEqual(data.jobs,[{id:'unchanged'}]);assert.equal(data.consumables.prices[0].correctedByRole,'Accountant');
+assert.equal((await invoke({operation:'MASTER_LIST',materialId:mid})).body.prices[0].price,3);
+assert.equal((await invoke({...p.body,requestId:'stale'})).body.code,'stale_workshop_revision');
+console.log('PASS scoped material and price master, audit identity, replay, date uniqueness, stale revision and role denial');

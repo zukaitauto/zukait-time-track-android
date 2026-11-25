@@ -4,6 +4,7 @@ import { saveWorkshopJobNotes } from "./workshop_job_notes_editor.mjs";
 import { invoicePriceReconcileApi } from "./extensions/invoice_price_reconcile_api.js";
 import { invoicePriceApplyApi } from "./extensions/invoice_price_apply_api.js";
 import { consumablesStockApi } from "./extensions/consumables_stock_api.js";
+import { stockMasterApi } from "./extensions/stock_master_api.js";
 import {vehicleMovement} from './vehicle_movement_rules.js';
 import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
@@ -1279,6 +1280,10 @@ Deno.serve(async (req: Request) => {
 
     // Stock is an isolated, small-table API; NO writes to workshop_state.
     // Both flags default off until the catalog migration and acceptance are complete.
+    if(action==='consumables_stock_master') {
+      const result=await stockMasterApi(admin,user,body,{enabled:Deno.env.get('ZUKAIT_ACCOUNTANT_STOCK_MASTER_ENABLED')==='true',sessionHash:await sha256Hex(token),computeLiveStatus});
+      return reply(result.body,result.status);
+    }
     if(action==='consumables_stock') {
       const result=await consumablesStockApi(admin,user,body,{
         enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true',
