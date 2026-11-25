@@ -1253,6 +1253,32 @@ Deno.serve(async (req: Request) => {
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
 
+    // Read-only, opt-in history endpoint. Keep legacy load/save responses unchanged
+    // until the archived-prefix cutover and old-client compatibility are proven.
+    if (action === "job_edit_audit_page") {
+      if (user.role !== "Manager") return reply({ok:false,code:"job_edit_forbidden"},403);
+      const allowed = new Set(["action","jobCard","before_position","limit","expected_revision"]);
+      if (Object.keys(body).some(k => !allowed.has(k)) ||
+          typeof body.jobCard !== "string" || !body.jobCard.trim() || body.jobCard.length > 80 ||
+          (body.limit !== undefined && (!Number.isSafeInteger(body.limit) || body.limit < 1 || body.limit > 100)) ||
+          (body.expected_revision != null && (!Number.isSafeInteger(body.expected_revision) || body.expected_revision < 0)) ||
+          (body.before_position != null && (!Number.isSafeInteger(body.before_position) || body.before_position < 1 || body.expected_revision == null))) {
+        return reply({ok:false,code:"invalid_audit_cursor"},400);
+      }
+      const {data,error} = await admin.rpc("zukait_job_edit_current_page", {
+        p_job_no: body.jobCard.trim().toUpperCase(),
+        p_before_position: body.before_position ?? null,
+        p_limit: body.limit ?? 50,
+        p_expected_revision: body.expected_revision ?? null
+      });
+      if (error) return reply({ok:false,code:"audit_history_unavailable"},503);
+      if (!data?.ok) return reply({ok:false,code:data?.code || "audit_history_unavailable",
+        ...(data?.revision != null ? {revision:data.revision} : {})},
+        data?.code === "audit_revision_changed" ? 409 : data?.code === "invalid_audit_cursor" ? 400 : 503);
+      return reply({ok:true,revision:data.revision,rows:data.rows,next_position:data.next_position});
+    }
+
+
     // Separate, default-off audited costing route. Never route this through
     // the stock ledger write API or accept browser-supplied workshop state.
     if(action==='consumables_invoice_price_reconcile') {
