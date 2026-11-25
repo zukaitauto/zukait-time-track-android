@@ -20,7 +20,7 @@ let sectionRequest=0;
 function master(){
  // Read the existing Material and Brand Master. Never store a duplicate catalog.
  const c=(typeof state!=='undefined'&&state?.consumables)||{};
- const materials=(Array.isArray(c.materials)?c.materials:[]).filter(x=>x&&x.active!==false&&['Mechanical','Both'].includes(x.department));
+ const materials=(Array.isArray(c.materials)?c.materials:[]).filter(x=>x&&x.active!==false&&(departmentPairs!==null||['Mechanical','Both'].includes(x.department)));
  const brands=(Array.isArray(c.brands)?c.brands:[]).filter(x=>x&&x.active!==false);
  const prices=Array.isArray(c.prices)?c.prices:[];
  const rows=[];
