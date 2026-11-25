@@ -173,16 +173,38 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   catch(e){if(rejection.has(e.message)){localStorage.removeItem(k);if(current()&&owner===who){show('<p>Server rejected transaction. Reopen the entry and check the values.</p>');status(e.message==='invoice_price_reconciliation_required'?'Price reconciliation is required. Reopen the invoice and review the costing changes. No invoice change was made.':e.message);}}else if(current()&&owner===who){status('Unconfirmed: '+e.message+' · Retry the exact saved request.');}}
   finally{busy=false;}
  }
+ function masterFrame(section,body){
+  const c=window.ZukaitStockCore;
+  return c.masterStyle+'<div id="consMasterWorkspace" class="cons-master-focused cons-master-'+section+'"><div class="cons-master-intro">'+c.masterIntro(section)+'</div>'+body+'</div>';
+ }
+ function scopedMasterCreate(){
+  const c=window.ZukaitStockCore,ids={cmNewMaterial:'as-material-name',cmNewUnit:'as-unit',cmNewCategory:'as-category',cmNewDepartment:'as-department'};
+  const html=c.masterCreateMarkup().replace(/id="([^"]+)"/g,(_,id)=>'id="'+(ids[id]||id)+'"')
+   .replace('onclick="consCreateMaterial()"','data-as="master-create-review"')
+   .replace('<button class="blue"','<label class="cons-master-field">Reason (required)<input id="as-reason" maxlength="500"></label><button class="blue"')
+   .replace('>CREATE MATERIAL</button>','>REVIEW MATERIAL</button>');
+  return masterFrame('create',html);
+ }
+ function scopedMasterPrice(m){
+  const c=window.ZukaitStockCore,ids={cmBrand:'as-brand-name',cmPrice:'as-master-rate',cmDate:'as-master-date'};
+  const html=c.masterPriceFields(today()).replace(/id="([^"]+)"/g,(_,id)=>'id="'+(ids[id]||id)+'"')
+   .replace(/oninput="[^"]+"/g,'').replace('onclick="consSaveMaster()"','data-as="master-price-review"')
+   .replace('<button class="blue"','<label class="cons-master-field">Reason (required)<input id="as-reason" maxlength="500"></label><button class="blue"')
+   .replace('>SAVE BRAND &amp; PRICE</button>','>REVIEW BRAND &amp; PRICE</button>');
+  return '<section class="cons-master-form"><label class="cons-master-field">Material<input readonly value="'+esc(m.name)+'"></label>'+html+'</section>';
+ }
  async function masterList(page=0,query=''){
   tab='master-list';const g=++generation,who=owner;show('<h2>Brand &amp; Price</h2><p>Loading materials…</p>');
   try{const r=await request({operation:'MASTER_LIST',page,query});if(!valid(g,who))return;masterMaterials=r.materials||[];
-   show('<h2>Brand &amp; Price</h2><label>Search material<input id="as-master-search" value="'+esc(query)+'" maxlength="120"></label>'+btn('Search','master-search')+masterMaterials.map((m,i)=>'<div class="as-row"><b>'+esc(m.name)+'</b><p>'+esc(m.unit)+' · '+esc(m.department||'Unassigned')+'</p>'+btn('Open prices','master-material:'+i)+'</div>').join('')+(page?btn('Previous','master-page:'+(page-1)):'')+(r.hasMore?btn('Next','master-page:'+(page+1)):''));
+   show(masterFrame('price','<section class="cons-master-form"><label class="cons-master-field">Search Material<input id="as-master-search" type="search" value="'+esc(query)+'" maxlength="120" placeholder="Search material"></label>'+btn('Search','master-search')+'</section>'+masterMaterials.map((m,i)=>'<div class="as-row"><b>'+esc(m.name)+'</b><p>'+esc(m.unit)+' · '+esc(m.department==='Both'?'Shared':m.department==='Painting'?'Paint':m.department||'Unassigned')+'</p>'+btn('Open prices','master-material:'+i)+'</div>').join('')+(page?btn('Previous','master-page:'+(page-1)):'')+(r.hasMore?btn('Next','master-page:'+(page+1)):'')));
+
   }catch(e){if(valid(g,who)){show('<h2>Brand &amp; Price</h2>'+btn('Retry','master-list'));status(e.message);}}
  }
  async function masterHistory(page=0){
   const m=masterSelected;if(!m)return masterList();tab='master-price';const g=++generation,who=owner;show('<h2>'+esc(m.name)+'</h2><p>Loading price history…</p>');
   try{const r=await request({operation:'MASTER_LIST',materialId:m.id,page});if(!valid(g,who))return;masterPrices=r.prices||[];
-   show('<h2>'+esc(m.name)+' · Brand &amp; Price</h2><label>Brand name<input id="as-brand-name" maxlength="120"></label><label>Price per '+esc(m.unit)+' (OMR)<input id="as-master-rate" type="number" min="0" step="0.001"></label><label>Effective from (Oman)<input id="as-master-date" type="date" value="'+today()+'"></label><label>Reason<input id="as-reason" maxlength="500"></label>'+btn('Review new price','master-price-review')+'<h3>Price history</h3>'+masterPrices.map((p,i)=>'<div class="as-row"><b>'+esc(p.brandName)+' · OMR '+omr(p.price)+'</b><p>'+esc(p.date)+'</p>'+(p.invoiceOwned?'<p>Invoice-owned period · reconcile through invoice history</p>':btn('Correct price','master-correct:'+i))+'</div>').join('')+(page?btn('Previous','master-history:'+(page-1)):'')+(r.pricesHasMore?btn('Next','master-history:'+(page+1)):''));
+   show(masterFrame('price',scopedMasterPrice(m)+'<h3>Price history</h3>'+masterPrices.map((p,i)=>'<div class="as-row"><b>'+esc(p.brandName)+' · OMR '+omr(p.price)+'</b><p>'+esc(p.date)+'</p>'+(p.invoiceOwned?'<p>Invoice-owned period · reconcile through invoice history</p>':btn('Correct price','master-correct:'+i))+btn('Change Price','master-change:'+i)+'</div>').join('')+(page?btn('Previous','master-history:'+(page-1)):'')+(r.pricesHasMore?btn('Next','master-history:'+(page+1)):'')));
+
   }catch(e){if(valid(g,who)){show('<h2>Brand &amp; Price</h2>'+btn('Retry','master-history:0'));status(e.message);}}
  }
  async function reviewMaster(data){
@@ -222,7 +244,7 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(op==='price-review')return reviewInvoicePrice(invoices[Number(index)]);
   if(op==='price-confirm'&&priceIntent){const p=priceIntent;if(p.operation==='PRICE_APPLY_APPLY'){const reason=val('as-reason');if(reason.length<5)throw Error('Enter a reason.');return send({...p,data:{...p.data,reason}});}return send(p);}
   if(op==='master-create'){
-   tab='master-create';generation++;masterSelected=null;show('<h2>Create Material</h2><label>Material name<input id="as-material-name" maxlength="120"></label><label>Unit<select id="as-unit"><option>Liter</option><option>kg</option><option>Piece</option></select></label><label>Category<select id="as-category"><option>Consumable</option><option>Paint</option></select></label><label>Department<select id="as-department"><option value="">Select department</option><option>Painting</option><option>Mechanical</option><option>Both</option></select></label><label>Reason<input id="as-reason" maxlength="500"></label>'+btn('Review material','master-create-review'));return;
+   tab='master-create';generation++;masterSelected=null;show(scopedMasterCreate());return;
   }
   if(op==='master-create-review')return reviewMaster({command:'CREATE_MATERIAL',name:val('as-material-name'),unit:val('as-unit'),category:val('as-category'),department:val('as-department'),reason:val('as-reason')});
   if(op==='master-list')return masterList();
@@ -232,6 +254,12 @@ window.zukaitCreateAccountStock=function({request,getUser,project,canWrite,notif
   if(op==='master-price-review'){
    if(!masterSelected||val('as-master-rate')==='')throw Error('Select material and enter a price.');
    return reviewMaster({command:'SET_PRICE',materialId:masterSelected.id,brandName:val('as-brand-name'),price:Number(val('as-master-rate')),date:val('as-master-date'),reason:val('as-reason')});
+  }
+  if(op==='master-change'&&tab==='master-price'){
+   const p=masterPrices[Number(index)];if(!p)return;
+   field('as-brand-name').value=p.brandName;field('as-master-rate').value='';field('as-master-date').value=today();
+   const out=field('cmLastPrice');if(out)out.textContent='Selected brand: '+p.brandName+' · Historical price: OMR '+omr(p.price)+' · From '+p.date;
+   field('as-master-rate').focus();return;
   }
   if(op==='master-correct'){
    const p=masterPrices[Number(index)];if(!p||p.invoiceOwned)throw Error('Invoice-owned price requires reconciliation.');

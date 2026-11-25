@@ -897,30 +897,18 @@ window.consOpenMaster=function(preset='',section=''){
  const units=['Liter','kg','Piece'],cats=['Consumable','Paint'];
  const focused=section==='create'||section==='price';
  const pageTitle=section==='create'?'Create Material':section==='price'?'Brand & Price':'Materials & Brands';
- const intro=section==='create'?
-  '<span class="cons-master-intro-icon create" aria-hidden="true">⬡</span><div><h2>Create Material</h2><p>Add a new consumable material.</p></div>':
-  '<span class="cons-master-intro-icon price" aria-hidden="true">◇</span><div><h2>Brand &amp; Price</h2><p>Assign a brand and price with an effective date.</p></div>';
+ const intro=window.ZukaitStockCore.masterIntro(section);
  modal(pageTitle,
  '<div class="cons-subnav"><button class="secondary" type="button" onclick="openStockManagement()">← Stock Management</button></div>'+
  '<div id="consMasterWorkspace" class="cons-entry-shell'+(focused?' cons-master-focused cons-master-'+section:'')+'">'+
  (focused?'<div class="cons-master-intro">'+intro+'</div>':'')+
- '<section class="cons-master-form" aria-labelledby="cmCreateHeading"><h3 id="cmCreateHeading">Create Material</h3>'+
- '<p class="notice">Create the material first. Add a brand and price separately.</p>'+
- '<label class="cons-master-field">Material Name<input id="cmNewMaterial" placeholder="Enter material name" autocomplete="off"></label>'+
- '<label class="cons-master-field">Unit<select id="cmNewUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
- '<label class="cons-master-field">Category<select id="cmNewCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
- '<label class="cons-master-field">Used In — required for new materials<select id="cmNewDepartment"><option value="">Select department</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label>'+
- '<button class="blue" type="button" onclick="consCreateMaterial()">CREATE MATERIAL</button></section>'+
+ window.ZukaitStockCore.masterCreateMarkup(units,cats)+
  '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
  '<p class="notice">Previous effective-dated prices remain in history.</p>'+
  '<label class="cons-master-field">Search Material + Brand<input id="cmPairSearch" type="search" autocomplete="off" placeholder="Search material or brand" oninput="consMasterPairSearch()" onfocus="consMasterPairSearch()"></label><div id="cmPairResults" class="cons-material-results hidden"></div>'+
  (section==='price'?'<button class="cm-new-brand" type="button" onclick="consMasterNewPair()">＋ Add Brand &amp; Price</button><dialog id="cmPairEditor" aria-labelledby="cmPairEditorTitle"><div class="cm-editor-top"><h3 id="cmPairEditorTitle">Brand &amp; Price</h3><button type="button" onclick="consMasterCloseEditor()" aria-label="Close price editor">✕</button></div>':'')+
  '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest();consMasterPairChanged()"></label><datalist id="cmMaterialChoices"></datalist>'+
- '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off" oninput="consMasterPairChanged()"></label><datalist id="cmBrandChoices"></datalist>'+
- '<p id="cmLastPrice" class="notice" role="status">Select a material and brand to view its current price.</p>'+
- '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
- '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+consOmanPriceDate()+'"></label>'+
- '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button>'+
+ window.ZukaitStockCore.masterPriceFields(consOmanPriceDate())+
  (section==='price'?'<button class="cm-editor-cancel" type="button" onclick="consMasterCloseEditor()">Cancel</button></dialog>':'')+'</section>'+
  '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
  '<h3 id="cmListHeading">Material &amp; Price List</h3><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
