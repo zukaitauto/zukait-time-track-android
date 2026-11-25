@@ -24,7 +24,7 @@ function manifest(dir, approval, sourceSha, apk) {
     }
   }
   walk(dir);
-  assert.ok(files['index.html'] && files['receptionist.html']);
+  assert.ok(files['index.html'] && files['receptionist.html'] && files['accountant.html'], 'All dashboard entrypoints must be staged');
   return {schemaVersion:1, sourceCommit:sourceSha, versionName:approval.versionName,
     versionCode:approval.versionCode, signedAcceptanceRun:approval.signedAcceptanceRun,
     releaseTag:`release-${approval.versionName}-architecture-v2`, apkSha256:hash(apk), files};
@@ -62,8 +62,8 @@ async function verifyPages(record, dir, fetcher=fetch) {
     }
     verified.push(relative);
   }
-  // Also verify the exact script URLs requested by both HTML entrypoints.
-  for (const html of ['index.html','receptionist.html']) {
+  // Verify exact script URLs requested by all three dashboard entrypoints.
+  for (const html of ['index.html','receptionist.html','accountant.html']) {
     const markup=fs.readFileSync(path.join(dir,html),'utf8');
     for (const match of markup.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)) {
       const url=new URL(match[1],SITE);

@@ -9,12 +9,18 @@ try {
   fs.writeFileSync(path.join(dir,'index.html'),'<script src="reception.js?v=305"></script>');
   fs.writeFileSync(path.join(dir,'receptionist.html'),'<script src="reception.js?v=305"></script>');
   fs.writeFileSync(path.join(dir,'reception.js'),'new UI');
+  fs.writeFileSync(path.join(dir,'accountant.html'),'<script src="accountant_stock.js?v=422"></script>');
+  fs.writeFileSync(path.join(dir,'accountant_stock.js'),'stock adapter');
   const sha='a'.repeat(40), apk=Buffer.from('accepted signed APK fixture');
   const record=manifest(dir,{sourceCommit:sha,versionName:'V305',versionCode:268,signedAcceptanceRun:123},sha,apk);
   fs.writeFileSync(path.join(dir,'release-integrity.json'),JSON.stringify(record));
   const response=(url,data)=>({url,ok:true,status:200,arrayBuffer:async()=>Buffer.from(data)});
   const fetcher=async url=>response(url,fs.readFileSync(path.join(dir,new URL(url).pathname.split('/').at(-1))));
   await verifyPages(record,dir,fetcher);
+  const missingStock={...record,files:{...record.files}};
+  delete missingStock.files['accountant_stock.js'];
+  await assert.rejects(verifyPages(missingStock,dir,fetcher),/Unmanifested script: accountant_stock/);
+  await assert.rejects(verifyPages(record,dir,async url=>url.endsWith('accountant_stock.js?v=422')?response(url,'stale stock'):fetcher(url)),/Stale script URL/);
   for(const stale of ['index.html','reception.js','release-integrity.json']) {
     await assert.rejects(verifyPages(record,dir,async url=>url.endsWith(stale)?response(url,'old'):fetcher(url)),/Stale\/mixed/);
   }
@@ -77,4 +83,5 @@ assert.match(fs.readFileSync('.github/workflows/pages.yml','utf8'),/Require sing
 const legacy=fs.readFileSync('.github/workflows/pages.yml','utf8').replaceAll('\r\n','\n');
 const staging=content=>content.replaceAll('\r\n','\n').split('      - name: Prepare PC site\n')[1].split('      - name: Verify staged shared Reception UI assets before public deployment\n')[0];
 assert.equal(staging(workflow),staging(legacy),'Staging-only CI and coordinator must use identical packaging');
+assert.ok(staging(workflow).includes("parser.feed((assets / 'accountant.html')"),'Accountant scripts must be staged');
 console.log('PASS: coordinated order, immutable candidate, stale CDN/script/updater/APK rejection, fail-closed publication');

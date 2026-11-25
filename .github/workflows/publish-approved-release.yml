@@ -418,6 +418,7 @@ jobs:
           parser.feed((assets / 'offline_test.html').read_text(encoding='utf-8'))
           parser.feed((assets / 'receptionist.html').read_text(encoding='utf-8'))
           parser.feed((assets / 'mechanical_supervisor.html').read_text(encoding='utf-8'))
+          parser.feed((assets / 'accountant.html').read_text(encoding='utf-8'))
           for source in parser.sources:
               relative = Path(source)
               if relative.is_absolute() or '..' in relative.parts:

@@ -495,7 +495,12 @@ function filterVisibility(){
 }
 function switchReport(name){
  if(!modules.some(m=>m[0]===name))return;
- if(name==='stock'){if(!verified||busy)return;token();return accountStock?.open();}
+ if(name==='stock'){
+  if(!verified){say('Sign in again to open Stock.');return;}
+  if(busy){say('Finish the current financial request, then open Stock.');return;}
+  if(!accountStock){say('Stock module could not load. Refresh or update the app and try again.');return;}
+  try{token();return accountStock.open().catch(e=>{accountStock.reset();say('Unable to open Stock: '+e.message);});}catch(e){say(e.message);return;}
+ }
  report=name;labourMode='with';offset=0;$('accounts-workspace').dataset.report=name;
  $('accounts-home').hidden=true;$('accounts-workspace').hidden=false;closeCashDialog();
  for(const id of ['query','month','from','to','employee','material','insurance'])$(id).value='';
