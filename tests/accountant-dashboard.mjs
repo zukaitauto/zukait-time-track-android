@@ -26,9 +26,9 @@ await wait(()=>w.document.getElementById('rows').textContent.includes('Search'))
 assert.equal(w.document.getElementById('accounts-home').hidden,false);
 assert.equal(w.document.getElementById('accounts-workspace').hidden,true);
 assert.equal(w.document.getElementById('account-name').textContent,'QA Finance');
-assert.equal(w.document.querySelectorAll('#navigation .module-card').length,8,'exactly eight approved Accounts sections');
+assert.equal(w.document.querySelectorAll('#navigation .module-card').length,9,'exactly nine approved Accounts sections');
 assert.deepEqual([...w.document.querySelectorAll('#navigation [data-report]')].map(b=>b.dataset.report),
- ['jobs','cash','insurance_invoiced','leave','profit','consumables','parts','paint']);
+ ['jobs','cash','insurance_invoiced','leave','profit','consumables','parts','paint','stock']);
 assert.equal(w.document.getElementById('summary').hidden,true,'legacy KPI navigation is hidden');
 assert.ok(w.document.querySelector('#navigation [data-report="parts"]'));
 assert.equal(w.document.querySelector('#navigation [data-report="outstanding"]'),null);
