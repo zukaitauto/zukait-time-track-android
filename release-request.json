@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner explicitly deferred backup restore and then physical-device acceptance for V420. Exact signed candidate and ten CI workflows passed. Production schema and canary installed; unauthenticated boundary smoke passed. Authenticated production verification, data preservation, PC-site reconciliation, HTTPS restart and production staff endpoint cutover are still outstanding. Staff approval remains false.",
+  "reason": "Owner explicitly deferred backup restore and physical-device acceptance for V420. Exact signed candidate and ten CI workflows passed. Production schema installed; production staff workshop-api V152 deployed on 2026-11-25 with exact canary bundle verified. Five new invoice tables have RLS and no client read grants; ten invoice RPCs restricted to service role. Authenticated production workflow smoke, full data preservation, PC-site reconciliation and HTTPS restart acceptance remain outstanding. Staff publication approval remains false.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -45,25 +45,38 @@
     "verifiedFunctions": 10,
     "invoiceCount": 0,
     "priceApplicationCount": 0,
-    "productionEdgeDeployed": false,
+    "productionEdgeDeployed": true,
     "verifiedDate": "2026-11-24"
   },
   "productionEdgePreflight": {
-    "status": "PRODUCTION_CANARY_DEPLOYED",
+    "status": "PRODUCTION_STAFF_ENDPOINT_DEPLOYED",
     "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
-    "staffEndpointVersion": 151,
+    "staffEndpointVersion": 152,
     "canaryFunction": "workshop-api-v420-canary",
     "canaryVersion": 1,
     "canaryBundleSha256": "d165832fac03b0aff89896440b1a3e9aa92d4f136b6f641cb4635990d867fdd2",
     "authenticatedSmoke": "NOT_RUN",
-    "existingStaffEndpointReplaced": false,
-    "checkedDate": "2026-11-24",
+    "existingStaffEndpointReplaced": true,
+    "checkedDate": "2026-11-25",
     "publicBoundarySmoke": {
       "status": "PASSED",
       "runId": 45468655727,
       "jobId": 138710298855,
       "verifiedDate": "2026-11-24",
       "scope": "Existing production staff endpoint and V420 canary reject GET, missing API key and missing session for revision, stock, apply and reconcile routes. No authenticated workflow tested and no business records changed."
+    },
+    "productionCutover": {
+      "deployedAt": "2026-11-25T04:33:19.500Z",
+      "bundleSha256": "d165832fac03b0aff89896440b1a3e9aa92d4f136b6f641cb4635990d867fdd2",
+      "exactCanaryFilesVerified": true,
+      "status": "ACTIVE",
+      "previousStaffEndpointVersion": 151,
+      "staffAuthUnchanged": true,
+      "activeStaffAfter": 25,
+      "workshopRevisionAfter": 17989,
+      "purchaseInvoicesAfter": 0,
+      "priceApplicationsAfter": 0,
+      "fullDataPreservationVerified": false
     }
   },
   "correctedSignedCandidate": {
