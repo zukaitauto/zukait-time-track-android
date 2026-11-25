@@ -1373,15 +1373,15 @@
         }else schedulePoll();
       },delay(pollMs(),'revision'));
     };
-    const scheduleLive=()=>{
+    const scheduleLive=(nextDelay)=>{
       if(!pollActive||generation!==pollGeneration)return;
       clearTimeout(livePollTimer);
       livePollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
         try{
           if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0))await pullLiveStatus(true);
-        }finally{scheduleLive();}
-      },delay(liveMs(),'live_status'));
+        }finally{scheduleLive(document.visibilityState!=='hidden'&&liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000?Math.max(1000,7000-(Date.now()-liveStatusLastFetchedAt)):undefined);}
+      },delay(nextDelay??liveMs(),'live_status'));
     };
     schedulePoll();scheduleLive();
   }
