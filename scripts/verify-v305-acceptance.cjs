@@ -95,6 +95,29 @@ function validate(approval,record) {
    assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12,'Backup deferral evidence required');
    continue;
   }
+  const remainingV420Checks=['client_https_restart','full_data_preservation','production_backend_smoke'];
+  if(remainingV420Checks.includes(key) && approval.remainingAcceptanceDeferral) {
+   const waiver=approval.remainingAcceptanceDeferral;
+   assert.equal(approval.versionName,'V420');
+   assert.equal(approval.versionCode,383);
+   assert.equal(approval.releaseScope,'purchase-invoice-coordinated');
+   assert.equal(approval.sourceCommit,'c521ccc89c7a11897cb1d536f9a877e7280856d0');
+   assert.equal(approval.signedAcceptanceRun,45467177557);
+   assert.equal(approval.ownerPublicationRequested,true);
+   assert.equal(approval.ownerRequestedImmediateRelease,true);
+   assert.deepEqual(waiver.checks,remainingV420Checks);
+   assert.equal(waiver.status,'DEFERRED_BY_OWNER_NOT_PERFORMED');
+   assert.equal(waiver.versionName,approval.versionName);
+   assert.equal(waiver.versionCode,approval.versionCode);
+   assert.equal(waiver.sourceCommit,approval.sourceCommit);
+   assert.equal(waiver.authorizedBy,'Owner in this conversation');
+   assert.equal(waiver.instruction,'bypass all and publish');
+   assert.equal(waiver.recordedDate,'2026-11-25');
+   assert.equal(check?.passed,false,'Deferred acceptance must remain not passed');
+   assert.deepEqual(check?.ownerWaiver,waiver);
+   assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12);
+   continue;
+  }
   if(check?.passed!==true||typeof check.evidence!=='string'||check.evidence.trim().length<12||
      typeof check.verifiedBy!=='string'||check.verifiedBy.trim().length<2||
      !check.verifiedAt||Number.isNaN(Date.parse(check.verifiedAt))) {
@@ -109,6 +132,7 @@ if(require.main===module) {
  validate(approval,record);
  console.log('V305 acceptance requirements satisfied for approved source '+approval.sourceCommit);
  if(approval.ownerBrowserBuildWaiver) console.log('OWNER-DEFERRED: exact browser build verification; owner reports V376 browser tests.');
+ if(approval.remainingAcceptanceDeferral) console.log('OWNER-DEFERRED: V420 authenticated production smoke, HTTPS restart and complete data preservation NOT VERIFIED.');
  if(approval.physicalDeviceDeferral) console.log('OWNER-DEFERRED: V420 physical Android and Safari tests NOT PERFORMED.');
  if(approval.backupRestoreDeferral) console.log('OWNER-DEFERRED: V420 backup restore NOT PERFORMED.');
  if(approval.ownerBackupRestoreWaiver) console.log('OWNER-DEFERRED: fresh backup restore NOT PERFORMED for V376.');

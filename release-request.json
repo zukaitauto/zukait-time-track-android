@@ -2,7 +2,7 @@
   "versionName": "V420",
   "versionCode": 383,
   "releaseScope": "purchase-invoice-coordinated",
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
@@ -12,7 +12,7 @@
   "phase2ActivationApproved": false,
   "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
   "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner requested V420 publication after recovery and confirmed existing Manager dashboard and Stock Balance open. V152 remains deployed. PC website, updater and public V418 APK metadata reconciled. Exact signed V420 candidate and ten CI workflows passed. Authenticated V420 purchase-invoice workflow, full data preservation and real HTTPS restart acceptance remain outstanding. Exact previous V151 rollback bundle not recovered. Backup and physical-device deferrals remain recorded. Staff approval remains false.",
+  "reason": "Owner explicitly requested V420 coordinated Android and web publication for testing, with remaining acceptance deferred. Signed exact-source build and CI passed. Authenticated production purchase-invoice smoke, complete preservation verification and HTTPS restart were not completed. Physical and backup deferrals remain recorded. Existing V152 stays deployed.",
   "previousPublishedRelease": {
     "versionName": "V418",
     "versionCode": 381,
@@ -22,8 +22,8 @@
   "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
   "signedAcceptanceRun": 45467177557,
   "verificationRun": 45467177569,
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedAt": "2026-11-25T05:44:12.241448Z",
+  "publishNonce": "8d82bd5a28b6f04e7ac7e40ea6ba0654",
   "backupRestoreDeferral": {
     "check": "fresh_backup_restored",
     "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
@@ -133,5 +133,19 @@
     "instruction": "Bypass and publish",
     "recordedDate": "2026-11-24",
     "scope": "Physical Android and Safari acceptance only; no device test represented as passed. Other release requirements, including authenticated production verification, remain enforced."
+  },
+  "remainingAcceptanceDeferral": {
+    "checks": [
+      "client_https_restart",
+      "full_data_preservation",
+      "production_backend_smoke"
+    ],
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "versionName": "V420",
+    "versionCode": 383,
+    "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+    "authorizedBy": "Owner in this conversation",
+    "instruction": "bypass all and publish",
+    "recordedDate": "2026-11-25"
   }
 }

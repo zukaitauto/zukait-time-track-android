@@ -9,14 +9,23 @@ assert.equal(required.length,7);
 // A standard release may complete the real evidence record. Validate its linkage
 // rather than treating the historical incomplete record as a permanent fixture.
 if (!request.approvedForStaff) assert.throws(()=>validate(request,actual),/Staff approval required/);
-else if (request.releaseScope==='standard') {
+else if (request.remainingAcceptanceDeferral) {
+ assert.equal(validate(request,actual),true);
+ assert.throws(()=>validate({...request,remainingAcceptanceDeferral:undefined},actual),/client_https_restart/);
+ const changed=structuredClone(actual);
+ changed.checks.client_https_restart.passed=true;
+ assert.throws(()=>validate(request,changed),/must remain not passed/);
+ const web=structuredClone(actual);
+ web.checks.pc_site_reconciled.passed=false;
+ assert.throws(()=>validate(request,web),/pc_site_reconciled/);
+} else if (request.releaseScope==='standard') {
  assert.equal(validate(request,actual),true,'Approved standard release requires all seven evidenced gates');
 } else if(request.versionName==='V420'&&request.backupRestoreDeferral&&required.filter(key=>key!=='fresh_backup_restored'&&!request.physicalDeviceDeferral?.checks.includes(key)).every(key=>actual.checks[key]?.passed===true)) {
  assert.equal(validate(request,actual),true,'V420 explicit backup deferral still requires six verified gates');
 } else if (required.some(key=>actual.checks[key]?.passed!==true)) {
  assert.throws(()=>validate(request,actual),'Incomplete evidence must not validate under another release scope');
 } else assert.equal(validate(request,actual),true);
-const good={...request,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
+const good={...request,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
 const complete={...actual,versionName:good.versionName,versionCode:good.versionCode,sourceCommit:good.sourceCommit,checks:Object.fromEntries(required.map(k=>[k,{passed:true,evidence:'docs/QA-'+k+'.md',verifiedBy:'QA Reviewer',verifiedAt:'2026-10-10T05:00:00Z'}]))};
 assert.equal(validate(good,complete),true,'Synthetic complete attestation must validate');
 for(const key of required) {
@@ -69,7 +78,7 @@ assert.throws(()=>validate(bothApproval,fakeBrowser),/must remain not passed/);
 console.log('PASS: explicit browser-build deferral cannot bypass Android, preservation, deployment or source checks');
 
 if(request.versionName==='V420'&&request.backupRestoreDeferral){
- const v420={...request,approvedForStaff:true,approvedAt:'2026-11-24T19:00:00Z',publishNonce:'fixture-only-v420'};
+ const v420={...request,remainingAcceptanceDeferral:undefined,approvedForStaff:true,approvedAt:'2026-11-24T19:00:00Z',publishNonce:'fixture-only-v420'};
  const v420Evidence={...complete,versionName:'V420',versionCode:383,sourceCommit:v420.sourceCommit,checks:structuredClone(complete.checks)};
  v420Evidence.checks.fresh_backup_restored={passed:false,evidence:'Explicit owner deferral; restore not performed.',ownerWaiver:structuredClone(v420.backupRestoreDeferral)};
  for(const k of v420.physicalDeviceDeferral?.checks||[]) v420Evidence.checks[k]={passed:false,evidence:'Explicit owner physical deferral; not performed.',ownerWaiver:structuredClone(v420.physicalDeviceDeferral)};

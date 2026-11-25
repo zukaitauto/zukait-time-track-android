@@ -134,15 +134,15 @@ jobs:
             verify_followup_blob 'scripts/verify-coordinated-release.cjs' '054886ee69e6b9785ea4e39a48800172e2e0d7fa'
             verify_followup_blob 'tests/reception-coordinated-release.mjs' 'e97c251bab5a004ea3ed61f64cdeca18ad532e6c'
           fi
-          # V420: only the scoped backup-deferral verifier and publication controller
+          # V420: only the scoped owner-deferral verifier and publication controller
           # may differ from the already-signed source. No runtime asset is excluded.
           if [ "$(jq -r '.versionName' release-request.json)" = "V420" ] &&
              [ "$SOURCE_COMMIT" = "c521ccc89c7a11897cb1d536f9a877e7280856d0" ] &&
              [ "$(jq -r '.backupRestoreDeferral.status' release-request.json)" = "DEFERRED_BY_OWNER_NOT_PERFORMED" ]; then
-            test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "56c377a3809b678f4d91555580ca8723e5c7ccb9" || {
+            test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "fa95cfb31de04a5850111cd4b0667c2116e71a50" || {
               echo "::error::V420 scoped backup-deferral verifier drift"; exit 1;
             }
-            test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "1bfe94874495133d1eaa9ef4ada82251904c9d22" || {
+            test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "5b61f91cff7594b1ae52bf3672cfdf0c3c40a5ad" || {
               echo "::error::V420 scoped release-fixture drift"; exit 1;
             }
             EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude).github/workflows/publish-approved-release.yml' ':(exclude)tests/reception-v305-acceptance.mjs')

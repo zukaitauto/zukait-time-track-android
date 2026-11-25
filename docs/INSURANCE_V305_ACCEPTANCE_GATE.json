@@ -7,7 +7,21 @@
       "passed": false,
       "evidence": "Exact V420 release acceptance has not been independently verified for this check.",
       "verifiedBy": null,
-      "verifiedAt": null
+      "verifiedAt": null,
+      "ownerWaiver": {
+        "checks": [
+          "client_https_restart",
+          "full_data_preservation",
+          "production_backend_smoke"
+        ],
+        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+        "versionName": "V420",
+        "versionCode": 383,
+        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+        "authorizedBy": "Owner in this conversation",
+        "instruction": "bypass all and publish",
+        "recordedDate": "2026-11-25"
+      }
     },
     "physical_android": {
       "passed": false,
@@ -53,7 +67,21 @@
       "passed": false,
       "evidence": "Additive production schema installation left workshop revision 17977 unchanged; complete data preservation verification is pending.",
       "verifiedBy": null,
-      "verifiedAt": null
+      "verifiedAt": null,
+      "ownerWaiver": {
+        "checks": [
+          "client_https_restart",
+          "full_data_preservation",
+          "production_backend_smoke"
+        ],
+        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+        "versionName": "V420",
+        "versionCode": 383,
+        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+        "authorizedBy": "Owner in this conversation",
+        "instruction": "bypass all and publish",
+        "recordedDate": "2026-11-25"
+      }
     },
     "fresh_backup_restored": {
       "passed": false,
@@ -82,7 +110,21 @@
       "passed": false,
       "evidence": "Exact V420 canary bundle deployed as live workshop-api V152 on 2026-11-25. Owner confirmed reconnect; 154 HTTP 200 POSTs and zero HTTP 503/500 in short window starting 04:36 UTC; database revision 17993. Authenticated V420 purchase-invoice and stock workflow tests remain NOT_RUN; previous 503 incident noted in release-request.json.",
       "verifiedBy": null,
-      "verifiedAt": null
+      "verifiedAt": null,
+      "ownerWaiver": {
+        "checks": [
+          "client_https_restart",
+          "full_data_preservation",
+          "production_backend_smoke"
+        ],
+        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+        "versionName": "V420",
+        "versionCode": 383,
+        "sourceCommit": "c521ccc89c7a11897cb1d536f9a877e7280856d0",
+        "authorizedBy": "Owner in this conversation",
+        "instruction": "bypass all and publish",
+        "recordedDate": "2026-11-25"
+      }
     }
   }
 }
