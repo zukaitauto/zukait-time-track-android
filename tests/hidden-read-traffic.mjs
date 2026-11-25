@@ -16,13 +16,22 @@ ctx.navigator.onLine=false;await window.zukaitNotificationCenter.refresh();asser
 ctx.navigator.onLine=true;window.me=null;await window.zukaitNotificationCenter.refresh();assert.equal(reads,2,'login screen makes no report request');
 const cloud=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const start=cloud.indexOf('  function beginPolling('),end=cloud.indexOf('  async function init(',start);
-let probes=0,live=0;const tasks=[];
-const c={document:{visibilityState:'hidden'},pollGeneration:1,pollActive:false,pollTimer:null,livePollTimer:null,clearTimeout(){},setTimeout:(fn,ms)=>(tasks.push({fn,ms}),tasks.length),sessionToken:()=>true,navigator:{onLine:true},probeRevision:async()=>probes++,pullLiveStatus:()=>live++,liveRole:()=>true};
+let probes=0,live=0,backoff=0,changed=false;const tasks=[];
+const c={document:{visibilityState:'hidden'},pollGeneration:1,pollActive:false,pollTimer:null,livePollTimer:null,revisionProbeInFlight:false,
+Math:Object.assign(Object.create(Math),{random:()=>0}),api:{retryAfter:()=>backoff},clearTimeout(){},setTimeout:(fn,ms)=>(tasks.push({fn,ms}),tasks.length),
+sessionToken:()=>true,navigator:{onLine:true},probeRevision:async()=>{probes++;return changed},pullLiveStatus:async()=>live++,liveRole:()=>true};
 vm.createContext(c);vm.runInContext(cloud.slice(start,end)+'beginPolling(1);',c);
-assert.equal(tasks[0].ms,120000);await tasks[0].fn();tasks[1].fn();assert.equal(probes,1);assert.equal(live,0,'hidden periodic live reads are paused');
-c.document.visibilityState='visible';vm.runInContext('beginPolling(++pollGeneration);',c);const fresh=tasks.slice(-2);assert.equal(fresh[0].ms,1000);assert.equal(fresh[1].ms,15000);await fresh[0].fn();fresh[1].fn();assert.equal(live,1);
+assert.equal(tasks[0].ms,120000);await tasks[0].fn();await tasks[1].fn();assert.equal(probes,1);assert.equal(live,0,'hidden periodic live reads are paused');
+c.document.visibilityState='visible';vm.runInContext('beginPolling(++pollGeneration);',c);const fresh=tasks.slice(-2);assert.equal(fresh[0].ms,5000);assert.equal(fresh[1].ms,15000);
+await fresh[0].fn();assert.equal(tasks.at(-1).ms,5000);
+await tasks.at(-1).fn();await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,8000,'quiet foreground adapts to slower polling');
+changed=true;await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,5000,'changed revision restores faster polling');
+backoff=45000;await tasks.at(-1).fn();assert.equal(tasks.at(-1).ms,45000,'server retry deadline governs next poll');
+await fresh[1].fn();assert.equal(live,0,'live polling respects cooldown');assert.equal(tasks.at(-1).ms,45000);
+backoff=0;c.revisionProbeInFlight=true;await tasks.at(-1).fn();assert.equal(live,0,'live refresh cannot overlap revision probe');
+c.revisionProbeInFlight=false;await tasks.at(-1).fn();assert.equal(live,1);
 const previous=probes;await tasks[0].fn();assert.equal(probes,previous,'old-generation timer cannot duplicate polling');
 assert.match(cloud,/if\(cloudDirty&&!cloudPushing\)await push\(0\)/,'resume flushes queued actions');
 assert.match(cloud,/if\(document.visibilityState==='visible'\)refreshVisibleSharedState\(\)/,'visibility resume retains immediate shared-state refresh');
-const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=2026112102/);assert.match(html,/notifications\/center\.js\?v=20261110-server-receipts/);
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=2026112501/);assert.match(html,/notifications\/center\.js\?v=20261110-server-receipts/);
 console.log('Hidden read traffic: no hidden report/live requests, foreground cadence, resume, offline/login and timer generation passed.');
