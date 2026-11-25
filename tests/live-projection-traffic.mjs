@@ -51,3 +51,38 @@ const result=await run(optimized,fixture);
 assert.deepEqual(Object.fromEntries(result.result.rows.map(r=>[r.employee_id,r.status])),{WORK:'Working',PAUSE:'Paused',IDLE:'ID001',OVER:'Overtime',FREE:'Available',DONE:'Available'});
 console.log('Live projection parity passed: Working, Paused, ID001, Overtime, Available, completed/cancelled assignments, empty inputs, and stale-row repairs.');
 
+
+ // Repeated refreshes at a stable revision must not re-extract JSON history.
+ // Exercise real production function source with a deterministic database stub.
+ const reads=[],repairWrites=[];
+ let clock=100000,revision=7,updated='2026-11-25T06:00:00Z',data=structuredClone(fixture),rows=[];
+ const cacheCtx={Date:{now:()=>clock},console,admin:{from(table){const q={
+   select(columns){q.columns=columns;reads.push({table,columns});return q},eq(){return q},
+   async single(){const result={revision,updated_at:updated,updated_by:'QA'};
+     for(const field of q.columns.split(',')){const m=field.match(/^(\w+):data->(\w+)$/);if(m)result[m[1]]=structuredClone(data[m[2]]??null)}
+     return {data:result}},
+   async order(){return {data:structuredClone(rows)}},
+   async upsert(expected){repairWrites.push('upsert');rows=structuredClone(expected);return {}},
+   delete(){return{async in(_field,ids){repairWrites.push('delete');rows=rows.filter(r=>!ids.includes(r.employee_id));return {}}}}
+ };return q}}};
+ vm.createContext(cacheCtx);vm.runInContext(stripTypeScriptTypes(optimized)+';this.project=computeLiveStatus;this.load=loadAuthoritativeLiveStatus;',cacheCtx);
+ const heavy=()=>reads.filter(x=>x.table==='workshop_state'&&x.columns.includes('data->')).length;
+ rows=structuredClone(cacheCtx.project(data,revision,'QA'));
+ const first=await cacheCtx.load();
+ for(let i=0;i<24;i++){clock+=500;assert.deepEqual(await cacheCtx.load(),first)}
+ assert.equal(heavy(),1,'25 same-revision refreshes use one JSON read per warm isolate');
+ assert.equal(repairWrites.length,0);
+ // A same-revision corrupt or missing row must never be served from cache.
+ rows[0].status='CORRUPT';const repaired=await cacheCtx.load();assert.equal(heavy(),2);
+ assert.equal(repaired.rows[0].status,first.rows[0].status);
+ await cacheCtx.load();assert.equal(heavy(),2);
+ rows=rows.slice(1);const missing=await cacheCtx.load();assert.equal(missing.rows.length,first.rows.length);
+ assert.equal(heavy(),3);
+ await cacheCtx.load();
+ // Changed workshop revision and metadata invalidate the shortcut.
+ revision++;updated='2026-11-25T06:01:00Z';data.sessions=[];rows=structuredClone(cacheCtx.project(data,revision,'QA'));
+ const changed=await cacheCtx.load();assert.equal(changed.revision,8);assert.equal(heavy(),4);
+ assert.ok(changed.rows.every(r=>r.status==='Available'));
+ clock+=31000;await cacheCtx.load();assert.equal(heavy(),5,'TTL forces periodic full revalidation');
+ updated='2026-11-25T06:02:00Z';await cacheCtx.load();assert.equal(heavy(),6,'same revision with changed timestamp revalidates');
+ console.log('PASS: 25 stable refreshes require 1 heavy projection read (96% reduction in this synthetic warm-isolate fixture); same-revision corruption/missing rows repaired, revision/metadata changes and TTL revalidated.');

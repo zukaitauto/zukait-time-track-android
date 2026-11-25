@@ -979,19 +979,11 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
   });
 }
 
+// Only the small, previously verified projection is retained per Edge isolate.
+// Revision and update metadata are read from the database on every cache hit;
+// matching row contents (not just a revision number or row count) are required.
+let verifiedLiveProjection: {revision:number,updated_at:any,updated_by:any,expected:any[],expiresAt:number}|null=null;
 async function loadAuthoritativeLiveStatus() {
-  const { data: current, error: stateError } = await admin.from("workshop_state")
-    .select("revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,updated_at,updated_by").eq("id","main").single();
-  if (stateError) throw stateError;
-  const revision = Number(current.revision || 0);
-  // The projection uses exactly these four inputs. Financial data, documents,
-  // purchasing and audit history never need to cross the database/API boundary.
-  const expected = computeLiveStatus({users:current.users,sessions:current.sessions,assign:current.assign,jobs:current.jobs}, revision, String(current.updated_by || ""));
-  const expectedIds = new Set(expected.map((x:any)=>String(x.employee_id)));
-  let { data: rows, error } = await admin.from("workshop_live_status")
-    .select("employee_id,employee_name,department,status,job_no,assignment_id,session_id,session_start,suggested_minutes,vehicle,registration,overtime,state_revision,updated_at,updated_by")
-    .order("employee_name",{ascending:true});
-  if (error) throw error;
   const comparable = (r:any) => ({
     employee_id: String(r?.employee_id || ""),
     employee_name: String(r?.employee_name || ""),
@@ -1007,11 +999,42 @@ async function loadAuthoritativeLiveStatus() {
     overtime: r?.overtime === true,
     state_revision: Number(r?.state_revision || 0)
   });
-  const expectedById = new Map(expected.map((x:any)=>[String(x.employee_id),x]));
-  const stale = !rows || rows.length!==expected.length || rows.some((r:any)=>{
-    const e = expectedById.get(String(r.employee_id));
-    return !e || JSON.stringify(comparable(r)) !== JSON.stringify(comparable(e));
-  });
+  const matches = (rows:any[],expected:any[]) => {
+    if (!Array.isArray(rows)||rows.length!==expected.length) return false;
+    const expectedById=new Map(expected.map((x:any)=>[String(x.employee_id),x]));
+    const seen=new Set<string>();
+    return rows.every((r:any)=>{
+      const id=String(r.employee_id),e=expectedById.get(id);
+      if(!e||seen.has(id))return false;
+      seen.add(id);
+      return JSON.stringify(comparable(r))===JSON.stringify(comparable(e));
+    });
+  };
+  const cached=verifiedLiveProjection;
+  if(cached&&Date.now()<cached.expiresAt){
+    const {data:meta,error:metaError}=await admin.from("workshop_state")
+      .select("revision,updated_at,updated_by").eq("id","main").single();
+    if(metaError)throw metaError;
+    if(Number(meta.revision)===cached.revision&&meta.updated_at===cached.updated_at&&meta.updated_by===cached.updated_by){
+      const {data:cachedRows,error:cachedRowsError}=await admin.from("workshop_live_status")
+        .select("employee_id,employee_name,department,status,job_no,assignment_id,session_id,session_start,suggested_minutes,vehicle,registration,overtime,state_revision,updated_at,updated_by").order("employee_name",{ascending:true});
+      if(cachedRowsError)throw cachedRowsError;
+      if(matches(cachedRows,cached.expected))return {revision:cached.revision,rows:cachedRows,updated_at:meta.updated_at,updated_by:meta.updated_by};
+    }
+  }
+  const { data: current, error: stateError } = await admin.from("workshop_state")
+    .select("revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,updated_at,updated_by").eq("id","main").single();
+  if (stateError) throw stateError;
+  const revision = Number(current.revision || 0);
+  // The projection uses exactly these four inputs. Financial data, documents,
+  // purchasing and audit history never need to cross the database/API boundary.
+  const expected = computeLiveStatus({users:current.users,sessions:current.sessions,assign:current.assign,jobs:current.jobs}, revision, String(current.updated_by || ""));
+  const expectedIds = new Set(expected.map((x:any)=>String(x.employee_id)));
+  let { data: rows, error } = await admin.from("workshop_live_status")
+    .select("employee_id,employee_name,department,status,job_no,assignment_id,session_id,session_start,suggested_minutes,vehicle,registration,overtime,state_revision,updated_at,updated_by")
+    .order("employee_name",{ascending:true});
+  if (error) throw error;
+  const stale = !matches(rows,expected);
   if (stale) {
     if (expected.length) {
       const { error: upsertError } = await admin.from("workshop_live_status").upsert(expected,{onConflict:"employee_id"});
@@ -1028,6 +1051,12 @@ async function loadAuthoritativeLiveStatus() {
       .order("employee_name",{ascending:true});
     if (refreshed.error) throw refreshed.error;
     rows = refreshed.data || [];
+  }
+  // Cache only verified rows. A repair still takes the established fresh-state
+  // path; the next read must validate the repaired contents before caching.
+  if(!stale&&Number.isSafeInteger(revision)&&revision>0&&
+      (!verifiedLiveProjection||revision>=verifiedLiveProjection.revision)){
+    verifiedLiveProjection={revision,updated_at:current.updated_at,updated_by:current.updated_by,expected,expiresAt:Date.now()+30000};
   }
   return { revision, rows: rows || [], updated_at: current.updated_at, updated_by: current.updated_by };
 }
