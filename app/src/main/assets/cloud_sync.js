@@ -1351,7 +1351,7 @@
     // Jitter prevents devices that resume together from polling in lockstep.
     // The write queue and explicit employee actions remain independent.
     const pollMs=()=>document.visibilityState==='hidden'?120000:
-      quietTicks<3?5000+Math.floor(Math.random()*1000):8000+Math.floor(Math.random()*2000);
+      quietTicks<3?5000+Math.floor(Math.random()*1000):12000+Math.floor(Math.random()*3000);
     const liveMs=()=>document.visibilityState==='hidden'?60000:15000+Math.floor(Math.random()*3000);
     const delay=(base,action)=>{
       const remaining=api.retryAfter?.(action)||0;
@@ -1362,7 +1362,7 @@
       clearTimeout(pollTimer);
       pollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
-        if(sessionToken()&&navigator.onLine){
+        if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine){
           try{
             const changed=await probeRevision();
             quietTicks=changed?0:Math.min(3,quietTicks+1);
