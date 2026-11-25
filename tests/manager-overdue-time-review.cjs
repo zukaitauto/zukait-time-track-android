@@ -15,6 +15,23 @@ assert.equal(rows.length,1,'normal work above approved suggestion appears');
 assert.equal(rows[0].employee,'VINAYAN');assert.equal(rows[0].suggested,100);assert.equal(rows[0].actual,125);assert.equal(rows[0].exceeded,25);
 state.overdueTimeReviews.push({job:'12001',assignmentId:'a1',signature:rows[0].signature});assert.equal(api.overdueTimeRows().length,0,'same reviewed signature stays hidden');
 state.assign[0].suggested=110;assert.equal(api.overdueTimeRows().length,1,'changed approved time creates a fresh review');
+// Work completion uses the assignment, not vehicle delivery.
+const done=Date.parse('2026-10-04T21:30:00Z');
+state.assign[0].completedAt=done;
+assert.equal(api.overdueTimeRows()[0].workCompletedAt,done);
+assert.ok(api.completedTimeHtml().includes('Work completed: <b>05 Oct 2026</b>'));
+const cardMarkup=api.completedTimeHtml();
+assert.match(cardMarkup,/<div class="wo-overdue-actions"><button class="wo-overdue-review wo-overdue-primary"[^>]*data-workshop-action="overdue-review"[^>]*>REVIEW[\s\S]*?<\/button><button class="wo-overdue-review"[^>]*data-workshop-action="overdue-staff"[^>]*>OPEN TIME REVIEW[\s\S]*?<\/button><\/div>/,'Both review actions share one row without changing their handlers');
+assert.match(source,/\.wo-overdue-actions\{display:grid;grid-template-columns:minmax\(0,0\.85fr\) minmax\(0,1\.4fr\)/);
+assert.match(source,/\.wo-overdue-review\.wo-overdue-primary\{background:linear-gradient\(145deg,#bb5514,#98400d\)/);
+
+delete state.assign[0].completedAt;
+assert.ok(api.completedTimeHtml().includes('Work completed: <b>Not recorded</b>'),'Never infer completion from a closed pause');
+state.sessions[0].finished=true;
+assert.equal(api.overdueTimeRows()[0].workCompletedAt,2000,'Explicit legacy FINISH is a valid fallback');
+state.sessions[0].assignmentId='different-assignment';
+assert.equal(api.overdueTimeRows()[0].workCompletedAt,0,'Another assignment must not supply completion');
+delete state.sessions[0].assignmentId;delete state.sessions[0].finished;
 const next=api.overdueTimeRows()[0],button={dataset:{workshopAction:'overdue-confirm',job:'12001',assignment:'a1',signature:next.signature}};
 for(const listener of listeners)listener({target:{closest(selector){return selector==='[data-workshop-action="detail-360"]'?null:button}},preventDefault(){},stopPropagation(){}});
 assert.equal(state.overdueTimeReviews.length,2,'confirmation is saved in review history');
