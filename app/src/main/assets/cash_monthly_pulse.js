@@ -1,5 +1,6 @@
 /* V251 shared monthly Cash Vehicle In / Vehicle Out dashboard snapshot. */
 (function(){'use strict';
+if(window.v251CashPulse)return;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>'OMR '+Number(v||0).toFixed(3);
 function role(){return (typeof me==='undefined'?window.me:me)?.role||''}
@@ -141,6 +142,33 @@ function html(){
  const p=pendingAll();
  return '<section class="v251-cash-pulse" data-v251-cash-pulse><div class="v251-cash-title"><b>Cash Monthly Follow-up</b><small>'+esc(label)+'</small></div><div class="v251-cash-grid"><button class="v251-cash-circle in" aria-label="CASH IN: '+i.length+' vehicles, '+money(total(i))+' this month" data-phone-note="This month" onclick="v251OpenCashPulse(\'in\')"><span>↓</span><b data-short="Cash In">CASH IN</b><strong>'+i.length+'</strong><em>'+cardAmount(money(total(i)))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle pending" aria-label="CASH IN PENDING: '+p.length+' vehicles, '+money(outstandingTotal(p))+' all months, not delivered" data-phone-note="All open" onclick="v251OpenCashPendingAll()"><span>◷</span><b data-short="Pending">CASH IN PENDING</b><strong>'+p.length+'</strong><em>'+cardAmount(money(outstandingTotal(p)))+'</em><small>ALL MONTHS · NOT DELIVERED</small><span class="v251-card-link">View list →</span></button><button class="v251-cash-circle out" aria-label="CASH OUT: '+o.length+' vehicles, '+money(total(o,'out'))+' delivered this month" data-phone-note="This month" onclick="v251OpenCashPulse(\'out\')"><span>↑</span><b data-short="Cash Out">CASH OUT</b><strong>'+o.length+'</strong><em>'+cardAmount(money(total(o,'out')))+'</em><small>THIS MONTH</small><span class="v251-card-link">View list →</span></button></div></section>';
 }
+// Preserve the mounted cards and their focus. Only changed leaf content and
+// accessible labels are updated; a missing or genuinely changed layout is mounted once.
+function patchCards(slot,markup){
+ const template=document.createElement('template');
+ if(!template.content||!slot.querySelectorAll){slot.innerHTML=markup;return;}
+ template.innerHTML=markup;
+ const selectors=['.v251-cash-title small','.v251-cash-grid button'];
+ const existing=Array.from(slot.querySelectorAll(selectors.join(','))),next=Array.from(template.content.querySelectorAll(selectors.join(',')));
+ if(existing.length!==next.length||existing.some((el,i)=>el.className!==next[i].className||el.tagName!==next[i].tagName)){slot.innerHTML=markup;return;}
+ for(let i=0;i<existing.length;i++){
+  const el=existing[i],desired=next[i];
+  if(el.tagName!=='BUTTON'){if(el.textContent!==desired.textContent)el.textContent=desired.textContent;continue;}
+  for(const attr of ['aria-label','data-phone-note'])if(el.getAttribute(attr)!==desired.getAttribute(attr))el.setAttribute(attr,desired.getAttribute(attr)||'');
+  const children=Array.from(el.children),wanted=Array.from(desired.children);
+  if(children.length!==wanted.length||children.some((node,n)=>node.tagName!==wanted[n].tagName||node.className!==wanted[n].className)){
+   // Pending captions may appear or disappear. Keep the button itself mounted.
+   if(el.innerHTML!==desired.innerHTML)el.innerHTML=desired.innerHTML;continue;
+  }
+  for(let n=0;n<children.length;n++){
+   const node=children[n],value=wanted[n];
+   if(node.tagName==='EM'){
+    const current=node.querySelector('data'),target=value.querySelector('data');
+    if(current&&target){if(current.getAttribute('aria-label')!==target.getAttribute('aria-label')){current.setAttribute('aria-label',target.getAttribute('aria-label'));current.innerHTML=target.innerHTML;}}else if(node.innerHTML!==value.innerHTML)node.innerHTML=value.innerHTML;
+   }else if(node.textContent!==value.textContent)node.textContent=value.textContent;
+  }
+ }
+}
 function install(){
  if(!['Manager','Supervisor'].includes(role()))return;
  const root=document.getElementById(role()==='Manager'?'managerView':'supervisorView');if(!root||root.classList.contains('hidden'))return;
@@ -149,7 +177,7 @@ function install(){
  const header=root.querySelector(role()==='Manager'?'.v135-manager-header,.v111-manager-header':'.v143-header');
  if(header&&header.nextElementSibling!==slot)header.insertAdjacentElement('afterend',slot);
  const markup='<div class="v251-followup-layout">'+html()+(role()==='Manager'?insuranceHtml():'')+'</div>',old=slot.querySelector('[data-v251-cash-pulse]');
- if(!old||slot.__cashPulseMarkup!==markup){slot.innerHTML=markup;slot.__cashPulseMarkup=markup;}
+ if(!old||slot.__cashPulseMarkup!==markup){if(old)patchCards(slot,markup);else slot.innerHTML=markup;slot.__cashPulseMarkup=markup;}
 }
 async function confirmRead(){
  const cloud=window.zukaitCloud,read=cloud?.readMonthlyFollowup||cloud?.readLatest;
@@ -238,6 +266,13 @@ const s=document.createElement('style');s.id='v251CashPulseStyle';s.textContent=
 .v251-insurance-entry input:focus-visible,.v251-insurance-entry button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 @media(max-width:520px){.v251-insurance-entry{grid-column:2;justify-content:flex-start;flex-wrap:wrap;min-width:0}.v251-insurance-entry input{width:115px}}
 `;document.head.appendChild(s);
-let scheduled=false;function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;install()},0)}new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});['zukait:state-synced','zukait:state-updated','zukait:cloud-sync','online','focus'].forEach(n=>window.addEventListener(n,schedule));document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});schedule();setInterval(install,2000);
+let scheduled=false;
+function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;install()},0)}
+// Observe structural loss of the slot, not changes made inside it.
+new MutationObserver(()=>{const r=role();if(!['Manager','Supervisor'].includes(r))return;const root=document.getElementById(r==='Manager'?'managerView':'supervisorView');if(root&&!root.classList.contains('hidden')&&!root.querySelector(r==='Manager'?'#managerCashPulseSlot':'#supervisorCashPulseSlot'))schedule()}).observe(document.body,{childList:true,subtree:true});
+['zukait:state-synced','zukait:state-updated','zukait:cloud-sync','online','focus'].forEach(n=>window.addEventListener(n,schedule));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});schedule();
+// One low-frequency local fallback also handles Oman month rollover. No network request.
+setInterval(schedule,30000);
 window.v251CashPulse={install,html,rows,total,pendingAll,insuranceRows,insuranceHtml,insuranceTotal,approximateRepairValue,approximateRepairSummary};
 })();
