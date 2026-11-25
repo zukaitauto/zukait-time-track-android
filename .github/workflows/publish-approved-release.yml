@@ -465,6 +465,22 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: _site
+      - name: Wait for the V420 Pages artifact to become visible
+        if: steps.approved.outputs.version_name == 'V420'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in {1..12}; do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" |
+                jq -e '.artifacts | any(.name == "github-pages" and .expired == false)' >/dev/null; then
+              sleep 20
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::GitHub did not index the uploaded Pages artifact."
+          exit 1
       - name: Deploy coordinated Pages candidate
         id: deployment
         uses: actions/deploy-pages@v4
