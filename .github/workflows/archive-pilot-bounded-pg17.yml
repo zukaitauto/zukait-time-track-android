@@ -1,0 +1,34 @@
+name: Bounded archive conversion isolated PostgreSQL 17
+on:
+  pull_request:
+    paths:
+      - 'supabase/staged/WORKSHOP_ARCHIVE_CONVERSION_BOUNDED_20261125.sql'
+      - 'tests/archive-pilot-bounded-20261125.sql'
+      - 'tests/fixtures/archive-pilot-live-readers-20261125.sql'
+      - '.github/workflows/archive-pilot-bounded-pg17.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-archive:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Qualify synthetic conversion and rollback
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: synthetic_only
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/archive-pilot-bounded-20261125.sql
