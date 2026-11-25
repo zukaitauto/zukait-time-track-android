@@ -9,3 +9,6 @@ Required scoped implementation:
 - Test actual signed-in Accountant and Manager, both departments and Both/shared material, real browser entry/history/adjustment/master workflows, denial of unrelated Manager and staff management APIs, then deploy.
 
 Current commit fixes workspace navigation and readiness error handling. It intentionally does not activate unimplemented privileged operations or change production data.
+
+## Legacy review follow-up
+Staged API and preview RPC now allow Manager and Accountant to review the same bounded saved pairs and link already classified pairs. The existing atomic-link database restriction on Accountant classification of genuinely unassigned legacy materials remains in force. Manager classification is required for those items. No production schema, function or setting changed. Verify both roles in isolated QA before deployment.

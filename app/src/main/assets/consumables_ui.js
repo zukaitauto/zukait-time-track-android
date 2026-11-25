@@ -80,16 +80,13 @@ function consPurchasePairs(){
  return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
 }
 const consPurchaseToday=()=>new Date(Date.now()+4*3600000).toISOString().slice(0,10);
-const consPurchaseStyle='<style>.cp-entry{display:grid;gap:12px;max-width:780px;margin:auto;min-width:0}.cp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cp-entry h3{margin:0;color:#17324f}.cp-entry .cp-field{display:grid;gap:5px;min-width:0;font-size:13px;font-weight:700;color:#304c68}.cp-entry input,.cp-entry select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box;border:1px solid #c4d6e7;border-radius:9px;background:#fff!important;color:#17324f!important;padding:8px;font-size:16px}.cp-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cp-entry .cp-panel{border:1px solid #d5e2ed;border-radius:12px;padding:12px;background:#f7faff}.cp-search-results{max-height:210px;overflow:auto}.cp-search-results button{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px;border:1px solid #dbe6f2!important;border-radius:7px;background:#fff!important;color:#17324f!important;text-align:left!important;margin:4px 0;min-height:42px}.cp-entry .cp-action{padding:10px 12px;border:1px solid #b6cfe5;border-radius:8px;color:#185999!important;background:#e9f3ff!important;font-weight:800}.cp-entry .cp-add{background:#e4f4ea!important;color:#166534!important}.cp-entry .cp-total{background:#194b80;color:#fff;padding:13px;border-radius:10px;font-weight:800}.cp-entry .cp-line{display:grid;grid-template-columns:minmax(0,1.5fr) .6fr .8fr .8fr auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #dce5ed;font-size:12px}.cp-lines{overflow-x:auto}.cp-entry .cp-line{min-width:430px}.cp-entry .cp-error{font-size:12px;color:#a13a1b}.cp-entry .cp-info{font-size:12px;color:#526b84}.cp-entry .cp-finish{min-height:44px;width:100%;background:#166534!important;color:#fff!important;border-radius:9px}.cp-entry .cp-finish:disabled{opacity:.55;cursor:not-allowed}@media(max-width:380px){.cp-two{grid-template-columns:1fr}}</style>';
+const consPurchaseStyle=window.ZukaitStockCore.purchaseStyle;
 window.consOpenPurchaseEntry=function(reset=false){
  if(!consPurchaseAllowed()||!consPurchaseRestore())return;
  if(consPurchaseBusy)return;
  if(!consPurchaseDraft||reset&&!consPurchasePending)consPurchaseDraft={invoiceNumber:'',supplier:'',invoiceDate:consPurchaseToday(),lines:[],selected:null,method:'unit'};
  const d=consPurchaseDraft;
- modal('Purchase Entry',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Material Purchase</h3><button type="button" class="cp-action" onclick="consOpenPurchaseInvoices()">Invoice List</button></div>'+
- '<div class="cp-panel"><div class="cp-two"><label class="cp-field">Invoice Number<input id="cpInvoice" maxlength="100" autocomplete="off" value="'+esc(d.invoiceNumber)+'" oninput="consPurchaseHeader()"></label><label class="cp-field">Invoice Date<input id="cpDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(d.invoiceDate)+'" oninput="consPurchaseHeader()"></label></div><label class="cp-field">Supplier<input id="cpSupplier" maxlength="160" value="'+esc(d.supplier)+'" oninput="consPurchaseHeader()"></label></div>'+
- '<div class="cp-panel"><label class="cp-field">Search Material + Brand<input id="cpSearch" type="search" autocomplete="off" placeholder="Example: Clear CAPCI" oninput="consPurchaseSearch()"></label><div id="cpResults" class="cp-search-results"></div><div id="cpSelected"></div><div id="cpLineEditor" hidden><label class="cp-field">Quantity<input id="cpQty" inputmode="decimal" type="number" min="0" step="0.0001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Price entry<select id="cpMethod" onchange="consPurchaseChangeMethod()"><option value="unit">Price per Unit</option><option value="total">Total Purchase Amount</option></select></label><div class="cp-two"><label class="cp-field">Price / Unit (OMR)<input id="cpUnit" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Total Amount (OMR)<input id="cpAmount" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()" readonly></label></div><button type="button" class="cp-action cp-add" onclick="consPurchaseAddLine()">＋ ADD ITEM</button><div id="cpError" class="cp-error" role="status"></div></div></div>'+
- '<h3>Invoice Items</h3><div id="cpLines" class="cp-lines"></div><div id="cpTotal" class="cp-total"></div><button type="button" id="cpFinish" class="cp-finish" onclick="consPurchaseSave()" disabled>FINISH &amp; SAVE</button><div id="cpSaveStatus" class="cp-info" role="status">Checking server availability…</div></div>','openStockManagement()');
+ modal('Purchase Entry',consPurchaseStyle+window.ZukaitStockCore.purchaseEntryMarkup(d,consPurchaseToday()),'openStockManagement()');
  consPurchaseRenderLines();consPurchaseLockForm(Boolean(consPurchasePending));
  const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
  consPurchaseApi({operation:'INVOICE_STATUS'}).then(r=>{
@@ -200,7 +197,7 @@ window.consPurchaseSave=async function(){
 };
 window.consOpenPurchaseInvoices=function(){
  if(!consPurchaseAllowed()||!consPurchaseRestore()||consPurchaseBusy)return;consPurchaseHeader();
- modal('Purchase Invoice List',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Invoice List</h3><button type="button" class="cp-action" onclick="consOpenPurchaseEntry()">New Entry</button></div><label class="cp-field">Search invoice / supplier / material<input id="cpHistoryQuery" type="search" maxlength="160"></label><div class="cp-two"><label class="cp-field">From Date<input id="cpHistoryFrom" type="date"></label><label class="cp-field">To Date<input id="cpHistoryTo" type="date"></label></div><button type="button" class="cp-action" onclick="consPurchaseLoadHistory(0)">Search / Refresh</button><div id="cpHistory" class="cp-panel cp-info" role="status">Loading server invoice history…</div></div>','consOpenPurchaseEntry()');
+ modal('Purchase Invoice List',consPurchaseStyle+window.ZukaitStockCore.purchaseHistoryMarkup(),'consOpenPurchaseEntry()');
  window.consPurchaseLoadHistory(0);
 };
 window.consPurchaseLoadHistory=async function(page=0){
@@ -900,30 +897,18 @@ window.consOpenMaster=function(preset='',section=''){
  const units=['Liter','kg','Piece'],cats=['Consumable','Paint'];
  const focused=section==='create'||section==='price';
  const pageTitle=section==='create'?'Create Material':section==='price'?'Brand & Price':'Materials & Brands';
- const intro=section==='create'?
-  '<span class="cons-master-intro-icon create" aria-hidden="true">⬡</span><div><h2>Create Material</h2><p>Add a new consumable material.</p></div>':
-  '<span class="cons-master-intro-icon price" aria-hidden="true">◇</span><div><h2>Brand &amp; Price</h2><p>Assign a brand and price with an effective date.</p></div>';
+ const intro=window.ZukaitStockCore.masterIntro(section);
  modal(pageTitle,
  '<div class="cons-subnav"><button class="secondary" type="button" onclick="openStockManagement()">← Stock Management</button></div>'+
  '<div id="consMasterWorkspace" class="cons-entry-shell'+(focused?' cons-master-focused cons-master-'+section:'')+'">'+
  (focused?'<div class="cons-master-intro">'+intro+'</div>':'')+
- '<section class="cons-master-form" aria-labelledby="cmCreateHeading"><h3 id="cmCreateHeading">Create Material</h3>'+
- '<p class="notice">Create the material first. Add a brand and price separately.</p>'+
- '<label class="cons-master-field">Material Name<input id="cmNewMaterial" placeholder="Enter material name" autocomplete="off"></label>'+
- '<label class="cons-master-field">Unit<select id="cmNewUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
- '<label class="cons-master-field">Category<select id="cmNewCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
- '<label class="cons-master-field">Used In — required for new materials<select id="cmNewDepartment"><option value="">Select department</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label>'+
- '<button class="blue" type="button" onclick="consCreateMaterial()">CREATE MATERIAL</button></section>'+
+ window.ZukaitStockCore.masterCreateMarkup(units,cats)+
  '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
  '<p class="notice">Previous effective-dated prices remain in history.</p>'+
  '<label class="cons-master-field">Search Material + Brand<input id="cmPairSearch" type="search" autocomplete="off" placeholder="Search material or brand" oninput="consMasterPairSearch()" onfocus="consMasterPairSearch()"></label><div id="cmPairResults" class="cons-material-results hidden"></div>'+
  (section==='price'?'<button class="cm-new-brand" type="button" onclick="consMasterNewPair()">＋ Add Brand &amp; Price</button><dialog id="cmPairEditor" aria-labelledby="cmPairEditorTitle"><div class="cm-editor-top"><h3 id="cmPairEditorTitle">Brand &amp; Price</h3><button type="button" onclick="consMasterCloseEditor()" aria-label="Close price editor">✕</button></div>':'')+
  '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest();consMasterPairChanged()"></label><datalist id="cmMaterialChoices"></datalist>'+
- '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off" oninput="consMasterPairChanged()"></label><datalist id="cmBrandChoices"></datalist>'+
- '<p id="cmLastPrice" class="notice" role="status">Select a material and brand to view its current price.</p>'+
- '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
- '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+consOmanPriceDate()+'"></label>'+
- '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button>'+
+ window.ZukaitStockCore.masterPriceFields(consOmanPriceDate())+
  (section==='price'?'<button class="cm-editor-cancel" type="button" onclick="consMasterCloseEditor()">Cancel</button></dialog>':'')+'</section>'+
  '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
  '<h3 id="cmListHeading">Material &amp; Price List</h3><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+

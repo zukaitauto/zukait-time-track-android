@@ -18,6 +18,8 @@ const env={window:{},role:()=> 'Manager',
  modal(t,body){title=t;form=body},
  document:{getElementById:id=>elements[id]||null},
  consRenderMaster(){},consMasterSuggest(){},consOmanPriceDate:()=> '2026-11-24'};
+runInNewContext(readFileSync('app/src/main/assets/consumables_stock_core.js','utf8'),env);
+env.window.ZukaitStockCore=env.ZukaitStockCore;
 runInNewContext(src.slice(begin,end),env);
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']}: {})});
 try{

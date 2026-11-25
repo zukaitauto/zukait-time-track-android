@@ -9,8 +9,8 @@ await db.exec("create table public.workshop_state(id text primary key,revision b
 await db.exec(readFileSync('supabase/staged/CONSUMABLES_STOCK_COMPACT_FOUNDATION.sql','utf8'));
 await db.exec(readFileSync('supabase/staged/CONSUMABLES_STOCK_MASTER_LINK.sql','utf8'));
 await db.exec(readFileSync('supabase/staged/CONSUMABLES_STOCK_LEGACY_PREVIEW.sql','utf8'));
-await db.exec("insert into public.staff_credentials(user_id,role) values('MGR','Manager'),('SUP','Supervisor')");
-await db.exec("insert into public.staff_sessions(user_id,token_hash) values('MGR','manager'),('SUP','bodyshop')");
+await db.exec("insert into public.staff_credentials(user_id,role) values('MGR','Manager'),('SUP','Supervisor'),('ACC','Accountant')");
+await db.exec("insert into public.staff_sessions(user_id,token_hash) values('MGR','manager'),('SUP','bodyshop'),('ACC','accountant')");
 let materials=[],prices=[];
 for(let i=0;i<23;i++){
  const id='mat-'+String(i).padStart(3,'0');
@@ -28,6 +28,9 @@ const preview=async(token,page=0)=>{
 await assert.rejects(preview('bodyshop'),/MANAGER_ONLY/);
 await assert.rejects(preview('manager',50),/INVALID_PREVIEW_PAGE/);
 const p0=await preview('manager');
+assert.deepEqual(await preview('accountant'),p0,'Accountant receives identical bounded read-only catalog');
+assert.equal(p0.items[0].savedDepartment,null);
+assert.equal(p0.items[0].stockDepartment,null);
 assert.equal(p0.readOnly,true);
 assert.equal(p0.items.length,20);
 assert.equal(p0.hasMore,true);
@@ -67,5 +70,5 @@ const movements=await db.query('select count(*) as n from public.zukait_stock_mo
 assert.equal(movements.rows[0].n,0);
 await db.exec("update public.staff_sessions set revoked_at=now() where token_hash='manager'");
 await assert.rejects(preview('manager'),/MANAGER_ONLY/);
-console.log('Stock legacy preview: 20-item pages, Manager only, Paint protection, explicit Both, no fabricated balances or history PASS');
+console.log('Stock legacy preview: 20-item pages, Manager and Accountant only, Paint protection, explicit Both, no fabricated balances or history PASS');
 await db.close();
