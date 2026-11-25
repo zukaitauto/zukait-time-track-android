@@ -20,6 +20,9 @@ const panel=w.zukaitCreateAccountStock({getUser:()=>user,project:'qa',canWrite:(
  if(x.operation==='ENTRY_CATALOG')return {items:[{materialId:'m',brandId:'b',material:'Primer',brand:'Brand A',department:'Both',unit:'Liter'}],hasMore:false};
  if(x.operation==='WRITE'){if(fail){fail=false;throw Error('timeout');}return {receipt:{final:true}}}
  if(x.operation==='INVOICE_LIST')return {invoices:[{id:'inv',invoice_number:'QA1',supplier:'Test',invoice_date:'2026-11-20',status:'active',revision:1,total_amount:2,lines:[{materialId:'m',brandId:'b',materialName:'Primer',brandName:'Brand A',unit:'Liter',quantity:1,priceMethod:'unit',price:2,totalAmount:2}]}],hasMore:false};
+ if(x.operation==='PRICE_RECONCILE_PREVIEW')return {required:false};
+ if(x.operation==='PRICE_APPLY_REVIEW')return {review:[{action:'create',materialName:'Primer',brandName:'Brand A',date:'2026-11-25',rate:2,affected:0}]};
+ if(x.operation==='PRICE_APPLY_APPLY')return {ok:true};
  if(x.operation==='INVOICE_CANCEL')return {invoice:{id:'inv',status:'cancelled'}};
  if(x.operation==='INVOICE_AUDIT')return {audit:[{actor_id:'A1',reason:'Created',event_type:'CREATED',before_header:null,after_header:{invoice_number:'QA1'}}],hasMore:false};
  throw Error('Unexpected '+x.operation);

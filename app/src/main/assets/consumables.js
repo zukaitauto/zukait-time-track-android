@@ -36,9 +36,10 @@
     if(managerOnly&&role!=='Manager')throw new Error('MANAGER_ONLY');
     if(role!=='Manager'&&role!=='Supervisor')throw new Error('CONSUMABLES_FORBIDDEN');
   }
+  function assertMasterRole(role){if(!['Manager','Accountant'].includes(role))throw Error('MANAGER_ONLY');}
   function validUnit(unit){return UNITS.includes(normalizeUnit(unit))}
   function addMaterial(state,input,actor){
-    assertRole(actor?.role,true); const c=ensureState(state);
+    assertMasterRole(actor?.role); const c=ensureState(state);
     const name=String(input?.name||'').trim(); const unit=normalizeUnit(input?.unit); const category=CATEGORIES.includes(input?.category)?input.category:'Consumable';
     const requested=String(input?.department||'').trim();
     // Existing callers may leave older materials unassigned. The new Manager
@@ -52,7 +53,7 @@
     c.materials.push(row); return clone(row);
   }
   function addBrand(state,input,actor){
-    assertRole(actor?.role,true); const c=ensureState(state);
+    assertMasterRole(actor?.role); const c=ensureState(state);
     const name=String(input?.name||'').trim(); if(!name)throw new Error('BRAND_NAME_REQUIRED');
     if(c.brands.some(x=>x.active!==false&&x.name.toLowerCase()===name.toLowerCase()))throw new Error('BRAND_DUPLICATE');
     const row={id:uid('brand'),name,active:true,createdAt:Date.now(),createdBy:actor.id}; c.brands.push(row); return clone(row);
@@ -62,7 +63,7 @@
     return (c.audit||[]).find(a=>a.type==='INVOICE_PRICE_APPLIED'&&!reconciled.has(a.requestId)&&a.receipt?.changes?.some(p=>p.priceId===priceId))||null;
   }
   function setPrice(state,input,actor){
-    assertRole(actor?.role,true); const c=ensureState(state);
+    assertMasterRole(actor?.role); const c=ensureState(state);
     const material=c.materials.find(x=>x.id===input.materialId&&x.active!==false);
     const brand=c.brands.find(x=>x.id===input.brandId&&x.active!==false);
     if(!material)throw new Error('MATERIAL_NOT_FOUND'); if(!brand)throw new Error('BRAND_NOT_FOUND');
@@ -78,7 +79,7 @@
     return clone(row);
   }
   function managerCorrectPrice(state,priceId,newPrice,actor,reason){
-    assertRole(actor?.role,true); const c=ensureState(state),why=String(reason||'').trim();
+    assertMasterRole(actor?.role); const c=ensureState(state),why=String(reason||'').trim();
     if(!why)throw new Error('REASON_REQUIRED');
     const row=c.prices.find(x=>x.id===priceId&&!x.voided); if(!row)throw new Error('PRICE_NOT_FOUND');
     if(activeInvoicePriceOwner(c,priceId))throw Error('INVOICE_PRICE_OWNED');
@@ -97,7 +98,7 @@
   // Read-only proposal. Invoice purchase rates are not silently substituted
   // for effective-dated job costing. A Manager reviews the existing price path.
   function invoicePriceReview(state,invoice,actor){
-    assertRole(actor?.role,true);
+    assertMasterRole(actor?.role);
     if(!invoice?.id||invoice.status!=='posted'||!Number.isInteger(invoice.revision)||invoice.revision<1||!Array.isArray(invoice.lines)||!invoice.lines.length)throw Error('POSTED_INVOICE_REQUIRED');
     const date=String(invoice.invoice_date||''),effective=Date.parse(date+'T00:00:00+04:00');
     const omanDate=t=>new Date(Number(t)+14400000).toISOString().slice(0,10);
@@ -142,7 +143,7 @@
   // revision under one server transaction, then persist the returned patch
   // atomically with its audit. Never call from an untrusted client to save.
   function prepareInvoicePriceApply(state,invoice,input,actor){
-    assertRole(actor?.role,true);
+    assertMasterRole(actor?.role);
     if(!String(actor?.id||'').trim())throw Error('MANAGER_ID_REQUIRED');
     const reason=String(input?.reason||'').trim(),rid=String(input?.requestId||'').trim();
     if(reason.length<5||reason.length>500)throw Error('REASON_REQUIRED');
@@ -178,7 +179,7 @@
   // Reversing an invoice application is a new audited costing event. It
   // does not delete a price or restore an old workshop snapshot.
   function prepareInvoicePriceReconciliation(state,application,input,actor){
-    assertRole(actor?.role,true);
+    assertMasterRole(actor?.role);
     if(!String(actor?.id||'').trim())throw Error('MANAGER_ID_REQUIRED');
     const staged={consumables:clone(state?.consumables||{})},c=ensureState(staged);
     const canon=v=>Array.isArray(v)?v.map(canon):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canon(v[k])])):v;
@@ -346,7 +347,7 @@
     auditChange(c,'ACTUAL_CORRECTED',row,before,row,actor,reason); return clone(row);
   }
   function managerRecalculateActualPrices(state,priceId,actor,reason){
-    assertRole(actor?.role,true); const c=ensureState(state),why=String(reason||'').trim(); if(!why)throw new Error('REASON_REQUIRED');
+    assertMasterRole(actor?.role); const c=ensureState(state),why=String(reason||'').trim(); if(!why)throw new Error('REASON_REQUIRED');
     const price=c.prices.find(x=>x.id===priceId&&!x.voided); if(!price)throw new Error('PRICE_NOT_FOUND');
     const affected=c.actuals.filter(x=>!x.voided&&x.locked&&x.actualAt>=price.effectiveFrom&&x.lines.some(l=>l.materialId===price.materialId&&l.brandId===price.brandId));
     const changed=[]; affected.forEach(row=>{const applicable=priceAt(state,price.materialId,price.brandId,row.actualAt);if(!applicable||applicable.id!==price.id)return;const before=clone(row);let touched=false;row.lines=row.lines.map(l=>{if(l.materialId!==price.materialId||l.brandId!==price.brandId)return l;const q=num(l.actualQuantity??l.quantity);if(l.priceId===applicable.id&&num(l.unitPriceSnapshot)===num(applicable.pricePerUnit)&&num(l.lineCost)===money(q*applicable.pricePerUnit))return l;touched=true;return {...l,priceId:applicable.id,unitPriceSnapshot:applicable.pricePerUnit,lineCost:money(q*applicable.pricePerUnit)}});if(!touched)return;row.totalCost=money(row.lines.reduce((n,l)=>n+num(l.lineCost),0));row.priceRecalculatedAt=Date.now();row.priceRecalculatedBy=actor.id;row.correctedAt=row.priceRecalculatedAt;row.correctedBy=actor.id;row.correctedByName=String(actor?.name||actor?.id||'');row.correctedByRole=String(actor?.role||'');row.correctionReason=why;auditChange(c,'ACTUAL_PRICE_RECALCULATED',row,before,row,actor,why);changed.push(clone(row))});

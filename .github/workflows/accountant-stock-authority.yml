@@ -36,6 +36,8 @@ jobs:
           node tests/accountant-stock-workspace.mjs
           node tests/accountant-stock-authority.mjs
           node tests/accountant-stock-master-api.mjs
+          node tests/consumables-invoice-price-api.mjs
+          node tests/consumables-invoice-price-reconcile-api.mjs
           node tests/consumables-stock-api.mjs
   database-transactions:
     runs-on: ubuntu-latest

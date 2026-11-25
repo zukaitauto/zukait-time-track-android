@@ -27,4 +27,6 @@ reset();r=await run(admin,user,{...apply,data:{...apply.data,review:{...apply.da
 reset();source={...invoice,revision:2};r=await run(admin,user,apply,opts);assert.equal(r.body.code,'invoice_revision_conflict');
 reset();prior={request_id:'reverse-1'};reply={data:{ok:true,replayed:true},error:null};source={...invoice,status:'cancelled',revision:2};r=await run(admin,user,apply,opts);assert.equal(r.body.replayed,true);assert.equal(calls.length,2);
 reset();reply={data:null,error:{message:'INVOICE_STOCK_USED_OR_CHANGED'}};r=await run(admin,user,apply,opts);assert.equal(r.status,409);assert.equal(r.body.code,'invoice_stock_used_or_changed');
+reset();r=await run(admin,{...user,role:'Accountant'},preview,opts);assert.equal(r.status,200);assert.equal(r.body.required,true);
+reset();r=await run(admin,{...user,role:'Accountant'},apply,opts);assert.equal(r.status,200);assert.equal(calls.at(-1).args.p_session_hash,'session');
 console.log('Reconciliation API: trusted preview, manager permission, stale review, stock guard and retry PASS');

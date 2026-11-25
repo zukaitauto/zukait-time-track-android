@@ -10,9 +10,24 @@ const same=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
 const allowed=new Set(['MANAGER_ONLY','REQUEST_ID_CONFLICT','INVOICE_NOT_FOUND','INVOICE_CANCELLED','INVOICE_REVISION_CONFLICT','INVOICE_PRICE_RECONCILIATION_REQUIRED','WORKSHOP_PRICE_COMMIT_FAILED','INVALID_PRICE_APPLICATION','STALE_PRICE_REVIEW','PRICE_REVIEW_BLOCKED','INVOICE_PRICE_SOURCE_CONFLICT','NO_PRICE_CHANGES','POSTED_INVOICE_REQUIRED','INVALID_INVOICE_DATE','INVALID_INVOICE_PRICE','INVOICE_PRICE_ALREADY_APPLIED_RECONCILIATION_REQUIRED']);
 export async function invoicePriceApplyApi(admin,user,body,{enabled=false,sessionHash='',computeLiveStatus}={}){
  if(!enabled)return bad('invoice_price_apply_not_enabled',423);
- if(user?.role!=='Manager'||!user.id)return bad('manager_only',403);
+ if(!['Manager','Accountant'].includes(user?.role)||!user.id)return bad('manager_only',403);
  if(!sessionHash)return bad('stock_session_required',401);
  const d=body?.data;
+ // Read-only review from authoritative posted invoice and current master.
+ if(body?.operation==='REVIEW'){
+  if(!d||Object.keys(d).some(k=>!['invoiceId','invoiceRevision'].includes(k))||!uuid.test(d.invoiceId||'')||!Number.isInteger(d.invoiceRevision)||d.invoiceRevision<1)return bad('invalid_price_application',400);
+  try{
+   const inv=await admin.from('zukait_purchase_invoices').select('id,revision,status,invoice_date,lines').eq('id',d.invoiceId).maybeSingle();
+   if(inv.error)return bad('invoice_price_source_unavailable',503);
+   if(!inv.data)return bad('invoice_not_found',404);
+   if(inv.data.status!=='posted')return bad('invoice_cancelled');
+   if(inv.data.revision!==d.invoiceRevision)return bad('invoice_revision_conflict');
+   const current=await admin.from('workshop_state').select('revision,data').eq('id','main').single();
+   if(current.error||!current.data?.data)return bad('workshop_state_unavailable',503);
+   return good({ok:true,review:C.invoicePriceReview(current.data.data,inv.data,user)});
+  }catch(e){const code=String(e?.message||'');return bad(allowed.has(code)?code.toLowerCase():'invoice_price_review_failed',allowed.has(code)?409:503);}
+ }
+ if(body?.operation&&body.operation!=='APPLY')return bad('invalid_price_application',400);
  if(!d||typeof d!=='object'||Array.isArray(d)||Object.keys(d).some(k=>!['invoiceId','invoiceRevision','requestId','reason','review'].includes(k))||
  !uuid.test(d.invoiceId||'')||!Number.isInteger(d.invoiceRevision)||d.invoiceRevision<1||
  typeof d.requestId!=='string'||! /^[a-zA-Z0-9_.:-]{1,128}$/.test(d.requestId)||

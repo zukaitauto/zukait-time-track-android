@@ -23,6 +23,8 @@ const saved=calls.at(-1);assert.equal(saved.name,'zukait_invoice_price_apply_com
 reset();prior={request_id:'apply-1'};reply={data:{ok:true,replayed:true},error:null};r=await run(admin,user,request,opts);assert.equal(r.body.replayed,true);assert.equal(calls.length,2);assert.equal(calls[1].args.p_expected_revision,0);
 reset();reply={data:{ok:false,code:'conflict'},error:null};r=await run(admin,user,request,opts);assert.equal(r.body.code,'stale_workshop_revision');
 reset();reply={data:null,error:{message:'INVOICE_PRICE_RECONCILIATION_REQUIRED'}};r=await run(admin,user,request,opts);assert.equal(r.status,409);assert.equal(r.body.code,'invoice_price_reconciliation_required');
+reset();const accountant={...user,role:'Accountant'};r=await run(admin,accountant,{operation:'REVIEW',data:{invoiceId:id,invoiceRevision:1}},opts);assert.equal(r.status,200);assert.deepEqual(r.body.review,request.data.review);assert.equal(calls.some(x=>typeof x==='object'),false);
+reset();r=await run(admin,accountant,request,opts);assert.equal(r.status,200);assert.equal(calls.at(-1).args.p_session_hash,'session');
 const browser=readFileSync(new URL('../app/src/main/assets/consumables.js',import.meta.url),'utf8');
 const server=readFileSync(new URL('../supabase/functions/workshop-api/extensions/invoice_price_core.js',import.meta.url),'utf8');
 const common=s=>s.slice(s.indexOf("  'use strict';"),s.lastIndexOf('}'));

@@ -7,7 +7,7 @@ const known=new Set(['MANAGER_ONLY','INVOICE_NOT_FOUND','INVOICE_CANCELLED','INV
 const fail=e=>{const code=String(e?.message||'');return bad(known.has(code)?code.toLowerCase():'invoice_price_reconciliation_failed',code==='MANAGER_ONLY'?403:known.has(code)?409:503)};
 export async function invoicePriceReconcileApi(admin,user,body,{enabled=false,sessionHash='',computeLiveStatus}={}){
  if(!enabled)return bad('invoice_price_reconciliation_not_enabled',423);
- if(user?.role!=='Manager'||!user.id)return bad('manager_only',403);
+ if(!['Manager','Accountant'].includes(user?.role)||!user.id)return bad('manager_only',403);
  if(!sessionHash)return bad('stock_session_required',401);
  const d=body?.data,preview=body?.operation==='PREVIEW',apply=body?.operation==='APPLY';
  if((!preview&&!apply)||!d||typeof d!=='object'||Array.isArray(d)||Object.keys(d).some(k=>!['mode','correction','requestId','applicationRequestId','review'].includes(k))||

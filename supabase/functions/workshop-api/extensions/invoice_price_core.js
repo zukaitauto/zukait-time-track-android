@@ -94,7 +94,7 @@ const invoicePriceCore=(function(){
   // Read-only proposal. Invoice purchase rates are not silently substituted
   // for effective-dated job costing. A Manager reviews the existing price path.
   function invoicePriceReview(state,invoice,actor){
-    assertRole(actor?.role,true);
+    assertMasterRole(actor?.role);
     if(!invoice?.id||invoice.status!=='posted'||!Number.isInteger(invoice.revision)||invoice.revision<1||!Array.isArray(invoice.lines)||!invoice.lines.length)throw Error('POSTED_INVOICE_REQUIRED');
     const date=String(invoice.invoice_date||''),effective=Date.parse(date+'T00:00:00+04:00');
     const omanDate=t=>new Date(Number(t)+14400000).toISOString().slice(0,10);
@@ -139,7 +139,7 @@ const invoicePriceCore=(function(){
   // revision under one server transaction, then persist the returned patch
   // atomically with its audit. Never call from an untrusted client to save.
   function prepareInvoicePriceApply(state,invoice,input,actor){
-    assertRole(actor?.role,true);
+    assertMasterRole(actor?.role);
     if(!String(actor?.id||'').trim())throw Error('MANAGER_ID_REQUIRED');
     const reason=String(input?.reason||'').trim(),rid=String(input?.requestId||'').trim();
     if(reason.length<5||reason.length>500)throw Error('REASON_REQUIRED');
@@ -175,7 +175,7 @@ const invoicePriceCore=(function(){
   // Reversing an invoice application is a new audited costing event. It
   // does not delete a price or restore an old workshop snapshot.
   function prepareInvoicePriceReconciliation(state,application,input,actor){
-    assertRole(actor?.role,true);
+    assertMasterRole(actor?.role);
     if(!String(actor?.id||'').trim())throw Error('MANAGER_ID_REQUIRED');
     const staged={consumables:clone(state?.consumables||{})},c=ensureState(staged);
     const canon=v=>Array.isArray(v)?v.map(canon):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canon(v[k])])):v;
