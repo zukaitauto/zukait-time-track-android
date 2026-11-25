@@ -308,8 +308,8 @@ function render(){
     const pairChoices=choices.map((x,i)=>'<button type="button" class="zs-pair-choice" data-pair-choice data-pair-name="'+esc(label(x))+'" onclick="zukStockChoosePair('+i+')">'+esc(label(x))+
       '<small>'+esc(x.unit||'')+(x.needsMasterLink?' · New stock item':'')+'</small></button>').join(''),
       pairName=selected?label(selected):String(view.pairQuery||'');
-    draw('<h3>'+(legacyEntryQA()?'Add / Open Stock':'Opening Stock')+'</h3>'+
-     (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs for this department.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
+    draw('<h3>'+(legacyEntryQA()?'Add / Open Stock':'Opening Stock (one time only)')+'</h3>'+
+     (noAssignedItems?'<div class="zs-warning"><b>No linked material and brand pairs available.</b><p>The existing Material Master is separate from Stock. Each material and brand must be reviewed and linked before Opening Stock can be saved.</p>'+
        (manager()?'<button type="button" class="zs-btn" onclick="zukStockLegacyReview()">Review &amp; Link Existing Materials</button>':'Ask the Manager to link existing material and brand pairs.')+'</div>':'')+
      '<p class="zs-muted">Enter litres directly (not tins or drums). Non-liquid materials retain kg or Piece units.</p>'+
      (legacyEntryQA()?(manager()?'<label>Entry type</label><select id="zs-entrytype" onchange="zukStockSetEntryType()"><option value="PURCHASE">Purchased Stock</option><option value="OPENING">Opening Stock (one time only)</option></select>':''):'<input type="hidden" id="zs-entrytype" value="OPENING">')+
@@ -322,7 +322,7 @@ function render(){
      '<input id="zs-material" type="hidden" value="'+esc(selected?.material_id||'')+'"><input id="zs-brand" type="hidden" value="'+esc(selected?.brand_id||'')+'">'+
      '<label>Quantity (existing material unit)</label><input id="zs-qty" type="number" min="0.0001" step="any" placeholder="Enter physically counted / received quantity" oninput="zukStockCalculatePurchase()">'+
      '<label>Price method</label><select id="zs-method" onchange="zukStockCalculatePurchase()"><option value="total">Total Purchase Price</option><option value="unit">Price per Unit</option></select>'+
-     '<label id="zs-price-label">Purchase amount (OMR)</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost" oninput="zukStockCalculatePurchase()">'+
+     '<label id="zs-price-label">'+(legacyEntryQA()?'Purchase amount (OMR)':'Counted amount (OMR)')+'</label><input id="zs-price" type="number" min="0.001" step="any" placeholder="Enter actual cost" oninput="zukStockCalculatePurchase()">'+
      '<div class="zs-card zs-calculation-card"><b>Calculated amount</b><div id="zs-price-calculated" role="status">Enter quantity and purchase amount.</div></div>'+
      '<div id="zs-opening-fields" style="display:'+(legacyEntryQA()?'none':'block')+'" class="zs-card">'+
      '<p class="zs-warning">Opening Stock is recorded once for this material and brand. Use the physical count, never an estimated stock number.</p>'+
