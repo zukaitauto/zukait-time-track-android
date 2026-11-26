@@ -10,6 +10,7 @@ create table public.workshop_live_status(
  state_revision bigint,updated_at timestamptz,updated_by text
 );
 create table private.workshop_time_edit_revision(prior_revision bigint,prior_updated_at timestamptz,prior_updated_by text,delta jsonb);
+create function private.normalize_job_edit_archive_candidate(jsonb,jsonb) returns jsonb language sql as 'select $2';
 create function private.workshop_time_edit_delta(jsonb,jsonb) returns jsonb language sql as 'select ''{}''::jsonb';
 create function private.undo_workshop_time_edit(jsonb,jsonb) returns jsonb language sql as 'select ''{}''::jsonb';
 create table public.live_write_audit(employee_id text,operation text);
