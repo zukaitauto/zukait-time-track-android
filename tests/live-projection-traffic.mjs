@@ -30,7 +30,7 @@ async function run(code,data,stale=false){
  for(const field of q.columns.split(',')){if(field==='data')result.data=structuredClone(data);const match=field.match(/^(\w+):data->(\w+)$/);if(match)result[match[1]]=structuredClone(data[match[2]]??null)}
  return {data:result}},
  async order(){return {data:rows}},
- async upsert(expected){writes.push({operation:'upsert',rows:structuredClone(expected)});rows=[...rows.filter(row=>!expected.some(next=>next.employee_id===row.employee_id)),...structuredClone(expected)];return {}},
+ async upsert(expected){writes.push({operation:'upsert',rows:structuredClone(expected)});rows=[...rows.map(row=>expected.find(next=>next.employee_id===row.employee_id)||row),...expected.filter(next=>!rows.some(row=>row.employee_id===next.employee_id))];return {}},
  delete(){return{async in(_field,ids){writes.push({operation:'delete',ids});rows=rows.filter(r=>!ids.includes(r.employee_id));return {}}}}
  };return q}},console};
  vm.createContext(ctx);vm.runInContext(stripTypeScriptTypes(code)+';this.project=computeLiveStatus;this.load=loadAuthoritativeLiveStatus;',ctx);
@@ -62,7 +62,7 @@ console.log('Live projection parity passed: Working, Paused, ID001, Overtime, Av
      for(const field of q.columns.split(',')){const m=field.match(/^(\w+):data->(\w+)$/);if(m)result[m[1]]=structuredClone(data[m[2]]??null)}
      return {data:result}},
    async order(){return {data:structuredClone(rows)}},
-   async upsert(expected){repairWrites.push('upsert');rows=[...rows.filter(row=>!expected.some(next=>next.employee_id===row.employee_id)),...structuredClone(expected)];return {}},
+   async upsert(expected){repairWrites.push('upsert');rows=[...rows.map(row=>expected.find(next=>next.employee_id===row.employee_id)||row),...expected.filter(next=>!rows.some(row=>row.employee_id===next.employee_id))];return {}},
    delete(){return{async in(_field,ids){repairWrites.push('delete');rows=rows.filter(r=>!ids.includes(r.employee_id));return {}}}}
  };return q}}};
  vm.createContext(cacheCtx);vm.runInContext(stripTypeScriptTypes(optimized)+';this.project=computeLiveStatus;this.load=loadAuthoritativeLiveStatus;',cacheCtx);
