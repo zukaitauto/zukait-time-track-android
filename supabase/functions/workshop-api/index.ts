@@ -1266,18 +1266,19 @@ Deno.serve(async (req: Request) => {
 
     // Read-only, opt-in history endpoint. Keep legacy load/save responses unchanged
     // until the archived-prefix cutover and old-client compatibility are proven.
-    if (action === "job_edit_audit_page") {
+    if (action === "job_edit_audit_page" || action === "job_edit_audit_all_page") {
+      const all = action === "job_edit_audit_all_page";
       if (user.role !== "Manager") return reply({ok:false,code:"job_edit_forbidden"},403);
-      const allowed = new Set(["action","jobCard","before_position","limit","expected_revision"]);
+      const allowed = new Set(["action","before_position","limit","expected_revision",...(all ? [] : ["jobCard"])]);
       if (Object.keys(body).some(k => !allowed.has(k)) ||
-          typeof body.jobCard !== "string" || !body.jobCard.trim() || body.jobCard.length > 80 ||
+          (!all && (typeof body.jobCard !== "string" || !body.jobCard.trim() || body.jobCard.length > 80)) ||
           (body.limit !== undefined && (!Number.isSafeInteger(body.limit) || body.limit < 1 || body.limit > 100)) ||
           (body.expected_revision != null && (!Number.isSafeInteger(body.expected_revision) || body.expected_revision < 0)) ||
           (body.before_position != null && (!Number.isSafeInteger(body.before_position) || body.before_position < 1 || body.expected_revision == null))) {
         return reply({ok:false,code:"invalid_audit_cursor"},400);
       }
-      const {data,error} = await admin.rpc("zukait_job_edit_current_page", {
-        p_job_no: body.jobCard.trim().toUpperCase(),
+      const {data,error} = await admin.rpc(all ? "zukait_job_edit_all_page" : "zukait_job_edit_current_page", {
+        ...(!all ? {p_job_no: body.jobCard.trim().toUpperCase()} : {}),
         p_before_position: body.before_position ?? null,
         p_limit: body.limit ?? 50,
         p_expected_revision: body.expected_revision ?? null
