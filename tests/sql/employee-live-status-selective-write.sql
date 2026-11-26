@@ -73,4 +73,25 @@ begin
  get diagnostics n=row_count;
  if n<>0 then raise exception 'duplicate session removal rewrote row'; end if;
 end $$;
+
+-- Two different employees changing status in one revision must update exactly two rows.
+do $$
+declare changed integer; unchanged integer;
+begin
+  update employee_status_candidate
+     set status='Paused', job_no='JC200', state_revision=1200
+   where employee_id in ('E3','E9')
+     and (status,job_no) is distinct from ('Paused'::text,'JC200'::text);
+  get diagnostics changed=row_count;
+  if changed<>2 then raise exception 'two-employee batch changed % rows',changed; end if;
+  select count(*) into unchanged from employee_status_candidate where state_revision=100;
+  if unchanged<>15 then raise exception 'unrelated employee revisions changed: %',unchanged; end if;
+  -- Repeating the same batch must not rewrite either row.
+  update employee_status_candidate
+     set status='Paused',job_no='JC200',state_revision=1201
+   where employee_id in ('E3','E9')
+     and (status,job_no) is distinct from ('Paused'::text,'JC200'::text);
+  get diagnostics changed=row_count;
+  if changed<>0 then raise exception 'replayed two-employee batch rewrote % rows',changed; end if;
+end $$;
 rollback;
