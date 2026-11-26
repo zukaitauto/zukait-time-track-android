@@ -8,6 +8,7 @@ function canonical(v){
  if(object(v))return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}';
  return JSON.stringify(v);
 }
+/** @returns {{ok: false, code: string}} */
 const fail=code=>({ok:false,code});
 const markerValid=m=>object(m)&&Number.isSafeInteger(m.snapshotRevision)&&m.snapshotRevision>=0&&Number.isSafeInteger(m.prefixCount)&&m.prefixCount>0;
 function additions(base,changed){
@@ -17,6 +18,7 @@ function additions(base,changed){
  for(const entry of changed){const k=canonical(entry),n=counts.get(k)||0;if(n>0)counts.set(k,n-1);else extra.push(entry);}
  return [...counts.values()].some(n=>n>0)?null:extra;
 }
+/** @returns {{ok:false,code:string}|{ok:true,active:false}|{ok:true,active:true,marker:any,jobEdits:any[]}} */
 export function reconcileCompactJobEditAudit({base,current,proposed,expandedCurrent}){
  if(!object(base)||!object(current)||!object(proposed))return fail('audit_refresh_required');
  if(!own(current,'jobEditArchive'))return {ok:true,active:false};
