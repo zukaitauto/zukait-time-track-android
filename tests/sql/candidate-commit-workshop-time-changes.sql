@@ -1,5 +1,5 @@
 -- REVIEW CANDIDATE ONLY. DO NOT DEPLOY UNTIL API REVISION SEMANTICS ARE UPDATED.
--- Existing function body copied from read-only production pg_get_functiondef.
+-- Function reconciled against QA installed pg_get_functiondef on 2026-11-26. Preserve normalize_job_edit_archive_candidate and compact undo behavior.
 -- Only ON CONFLICT business-field comparison is modified; unchanged rows keep older state_revision.
 -- Deploying this alone would trigger API read-repair write amplification.
 
@@ -37,6 +37,8 @@ begin
       'revision', v_revision
     );
   end if;
+
+  p_data := private.normalize_job_edit_archive_candidate(v_current,coalesce(p_data,'{}'::jsonb));
 
   -- An identical submission is not a new business revision. Keep CAS above this guard.
   v_next := v_revision;
