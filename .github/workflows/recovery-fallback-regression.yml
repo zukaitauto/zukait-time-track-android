@@ -70,3 +70,21 @@ jobs:
             end;
           end $$;
           SQL
+      - name: Verify transactional rollback and permissions
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create role recovery_test_client;
+          revoke all on schema private from public;
+          revoke all on function private.recover_workshop_revision(bigint) from public;
+          create temp table original_recovery as select pg_get_functiondef('private.recover_workshop_revision(bigint)'::regprocedure) as definition;
+          begin;
+          create or replace function private.recover_workshop_revision(p_revision bigint) returns jsonb language sql stable set search_path to '' as $$select null::jsonb$$;
+          rollback;
+          do $$
+          begin
+            if (select definition from original_recovery) is distinct from pg_get_functiondef('private.recover_workshop_revision(bigint)'::regprocedure) then raise exception 'rollback definition mismatch'; end if;
+            if has_function_privilege('recovery_test_client','private.recover_workshop_revision(bigint)','EXECUTE') then raise exception 'unexpected execute privilege'; end if;
+            if has_schema_privilege('recovery_test_client','private','USAGE') then raise exception 'unexpected schema privilege'; end if;
+            if private.recover_workshop_revision(10)->>'marker' is distinct from '10' then raise exception 'recovery failed after rollback'; end if;
+          end $$;
+          SQL
