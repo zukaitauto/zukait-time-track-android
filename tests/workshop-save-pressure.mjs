@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {sharedWorkshopSections} from '../supabase/functions/workshop-api/extensions/shared_workshop_sections.js';
+import {jobEditSaveMode,jobEditWireState,COMPACT_JOB_EDIT_MODE} from '../supabase/functions/workshop-api/extensions/job_edit_archive_wire.js';
+import {reconcileCompactJobEditAudit} from '../supabase/functions/workshop-api/extensions/compact_job_edit_audit.js';
 const file=process.env.WORKSHOP_RELIABILITY_SOURCE||'supabase/functions/workshop-api/index.ts';
 const source=fs.readFileSync(file,'utf8').replaceAll('\r\n','\n');
 const marker='// FINAL_SESSION_STATUS_BEGIN';
@@ -14,12 +16,12 @@ const {stripTypeScriptTypes}=await import('node:module');
 const stripBody=body=>{const text=stripTypeScriptTypes('async function fixture(){\n'+body+'\n}',{mode:'strip'});return text.slice(text.indexOf('{')+1,text.lastIndexOf('}'));};
 const code=stripBody(block);
 const preserve=['preservePaintPurchasingHistory','preserveConsumablesHistory','preserveOperationalHistory','reconcileAutoOvertime','preserveClosedSessions','preserveEstimateHistory','preserveLeaveAuthority','preserveManagerTimeAuthority','preserveAuthoritativeReopens','preserveJobTypeAuthority','preserveReceptionPromiseAuthority','preserveJobEditAuthority','preserveQcAuthority','reconcilePaintOrderCosts'];
-const args=['action','body','admin','user','reply','cloneValue','threeWayMerge','baseStateForRevision',...preserve,'validateConsumablesManagerCorrections','validatePaintManagerCorrections','paintOrderRules','computeLiveStatus','same','Date','id001AssignmentConflict','normalizeCompletedSessionStatuses','Deno','sharedWorkshopSections'];
+const args=['action','body','admin','user','reply','cloneValue','threeWayMerge','baseStateForRevision',...preserve,'validateConsumablesManagerCorrections','validatePaintManagerCorrections','paintOrderRules','computeLiveStatus','same','Date','id001AssignmentConflict','normalizeCompletedSessionStatuses','Deno','sharedWorkshopSections','jobEditSaveMode','jobEditWireState','COMPACT_JOB_EDIT_MODE','prefixReader','legacyWire','reconcileCompactJobEditAudit'];
 const run=new (Object.getPrototypeOf(async function(){}).constructor)(...args,code);
 async function scenario(mode,production=false){
  let reads=0,commits=0,at=0;const original={jobs:[{no:'QA1'}],users:[],assign:[],sublets:[],subletAudit:[]};
  const admin={from:table=>{assert.equal(table,'workshop_state');return {select:()=>({eq:()=>({single:async()=>{reads++;return {data:{revision:1,data:structuredClone(original)}}}})})}},rpc:async(name,params)=>{assert.equal(name,production?'zukait_commit_workshop_state_sections':'zukait_commit_workshop_state_v2');if(production){assert.deepEqual(params.p_sections,{});assert.deepEqual(params.p_removed,[]);assert.equal('p_data' in params,false);}assert.equal(params.p_expected_revision,1);commits++;if(mode==='slow')at+=6000;return {data:mode==='success'?{ok:true,revision:2}:{ok:false,code:'conflict'}}}};
- const result=await run('save',{expected_revision:1,data:original},admin,{id:'QA_MANAGER',role:'Manager'},(body,status=200)=>({body,status}),structuredClone,(_base,_current,proposed)=>proposed,async()=>original,...preserve.map(()=>x=>x),()=>null,()=>null,{validateNewOrders:()=>null},()=>[],(a,b)=>JSON.stringify(a)===JSON.stringify(b),{now:()=>at},()=>null,normalizeCompletedSessionStatuses,{env:{get:k=>production&&k==='SUPABASE_URL'?'https://pjknotnjkufadqavcmii.supabase.co':undefined}},sharedWorkshopSections);
+ const result=await run('save',{expected_revision:1,data:original},admin,{id:'QA_MANAGER',role:'Manager'},(body,status=200)=>({body,status}),structuredClone,(_base,_current,proposed)=>proposed,async()=>original,...preserve.map(()=>x=>x),()=>null,()=>null,{validateNewOrders:()=>null},()=>[],(a,b)=>JSON.stringify(a)===JSON.stringify(b),{now:()=>at},()=>null,normalizeCompletedSessionStatuses,{env:{get:k=>production&&k==='SUPABASE_URL'?'https://pjknotnjkufadqavcmii.supabase.co':undefined}},sharedWorkshopSections,jobEditSaveMode,jobEditWireState,COMPACT_JOB_EDIT_MODE,async()=>{throw Error('unexpected archive read')},async data=>data,reconcileCompactJobEditAudit);
  return {result,reads,commits};
 }
 let r=await scenario('conflict');assert.equal(r.commits,3);assert.equal(r.reads,3);assert.equal(r.result.body.code,'conflict_busy');assert.equal(r.result.body.retryable,true);assert.equal(r.result.body.retry_after_ms,3000);
