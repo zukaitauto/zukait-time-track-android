@@ -18,6 +18,7 @@ declare
   v_ids text[];
   v_saved jsonb;
   v_delta jsonb;
+  v_previous_mode text;
 begin
   if p_expected_revision is null then raise exception 'time_expected_revision_required'; end if;
   select revision, data, updated_at, updated_by
@@ -50,12 +51,16 @@ begin
 
   v_next := v_revision + 1;
 
+  -- Limit selective refresh to the trigger fired by this compact timer save.
+  v_previous_mode := current_setting('zukait.selective_timer_write', true);
+  perform set_config('zukait.selective_timer_write', 'on', true);
   update public.workshop_state
      set revision = v_next,
          data = coalesce(p_data, '{}'::jsonb),
          updated_at = now(),
          updated_by = p_changed_by
    where id = 'main' returning data into v_saved;
+  perform set_config('zukait.selective_timer_write', coalesce(v_previous_mode,''), true);
   if v_saved is distinct from p_data then
     v_delta:=private.workshop_time_edit_delta(v_current,v_saved);
   end if;
@@ -118,7 +123,10 @@ begin
       state_revision = excluded.state_revision,
       updated_at = excluded.updated_at,
       updated_by = excluded.updated_by
-    where row(workshop_live_status.employee_name, workshop_live_status.department, workshop_live_status.status, workshop_live_status.job_no, workshop_live_status.assignment_id, workshop_live_status.session_id, workshop_live_status.session_start, workshop_live_status.suggested_minutes, workshop_live_status.vehicle, workshop_live_status.registration, workshop_live_status.overtime)
+    where workshop_live_status.state_revision IS NULL
+       OR workshop_live_status.state_revision < 1
+       OR workshop_live_status.state_revision > excluded.state_revision
+       OR row(workshop_live_status.employee_name, workshop_live_status.department, workshop_live_status.status, workshop_live_status.job_no, workshop_live_status.assignment_id, workshop_live_status.session_id, workshop_live_status.session_start, workshop_live_status.suggested_minutes, workshop_live_status.vehicle, workshop_live_status.registration, workshop_live_status.overtime)
       is distinct from row(excluded.employee_name, excluded.department, excluded.status, excluded.job_no, excluded.assignment_id, excluded.session_id, excluded.session_start, excluded.suggested_minutes, excluded.vehicle, excluded.registration, excluded.overtime);
   end loop;
 

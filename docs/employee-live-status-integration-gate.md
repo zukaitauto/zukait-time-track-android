@@ -58,3 +58,11 @@ Status: candidate only. CI now runs the actual candidate SQL function in a dispo
 - Rollback requires restoring both the old SQL writer and the prior QA API deployment/feature flag. Restoring SQL alone while the API still accepts older per-row revisions is not a coordinated rollback.
 - Before switching, record API function version and deployed source, database revision, row count, and row write counters. After switching, run a single controlled test user first, then multi-user concurrency.
 - Do not claim the backup is verified or QA acceptance passed until independently demonstrated. No deployment was performed during this readiness review.
+
+## QA RPC parity and trigger benchmark, 26 November
+
+Installed the three missing service-role employee timer RPCs on QA from the production definitions. Verified actor rejection, invalid section rejection, stale revision rejection and grants. The running QA API still uses the original path. The candidate permits compact timer routing on the QA project only with an explicit QA opt-in.
+
+Both databases have an enabled workshop-state trigger that refreshes every employee on a revision change. The previous single-writer benchmark omitted this trigger. Pair the candidate writer with candidate-refresh-live-status.sql. The writer scopes a transaction-local setting to its state update. The trigger still computes the authoritative projection, but skips rewriting unchanged valid rows during that update. Ordinary state changes retain strict refresh semantics.
+
+The synthetic trigger benchmark ran on QA PostgreSQL in temporary tables with rollback. One employee starting among 18 produced 18 live row writes under the original writer and one with both candidate functions. The test also checks future revision repair and restoration of ordinary refresh behavior. It uses archive stubs and does not measure authenticated latency or memory. The shared QA writer and trigger have not been replaced. Before activation, verify a recoverable QA snapshot, save both installed function definitions and QA API configuration, then run the authenticated and Android acceptance cases above. Rollback must cover the refresh function as well as the writer and API.

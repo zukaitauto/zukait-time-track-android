@@ -42,3 +42,7 @@ jobs:
         env:
           PGPASSWORD: qa_only
         run: psql -X -v ON_ERROR_STOP=1 -h localhost -U postgres -d timer_regression -f tests/sql/candidate-timer-integration.sql
+      - name: Compare compact timer writes with the state trigger enabled
+        env:
+          PGPASSWORD: qa_only
+        run: psql -X -v ON_ERROR_STOP=1 -h localhost -U postgres -d timer_regression -f tests/sql/timer-trigger-writes.sql

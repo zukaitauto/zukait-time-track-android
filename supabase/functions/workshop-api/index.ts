@@ -1749,7 +1749,11 @@ Deno.serve(async (req: Request) => {
         }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
-        const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+        const projectUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+        const compactTimerProject = projectUrl === "https://pjknotnjkufadqavcmii.supabase.co" ||
+          (projectUrl === "https://omqgkqknbdcnotabffek.supabase.co" &&
+           Deno.env.get("ZUKAIT_QA_COMPACT_EMPLOYEE_TIME_ENABLED") === "true");
+        const useCompactTime = compactTimerProject &&
           Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
           ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
         const sections = useCompactTime ? employeeTimeSections(current.data, result.data) : null;
