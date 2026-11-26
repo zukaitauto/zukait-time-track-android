@@ -42,4 +42,8 @@ const future=await scenario(true,rows=>{rows[2].state_revision=12});
 assert.deepEqual(future.writes,[['E3']],'future employee revision must be repaired');
 const invalid=await scenario(true,rows=>{rows[0].state_revision=0});
 assert.deepEqual(invalid.writes,[['E1']],'invalid employee revision must be repaired');
+const missing=await scenario(true,rows=>{rows.splice(1,1)});
+assert.deepEqual(missing.writes,[['E2']],'missing employee row must be restored without rewriting other employees');
+const staleBusiness=await scenario(true,rows=>{rows[0].registration='WRONG-PLATE'});
+assert.deepEqual(staleBusiness.writes,[['E1']],'older revision cannot hide changed employee business fields');
 console.log('PASS: actual API loader preserves valid older row revisions only when opt-in; strict default, corruption, future and invalid revision repairs verified.');
