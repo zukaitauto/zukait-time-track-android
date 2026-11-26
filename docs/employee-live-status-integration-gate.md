@@ -37,3 +37,9 @@ Status: candidate only. CI now runs the actual candidate SQL function in a dispo
 4. Test Employee Start/Pause/Resume/Finish and duplicate action IDs; Manager/Supervisor views; ID001; two simultaneous employees; reconnect; forced conflict/retry; historical audit and undo.
 5. Compare workshop revision, per-employee status and number of live-status row writes before and after. Confirm unchanged rows keep their revision and changed rows advance.
 6. Disable candidate endpoint and revert QA SQL as a unit if any mismatch; do not merge or deploy to production until these checks pass.
+
+## QA function drift found — 2026-11-26
+- Read-only `pg_get_functiondef` comparison found candidate timer SQL missing `private.normalize_job_edit_archive_candidate(v_current,coalesce(p_data,'{}'::jsonb))`, which is present in the installed QA function.
+- Restored that normalization call before the unchanged-submission guard in the candidate function. Updated disposable PostgreSQL integration harness with the dependency stub.
+- This is a candidate compatibility fix only; no QA or production SQL was replaced.
+- The latest CI run must pass again after this correction, and the complete QA function body must be reconciled before deployment.
