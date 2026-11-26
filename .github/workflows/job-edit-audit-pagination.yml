@@ -5,6 +5,8 @@ on:
     paths:
       - 'app/src/main/assets/job_card_edit.js'
       - 'tests/job-edit-audit-pagination-client.mjs'
+      - 'tests/compact-job-edit-audit-compatibility.mjs'
+      - 'supabase/functions/workshop-api/extensions/compact_job_edit_audit.js'
       - 'scripts/sql/job-edit-*.sql'
       - 'supabase/functions/workshop-api/index.ts'
       - '.github/workflows/job-edit-audit-pagination.yml'
@@ -24,3 +26,4 @@ jobs:
       - run: node --check app/src/main/assets/job_card_edit.js
       - run: node tests/job-edit-audit-pagination-client.mjs
       - run: node tests/reception-job-edit.mjs
+      - run: node tests/compact-job-edit-audit-compatibility.mjs
