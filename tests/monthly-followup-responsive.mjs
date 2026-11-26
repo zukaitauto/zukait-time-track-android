@@ -39,6 +39,26 @@ try {
   fs.mkdirSync('artifacts/monthly-followup',{recursive:true});
   await page.evaluate(()=>window.closeModal());
   await page.screenshot({path:'artifacts/monthly-followup/manager-'+width+'.png',fullPage:true});
+  await page.evaluate(()=>{
+   document.getElementById('managerView').id='supervisorView';
+   window.me.role='Supervisor';
+  });
+  await page.addScriptTag({path:'app/src/main/assets/supervisor_stable.js'});
+  for(const phase of ['redraw','refresh']){
+   await page.evaluate(phase=>{
+    if(phase==='redraw')document.getElementById('supervisorView').innerHTML=window.v251VehicleKpiHTML();
+    else window.v251CashPulse.install();
+   },phase);
+   const cards=page.locator('#supervisorCashPulseSlot .v251-cash-circle');
+   assert.equal(await cards.count(),3);
+   const geometry=await cards.evaluateAll(elements=>elements.map(el=>({
+    radius:getComputedStyle(el).borderRadius, width:el.clientWidth, scroll:el.scrollWidth
+   })));
+   for(const box of geometry){
+    assert.equal(box.radius,'12px','Supervisor '+phase+' at '+width);
+    assert.ok(box.scroll<=box.width+1,'Supervisor card overflow at '+width);
+   }
+  }
   await page.close();
  }
 }finally{await browser.close();}

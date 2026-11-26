@@ -34,7 +34,13 @@ function countOver(){let n=0;(S().assign||[]).forEach(a=>{if(!a||a.completed||a.
 function v251MonthBounds(){const d=new Date();return{from:+new Date(d.getFullYear(),d.getMonth(),1),to:+new Date(d.getFullYear(),d.getMonth()+1,1)}}
 function v251VehicleKpi(){const {from,to}=v251MonthBounds(),all=jobs().filter(j=>j&&j.no!=='ID001'&&!j.deleted&&!j.archived&&String(j.jobType||'').toUpperCase()==='CASH'),incoming=all.filter(j=>Number(j.createdAt||0)>=from&&Number(j.createdAt||0)<to),outgoing=all.filter(j=>j.delivered&&Number(j.deliveredAt||0)>=from&&Number(j.deliveredAt||0)<to),money=(j,out)=>{const n=Number(out?(j.finalInvoiceAmount??j.amount):(j.amount));return Number.isFinite(n)?n:0};return{incoming,outgoing,inTotal:incoming.reduce((n,j)=>n+money(j,false),0),outTotal:outgoing.reduce((n,j)=>n+money(j,true),0)}}
 // Cash summaries have one shared renderer for both dashboard roles.
-function v251KpiHTML(){const id=role()==='Manager'?'managerCashPulseSlot':'supervisorCashPulseSlot';return '<div id="'+id+'" class="cash-pulse-slot">'+(window.v251CashPulse?.html?.()||'')+'</div>'}
+function v251KpiHTML(){
+ const manager=role()==='Manager';
+ const id=manager?'managerCashPulseSlot':'supervisorCashPulseSlot';
+ const cards=window.v251CashPulse?.html?.()||'';
+ const content=manager?cards:'<div class="v251-followup-layout">'+cards+'</div>';
+ return '<div id="'+id+'" class="cash-pulse-slot">'+content+'</div>';
+}
 window.v251VehicleKpiHTML=v251KpiHTML;
 window.v251OpenVehicleKpi=function(type){return window.v251OpenCashPulse?.(type)};
 function v251RefreshManagerKpi(){window.v251CashPulse?.install?.()}
