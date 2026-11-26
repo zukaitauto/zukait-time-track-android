@@ -1,4 +1,5 @@
 import { sharedWorkshopSections } from "./extensions/shared_workshop_sections.js";
+import { reconcileCompactJobEditAudit } from "./extensions/compact_job_edit_audit.js";
 import { employeeTimeSections } from "./extensions/employee_time_sections.js";
 import { saveWorkshopJobNotes } from "./workshop_job_notes_editor.mjs";
 import { invoicePriceReconcileApi } from "./extensions/invoice_price_reconcile_api.js";
@@ -2375,6 +2376,25 @@ Deno.serve(async (req: Request) => {
             return reply({ ok: false, code: "conflict", revision: current.revision, data: current.data }, 409);
           }
           candidate = threeWayMerge(baseData, current.data, originalProposed);
+        }
+
+        // This path stays inactive until the server-owned compact marker is installed.
+        // Recover the exact old base before merging any legacy audit additions.
+        if (current.data?.jobEditArchive) {
+          const auditBase = currentRevision === originalExpected ? current.data : baseData;
+          let expandedCurrent: any = undefined;
+          if (!auditBase?.jobEditArchive) {
+            const {data:expanded,error:expandError}=await admin.rpc("zukait_job_edit_legacy_current",{p_expected_revision:currentRevision});
+            if(expandError) return reply({ok:false,code:"audit_history_unavailable"},503);
+            if(expanded?.code==="audit_revision_changed") continue;
+            if(!expanded?.ok || expanded.revision!==currentRevision) return reply({ok:false,code:"audit_history_unavailable"},503);
+            expandedCurrent=expanded.jobEdits;
+          }
+          const audit=reconcileCompactJobEditAudit({base:auditBase,current:current.data,proposed:originalProposed,expandedCurrent});
+          if(!audit.ok) return reply({ok:false,code:audit.code,revision:currentRevision},409);
+          if(!audit.active) return reply({ok:false,code:"audit_history_unavailable"},503);
+          candidate.jobEditArchive=audit.marker;
+          candidate.jobEdits=audit.jobEdits;
         }
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
