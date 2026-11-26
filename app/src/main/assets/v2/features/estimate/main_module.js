@@ -106,6 +106,7 @@ function audit(e,action,beforeTotal=null){
 }
 function saveState(){if(typeof save==='function')save()}
 function ensureStyle(){
+  if(typeof document==='undefined'||!document)return;
   if(document.getElementById('zukaitEstimateStyle'))return;
   const s=document.createElement('style');s.id='zukaitEstimateStyle';s.textContent=`
   .est-mechanical-editor{max-width:none!important;width:100%!important;box-sizing:border-box}
@@ -822,7 +823,7 @@ async function shareEstimate(id){
   try{await navigator.clipboard.writeText(text);alert('Estimate summary copied for sharing.')}catch(_){alert('Share is unavailable on this device.')}
 }
 function ensureDashboardCards(){
-  if(!canUse())return;ensureStyle();
+  if(typeof document==='undefined'||!document||!canUse())return;ensureStyle();
   const r=role();
   if(r==='Supervisor'){
     const root=document.getElementById('supervisorView');if(!root||root.classList.contains('hidden'))return;
@@ -847,10 +848,12 @@ function wrapRender(name){
   const w=function(){const r=fn.apply(this,arguments);setTimeout(ensureDashboardCards,0);setTimeout(ensureDashboardCards,250);return r};w.__estimateWrapped=true;window[name]=w;
 }
 try{if(typeof state!=='undefined')for(const e of state.estimates||[])rememberEstimate(e)}catch(error){console.warn('Existing device estimates could not be retained',error)}
-function boot(){ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
+function boot(){if(typeof document==='undefined'||!document)return;ensureState();ensureStyle();wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}
 window.zukaitEstimate={normalizeDescription:normalizeEstimateDescriptionInput,openHome,suggestParts:showEstimatePartHints,partHintKeydown:estimatePartHintKeydown,hidePartHints:hideEstimatePartHints,selectPartSuggestion:selectEstimatePartHint,openDrafts,deleteDraft,refreshLists,newEstimate,newFromReception,openReceptionEstimates,openEditor,createMechanicalJob,setPaymentType,setType,setVat,addRow,removeRow,recalc,autoSave,saveCurrent,loadJob,openFind,renderFind,openRecent,openReports,preview,printEstimate,pdfEstimate,whatsApp,shareEstimate,ensureDashboardCards,totals,printable,estimatePdfFilename,estimateDocumentHtml,shareText,currentOutputEstimate,toggleCustomerParts};
 window.openEstimateModule=openHome;
 document.addEventListener('DOMContentLoaded',boot);setTimeout(boot,0);setTimeout(boot,700);
-new MutationObserver(()=>{wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()}).observe(document.documentElement,{childList:true,subtree:true});
+const estimateObserver=new MutationObserver(()=>{if(typeof document==='undefined'||!document){estimateObserver.disconnect();return;}wrapRender('renderSupervisor');wrapRender('renderManager');ensureDashboardCards()});
+estimateObserver.observe(document.documentElement,{childList:true,subtree:true});
+window.addEventListener?.('pagehide',event=>{if(!event.persisted)estimateObserver.disconnect();});
 })();
 

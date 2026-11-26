@@ -1,0 +1,20 @@
+{
+  "project": "pjknotnjkufadqavcmii",
+  "backendVersion": 155,
+  "previousBackendVersion": 154,
+  "sourceCommit": "641a954b81fb578e40429c57a7ab18c4de793520",
+  "databaseMigrationApplied": true,
+  "migration": "accountant_stock_legacy_preview_v423",
+  "verified": true,
+  "verification": {
+    "deployedStockSourceMatches": true,
+    "stockInstallationReady": true,
+    "stockRpcServiceOnly": true,
+    "isolatedStockRoleGateRun": 45616828555,
+    "isolatedFullRegressionRun": 45616828583,
+    "productionAuthenticatedAcceptance": "NOT_RUN"
+  },
+  "apkUnchanged": true,
+  "productionBusinessRecordsModified": false,
+  "purchaseInvoiceActivation": "NOT_VERIFIED"
+}

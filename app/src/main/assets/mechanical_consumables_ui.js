@@ -36,7 +36,10 @@ function master(){
  }
  return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
 }
-const consDepartmentMenuStyle="<style>.cons-department-menu{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0}.cons-department-menu button.cons-action,.cons-department-menu button.mc-cons-tile{position:relative;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;min-width:0;min-height:106px!important;padding:13px!important;border:1px solid #b5c9df!important;border-bottom:4px solid #b5c9df!important;border-radius:16px!important;background:#eaf2fb!important;color:#173653!important;text-align:left;box-shadow:0 4px 12px #17365312}.cons-department-menu button.actual{background:#e6f5ed!important;border-color:#add6bd!important;color:#18563b!important}.cons-department-menu button.additional{background:#fff1d9!important;border-color:#e5c582!important;color:#70460e!important}.cons-department-menu button.search{background:#f1eafa!important;border-color:#cdb8e5!important;color:#53347c!important}.cons-department-menu button.manager{background:#e8f5f6!important;border-color:#afd5d8!important;color:#20555e!important}.cons-department-menu b{font-size:16px!important;font-weight:800;line-height:1.28;color:inherit!important;overflow-wrap:anywhere}.cons-department-menu .cons-menu-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#ffffffaa;font-size:19px;color:inherit}.cons-department-menu button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}@media(max-width:360px){.cons-department-menu{gap:8px}.cons-department-menu button{padding:10px!important}.cons-department-menu b{font-size:14px!important}}</style>";
+const consDepartmentMenuStyle="<style>.cons-department-menu{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0}.cons-department-menu button.cons-action,.cons-department-menu button.mc-cons-tile,.cons-department-menu button.cons-dept{box-sizing:border-box;position:relative;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;min-width:0;min-height:100px!important;padding:13px 16px!important;margin:0!important;border:1px solid #e5dfe6!important;border-top:4px solid #db2777!important;border-radius:18px!important;background:linear-gradient(145deg,#fff,#fdf5f9)!important;color:#172033!important;text-align:left;box-shadow:0 4px 12px #17365312;white-space:normal!important}.cons-department-menu button b{font-size:16px!important;font-weight:800;line-height:1.28;color:#172033!important;overflow-wrap:break-word;min-width:0}.cons-department-menu .cons-menu-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#fce7f3;color:#be185d;margin:0!important;flex:0 0 auto}.cons-menu-icon svg{display:block;width:21px;height:21px}.cons-department-menu .cons-menu-arrow{position:absolute;top:18px;right:16px;width:15px;height:15px;color:#b76c90;font-size:18px;line-height:15px;margin:0!important}.cons-department-menu button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}.cons-department-menu button:disabled{opacity:.65;cursor:not-allowed}.cons-department-menu button small{margin:0!important;color:#64748b!important;font-size:12px;line-height:1.35}@media(max-width:600px){.cons-department-menu{grid-template-columns:1fr!important;gap:9px}.cons-department-menu button.cons-action,.cons-department-menu button.mc-cons-tile,.cons-department-menu button.cons-dept{min-height:76px!important;padding:10px 36px 10px 12px!important;display:grid!important;grid-template-columns:36px minmax(0,1fr);align-content:center;column-gap:11px;row-gap:4px}.cons-department-menu .cons-menu-icon{grid-row:1/3;align-self:center}.cons-department-menu button b,.cons-department-menu button small{grid-column:2}.cons-department-menu .cons-menu-arrow{top:50%;transform:translateY(-50%);right:12px}}</style>";
+const consMenuGlyphs={"pending":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>","issued":"<path d=\"m3 7 9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10\"/>","actual":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m8 12 3 3 5-6\"/>","additional":"<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"3\"/><path d=\"M12 8v8M8 12h8\"/>","search":"<circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"m16 16 4 4\"/>","total":"<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 8h8M8 12h8M8 16h8\"/>","reports":"<path d=\"M4 4v16h16M8 16v-5M12 16V7M16 16v-8\"/>","history":"<path d=\"M3 12a9 9 0 1 1 2.7 6.4M3 5v7h7M12 7v5l3 2\"/>","returns":"<path d=\"M9 7 4 12l5 5M4 12h10a5 5 0 0 1 5 5\"/>","painting":"<path d=\"M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H13a1.5 1.5 0 0 1 0-3h4a4 4 0 0 0 4-4c0-4-4-7-9-7z\"/><circle cx=\"7\" cy=\"10\" r=\".8\"/><circle cx=\"10\" cy=\"6.5\" r=\".8\"/><circle cx=\"15\" cy=\"7\" r=\".8\"/>","paint":"<path d=\"M15 3 21 9 11 19l-6-6zM5 13l-2 8 8-2\"/>","denting":"<path d=\"M14 4l6 6-3 3-3-3-8 10-3-3 9-9-2-2z\"/>","mechanical":"<path d=\"M14 6a5 5 0 0 0-6 6l-5 5 4 4 5-5a5 5 0 0 0 6-6l-3 3-4-4z\"/>","stock":"<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 9h18M3 15h18M12 9v11\"/>"};
+function consMenuIcon(key){return '<span class="cons-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+(consMenuGlyphs[key]||consMenuGlyphs.search)+'</svg></span>'}
+const consMenuArrow='<span class="cons-menu-arrow" aria-hidden="true">›</span>';
 const style='<style>'+
  '.mc-cons{max-width:1100px;margin:auto;color:#1e3046;font-family:inherit}'+
  '.mc-cons .mc-cons-toolbar{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px}'+
@@ -69,9 +72,9 @@ function menu(){
  const tileColor={issued:'issued',additional:'additional',returns:'actual',search:'search',totals:'search',master:'manager',materialHistory:'manager'};
  const entries=Object.entries(sections).filter(([key,s])=>key!=='master'&&(!s.managerOnly||canManage())).map(([key,s])=>
   '<button type="button" class="mc-cons-tile '+tileColor[key]+'" onclick="openMechanicalConsumablesSection(\''+key+'\')">'+
-  '<span class="cons-menu-icon" aria-hidden="true">'+({issued:'📦',additional:'＋',returns:'↩',search:'⌕',totals:'▤',materialHistory:'◷'}[key]||'◇')+'</span><b>'+escapeHtml(s.title)+'</b></button>').join('');
+  consMenuIcon(({totals:'total',materialHistory:'history'})[key]||key)+'<b>'+escapeHtml(s.title)+'</b>'+consMenuArrow+'</button>').join('');
  open('',consDepartmentMenuStyle+'<div class="mc-cons-list cons-department-menu">'+entries+'</div>'+
-  (canIssue()?'':'<p class="mc-cons-alert">Mechanical issuing is not active on this server.</p>'));
+  issueNotice()+(canIssue()?'':'<p class="mc-cons-alert">Mechanical issuing is not active on this server.</p>'));
 }
 function catalog(){
  return '<label for="mcConsFilter">Search material or brand</label>'+
@@ -128,6 +131,22 @@ const canIssue=()=>{
    window.ZUKAIT_MECHANICAL_STOCK_ENABLED===true&&
    typeof window.zukaitCloud?.stockRequest==='function';
 };
+
+const issueOwner=()=>{const u=typeof me!=='undefined'&&me?me:window.me;return u?.id&&['Manager','Mechanical Supervisor'].includes(u.role)?String(u.id)+'|'+u.role:''};
+const issueKey=owner=>'zukait_mechanical_stock_pending_v1:'+encodeURIComponent(owner);
+function readIssue(owner){
+ if(!owner)throw Error('Staff identity unavailable');
+ const raw=window.localStorage.getItem(issueKey(owner));if(!raw)return null;
+ const entry=JSON.parse(raw);
+ if(entry.owner!==owner||!entry.requestId||!entry.data||entry.fingerprint!==JSON.stringify(entry.data))throw Error('Saved issue receipt needs review');
+ return entry;
+}
+function issueNotice(){
+ if(!canIssue()||!issueOwner())return '';
+ try{const entry=readIssue(issueOwner());return entry?'<div class="mc-cons-alert" role="alert">Unconfirmed material issue: '+escapeHtml(entry.data.jobCard)+'. Retry the original issue before creating another. <button type="button" onclick="mechanicalConsumablesRetryIssue()"'+(sending?' disabled':'')+'>Retry original issue</button></div>':'';}
+ catch(_){return '<div class="mc-cons-alert">Saved issue storage unavailable. Material issuing is blocked.</div>';}
+}
+
 function addIssueLine(){
  if(!canView())return;
  if(pendingIssue||sending)return;
@@ -139,7 +158,7 @@ function addIssueLine(){
  const warn=document.getElementById('mcConsWarning');
  const fail=msg=>{if(warn)warn.textContent=msg};
  if(!row||!b)return fail('Choose a material and its brand.');
- if(!raw||!Number.isFinite(n)||n<=0||!Number.isInteger(n*10000))
+ if(!/^(?:\d+(?:\.\d{1,4})?|\.\d{1,4})$/.test(raw)||!Number.isFinite(n)||n<=0||n>Number.MAX_SAFE_INTEGER/10000)
    return fail('Enter a valid quantity, up to four decimal places.');
  if(row.unit==='Piece'&&!Number.isInteger(n))return fail('Pieces must be whole numbers.');
  if(draftLines.length>=20)return fail('Maximum 20 lines per issue.');
@@ -160,8 +179,9 @@ function renderDraft(){
    draftLines.map((x,i)=>'<div class="mc-cons-toolbar" style="padding:8px 0;border-bottom:1px solid #dce6f1">'+
    '<span><b>'+escapeHtml(x.material)+'</b> — '+escapeHtml(x.brand)+' · '+escapeHtml(x.quantity)+' '+escapeHtml(x.unit)+'</span>'+
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesRemoveLine('+i+')">Remove</button></div>').join('');
+ const retry=document.getElementById('mcConsRetry');if(retry)retry.innerHTML=issueNotice();
  const submit=document.getElementById('mcConsSubmit');
- if(submit)submit.disabled=!canIssue()||draftLines.length===0||sending;
+ if(submit)submit.disabled=!canIssue()||draftLines.length===0||sending||!!pendingIssue;
 }
 
 async function loadBalance(){
@@ -183,40 +203,54 @@ async function loadBalance(){
    if(generation===balanceRead&&out)out.textContent='Stock unavailable. No issue has been made.';
  }
 }
+async function sendIssue(data,retry=false){
+ if(!canIssue()||sending)return;
+ const owner=issueOwner(),session=String(window.zukaitAuth?.getToken?.()||'');
+ const current=()=>owner===issueOwner()&&session===String(window.zukaitAuth?.getToken?.()||'');
+ const warn=document.getElementById('mcConsWarning');
+ const message=msg=>{if(current()&&warn&&document.getElementById('mcConsWarning')===warn)warn.textContent=msg;else if(current())window.alert?.(msg)};
+ if(typeof navigator!=='undefined'&&navigator.onLine===false){message('Offline. No new request sent.');return}
+ let entry,wasPending=false;
+ try{
+  entry=readIssue(owner);wasPending=!!entry;
+  const fingerprint=JSON.stringify(data);
+  if(entry&&entry.fingerprint!==fingerprint)throw Error('Earlier issue is unconfirmed. Retry the original issue first');
+  if(!entry){
+    if(retry)throw Error('No saved issue to retry');
+    entry={owner,data,fingerprint,requestId:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'mechanical-'+Date.now()+'-'+Math.random().toString(36).slice(2)};
+    window.localStorage.setItem(issueKey(owner),JSON.stringify(entry));
+    if(readIssue(owner)?.requestId!==entry.requestId)throw Error('Cannot preserve issue receipt');
+  }
+ }catch(e){message(String(e.message||e)+'. No new issue sent.');return}
+ pendingIssue=entry;sending=true;renderDraft();
+ try{
+   if(!current())throw Error('Staff session changed');
+   const r=await window.zukaitCloud.stockRequest({operation:'WRITE',command:'MECHANICAL_ISSUE',requestId:entry.requestId,data:entry.data});
+   if(!r?.ok||r.receipt?.final!==true||String(r.receipt.jobCard)!==entry.data.jobCard||Number(r.receipt.lineCount)!==entry.data.lines.length){
+     const definitive=['mechanical_stock_forbidden','mechanical_stock_not_enabled','stock_write_not_enabled','mechanical_job_not_found','invalid_mechanical_job','invalid_issue_lines','invalid_issue_line','invalid_issue_kind','duplicate_material_brand','piece_whole_required','insufficient_stock','opening_stock_required','stock_master_key_not_found','stock_unit_conflict'];
+     if(!wasPending&&definitive.includes(r?.code)){window.localStorage.removeItem(issueKey(owner));pendingIssue=null;}
+     throw Error(r?.code||'No confirmed issue receipt');
+   }
+   if(readIssue(owner)?.requestId===entry.requestId)window.localStorage.removeItem(issueKey(owner));
+   if(!current())return;
+   draftLines.length=0;pendingIssue=null;
+   message('ISSUED — '+entry.data.jobCard+' · '+Number(r.receipt.totalCost||0).toFixed(3)+' OMR. Final.');
+   if(!warn)menu();else loadBalance();
+ }catch(e){message('Issue not confirmed: '+String(e?.message||e)+'. Retry uses the original receipt.');}
+ finally{sending=false;if(current())renderDraft()}
+}
 async function submitIssue(){
  if(!canIssue()||sending||!draftLines.length)return;
  const jc=String(document.getElementById('mcConsJc')?.value||'').trim().toUpperCase();
  const warn=document.getElementById('mcConsWarning');
  if(!/^[A-Z0-9_. -]{1,36}$/.test(jc)){if(warn)warn.textContent='Enter a valid Mechanical Job Card number.';return}
- if(typeof navigator!=='undefined'&&navigator.onLine===false){
-   if(warn)warn.textContent='Offline. Nothing was issued.';return;
- }
- const data={jobCard:jc,kind:currentIssueKind,
-    lines:draftLines.map(x=>({materialId:x.materialId,brandId:x.brandId,quantity:x.quantity}))};
- const fingerprint=JSON.stringify(data);
- if(pendingIssue&&pendingIssue.fingerprint!==fingerprint){
-   if(warn)warn.textContent='Issue details changed after an uncertain save. Reopen the screen and review the Job Card before retrying.';return;
- }
- if(!pendingIssue){
-   const id=(typeof crypto!=='undefined'&&crypto.randomUUID)?
-     crypto.randomUUID():'mechanical-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-   pendingIssue={requestId:id,fingerprint};
- }
- sending=true;renderDraft();
- try{
-   const r=await window.zukaitCloud.stockRequest({
-     operation:'WRITE',command:'MECHANICAL_ISSUE',
-     requestId:pendingIssue.requestId,data
-   });
-   if(!r?.ok||r.receipt?.final!==true||String(r.receipt.jobCard)!==jc
-      ||Number(r.receipt.lineCount)!==draftLines.length)throw Error(r?.code||'No confirmed issue receipt');
-   draftLines.length=0;pendingIssue=null;
-   if(warn)warn.textContent='ISSUED — '+jc+' · '+Number(r.receipt.totalCost||0).toFixed(3)+' OMR. Final.';
-   loadBalance();
- }catch(e){
-   if(warn)warn.textContent='Issue not confirmed: '+String(e?.message||e)+'. Retry uses the same request ID.';
- }finally{sending=false;renderDraft()}
+ return sendIssue({jobCard:jc,kind:currentIssueKind,lines:draftLines.map(x=>({materialId:x.materialId,brandId:x.brandId,quantity:x.quantity}))});
 }
+window.mechanicalConsumablesRetryIssue=async()=>{
+ if(!canIssue()||sending)return;
+ try{const entry=readIssue(issueOwner());if(!entry)return;if(typeof window.confirm==='function'&&!window.confirm('Retry original material issue for '+entry.data.jobCard+'?'))return;return await sendIssue(entry.data,true);}
+ catch(e){window.alert?.(String(e.message||e))}
+};
 function issueForm(){
  // Local draft only; stock and JC costs are not changed until a server transaction is available.
  const rows=master(),first=rows[0],unique=[...new Map(rows.map(x=>[String(x.id),x])).values()];
@@ -233,7 +267,7 @@ function issueForm(){
    '<input id="mcConsQuantity" inputmode="decimal" type="number" min="0.0001" step="any" placeholder="Enter quantity">'+
    '<p id="mcConsUnit" class="mc-cons-muted">Unit: '+escapeHtml(first?.unit||'—')+'</p>'+
    '<button class="mc-cons-secondary" type="button" onclick="mechanicalConsumablesAddLine()">+ Add Material</button>'+
-   '<p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
+   '<div id="mcConsRetry"></div><p id="mcConsWarning" role="status" class="mc-cons-muted"></p>'+
    '<div id="mcConsDraft"></div>'+
    '<p id="mcConsAvailable" class="mc-cons-muted">'+(canIssue()?'Checking available stock…':'Available stock will show when issuing is enabled.')+'</p>'+ 
    '<button id="mcConsSubmit" type="button" '+(canIssue()?'onclick="mechanicalConsumablesSubmitIssue()"':'title="Secure stock issuing is not enabled yet"')+' disabled style="display:block;width:100%;background:#64748b;color:white;padding:12px;margin-top:12px">ISSUE MATERIALS'+(canIssue()?'':' (not enabled)')+'</button>'+ 
@@ -278,7 +312,9 @@ async function section(id){
      '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">Browse Material Master</button>');
    return;
  }
- draftLines.length=0;pendingIssue=null;sending=false;currentIssueKind=id;
+ if(sending)return;
+ draftLines.length=0;pendingIssue=null;currentIssueKind=id;
+ if(canIssue()){try{pendingIssue=readIssue(issueOwner())}catch(_){pendingIssue={blocked:true}}}
  open(s.title,back+issueForm()+
    (canIssue()?'':'<div class="mc-cons-alert">Preview only: no materials have been issued or deducted from stock.</div>'));
  renderDraft();loadBalance();

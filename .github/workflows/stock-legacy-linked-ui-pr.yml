@@ -24,6 +24,9 @@ on:
       - 'supabase/staged/CONSUMABLES_INVOICE_PRICE_RECONCILIATION.sql'
       - 'tests/consumables-master-mobile-responsive.mjs'
       - 'tests/consumables-stock-legacy-linked-ui.mjs'
+      - 'tests/consumables-stock-retry-safety.mjs'
+      - 'tests/reception-v305-acceptance.mjs'
+      - 'tests/mechanical-estimate-create-jc.mjs'
       - 'package.json'
       - '.github/workflows/stock-legacy-linked-ui-pr.yml'
   workflow_dispatch:
@@ -49,6 +52,11 @@ jobs:
           node --check tests/consumables-stock-home-responsive.mjs
       - name: Run all isolated Stock regressions
         run: npm run test:consumables:stock
+      - name: Verify V424 audit regression fixes
+        run: |
+          node tests/consumables-stock-retry-safety.mjs
+          node tests/reception-v305-acceptance.mjs
+          node tests/mechanical-estimate-create-jc.mjs
       - name: Verify preview-only application safety
         run: node tests/consumables-main-app-preview.mjs
       - name: Verify original Material Master create, brand and price functionality

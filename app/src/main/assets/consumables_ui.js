@@ -25,34 +25,54 @@ const modal=(title,body,back)=>{
 if(window.addEventListener){window.addEventListener('zukait-live-status',consUpdateSync);window.addEventListener('online',consUpdateSync);window.addEventListener('offline',consUpdateSync)}
 function consCompactListRow(no,primary,details,tail,onclick){return '<button type="button" class="zukait-compact-list-row" onclick="'+onclick+'"><span class="zukait-compact-list-no">'+no+'</span><span class="zukait-compact-list-main"><b>'+primary+'</b><small>'+details+'</small></span>'+(tail?'<span class="zukait-compact-list-tail">'+tail+'</span>':'')+'<strong class="zukait-compact-list-arrow">›</strong></button>'}
 function deptCard(title,icon,enabled,fn){
- return '<button class="cons-dept '+(enabled?'':'disabled')+'" '+(enabled?'onclick="'+fn+'"':'disabled')+'><span>'+icon+'</span><b>'+title+'</b><small>'+(enabled?'Open module':'Coming soon')+'</small></button>';
+ const key=({'Painting Consumables':'painting','PAINT':'paint','Denting Consumables':'denting','Mechanical Consumables':'mechanical','Stock':'stock'})[title];
+ return '<button class="cons-dept '+(enabled?'':'disabled')+'" '+(enabled?'onclick="'+fn+'"':'disabled')+'>'+consMenuIcon(key)+'<b>'+title+'</b>'+(!enabled?'<small>Coming soon</small>':'')+(enabled?consMenuArrow:'')+'</button>';
 }
 window.openConsumablesModule=function(){
  const r=role();if(r!=='Supervisor'&&r!=='Manager')return;
- modal('Consumables','<div class="cons-depts">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',true,'openMechanicalConsumables()')+deptCard('Stock','📦',true,'openStockManagement()')+'</div>');
+ modal('Consumables',consDepartmentMenuStyle+'<div class="cons-depts cons-department-menu">'+deptCard('Painting Consumables','🎨',true,'openPaintingConsumables()')+deptCard('PAINT','🖌️',true,"typeof openPaintModule==='function'?openPaintModule():(typeof openPaintPurchaseOrder==='function'?openPaintPurchaseOrder():openPaintingConsumables())")+deptCard('Denting Consumables','🛠️',false,"openConsumablesPlaceholder('Denting')")+deptCard('Mechanical Consumables','⚙️',true,'openMechanicalConsumables()')+deptCard('Stock','📦',true,'openStockManagement()')+'</div>');
 };
 
 /* Staged Purchase Entry: local draft only. Do not enable stock or price writes
    until a single authenticated invoice transaction and read endpoint exist. */
 let consPurchaseDraft=null,consPurchaseBusy=false,consPurchasePending=null,consPurchaseHistorySeq=0;
 let consPurchaseHistoryRows=[],consPurchaseEditing=null;const consPurchaseCorrectionPending=new Map();
-let consPurchaseOwner='';
-const consPurchaseOwnerId=()=>String(typeof me!=='undefined'?me?.id||'':'');
+let consPurchaseOwner='',consPurchaseRecoveryBlocked=false;
+// Purchase entry can be used by two roles. Never restore a previous role's draft.
+const consPurchaseStaffId=()=>String(typeof me!=='undefined'?me?.id||'':'');
+const consPurchaseActor=()=>{const id=consPurchaseStaffId(),r=role();return id&&['Manager','Supervisor'].includes(r)?JSON.stringify([id,r]):''};
+// Correction/price/reconciliation journals have always been Manager-only.
+const consPurchaseOwnerId=()=>role()==='Manager'?consPurchaseStaffId():'';
 const consPurchaseStorageKey=id=>'zukait-purchase-pending-v1:'+id;
-function consPurchaseRestore(){
- const owner=consPurchaseOwnerId();if(!owner)return false;
+function consPurchaseOtherReceipt(owner){
+ const id=consPurchaseStaffId();if(!id||owner!==consPurchaseActor())throw Error('Staff session changed');
+ // An old ID-only receipt did not record its originating role: do not silently
+ // claim it for either role or discard it. Block new writes until reviewed.
+ if(window.localStorage.getItem(consPurchaseStorageKey(id))!==null)return true;
+ const other=JSON.stringify([id,role()==='Manager'?'Supervisor':'Manager']);
+ return window.localStorage.getItem(consPurchaseStorageKey(other))!==null;
+}
+function consPurchaseRestore(forWrite=true){
+ const owner=consPurchaseActor();if(!owner)return false;
  if(owner!==consPurchaseOwner){
+  consPurchaseRecoveryBlocked=false;
   consPurchaseOwner=owner;consPurchaseDraft=null;consPurchasePending=null;consPurchaseEditing=null;consPurchaseHistoryRows=[];consPurchaseCorrectionPending.clear();consPurchaseHistorySeq++;
   try{const saved=JSON.parse(window.localStorage?.getItem(consPurchaseStorageKey(owner))||'null');
-   if(saved?.owner===owner&&saved?.pending?.id&&saved?.draft){consPurchaseDraft=saved.draft;consPurchasePending=saved.pending;}
-  }catch(_){}
+   if(saved){if(saved.owner!==owner||!saved.pending?.id||!saved.pending?.fingerprint||!saved.draft)throw Error('Invalid saved invoice receipt');consPurchaseDraft=saved.draft;consPurchasePending=saved.pending;}
+  }catch(_){consPurchaseRecoveryBlocked=true;}
+ }
+ if(forWrite){
+  if(consPurchaseRecoveryBlocked){alert('Saved invoice receipt requires review. New purchase invoices are blocked on this device until recovery is possible.');return false;}
+  try{if(consPurchaseOtherReceipt(owner)){alert('An unconfirmed invoice belongs to another role or an older app version. Restore the original role or ask Manager to reconcile the saved receipt. New purchase invoices are blocked; history is still available.');return false;}}
+  catch(_){alert('Invoice receipt storage is unavailable. New purchase invoices are blocked.');return false;}
  }
  return true;
 }
 function consPurchasePersist(){
- if(!consPurchaseOwner||consPurchaseOwner!==consPurchaseOwnerId())throw Error('Staff session changed.');
+ if(!consPurchaseOwner||consPurchaseOwner!==consPurchaseActor())throw Error('Staff session changed.');
  if(!consPurchasePending||!consPurchaseDraft)return;
  // Fail closed if storage is unavailable; do not send a transaction whose retry ID would be lost.
+ if(consPurchaseOtherReceipt(consPurchaseOwner))throw Error('Another role has an unconfirmed invoice');
  window.localStorage.setItem(consPurchaseStorageKey(consPurchaseOwner),JSON.stringify({owner:consPurchaseOwner,pending:consPurchasePending,draft:consPurchaseDraft}));
 }
 function consPurchaseLockForm(locked){
@@ -80,16 +100,13 @@ function consPurchasePairs(){
  return rows.sort((a,b)=>a.material.localeCompare(b.material)||a.brand.localeCompare(b.brand));
 }
 const consPurchaseToday=()=>new Date(Date.now()+4*3600000).toISOString().slice(0,10);
-const consPurchaseStyle='<style>.cp-entry{display:grid;gap:12px;max-width:780px;margin:auto;min-width:0}.cp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cp-entry h3{margin:0;color:#17324f}.cp-entry .cp-field{display:grid;gap:5px;min-width:0;font-size:13px;font-weight:700;color:#304c68}.cp-entry input,.cp-entry select{min-height:44px;max-width:100%;width:100%;box-sizing:border-box;border:1px solid #c4d6e7;border-radius:9px;background:#fff!important;color:#17324f!important;padding:8px;font-size:16px}.cp-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cp-entry .cp-panel{border:1px solid #d5e2ed;border-radius:12px;padding:12px;background:#f7faff}.cp-search-results{max-height:210px;overflow:auto}.cp-search-results button{display:flex!important;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:10px;border:1px solid #dbe6f2!important;border-radius:7px;background:#fff!important;color:#17324f!important;text-align:left!important;margin:4px 0;min-height:42px}.cp-entry .cp-action{padding:10px 12px;border:1px solid #b6cfe5;border-radius:8px;color:#185999!important;background:#e9f3ff!important;font-weight:800}.cp-entry .cp-add{background:#e4f4ea!important;color:#166534!important}.cp-entry .cp-total{background:#194b80;color:#fff;padding:13px;border-radius:10px;font-weight:800}.cp-entry .cp-line{display:grid;grid-template-columns:minmax(0,1.5fr) .6fr .8fr .8fr auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid #dce5ed;font-size:12px}.cp-lines{overflow-x:auto}.cp-entry .cp-line{min-width:430px}.cp-entry .cp-error{font-size:12px;color:#a13a1b}.cp-entry .cp-info{font-size:12px;color:#526b84}.cp-entry .cp-finish{min-height:44px;width:100%;background:#166534!important;color:#fff!important;border-radius:9px}.cp-entry .cp-finish:disabled{opacity:.55;cursor:not-allowed}@media(max-width:380px){.cp-two{grid-template-columns:1fr}}</style>';
+const consPurchaseStyle=window.ZukaitStockCore.purchaseStyle;
 window.consOpenPurchaseEntry=function(reset=false){
  if(!consPurchaseAllowed()||!consPurchaseRestore())return;
  if(consPurchaseBusy)return;
  if(!consPurchaseDraft||reset&&!consPurchasePending)consPurchaseDraft={invoiceNumber:'',supplier:'',invoiceDate:consPurchaseToday(),lines:[],selected:null,method:'unit'};
  const d=consPurchaseDraft;
- modal('Purchase Entry',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Material Purchase</h3><button type="button" class="cp-action" onclick="consOpenPurchaseInvoices()">Invoice List</button></div>'+
- '<div class="cp-panel"><div class="cp-two"><label class="cp-field">Invoice Number<input id="cpInvoice" maxlength="100" autocomplete="off" value="'+esc(d.invoiceNumber)+'" oninput="consPurchaseHeader()"></label><label class="cp-field">Invoice Date<input id="cpDate" type="date" max="'+consPurchaseToday()+'" value="'+esc(d.invoiceDate)+'" oninput="consPurchaseHeader()"></label></div><label class="cp-field">Supplier<input id="cpSupplier" maxlength="160" value="'+esc(d.supplier)+'" oninput="consPurchaseHeader()"></label></div>'+
- '<div class="cp-panel"><label class="cp-field">Search Material + Brand<input id="cpSearch" type="search" autocomplete="off" placeholder="Example: Clear CAPCI" oninput="consPurchaseSearch()"></label><div id="cpResults" class="cp-search-results"></div><div id="cpSelected"></div><div id="cpLineEditor" hidden><label class="cp-field">Quantity<input id="cpQty" inputmode="decimal" type="number" min="0" step="0.0001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Price entry<select id="cpMethod" onchange="consPurchaseChangeMethod()"><option value="unit">Price per Unit</option><option value="total">Total Purchase Amount</option></select></label><div class="cp-two"><label class="cp-field">Price / Unit (OMR)<input id="cpUnit" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()"></label><label class="cp-field">Total Amount (OMR)<input id="cpAmount" inputmode="decimal" type="number" min="0" step="0.001" oninput="consPurchaseCalculate()" readonly></label></div><button type="button" class="cp-action cp-add" onclick="consPurchaseAddLine()">＋ ADD ITEM</button><div id="cpError" class="cp-error" role="status"></div></div></div>'+
- '<h3>Invoice Items</h3><div id="cpLines" class="cp-lines"></div><div id="cpTotal" class="cp-total"></div><button type="button" id="cpFinish" class="cp-finish" onclick="consPurchaseSave()" disabled>FINISH &amp; SAVE</button><div id="cpSaveStatus" class="cp-info" role="status">Checking server availability…</div></div>','openStockManagement()');
+ modal('Purchase Entry',consPurchaseStyle+window.ZukaitStockCore.purchaseEntryMarkup(d,consPurchaseToday()),'openStockManagement()');
  consPurchaseRenderLines();consPurchaseLockForm(Boolean(consPurchasePending));
  const button=document.getElementById('cpFinish'),status=document.getElementById('cpSaveStatus');
  consPurchaseApi({operation:'INVOICE_STATUS'}).then(r=>{
@@ -167,6 +184,7 @@ window.consPurchaseSave=async function(){
  if(!button||button.disabled)return;
  if(!consPurchaseRestore())return;
  const owner=consPurchaseOwner;
+ if(!consPurchaseDraft||owner!==consPurchaseActor())return;
  if(!consPurchasePending)consPurchaseHeader();
  try{
   if(consPurchaseDraft.selected)throw Error('Add or remove the selected item before saving.');
@@ -186,11 +204,11 @@ window.consPurchaseSave=async function(){
   if(!r?.ok||!r.invoice?.id){
    // An explicit validation rejection is safe to correct; uncertain network/server failures retain the same receipt ID.
    const code=String(r?.code||'invoice_save_unconfirmed');
-   if(['invalid_invoice','invoice_reference_required','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','duplicate_material_brand','invalid_stock_identity','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','duplicate_invoice','stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled'].includes(code))consPurchaseClearPending(owner);
+   if(!wasPending&&['invalid_invoice','invoice_reference_required','invalid_invoice_date','invalid_invoice_lines','invalid_invoice_line','duplicate_material_brand','invalid_stock_identity','stock_pair_not_linked','stock_unit_conflict','piece_whole_required','invalid_line_total','invalid_invoice_total','duplicate_invoice','stock_forbidden','stock_write_not_enabled','stock_invoice_not_enabled'].includes(code))consPurchaseClearPending(owner);
    throw Error(code);
   }
   consPurchaseClearPending(owner);
-  if(owner!==consPurchaseOwnerId())return;
+  if(owner!==consPurchaseActor())return;
   consPurchaseDraft=null;consPurchaseBusy=false;
   alert(r.invoice.status==='cancelled'?'Invoice was already saved and subsequently cancelled. No stock was added again.':'Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
   window.consOpenPurchaseInvoices();
@@ -199,8 +217,8 @@ window.consPurchaseSave=async function(){
  }finally{consPurchaseBusy=false}
 };
 window.consOpenPurchaseInvoices=function(){
- if(!consPurchaseAllowed()||!consPurchaseRestore()||consPurchaseBusy)return;consPurchaseHeader();
- modal('Purchase Invoice List',consPurchaseStyle+'<div class="cp-entry"><div class="cp-head"><h3>Invoice List</h3><button type="button" class="cp-action" onclick="consOpenPurchaseEntry()">New Entry</button></div><label class="cp-field">Search invoice / supplier / material<input id="cpHistoryQuery" type="search" maxlength="160"></label><div class="cp-two"><label class="cp-field">From Date<input id="cpHistoryFrom" type="date"></label><label class="cp-field">To Date<input id="cpHistoryTo" type="date"></label></div><button type="button" class="cp-action" onclick="consPurchaseLoadHistory(0)">Search / Refresh</button><div id="cpHistory" class="cp-panel cp-info" role="status">Loading server invoice history…</div></div>','consOpenPurchaseEntry()');
+ if(!consPurchaseAllowed()||!consPurchaseRestore(false)||consPurchaseBusy)return;consPurchaseHeader();
+ modal('Purchase Invoice List',consPurchaseStyle+window.ZukaitStockCore.purchaseHistoryMarkup(),'consOpenPurchaseEntry()');
  window.consPurchaseLoadHistory(0);
 };
 window.consPurchaseLoadHistory=async function(page=0){
@@ -215,14 +233,15 @@ window.consPurchaseLoadHistory=async function(page=0){
   if(seq!==consPurchaseHistorySeq||document.getElementById('cpHistory')!==out)return;
   if(!r?.ok||!Array.isArray(r.invoices))throw Error(r?.code||'Invoice history unavailable');
   consPurchaseHistoryRows=r.invoices;
-  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button><button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Review Brands &amp; Price</button>':'')+(consReconcileHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryReconciliation('+index+')">Retry Price Reconciliation</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
+  out.innerHTML=r.invoices.length?r.invoices.map((i,index)=>'<details class="cp-panel"><summary><b>'+esc(i.invoice_number)+' · '+esc(i.supplier)+'</b><div>'+esc(i.invoice_date)+' · '+(i.status==='cancelled'?'CANCELLED · Original OMR ':'OMR ')+Number(i.total_amount).toFixed(3)+'</div></summary><div class="cp-lines">'+(i.lines||[]).map(l=>'<div class="cp-line"><b>'+esc(l.materialName)+' · '+esc(l.brandName)+'</b><span>'+esc(l.quantity)+' '+esc(l.unit)+'</span><span>'+Number(l.unitPrice).toFixed(3)+'</span><b>'+Number(l.totalAmount).toFixed(3)+'</b></div>').join('')+'</div>'+ (role()==='Manager'?'<div class="cp-two">'+(i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'header\')">Edit Invoice Details</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'lines\')">Correct Quantity / Price</button><button type="button" class="cp-action" onclick="consPurchaseEdit('+index+',\'cancel\')">Cancel Invoice</button>':'')+(consPriceHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Retry Original Price Application</button>':i.status!=='cancelled'?'<button type="button" class="cp-action" onclick="consPurchasePriceReview('+index+')">Review Brands &amp; Price</button>':'')+(consCorrectionHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryCorrection('+index+')">Retry Original Invoice Correction</button>':'')+(consReconcileHasPending(i.id)?'<button type="button" class="cp-action" onclick="consPurchaseRetryReconciliation('+index+')">Retry Price Reconciliation</button>':'')+'<button type="button" class="cp-action" onclick="consPurchaseAudit('+index+')">Audit History</button></div>':'')+'</details>').join(''):'No invoices found.';
   out.innerHTML+='<div class="cp-head">'+(page>0?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page-1)+')">Previous</button>':'')+(r.hasMore?'<button class="cp-action" onclick="consPurchaseLoadHistory('+(page+1)+')">Next</button>':'')+'</div>';
  }catch(e){if(seq===consPurchaseHistorySeq&&document.getElementById('cpHistory')===out)out.textContent=String(e?.message||e);}
 };
 window.consPurchaseEdit=function(index,mode){
  if(role()!=='Manager'||consPurchaseBusy||!['header','lines','cancel'].includes(mode))return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice?.id||!Number.isInteger(invoice.revision))return alert('Reload invoice history first.');
- consPurchaseEditing={invoice,mode};
+ consPurchaseEditing={invoice,mode,owner:consPurchaseOwnerId()};
+ if(consCorrectionHasPending(invoice.id))return window.consPurchaseRetryCorrection(index);
  if(consReconcileHasPending(invoice.id))return window.consPurchaseRetryReconciliation(index);
  if(invoice.status==='cancelled')return alert('Invoice already cancelled.');
  const fields=mode==='cancel'?'<div class="cp-info">Cancellation reverses all invoice quantities and values only if no affected stock has subsequently been used or changed. The original invoice and audit trail remain visible.</div>':mode==='header'?
@@ -231,6 +250,13 @@ window.consPurchaseEdit=function(index,mode){
  modal('Manager Invoice Correction',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · Revision '+invoice.revision+'</b>'+fields+'<label class="cp-field">Reason (required)<input id="cpEditReason" maxlength="500"></label><button type="button" id="cpEditSave" class="cp-finish" onclick="consPurchaseSaveCorrection()">SAVE CORRECTION</button><div id="cpEditStatus" class="cp-info" role="status"></div></div>','consOpenPurchaseInvoices()');
 };
 let consPurchaseReconcileSelection=null;
+const consCorrectionKey=(owner,id)=>'zukait-invoice-correction-pending-v1:'+owner+':'+id;
+function consCorrectionRead(owner,id){
+ const p=JSON.parse(window.localStorage.getItem(consCorrectionKey(owner,id))||'null');
+ if(p&&(p.owner!==owner||p.data?.invoiceId!==id||!p.id||!['header','lines','cancel'].includes(p.mode)||p.fingerprint!==JSON.stringify(p.data)))throw Error('Saved correction receipt requires review');
+ return p;
+}
+function consCorrectionHasPending(id){try{return !!consCorrectionRead(consPurchaseOwnerId(),id)}catch{return true}}
 const consReconcileKey=(owner,id)=>'zukait-invoice-reconcile-pending-v1:'+owner+':'+id;
 function consReconcileRead(owner,id){
  return JSON.parse(window.localStorage.getItem(consReconcileKey(owner,id))||'null');
@@ -254,7 +280,7 @@ window.consPurchaseConfirmReconciliation=async function(){
  if(owner!==consPurchaseOwnerId()||!button||!out||button.disabled)return;
  const key=consReconcileKey(owner,invoice.id);
  try{
-  let pending=consReconcileRead(owner,invoice.id);
+  let pending=consReconcileRead(owner,invoice.id);const wasPending=Boolean(pending);
   if(!pending){if(!confirm('Confirm the invoice change and the displayed costing actions? Independently corrected prices marked Retain will remain unchanged.'))return;pending=payload;window.localStorage.setItem(key,JSON.stringify(pending));}
   if(pending.correction.invoiceId!==invoice.id||JSON.stringify(pending)!==JSON.stringify(payload))throw Error('Unconfirmed reconciliation must be retried unchanged.');
   consPurchaseBusy=true;button.disabled=true;out.textContent='Saving invoice and reconciled prices…';
@@ -263,7 +289,7 @@ window.consPurchaseConfirmReconciliation=async function(){
   if(!result?.ok){
    const code=String(result?.code||'invoice_price_reconciliation_unconfirmed');
    const definitive=['manager_only','invalid_price_reconciliation','invalid_invoice_correction','invoice_not_found','invoice_cancelled','invoice_revision_conflict','invoice_price_application_not_found','invoice_price_changed_since_application','invoice_price_actual_changed_since_application','invoice_price_reconciliation_no_fallback','invoice_reference_only_use_header_correction','invoice_price_already_reconciled','invalid_invoice_date','invalid_invoice_line','invalid_line_total','invalid_invoice_total','invoice_pair_set_change_requires_review','duplicate_material_brand','piece_whole_required','stale_price_reconciliation_review','invoice_price_reconciliation_not_enabled','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','stock_unit_conflict','duplicate_invoice','no_invoice_change','stale_workshop_revision','request_id_conflict'];
-   if(definitive.includes(code)){window.localStorage.removeItem(key);consPurchaseCorrectionPending.delete(invoice.id+'|'+pending.mode);consPurchaseReconcileSelection=null;out.textContent='Rejected: '+code+'. Reopen invoice correction to review again.';return;}
+   if(!wasPending&&definitive.includes(code)){window.localStorage.removeItem(key);consPurchaseCorrectionPending.delete(invoice.id+'|'+pending.mode);consPurchaseReconcileSelection=null;out.textContent='Rejected: '+code+'. Reopen invoice correction to review again.';return;}
    throw Error(code);
   }
   if(result.invoice?.id!==invoice.id||result.reconciliation?.requestId!==pending.requestId||result.invoice.revision!==pending.correction.expectedRevision+1)throw Error('Reconciliation confirmation mismatch.');
@@ -274,13 +300,28 @@ window.consPurchaseConfirmReconciliation=async function(){
  }catch(e){if(document.getElementById('cpReconcileStatus')===out){out.textContent=String(e?.message||e);button.disabled=false}}
  finally{consPurchaseBusy=false}
 };
+window.consPurchaseRetryCorrection=function(index){
+ if(role()!=='Manager'||consPurchaseBusy)return;
+ const invoice=consPurchaseHistoryRows[index],owner=consPurchaseOwnerId();if(!invoice||!owner)return;
+ try{
+  const pending=consCorrectionRead(owner,invoice.id);if(!pending)return;
+  consPurchaseEditing={invoice,mode:pending.mode,retry:pending,owner};
+  modal('Retry Invoice Correction',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+'</b><p>Previous correction is unconfirmed. Retry the exact saved request without editing.</p><button type="button" id="cpEditSave" class="cp-finish" onclick="consPurchaseSaveCorrection()">RETRY ORIGINAL CORRECTION</button><div id="cpEditStatus" class="cp-info" role="status"></div></div>','consOpenPurchaseInvoices()');
+ }catch(e){alert(String(e?.message||e))}
+};
 window.consPurchaseSaveCorrection=async function(){
  if(role()!=='Manager'||consPurchaseBusy||!consPurchaseEditing)return;
- const {invoice,mode}=consPurchaseEditing,button=document.getElementById('cpEditSave'),out=document.getElementById('cpEditStatus');if(!button||button.disabled)return;
+ const {invoice,mode,retry,owner:editingOwner}=consPurchaseEditing,owner=consPurchaseOwnerId(),button=document.getElementById('cpEditSave'),out=document.getElementById('cpEditStatus');if(!button||button.disabled)return;
  const val=id=>String(document.getElementById(id)?.value||'').trim(),reason=val('cpEditReason');
  try{
+  if(!owner||editingOwner!==owner)throw Error('Staff session changed. Reopen invoice history.');
+  const storageKey=consCorrectionKey(owner,invoice.id);let saved=consCorrectionRead(owner,invoice.id);const wasPending=Boolean(saved);
+  let data;
+  if(retry){if(!saved||saved.id!==retry.id)throw Error('Saved correction changed; reopen invoice history');data=saved.data;}
+  else{
+  if(saved)throw Error('Retry original correction from invoice history first');
   if(reason.length<5||reason.length>500)throw Error('Enter a correction reason (5–500 characters).');
-  const data={invoiceId:invoice.id,expectedRevision:invoice.revision,reason};
+  data={invoiceId:invoice.id,expectedRevision:invoice.revision,reason};
   if(mode==='header'){
    Object.assign(data,{invoiceNumber:val('cpEditNumber'),supplier:val('cpEditSupplier'),invoiceDate:val('cpEditDate')});
    if(!data.invoiceNumber||!data.supplier||!data.invoiceDate)throw Error('Complete all invoice fields.');
@@ -292,15 +333,18 @@ window.consPurchaseSaveCorrection=async function(){
    if(!confirm('Correct invoice to OMR '+total.toFixed(3)+'? The server will verify all affected stock movements.'))return;
    data.lines=lines.map(({materialId,brandId,unit,quantity,priceMethod,price})=>({materialId,brandId,unit,quantity,priceMethod,price}));
   }
-  const key=invoice.id+'|'+mode,fingerprint=JSON.stringify(data);
-  let pending=consPurchaseCorrectionPending.get(key);
-  if(pending&&pending.fingerprint!==fingerprint)throw Error('Previous correction unconfirmed. Restore the original correction and retry.');
-  if(!pending){pending={fingerprint,id:window.crypto?.randomUUID?.()||('correction-'+Date.now()+'-'+Math.random().toString(36).slice(2))};consPurchaseCorrectionPending.set(key,pending)}
+    saved={owner,mode,data,fingerprint:JSON.stringify(data),id:window.crypto?.randomUUID?.()||('correction-'+Date.now()+'-'+Math.random().toString(36).slice(2))};
+  window.localStorage.setItem(storageKey,JSON.stringify(saved));
+  if(consCorrectionRead(owner,invoice.id)?.id!==saved.id)throw Error('Cannot preserve correction receipt');
+  }
+  const pending=saved,key=invoice.id+'|'+mode;
   consPurchaseBusy=true;button.disabled=true;out.textContent='Saving correction…';
   const r=await consPurchaseApi({operation:mode==='cancel'?'INVOICE_CANCEL':mode==='header'?'INVOICE_CORRECT_HEADER':'INVOICE_CORRECT_LINES',requestId:pending.id,data});
+  if(owner!==consPurchaseOwnerId())return;
   if(!r?.ok||!r.invoice?.id){
    const code=String(r?.code||'invoice_correction_unconfirmed');
-   if(code==='invoice_price_reconciliation_required'){
+   if(!wasPending&&code==='invoice_price_reconciliation_required'){
+    window.localStorage.removeItem(storageKey);
     // Server explicitly rejected the ordinary correction; there is no unknown write to retry.
     consPurchaseCorrectionPending.delete(key);
     const owner=consPurchaseOwnerId();
@@ -311,23 +355,28 @@ window.consPurchaseSaveCorrection=async function(){
     consReconcileRender(owner,invoice,payload);
     return;
    }
-   if(['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_cancelled','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','duplicate_invoice'].includes(code))consPurchaseCorrectionPending.delete(key);
+   if(!wasPending&&['manager_only','invalid_invoice_correction','invalid_invoice_date','invoice_not_found','invoice_cancelled','invoice_revision_conflict','no_invoice_change','invoice_line_correction_requires_review','invoice_pair_set_change_requires_review','duplicate_material_brand','invalid_invoice_line','piece_whole_required','invalid_line_total','invalid_invoice_total','stock_unit_conflict','invoice_stock_used_or_changed','invoice_stock_correction_unsafe','invoice_price_reconciliation_required','duplicate_invoice'].includes(code)){window.localStorage.removeItem(storageKey);consPurchaseCorrectionPending.delete(key);}
    throw Error(code);
   }
+  if(r.invoice.id!==data.invoiceId||r.invoice.revision!==data.expectedRevision+1)throw Error('Correction confirmation mismatch');
+  if(consCorrectionRead(owner,invoice.id)?.id===pending.id)window.localStorage.removeItem(storageKey);
+  if(owner!==consPurchaseOwnerId())return;
   consPurchaseCorrectionPending.delete(key);consPurchaseEditing=null;consPurchaseBusy=false;
   alert(mode==='cancel'?'Invoice cancelled with audit record.':'Invoice correction saved with audit record.');window.consOpenPurchaseInvoices();
- }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);}}
+ }catch(e){if(document.getElementById('cpEditSave')===button){button.disabled=false;out.textContent=String(e?.message||e);try{const saved=consCorrectionRead(owner,invoice.id);if(saved){consPurchaseEditing={invoice,mode:saved.mode,retry:saved,owner};button.textContent='RETRY ORIGINAL CORRECTION';}}catch(_){button.disabled=true;}}}
  finally{consPurchaseBusy=false}
 };
 let consPurchasePriceSelection=null;
 const consPricePendingKey=(owner,invoiceId)=>'zukait-invoice-price-pending-v1:'+owner+':'+invoiceId;
+function consPriceHasPending(id){const owner=consPurchaseOwnerId();if(!owner)return false;try{return window.localStorage.getItem(consPricePendingKey(owner,id))!==null}catch{return true}}
 window.consPurchasePriceReview=function(index){
- if(role()!=='Manager'||!consPurchaseRestore()||consPurchaseBusy)return;
+ if(role()!=='Manager'||!consPurchaseRestore(false)||consPurchaseBusy)return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice)return;
  try{
   const owner=consPurchaseOwnerId(),key=consPricePendingKey(owner,invoice.id);
   const pending=JSON.parse(window.localStorage.getItem(key)||'null');
   if(pending&&(pending.invoiceId!==invoice.id||!pending.requestId||!Array.isArray(pending.review)))throw Error('Invalid pending price application. Contact Manager support.');
+  if(!pending&&invoice.status==='cancelled')throw Error('Cancelled invoice: no new price application is allowed.');
   const rows=pending?pending.review:C().invoicePriceReview(state,invoice,me);
   consPurchasePriceSelection={owner,invoice,rows,key,pending};
   const changes=rows.filter(p=>p.action==='create'||p.action==='correct');
@@ -353,8 +402,9 @@ window.consPurchaseApplyPrices=async function(){
  if(!button||!out||button.disabled)return;
  const definitive=['manager_only','invalid_price_application','invoice_price_apply_not_enabled','invoice_not_found','invoice_cancelled','invoice_revision_conflict','stale_price_review','price_review_blocked','no_price_changes','invoice_price_reconciliation_required','invoice_price_already_applied_reconciliation_required','invoice_price_source_conflict','request_id_conflict','stale_workshop_revision'];
  try{
-  let pending=JSON.parse(window.localStorage.getItem(key)||'null');
+  let pending=JSON.parse(window.localStorage.getItem(key)||'null');const wasPending=Boolean(pending);
   if(!pending){
+   if(selection.pending||invoice.status==='cancelled')throw Error('Original saved request is unavailable. Reopen invoice history; no new price application sent.');
    if(rows.some(p=>p.action==='blocked')||!rows.some(p=>p.action==='create'||p.action==='correct'))throw Error('No eligible price changes.');
    const reason=String(document.getElementById('cpPriceReason')?.value||'').trim();
    if(reason.length<5||reason.length>500)throw Error('Enter a reason (5–500 characters).');
@@ -372,7 +422,7 @@ window.consPurchaseApplyPrices=async function(){
   if(owner!==consPurchaseOwnerId())return;
   if(!result?.ok){
    const code=String(result?.code||'invoice_price_commit_unconfirmed');
-   if(definitive.includes(code)){
+   if(!wasPending&&definitive.includes(code)){
     window.localStorage.removeItem(key);
     if(document.getElementById('cpPriceStatus')===out)out.textContent='Price application rejected: '+code+'. Reopen invoice review before retrying.';
     return;
@@ -387,7 +437,7 @@ window.consPurchaseApplyPrices=async function(){
  }finally{consPurchaseBusy=false;}
 };
 window.consPurchaseAudit=async function(index,page=0){
- if(role()!=='Manager'||!consPurchaseRestore()||!Number.isInteger(page)||page<0||page>100)return;
+ if(role()!=='Manager'||!consPurchaseRestore(false)||!Number.isInteger(page)||page<0||page>100)return;
  const invoice=consPurchaseHistoryRows[index];if(!invoice?.id)return;
  const owner=consPurchaseOwnerId();
  modal('Invoice Audit History',consPurchaseStyle+'<div class="cp-entry"><b>'+esc(invoice.invoice_number)+' · '+esc(invoice.supplier)+'</b><div id="cpAudit" class="cp-panel">Loading history…</div></div>','consOpenPurchaseInvoices()');
@@ -401,8 +451,11 @@ window.consPurchaseAudit=async function(index,page=0){
  }catch(e){if(document.getElementById('cpAudit')===out)out.textContent=String(e?.message||e);}
 };
 window.openConsumablesPlaceholder=function(name){modal(esc(name)+' Consumables','<div class="notice">This department module is openable and isolated. Detailed workflow will be added after Painting Consumables is completed.</div>')};
-const consDepartmentMenuStyle="<style>.cons-department-menu{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0}.cons-department-menu button.cons-action,.cons-department-menu button.mc-cons-tile{position:relative;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;min-width:0;min-height:106px!important;padding:13px!important;border:1px solid #b5c9df!important;border-bottom:4px solid #b5c9df!important;border-radius:16px!important;background:#eaf2fb!important;color:#173653!important;text-align:left;box-shadow:0 4px 12px #17365312}.cons-department-menu button.actual{background:#e6f5ed!important;border-color:#add6bd!important;color:#18563b!important}.cons-department-menu button.additional{background:#fff1d9!important;border-color:#e5c582!important;color:#70460e!important}.cons-department-menu button.search{background:#f1eafa!important;border-color:#cdb8e5!important;color:#53347c!important}.cons-department-menu button.manager{background:#e8f5f6!important;border-color:#afd5d8!important;color:#20555e!important}.cons-department-menu b{font-size:16px!important;font-weight:800;line-height:1.28;color:inherit!important;overflow-wrap:anywhere}.cons-department-menu .cons-menu-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#ffffffaa;font-size:19px;color:inherit}.cons-department-menu button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}@media(max-width:360px){.cons-department-menu{gap:8px}.cons-department-menu button{padding:10px!important}.cons-department-menu b{font-size:14px!important}}</style>";
-function action(label,sub,fn,cls=''){const icon=label.includes('Pending')?'⏳':cls==='issued'?'📦':cls==='actual'?'✓':cls==='additional'?'＋':label.includes('Total')?'▤':label.includes('History')?'◷':label==='Reports'?'▥':'⌕';return '<button type="button" class="cons-action '+cls+'" onclick="'+fn+'"><span class="cons-menu-icon" aria-hidden="true">'+icon+'</span><b>'+label+'</b></button>'}
+const consDepartmentMenuStyle="<style>.cons-department-menu{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:4px 0}.cons-department-menu button.cons-action,.cons-department-menu button.mc-cons-tile,.cons-department-menu button.cons-dept{box-sizing:border-box;position:relative;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;min-width:0;min-height:100px!important;padding:13px 16px!important;margin:0!important;border:1px solid #e5dfe6!important;border-top:4px solid #db2777!important;border-radius:18px!important;background:linear-gradient(145deg,#fff,#fdf5f9)!important;color:#172033!important;text-align:left;box-shadow:0 4px 12px #17365312;white-space:normal!important}.cons-department-menu button b{font-size:16px!important;font-weight:800;line-height:1.28;color:#172033!important;overflow-wrap:break-word;min-width:0}.cons-department-menu .cons-menu-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#fce7f3;color:#be185d;margin:0!important;flex:0 0 auto}.cons-menu-icon svg{display:block;width:21px;height:21px}.cons-department-menu .cons-menu-arrow{position:absolute;top:18px;right:16px;width:15px;height:15px;color:#b76c90;font-size:18px;line-height:15px;margin:0!important}.cons-department-menu button:focus-visible{outline:3px solid #2563eb;outline-offset:2px}.cons-department-menu button:disabled{opacity:.65;cursor:not-allowed}.cons-department-menu button small{margin:0!important;color:#64748b!important;font-size:12px;line-height:1.35}@media(max-width:600px){.cons-department-menu{grid-template-columns:1fr!important;gap:9px}.cons-department-menu button.cons-action,.cons-department-menu button.mc-cons-tile,.cons-department-menu button.cons-dept{min-height:76px!important;padding:10px 36px 10px 12px!important;display:grid!important;grid-template-columns:36px minmax(0,1fr);align-content:center;column-gap:11px;row-gap:4px}.cons-department-menu .cons-menu-icon{grid-row:1/3;align-self:center}.cons-department-menu button b,.cons-department-menu button small{grid-column:2}.cons-department-menu .cons-menu-arrow{top:50%;transform:translateY(-50%);right:12px}}</style>";
+const consMenuGlyphs={"pending":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/>","issued":"<path d=\"m3 7 9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10\"/>","actual":"<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m8 12 3 3 5-6\"/>","additional":"<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"3\"/><path d=\"M12 8v8M8 12h8\"/>","search":"<circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"m16 16 4 4\"/>","total":"<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 8h8M8 12h8M8 16h8\"/>","reports":"<path d=\"M4 4v16h16M8 16v-5M12 16V7M16 16v-8\"/>","history":"<path d=\"M3 12a9 9 0 1 1 2.7 6.4M3 5v7h7M12 7v5l3 2\"/>","returns":"<path d=\"M9 7 4 12l5 5M4 12h10a5 5 0 0 1 5 5\"/>","painting":"<path d=\"M12 3a9 9 0 1 0 0 18h1.5a2 2 0 0 0 0-4H13a1.5 1.5 0 0 1 0-3h4a4 4 0 0 0 4-4c0-4-4-7-9-7z\"/><circle cx=\"7\" cy=\"10\" r=\".8\"/><circle cx=\"10\" cy=\"6.5\" r=\".8\"/><circle cx=\"15\" cy=\"7\" r=\".8\"/>","paint":"<path d=\"M15 3 21 9 11 19l-6-6zM5 13l-2 8 8-2\"/>","denting":"<path d=\"M14 4l6 6-3 3-3-3-8 10-3-3 9-9-2-2z\"/>","mechanical":"<path d=\"M14 6a5 5 0 0 0-6 6l-5 5 4 4 5-5a5 5 0 0 0 6-6l-3 3-4-4z\"/>","stock":"<rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 9h18M3 15h18M12 9v11\"/>"};
+function consMenuIcon(key){return '<span class="cons-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+(consMenuGlyphs[key]||consMenuGlyphs.search)+'</svg></span>'}
+const consMenuArrow='<span class="cons-menu-arrow" aria-hidden="true">›</span>';
+function action(label,sub,fn,cls=''){const key=label.includes('Pending')?'pending':label.includes('Total')?'total':label.includes('History')?'history':label==='Reports'?'reports':cls==='issued'?'issued':cls==='actual'?'actual':cls==='additional'?'additional':'search';return '<button type="button" class="cons-action '+cls+'" onclick="'+fn+'">'+consMenuIcon(key)+'<b>'+label+'</b>'+consMenuArrow+'</button>'}
 function consFinalMaterialPendingRows(){
  const c=C().ensureState(state),done=no=>{const a=(state.assign||[]).filter(x=>x&&!x.cancelled&&String(x.job)===String(no));return a.length>0&&a.every(x=>x.completed)};
  const actual=new Set(c.actuals.filter(x=>x&&!x.voided&&x.locked).map(x=>String(x.jobCard||'').toUpperCase()));
@@ -415,9 +468,9 @@ window.consFinalMaterialPendingCount=function(){return consFinalMaterialPendingR
 window.openFinalMaterialPending=function(){
  if(!['Supervisor','Manager'].includes(role()))return;
  const rows=consFinalMaterialPendingRows();
- const body=rows.length?'<div class="cons-final-pending-list" role="list">'+rows.map((x,i)=>{
+ const body=rows.length?'<div class="cons-final-pending-list"><div class="cons-final-pending-head" aria-hidden="true"><span>No.</span><span>JC No.</span><span>Vehicle</span><span>Reg No.</span><span>Status</span><span></span></div>'+rows.map((x,i)=>{
   const d=jcData(x.jobCard),j=d?.job||{},status=x.status==='reopened'?'REOPENED ACTUAL — Manager to finalize':x.status==='review'?'UNLOCKED ACTUAL — Manager review required':'ACTUAL NOT ENTERED — Complete final materials';
-  return '<button type="button" class="cons-final-pending-row" onclick="openConsumablesActual().then(()=>{const e=document.getElementById(\'consActualJc\');if(e){e.value=decodeURIComponent(\''+encodeURIComponent(x.jobCard)+'\');consLoadActual()}})"><b class="cons-row-no">'+(i+1)+'</b><b>JC '+esc(x.jobCard)+'</b><span>'+esc(d?.vehicle||j.vehicle||'Vehicle')+'</span><span class="cons-row-reg">Reg: '+esc(j.reg||j.registration||'—')+'</span><span class="cons-row-reg" style="font-weight:800;color:#155e75">'+esc(status)+'</span><i>›</i></button>';
+  return '<button type="button" class="cons-final-pending-row" onclick="openConsumablesActual().then(()=>{const e=document.getElementById(\'consActualJc\');if(e){e.value=decodeURIComponent(\''+encodeURIComponent(x.jobCard)+'\');consLoadActual()}})"><b class="cons-row-no">'+(i+1)+'</b><b class="cons-row-jc">JC '+esc(x.jobCard)+'</b><span class="cons-row-vehicle">'+esc(d?.vehicle||j.vehicle||'Vehicle')+'</span><span class="cons-row-reg">Reg: '+esc(j.reg||j.registration||'—')+'</span><span class="cons-row-status '+x.status+'" title="'+esc(status)+'" aria-label="'+esc(status)+'">'+(x.status==='reopened'?'Reopened Actual':x.status==='review'?'Manager Review':'Actual Pending')+'</span><i aria-hidden="true">›</i></button>';
  }).join('')+'</div>':'<div class="notice">No Final Paint Material entries are pending.</div>';
  modal('⚠ Final Material Pending · '+rows.length,body,'openPaintingConsumables()');
 };
@@ -900,30 +953,18 @@ window.consOpenMaster=function(preset='',section=''){
  const units=['Liter','kg','Piece'],cats=['Consumable','Paint'];
  const focused=section==='create'||section==='price';
  const pageTitle=section==='create'?'Create Material':section==='price'?'Brand & Price':'Materials & Brands';
- const intro=section==='create'?
-  '<span class="cons-master-intro-icon create" aria-hidden="true">⬡</span><div><h2>Create Material</h2><p>Add a new consumable material.</p></div>':
-  '<span class="cons-master-intro-icon price" aria-hidden="true">◇</span><div><h2>Brand &amp; Price</h2><p>Assign a brand and price with an effective date.</p></div>';
+ const intro=window.ZukaitStockCore.masterIntro(section);
  modal(pageTitle,
  '<div class="cons-subnav"><button class="secondary" type="button" onclick="openStockManagement()">← Stock Management</button></div>'+
  '<div id="consMasterWorkspace" class="cons-entry-shell'+(focused?' cons-master-focused cons-master-'+section:'')+'">'+
  (focused?'<div class="cons-master-intro">'+intro+'</div>':'')+
- '<section class="cons-master-form" aria-labelledby="cmCreateHeading"><h3 id="cmCreateHeading">Create Material</h3>'+
- '<p class="notice">Create the material first. Add a brand and price separately.</p>'+
- '<label class="cons-master-field">Material Name<input id="cmNewMaterial" placeholder="Enter material name" autocomplete="off"></label>'+
- '<label class="cons-master-field">Unit<select id="cmNewUnit">'+units.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
- '<label class="cons-master-field">Category<select id="cmNewCategory">'+cats.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'+
- '<label class="cons-master-field">Used In — required for new materials<select id="cmNewDepartment"><option value="">Select department</option><option value="Painting">Paint</option><option value="Mechanical">Mechanical</option><option value="Both">Shared</option></select></label>'+
- '<button class="blue" type="button" onclick="consCreateMaterial()">CREATE MATERIAL</button></section>'+
+ window.ZukaitStockCore.masterCreateMarkup(units,cats)+
  '<section class="cons-master-form" aria-labelledby="cmPriceHeading"><h3 id="cmPriceHeading">Brand &amp; Price</h3>'+
  '<p class="notice">Previous effective-dated prices remain in history.</p>'+
  '<label class="cons-master-field">Search Material + Brand<input id="cmPairSearch" type="search" autocomplete="off" placeholder="Search material or brand" oninput="consMasterPairSearch()" onfocus="consMasterPairSearch()"></label><div id="cmPairResults" class="cons-material-results hidden"></div>'+
  (section==='price'?'<button class="cm-new-brand" type="button" onclick="consMasterNewPair()">＋ Add Brand &amp; Price</button><dialog id="cmPairEditor" aria-labelledby="cmPairEditorTitle"><div class="cm-editor-top"><h3 id="cmPairEditorTitle">Brand &amp; Price</h3><button type="button" onclick="consMasterCloseEditor()" aria-label="Close price editor">✕</button></div>':'')+
  '<label class="cons-master-field">Material<input id="cmMaterial" list="cmMaterialChoices" placeholder="Search material" autocomplete="off" oninput="consMasterSuggest();consMasterPairChanged()"></label><datalist id="cmMaterialChoices"></datalist>'+
- '<label class="cons-master-field">Brand<input id="cmBrand" list="cmBrandChoices" placeholder="Search or enter brand" autocomplete="off" oninput="consMasterPairChanged()"></label><datalist id="cmBrandChoices"></datalist>'+
- '<p id="cmLastPrice" class="notice" role="status">Select a material and brand to view its current price.</p>'+
- '<label class="cons-master-field">Price / Unit (OMR)<input id="cmPrice" type="number" min="0" step="0.001" inputmode="decimal" placeholder="Enter price per unit"></label>'+
- '<label class="cons-master-field">Effective From<input id="cmDate" type="date" value="'+consOmanPriceDate()+'"></label>'+
- '<button class="blue" type="button" onclick="consSaveMaster()">SAVE BRAND &amp; PRICE</button>'+
+ window.ZukaitStockCore.masterPriceFields(consOmanPriceDate())+
  (section==='price'?'<button class="cm-editor-cancel" type="button" onclick="consMasterCloseEditor()">Cancel</button></dialog>':'')+'</section>'+
  '<p id="cmSaveMessage" class="notice" role="status">Shared materials use one physical stock balance. Opening stock is entered only after a physical count.</p>'+
  '<h3 id="cmListHeading">Material &amp; Price List</h3><div class="cons-searchbar"><input id="cmListSearch" type="search" autocomplete="off" aria-label="Search material or brand" placeholder="Search material or brand..." oninput="consRenderMaster()"></div>'+
@@ -1400,7 +1441,7 @@ body.cons-master-open #cmList{max-height:62vh;overflow:auto}
 }
 .cons-total-head,.cons-total-row{display:grid;grid-template-columns:46px minmax(260px,2.2fr) minmax(120px,.8fr) minmax(120px,.8fr) minmax(130px,.9fr);gap:0;align-items:stretch}.cons-total-head{margin-top:14px;border:1px solid #cbd5e1;border-bottom:0;border-radius:12px 12px 0 0;background:#eef4fb;color:#334155;font-size:11px;font-weight:900;letter-spacing:.02em}.cons-total-head>span{padding:10px 12px;border-right:1px solid #dbe5f0}.cons-total-head>span:last-child{border-right:0;text-align:right}.cons-total-list{border:1px solid #cbd5e1;border-radius:0 0 12px 12px;overflow:hidden;background:#fff}.cons-total-row{min-height:72px;border-top:1px solid #e5e7eb}.cons-total-row:first-child{border-top:0}.cons-total-row>div{min-width:0;padding:11px 12px;border-right:1px solid #eef2f7}.cons-total-row>div:last-child{border-right:0}.cons-total-no{display:grid;place-items:center;font-size:14px;font-weight:900;background:#f8fafc;color:#475569}.cons-total-material small,.cons-total-cell small{display:block;font-size:9px;font-weight:900;color:#64748b;margin-bottom:4px;letter-spacing:.04em}.cons-total-material b{display:block;font-size:15px;line-height:1.25;color:#172033;overflow-wrap:anywhere}.cons-total-material span{display:block;margin-top:3px;font-size:12px;font-weight:800;color:#52657c;overflow-wrap:anywhere}.cons-total-cell{display:flex;flex-direction:column;justify-content:center}.cons-total-cell b{font-size:14px;color:#172033;white-space:normal}.cons-total-cost{text-align:right}.cons-total-cost b{font-size:15px}.cons-total-grand{margin-top:12px;padding:14px 16px;border:1px solid #a7d7bd;border-radius:12px;background:#f0fdf4}.cons-total-grand span{font-size:12px;font-weight:900;color:#166534}.cons-total-grand b{font-size:24px;color:#14532d}
 @media(max-width:760px){.cons-total-head{display:none}.cons-total-list{border:0;background:transparent;overflow:visible}.cons-total-row{grid-template-columns:42px minmax(0,1fr) minmax(110px,.72fr);grid-template-areas:"no material cost" "no issued actual";margin:9px 0;border:1px solid #dbe5f0!important;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 4px 14px #17304d0a}.cons-total-no{grid-area:no}.cons-total-material{grid-area:material}.cons-total-cost{grid-area:cost}.cons-total-row>div{border-right:0}.cons-total-row .cons-total-cell:nth-of-type(3){grid-area:issued;border-top:1px solid #eef2f7}.cons-total-row .cons-total-cell:nth-of-type(4){grid-area:actual;border-top:1px solid #eef2f7}.cons-total-material b{font-size:14px}.cons-total-cell b{font-size:13px}.cons-total-cost b{font-size:14px}.cons-total-grand b{font-size:21px}}@media(max-width:700px){.cons-depts,.cons-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cons-entry-grid{grid-template-columns:1fr}.cons-vehicle-card{grid-template-columns:repeat(2,minmax(0,1fr))}.cons-line-editor{grid-template-columns:1fr 1fr}.cons-line-editor input,.cons-line-editor button{min-height:48px}.cons-dept,.cons-action{min-height:105px}.cons-launch{margin-top:6px}}
-#modal .cons-final-pending-list{display:flex;flex-direction:column;gap:10px;width:100%}#modal .cons-final-pending-row{display:grid!important;grid-template-columns:32px minmax(110px,.7fr) minmax(0,1.6fr) minmax(110px,1fr) 16px;align-items:center;gap:12px;width:100%!important;margin:0!important;padding:14px 16px!important;text-align:left!important;background:#fff!important;color:#172033!important;border:1px solid #cbd5e1!important;border-left:4px solid #d97706!important;border-radius:10px;min-height:64px;white-space:normal;overflow-wrap:anywhere}#modal .cons-final-pending-row .cons-row-no{color:#64748b}#modal .cons-final-pending-row .cons-row-reg{color:#475569}#modal .cons-final-pending-row:focus-visible{outline:3px solid #2563eb;outline-offset:2px}@media(max-width:600px){#modal .cons-final-pending-row{grid-template-columns:26px minmax(0,1fr) 16px;gap:6px 10px}#modal .cons-final-pending-row .cons-row-no{grid-row:1/4}#modal .cons-final-pending-row>span{grid-column:2}#modal .cons-final-pending-row>i{grid-column:3;grid-row:1/4}}
+#modal .cons-final-pending-list{display:flex;flex-direction:column;gap:6px;width:100%;min-width:0}#modal .cons-final-pending-head,#modal .cons-final-pending-row{box-sizing:border-box;display:grid!important;grid-template-columns:32px minmax(72px,.75fr) minmax(0,1.6fr) minmax(78px,.9fr) minmax(112px,1fr) 16px;align-items:center;gap:10px;width:100%!important;padding:10px 12px!important;text-align:left!important}#modal .cons-final-pending-head{background:#f1f5f9;color:#526579;font-size:11px;font-weight:700;border-radius:8px}#modal .cons-final-pending-row{margin:0!important;background:#fff!important;color:#172033!important;border:1px solid #dce5ef!important;border-radius:9px;min-height:54px!important;white-space:normal!important;line-height:1.35}#modal .cons-final-pending-row>*{min-width:0;overflow-wrap:break-word}#modal .cons-final-pending-row .cons-row-no{color:#64748b;font-size:12px}#modal .cons-final-pending-row .cons-row-jc{color:#24528c;font-size:13px}#modal .cons-final-pending-row .cons-row-vehicle{font-weight:700;font-size:13px}#modal .cons-final-pending-row .cons-row-reg{color:#475569;font-size:12px}#modal .cons-final-pending-row .cons-row-status{box-sizing:border-box;justify-self:start;border-radius:7px;background:#fff0d5;color:#92400e;padding:5px 7px;font-size:11px;font-weight:800;line-height:1.35;white-space:normal;overflow-wrap:normal;word-break:normal}#modal .cons-final-pending-row .cons-row-status.reopened{background:#e0edff;color:#24528c}#modal .cons-final-pending-row .cons-row-status.review{background:#f1e8fb;color:#63328d}#modal .cons-final-pending-row>i{color:#24528c;font-style:normal;font-size:20px;text-align:center}#modal .cons-final-pending-row:focus-visible{outline:3px solid #2563eb;outline-offset:2px}@media(max-width:700px){#modal .cons-final-pending-head{display:none!important}#modal .cons-final-pending-row{grid-template-columns:22px minmax(0,1fr) minmax(0,.85fr) 16px;grid-template-areas:"no jc reg arrow" "no vehicle vehicle arrow" "no status status arrow";gap:4px 8px;padding:9px 10px!important;min-height:76px!important}#modal .cons-final-pending-row .cons-row-no{grid-area:no}#modal .cons-final-pending-row .cons-row-jc{grid-area:jc}#modal .cons-final-pending-row .cons-row-vehicle{grid-area:vehicle}#modal .cons-final-pending-row .cons-row-reg{grid-area:reg;text-align:right}#modal .cons-final-pending-row .cons-row-status{grid-area:status}#modal .cons-final-pending-row>i{grid-area:arrow}}
 .cons-job-report-list{display:grid;gap:10px}.cons-job-report{border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#fff}.cons-job-report>summary{cursor:pointer;display:list-item;padding:8px;color:#172033}.cons-job-report>summary>span{display:inline-block;margin:0 16px;color:#475569}.cons-job-report>summary>strong{display:inline-block;color:#166534}.cons-job-report[open]>summary{border-bottom:1px solid #cbd5e1;margin-bottom:10px}@media(max-width:600px){.cons-job-report>summary>span{display:block;margin:6px 0}}
 #modal .cons-report-panel{border:1px solid #cbdde8;border-radius:16px;overflow:hidden;background:#f8fafc;margin-bottom:20px}#modal .cons-report-panel-head{padding:18px 22px;background:linear-gradient(120deg,#0c4a6e,#0f766e);color:white}#modal .cons-report-panel-head>span{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#bae6fd}#modal .cons-report-panel-head h3{color:#fff!important;margin:5px 0;font-size:22px}#modal .cons-report-panel-head p{margin:0;color:#e0f2fe;font-size:13px}#modal .cons-report-builder{padding:20px;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}#modal .cons-report-builder label{display:flex;flex-direction:column;gap:7px;color:#334155;font-size:12px;font-weight:800}#modal .cons-report-builder label input,#modal .cons-report-builder label select{width:100%;margin:0;min-height:46px;border:1px solid #b8cbd9;border-radius:9px;background:#fff;color:#0f172a;font-size:14px;padding:10px}#modal .cons-report-builder input:focus,#modal .cons-report-builder select:focus{outline:2px solid #0284c7;outline-offset:1px}#modal .cons-report-type{grid-column:span 2}#modal .cons-report-submit{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #dce5ec;padding-top:16px}#modal .cons-report-submit span{font-size:12px;color:#64748b}#modal .cons-report-submit button{width:auto!important;min-width:180px;background:#0369a1!important;color:white!important;border-radius:10px;min-height:46px;font-weight:800}#modal .cons-report-kpis>div{padding:16px;border:1px solid #dbe5ec;border-radius:12px;background:#eff6ff}#modal .cons-report-kpis b{display:block;font-size:22px;color:#075985}#modal .cons-report-kpis span{display:block;font-size:12px;color:#475569;margin-top:5px}@media(max-width:700px){#modal .cons-report-builder{grid-template-columns:repeat(2,minmax(0,1fr));padding:14px;gap:12px}#modal .cons-report-submit{flex-direction:column;align-items:stretch}#modal .cons-report-submit button{width:100%!important}#modal .cons-report-panel-head{padding:16px}}
 .cons-period-items{display:grid;gap:8px}.cons-period-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px;border:1px solid #dce3eb;border-radius:9px;background:#fff;break-inside:avoid}.cons-period-item b{overflow-wrap:anywhere}.cons-period-item strong{white-space:nowrap}.cons-period-item small{grid-column:1/-1;color:#526579}

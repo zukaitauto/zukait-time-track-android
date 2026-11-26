@@ -35,7 +35,11 @@ export async function accountantApi(admin,user,body,secret,now=Date.now(),servic
   if(receipt.data)return receipt.data.actor_id===user.id&&receipt.data.fingerprint===fp?{status:200,body:receipt.data.result}:fail('request_conflict',409);
  }
  const context=await readAccountantContext(admin,user,{enabled:services.coalesceContextReads===true,project:services.contextProject||'',readOnly:['accountant_dashboard','accountant_jc_search','accountant_jc_detail','accountant_report'].includes(action)});
- const full=financialReport(context,{},now),report=Object.keys(filters).length&&body.report!=='manager_profit'?financialReport(context,filters,now):full;
+ const full=financialReport(context,{},now);
+ // These branches use the full report and their own filters, and return before
+ // the generic filtered report or enriched summary is consumed.
+ const specialized=action==='accountant_report'&&['accounts_performance','accounts_leave','manager_profit'].includes(body.report)||action==='accountant_command'||action==='accountant_jc_detail';
+ const report=!specialized&&Object.keys(filters).length&&body.report!=='manager_profit'?financialReport(context,filters,now):full;
  const omanCurrentMonth=day(now).slice(0,7);
  const currentCashInvoices=full.rows.invoices.filter(i=>key(i.job_type)==='CASH'&&String(i.date||'').startsWith(omanCurrentMonth));
  const monthlyCashInvoiceTotal=currentCashInvoices.reduce((n,i)=>n+(milli(i.invoice_amount_omr)||0),0)/1000;

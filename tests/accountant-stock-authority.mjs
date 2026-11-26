@@ -3,7 +3,7 @@ import {consumablesStockApi as api} from '../supabase/functions/workshop-api/ext
 const A={role:'Accountant',id:'accountant'},calls=[];
 const opts={enabled:true,writesEnabled:true,invoiceEnabled:true,sessionHash:'synthetic'};
 const db={rpc:async(name,args)=>{calls.push({name,args});return {data:name.endsWith('_list')?[]:{id:'invoice',final:true},error:null}}};
-for(const [operation,command] of [['WRITE','PURCHASE'],['WRITE','RESERVE'],['WRITE','FINALISE'],['WRITE','MECHANICAL_ISSUE'],['WRITE','RETURN'],['MASTER_LINK'],['LEGACY_PREVIEW'],['RESERVATIONS']]){
+for(const [operation,command] of [['WRITE','PURCHASE'],['WRITE','RESERVE'],['WRITE','FINALISE'],['WRITE','MECHANICAL_ISSUE'],['WRITE','RETURN'],['RESERVATIONS']]){
  const n=calls.length;assert.equal((await api(db,A,{operation,...(command?{command}:{}),requestId:'test',data:{}},opts)).status,403,operation+' '+command);assert.equal(calls.length,n);
 }
 for(const [operation,command] of [['WRITE','OPENING'],['WRITE','ADJUST'],['WRITE','MINIMUM'],['INVOICE_CANCEL'],['INVOICE_SAVE'],['INVOICE_CORRECT_HEADER'],['INVOICE_CORRECT_LINES'],['INVOICE_LIST'],['INVOICE_AUDIT']]){
@@ -11,6 +11,14 @@ for(const [operation,command] of [['WRITE','OPENING'],['WRITE','ADJUST'],['WRITE
  const result=await api(db,A,{operation,...(command?{command}:{}),requestId:'test',data},opts);
  assert.equal(result.status,200,operation+': '+JSON.stringify(result));
  assert.equal(calls.at(-1).args.p_session_hash,'synthetic');
+}
+const legacyOpts={...opts,masterLinkEnabled:true};
+for(const cmd of [{operation:'LEGACY_PREVIEW',page:0},{operation:'MASTER_LINK',materialId:'m',brandId:'b',origin:'Both'}]){
+ assert.equal((await api(db,A,cmd,legacyOpts)).status,200);
+ assert.equal(calls.at(-1).args.p_session_hash,'synthetic');
+ assert.equal((await api(db,A,cmd,opts)).status,423);
+ assert.equal((await api(db,A,cmd,{...legacyOpts,sessionHash:''})).status,401);
+ assert.equal((await api(db,{role:'Supervisor'},cmd,legacyOpts)).status,403);
 }
 assert.equal((await api(db,A,{operation:'WRITE',command:'OPENING',requestId:'x',data:{}},{...opts,sessionHash:''})).status,401);
 for(const role of ['Employee','Purchaser','Receptionist'])assert.equal((await api(db,{role},{operation:'INVOICE_SAVE',requestId:'x',data:{}},opts)).status,403);

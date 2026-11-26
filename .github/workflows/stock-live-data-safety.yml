@@ -9,6 +9,12 @@ on:
       - 'supabase/staged/CONSUMABLES_STOCK_*.sql'
       - 'supabase/functions/workshop-api/extensions/consumables_stock_api.js'
       - 'tests/consumables-stock-*.mjs'
+      - 'tests/accountant-stock-workspace.mjs'
+      - 'tests/account-session-isolation.mjs'
+      - 'tests/consumables-invoice-price-reconcile-client.mjs'
+      - 'app/src/main/assets/accountant_stock.js'
+      - 'app/src/main/assets/session_privacy.js'
+      - 'release-request.json'
       - 'package.json'
       - 'tests/consumables-main-app-preview.mjs'
       - 'scripts/prepare-consumables-stock-android-pilot.mjs'
@@ -31,6 +37,14 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Full isolated PG17-compatible stock ledger checks
         run: npm run test:consumables:stock
+      - name: Verify account-scoped transaction recovery
+        run: |
+          node tests/consumables-stock-retry-safety.mjs
+          node tests/account-session-isolation.mjs
+          node tests/accountant-stock-workspace.mjs
+          node tests/consumables-invoice-price-reconcile-client.mjs
+          node tests/consumables-invoice-price-client.mjs
+          node tests/consumables-purchase-role-recovery.mjs
       - name: Normal staff app cannot activate via URL
         run: node tests/consumables-stock-live-readiness.mjs
       - name: Confirm live Stock activation remains disabled
@@ -50,7 +64,14 @@ jobs:
             request.backendDeploymentRequired===true && request.approvedAt===null &&
             request.publishNonce===null;
           const heldParity=request.releaseScope==='standard' && request.versionName==='V422' && request.versionCode===385 && request.approvedForStaff===false && request.approvedAt===null && request.publishNonce===null && request.productionBackendChanges===true && request.backendDeploymentRequired===true;
-          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase && !heldParity))
+          // V424 is a held, UI-only Consumables menu/list update, with no backend changes.
+          const heldV424=request.releaseScope==='standard' && request.versionName==='V424' &&
+            request.versionCode===387 && request.approvedForStaff===false && request.approvedAt===null &&
+            request.publishNonce===null && request.productionBackendChanges===false && request.backendDeploymentRequired===false;
+          const heldV425=request.releaseScope==='standard' && request.versionName==='V425' &&
+            request.versionCode===388 && request.approvedForStaff===false && request.approvedAt===null &&
+            request.publishNonce===null && request.productionBackendChanges===false && request.backendDeploymentRequired===false;
+          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase && !heldParity && !heldV424 && !heldV425))
             throw Error('Unexpected Stock backend activation or release scope');
           const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
           if(!html.includes('window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true'))

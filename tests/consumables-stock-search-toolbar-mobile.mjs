@@ -48,6 +48,9 @@ const browser=await chromium.launch({headless:true});
 try{
  for(const width of [320,375,390,430,600,768]){
   const page=await browser.newPage({viewport:{width,height:812},deviceScaleFactor:1});
+  // A routed synthetic HTTPS document supplies real browser localStorage without network access.
+  await page.route('https://stock-qa.invalid/**',route=>route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><html><body></body></html>'}));
+  await page.goto('https://stock-qa.invalid/');
   await page.setContent('<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">'+
   '<style>*{box-sizing:border-box}body{margin:0;font:16px Arial,sans-serif}</style></head><body></body></html>');
   await page.addScriptTag({content:bootstrap});

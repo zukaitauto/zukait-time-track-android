@@ -30,7 +30,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
   }
   if(!enabled)return bad('stock_not_enabled',503);
   // Accountant Stock administration: scoped reads, opening counts, adjustments, minimums and invoice lifecycle. Job issue/return and master price actions remain separate.
-  if(user.role==='Accountant'&&!['LIST','BALANCE','HISTORY','REPORTS','ENTRY_CATALOG','INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL','INVOICE_AUDIT','WRITE'].includes(operation))return bad('stock_forbidden',403);
+  if(user.role==='Accountant'&&!['LIST','BALANCE','HISTORY','REPORTS','ENTRY_CATALOG','LEGACY_PREVIEW','MASTER_LINK','INVOICE_STATUS','INVOICE_SAVE','INVOICE_LIST','INVOICE_CORRECT_HEADER','INVOICE_CORRECT_LINES','INVOICE_CANCEL','INVOICE_AUDIT','WRITE'].includes(operation))return bad('stock_forbidden',403);
   if(user.role==='Accountant'&&operation==='WRITE'&&!['OPENING','ADJUST','MINIMUM'].includes(String(body.command||'').toUpperCase()))return bad('stock_forbidden',403);
   const department=body.department;
   if(department!==undefined&&!['Painting','Mechanical'].includes(department))
@@ -97,9 +97,9 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     return good({invoices:data.slice(0,50),page,hasMore:data.length>50});
   }
   if(operation==='LEGACY_PREVIEW') {
-    // One-time Manager review of the CURRENT saved master; at most 20 pairs.
+    // Scoped Stock administrator review of the CURRENT saved master; at most 20 pairs.
     // No write to Stock or workshop_state, no automatic department inference.
-    if(user.role!=='Manager')return bad('manager_only',403);
+    if(!['Manager','Accountant'].includes(user.role))return bad('manager_only',403);
     if(!masterLinkEnabled)return bad('stock_master_link_not_enabled',423);
     if(!sessionHash)return bad('stock_session_required',401);
     if(!Number.isInteger(body.page)||body.page<0||body.page>49)
@@ -111,9 +111,9 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     return good({preview:data});
   }
   if(operation==='MASTER_LINK') {
-    // Manager-only projection of one material+brand that is ALREADY committed
-    // to the existing workshop Master; SQL rechecks saved IDs, price and role.
-    if(user.role!=='Manager')return bad('manager_only',403);
+    // Scoped projection of one material+brand that is ALREADY committed
+    // to the existing workshop Master; SQL rechecks saved IDs, price, scope and role.
+    if(!['Manager','Accountant'].includes(user.role))return bad('manager_only',403);
     if(!masterLinkEnabled)return bad('stock_master_link_not_enabled',423);
     if(!sessionHash)return bad('stock_session_required',401);
     const materialId=safeId(body.materialId);
@@ -128,7 +128,7 @@ export async function consumablesStockApi(admin,user,body,{enabled=false,writesE
     if(error){
       const code=String(error.message||'');
       const allowed=['MANAGER_ONLY','STOCK_FORBIDDEN','MASTER_NOT_SAVED',
-        'STOCK_UNIT_CONFLICT','PAINT_ONLY_MASTER','INVALID_MASTER'];
+        'STOCK_UNIT_CONFLICT','PAINT_ONLY_MASTER','INVALID_MASTER','MASTER_SCOPE_MISMATCH'];
       const mapped=allowed.includes(code)?code.toLowerCase():'stock_master_link_failed';
       return bad(mapped,mapped==='manager_only'||mapped==='stock_forbidden'?403:
         mapped==='stock_master_link_failed'?503:409);

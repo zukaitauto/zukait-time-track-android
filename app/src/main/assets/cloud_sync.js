@@ -24,7 +24,7 @@
   let cloudPushing=false;
   let managerEditInFlight=false;
   let pushTimer=null;
-  let dashboardRenderTimer=null;
+  let dashboardRenderTimer=null,dashboardRenderPending=false;
   let pollTimer=null;
   let livePollTimer=null;
   let pollGeneration=0,pollActive=false;
@@ -149,10 +149,17 @@
       try{window.zukaitLiveStatusAuthority?.apply?.()}catch(_){}
       return;
     }
+    dashboardRenderPending=true;
+    queueDashboardRender();
+  }
+
+  function queueDashboardRender(){
+    if(!dashboardRenderPending||!me||document.visibilityState==='hidden')return;
     clearTimeout(dashboardRenderTimer);
     dashboardRenderTimer=setTimeout(()=>{
       dashboardRenderTimer=null;
       if(!me||document.visibilityState==='hidden')return;
+      dashboardRenderPending=false;
       try{render()}catch(e){console.error('Render after sync failed',e)}
     },180);
   }
@@ -190,9 +197,7 @@
     // unless the request carries an in-memory baseline revision.
     if(payload.action==='load'||payload.action==='save'){
       payload={...payload,job_edit_sync_mode:'compact-v1'};
-      if(payload.action==='load'&&Number.isSafeInteger(payload.known_revision)&&lastSyncedState){
-        payload.known_job_edit_sync_mode=lastSyncedState.jobEditArchive?'compact-v1':'legacy-v1';
-      }
+
     }
     const epoch=sessionEpoch;
     const token=sessionToken();
@@ -448,7 +453,10 @@
     }catch(_){}
   }
 
-  async function pullLiveStatus(){
+  async function pullLiveStatus(scheduled=false){
+    // Only scheduled reads may reuse a recently confirmed live projection.
+    // Explicit action, revision and resume refreshes retain their existing behavior.
+    if(scheduled&&liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000)return false;
     const epoch=sessionEpoch;
     if(liveInFlight||!sessionToken()||!navigator.onLine||!liveRole())return false;
     liveInFlight=true;
@@ -730,7 +738,7 @@
       if(pullBaseline&&confirmedRevision===pullRevision&&lastProbedRevision===pullRevision&&Date.now()-lastRevisionProbeAt<700){
         r={ok:true,revision:pullRevision,not_modified:true,user:me};
       }else{
-        r=await api(pullBaseline?{action:'load',known_revision:pullRevision}:{action:'load'});
+        r=await api(pullBaseline?{action:'load',known_revision:pullRevision,known_job_edit_sync_mode:pullBaseline.jobEditArchive?'compact-v1':'legacy-v1'}:{action:'load'});
       }
     }finally{if(!stale(epoch))pullInFlight=false}
     if(!r.ok){
@@ -1081,16 +1089,25 @@
   async function readLatest(){
     if(!navigator.onLine)throw new Error('OFFLINE');
     if(readLatestInFlight)return readLatestInFlight;
-    readLatestInFlight=(async()=>{
-      const r=await api({action:'load'});
+    const epoch=sessionEpoch;
+    const request=(async()=>{
+      // Reuse only a server-confirmed read baseline from this session.
+      const baseline=confirmedReadState&&confirmedReadRevision>=0?{revision:confirmedReadRevision,data:confirmedReadState}:null;
+      const r=await api(baseline?{action:'load',known_revision:baseline.revision,known_job_edit_sync_mode:baseline.data.jobEditArchive?'compact-v1':'legacy-v1'}:{action:'load'});
       if(!r.ok)throw new Error(r.code||'LOAD_FAILED');
+      if(stale(epoch))throw Error('STALE_SESSION');
+      if(r.not_modified===true){
+        if(!baseline||Number(r.revision)!==baseline.revision)throw new Error('INVALID_NOT_MODIFIED');
+        r.data=baseline.data;
+      }
       if(!r.data||typeof r.data!=='object')throw new Error('INVALID_SERVER_RECORDS');
       const revision=Number(r.revision||0);
       if(revision>=confirmedReadRevision){confirmedReadState=clone(r.data);confirmedReadRevision=revision;}
       // Neither state nor the dirty flag/conflict merge baseline is changed.
       return {revision:confirmedReadRevision,data:clone(confirmedReadState)};
     })();
-    try{return await readLatestInFlight}finally{readLatestInFlight=null}
+    readLatestInFlight=request;
+    try{return await request}finally{if(readLatestInFlight===request)readLatestInFlight=null}
   }
 
   let monthlyReadInFlight=null;
@@ -1377,7 +1394,7 @@
       clearTimeout(pollTimer);
       pollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
-        if(sessionToken()&&navigator.onLine){
+        if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine){
           try{
             const changed=await probeRevision();
             quietTicks=changed?0:Math.min(3,quietTicks+1);
@@ -1385,15 +1402,19 @@
         }else schedulePoll();
       },delay(pollMs(),'revision'));
     };
-    const scheduleLive=()=>{
+    const scheduleLive=(nextDelay)=>{
       if(!pollActive||generation!==pollGeneration)return;
       clearTimeout(livePollTimer);
       livePollTimer=setTimeout(async()=>{
         if(generation!==pollGeneration)return;
+        let nextDelay;
         try{
-          if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0))await pullLiveStatus();
-        }finally{scheduleLive();}
-      },delay(liveMs(),'live_status'));
+          if(document.visibilityState!=='hidden'&&sessionToken()&&navigator.onLine&&liveRole()&&!revisionProbeInFlight&&!(api.retryAfter?.('live_status')>0)){
+            if(liveStatusLastFetchedAt>0&&Date.now()-liveStatusLastFetchedAt<7000)nextDelay=Math.max(1000,7000-(Date.now()-liveStatusLastFetchedAt));
+            else await pullLiveStatus(true);
+          }
+        }finally{scheduleLive(nextDelay);}
+      },delay(nextDelay??liveMs(),'live_status'));
     };
     schedulePoll();scheduleLive();
   }
@@ -1437,7 +1458,7 @@
     clearTimeout(pollTimer);pollTimer=null;
     clearTimeout(livePollTimer);livePollTimer=null;
     clearTimeout(pushTimer);pushTimer=null;
-    clearTimeout(dashboardRenderTimer);dashboardRenderTimer=null;
+    clearTimeout(dashboardRenderTimer);dashboardRenderTimer=null;dashboardRenderPending=false;
   }
 
 
@@ -1468,6 +1489,7 @@
   document.addEventListener('visibilitychange',()=>{
     if(pollActive)beginPolling(++pollGeneration);
     if(document.visibilityState==='visible')refreshVisibleSharedState();
+    if(document.visibilityState==='visible')queueDashboardRender();
   });
   window.addEventListener('focus',refreshVisibleSharedState);
 

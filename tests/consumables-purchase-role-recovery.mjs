@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const source=fs.readFileSync('app/src/main/assets/consumables_ui.js','utf8');
+const block=source.slice(source.indexOf('let consPurchaseDraft=null'),source.indexOf('function consPurchaseLockForm('));
+const storage=new Map(),alerts=[];let role='Manager';const ctx={me:{id:'M1'},role:()=>role,alert:x=>alerts.push(x),window:{localStorage:{getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}}};
+vm.createContext(ctx);vm.runInContext(block,ctx);const run=s=>vm.runInContext(s,ctx);
+assert.equal(run('consPurchaseRestore()'),true);
+run("consPurchaseDraft={invoiceNumber:'INV',lines:[]};consPurchasePending={id:'original',fingerprint:'receipt'};consPurchasePersist()");
+const key=[...storage.keys()][0],original=storage.get(key);
+role='Supervisor';assert.equal(run('consPurchaseRestore()'),false);assert.equal(run('consPurchaseDraft'),null);assert.equal(run('consPurchaseOwnerId()'),'');assert.equal(run('consPurchaseRestore(false)'),true);assert.equal(storage.get(key),original);
+role='Manager';assert.equal(run('consPurchaseRestore()'),true);assert.equal(run('consPurchasePending.id'),'original');
+storage.clear();storage.set('zukait-purchase-pending-v1:M1',JSON.stringify({owner:'M1',pending:{id:'old',fingerprint:'old'},draft:{}}));
+assert.equal(run('consPurchaseRestore()'),false);assert.equal(storage.size,1);
+role='Supervisor';assert.equal(run('consPurchaseRestore()'),false);assert.equal(run('consPurchaseRestore(false)'),true);assert.equal(storage.size,1);
+console.log('PASS Manager/Supervisor purchase recovery role isolation and legacy receipt preservation');

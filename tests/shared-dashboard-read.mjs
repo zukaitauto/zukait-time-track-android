@@ -2,7 +2,7 @@ import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:asser
 const source=fs.readFileSync('app/src/main/assets/cloud_sync.js','utf8');
 const slice=(start,end)=>source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start)));
 let reads=0,patches=0;
-const c=vm.createContext({navigator:{onLine:true},cloudDirty:true,cloudPushing:true,pullInFlight:true,cloudRevision:1,Date,setTimeout,clone:structuredClone,state:{jobs:[{no:'LOCAL',amount:12}]},
+const c=vm.createContext({sessionEpoch:0,stale:epoch=>epoch!==0,confirmedReadState:null,confirmedReadRevision:-1,navigator:{onLine:true},cloudDirty:true,cloudPushing:true,pullInFlight:true,cloudRevision:1,Date,setTimeout,clone:structuredClone,state:{jobs:[{no:'LOCAL',amount:12}]},
  async api(body){assert.equal(body.action,'load');reads++;return {ok:true,revision:2,data:{jobs:[{no:'12079',amount:80}]}}}});
 vm.runInContext(slice('  let readLatestInFlight=', '  async function syncNow(){')+';globalThis.readLatest=readLatest;',c);
 const result=await c.readLatest();assert.equal(reads,1);assert.equal(result.data.jobs[0].no,'12079');
