@@ -1,4 +1,4 @@
--- Production migration installed 2026-11-26. Raw originals retain priority on equal revision.
+-- Candidate recovery update; not deployed. Preserve snapshot-block recovery and exact backup fallback.
 -- Requires compact archive and consumables shadow schemas. No data changes.
 CREATE OR REPLACE FUNCTION private.recover_workshop_revision(p_revision bigint)
  RETURNS jsonb
@@ -14,27 +14,47 @@ declare
   time_delta jsonb;
   staged boolean;
   shadow boolean;
+  blocked boolean;
 begin
+  -- Exact backup fallback is restricted to revisions without a normal exact source.
+  if not exists (select 1 from public.workshop_state_history where revision=p_revision)
+     and not exists (select 1 from private.workshop_archive_conversion_pilot where revision=p_revision)
+     and not exists (select 1 from private.workshop_consumables_shadow_history where revision=p_revision)
+     and not exists (select 1 from private.workshop_snapshot_manifests where revision=p_revision)
+     and not exists (select 1 from public.workshop_state where id='main' and revision=p_revision) then
+    select b.data into checkpoint_data from public.workshop_backups b
+      where b.revision=p_revision and jsonb_typeof(b.data)='object'
+        and b.data ?& array['jobs','sessions','assign','users']
+      and not exists (select 1 from public.workshop_backups other where other.revision=b.revision and other.data is distinct from b.data)
+      order by b.id limit 1;
+    if found then return checkpoint_data; end if;
+  end if;
+
   -- Choose the nearest later full checkpoint, including the current state.
-  select candidate.revision,candidate.data,candidate.staged,candidate.shadow into checkpoint_revision,checkpoint_data,staged,shadow
+  select candidate.revision,candidate.data,candidate.staged,candidate.shadow,candidate.blocked into checkpoint_revision,checkpoint_data,staged,shadow,blocked
   from (
-    (select h.revision,h.data,false as staged,false as shadow from public.workshop_state_history h
+    (select h.revision,h.data,false as staged,false as shadow,false as blocked from public.workshop_state_history h
      where h.revision>=p_revision order by h.revision limit 1)
     union all
-    (select p.revision,null::jsonb,true,false from private.workshop_archive_conversion_pilot p
+    (select p.revision,null::jsonb,true,false,false from private.workshop_archive_conversion_pilot p
      where p.revision>=p_revision order by p.revision limit 1)
     union all
-    (select h.revision,null::jsonb,false,true from private.workshop_consumables_shadow_history h
+    (select h.revision,null::jsonb,false,true,false from private.workshop_consumables_shadow_history h
      where h.revision>=p_revision order by h.revision limit 1)
     union all
-    (select s.revision,s.data,false,false from public.workshop_state s
+    (select m.revision,null::jsonb,false,false,true from private.workshop_snapshot_manifests m
+     where m.revision>=p_revision order by m.revision limit 1)
+    union all
+    (select s.revision,s.data,false,false,false from public.workshop_state s
      where s.id='main' and s.revision>=p_revision)
   ) candidate
-  order by candidate.revision,candidate.staged desc,candidate.shadow asc limit 1;
+  order by candidate.revision,candidate.staged desc,candidate.blocked asc,candidate.shadow asc limit 1;
   if not found then return null; end if;
 
   if staged then checkpoint_data:=private.read_workshop_archive_pilot(checkpoint_revision); end if;
   if shadow then checkpoint_data:=private.read_workshop_consumables_shadow(checkpoint_revision)->'data'; end if;
+
+  if blocked then checkpoint_data:=private.read_workshop_snapshot_blocks_fast(checkpoint_revision)->'data'; end if;
 
   while checkpoint_revision>p_revision loop
     previous_revision := checkpoint_revision-1;
