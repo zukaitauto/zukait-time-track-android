@@ -2531,10 +2531,18 @@ Deno.serve(async (req: Request) => {
       const { data: current, error } = await admin.from("workshop_state")
         .select("revision,data").eq("id","main").single();
       if (error) throw error;
+      // Manager backups must contain the full audit, independent of the
+      // archive baseline or the compact-sync feature flag.
+      let backupData;
+      try {
+        backupData=await legacyWire(current.data);
+      } catch {
+        return reply({ok:false,code:"audit_history_unavailable"},503);
+      }
       const { data: created, error: backupError } = await admin.from("workshop_backups").insert({
         created_by: user.id,
         revision: current.revision,
-        data: current.data
+        data: backupData
       }).select("id,created_at,revision").single();
       if (backupError) throw backupError;
       return reply({ ok:true, backup:created });
