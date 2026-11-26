@@ -9,6 +9,7 @@ GRANT SELECT ON private.workshop_job_edit_archive_manifest TO service_role;
 CREATE FUNCTION private.guard_sealed_job_edit_archive() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 BEGIN
+ IF pg_catalog.current_setting('transaction_isolation') <> 'read committed' THEN RAISE EXCEPTION 'archive_mutation_requires_read_committed'; END IF;
  -- Serialize all archive mutations with sealing, including TRUNCATE.
  PERFORM pg_catalog.pg_advisory_xact_lock(184293, 115);
  IF TG_OP='TRUNCATE' THEN
