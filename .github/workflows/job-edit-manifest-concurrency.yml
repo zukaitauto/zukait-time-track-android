@@ -1,0 +1,51 @@
+name: Job edit manifest concurrency
+on:
+  pull_request:
+    branches: [architecture-v2]
+permissions:
+  contents: read
+jobs:
+  concurrency:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: qa
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: qa
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated fixture
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon;
+          create role authenticated;
+          create role service_role;
+          create schema private;
+          create table private.workshop_job_edit_audit_baseline(snapshot_revision bigint, position bigint, job_no text, payload jsonb, primary key(snapshot_revision,position));
+          insert into private.workshop_job_edit_audit_baseline values(1,1,'QA','{}'),(2,1,'QA','{}');
+          SQL
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/job-edit-archive-manifest-candidate.sql
+      - name: Concurrent seal and mutation
+        run: |
+          set -eu
+          psql -v ON_ERROR_STOP=1 -c "begin; select private.seal_job_edit_archive(1,1); select pg_sleep(3); commit;" > /tmp/seal.log 2>&1 &
+          pid=$!
+          for i in $(seq 1 30); do
+            if [ "$(psql -Atc "select count(*) from pg_locks where relation='private.workshop_job_edit_audit_baseline'::regclass and mode='ShareRowExclusiveLock' and granted")" = 1 ]; then break; fi
+            sleep 0.1
+          done
+          if psql -v ON_ERROR_STOP=1 -c "delete from private.workshop_job_edit_audit_baseline where snapshot_revision=1" > /tmp/mutate.log 2>&1; then exit 1; fi
+          wait "$pid"
+          grep archive_sealed /tmp/mutate.log
+          test "$(psql -Atc "select count(*) from private.workshop_job_edit_audit_baseline where snapshot_revision=1")" = 1
+          if psql -v ON_ERROR_STOP=1 -c "begin isolation level repeatable read; delete from private.workshop_job_edit_audit_baseline where snapshot_revision=2;" > /tmp/isolation.log 2>&1; then exit 1; fi
+          grep archive_mutation_requires_read_committed /tmp/isolation.log
+          test "$(psql -Atc "select has_function_privilege('service_role','private.seal_job_edit_archive(bigint,bigint)','EXECUTE')")" = f
