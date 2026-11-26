@@ -985,6 +985,9 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
 // matching row contents (not just a revision number or row count) are required.
 let verifiedLiveProjection: {revision:number,updated_at:any,updated_by:any,expected:any[],expiresAt:number}|null=null;
 async function loadAuthoritativeLiveStatus() {
+  // Opt in only after the atomic SQL writer is migrated and QA verified.
+  // Default remains strict for existing production deployments.
+  const selectiveRevision = Deno.env.get("ZUKAIT_LIVE_STATUS_SELECTIVE_REVISION") === "true";
   const comparable = (r:any) => ({
     employee_id: String(r?.employee_id || ""),
     employee_name: String(r?.employee_name || ""),
@@ -998,7 +1001,7 @@ async function loadAuthoritativeLiveStatus() {
     vehicle: String(r?.vehicle || ""),
     registration: String(r?.registration || ""),
     overtime: r?.overtime === true,
-    state_revision: Number(r?.state_revision || 0)
+    ...(selectiveRevision ? {} : {state_revision: Number(r?.state_revision || 0)})
   });
   const matches = (rows:any[],expected:any[]) => {
     if (!Array.isArray(rows)||rows.length!==expected.length) return false;
@@ -1008,6 +1011,9 @@ async function loadAuthoritativeLiveStatus() {
       const id=String(r.employee_id),e=expectedById.get(id);
       if(!e||seen.has(id))return false;
       seen.add(id);
+      // Per-employee revision may lag the global revision, never lead it.
+      const rowRevision = Number(r?.state_revision);
+      if (selectiveRevision && (!Number.isSafeInteger(rowRevision) || rowRevision < 1 || rowRevision > Number(e.state_revision))) return false;
       return JSON.stringify(comparable(r))===JSON.stringify(comparable(e));
     });
   };
@@ -1043,7 +1049,7 @@ async function loadAuthoritativeLiveStatus() {
     const currentById = new Map((rows||[]).map((row:any)=>[String(row.employee_id),row]));
     const changedRows = expected.filter((row:any)=>{
       const currentRow = currentById.get(String(row.employee_id));
-      return !currentRow || JSON.stringify(comparable(currentRow)) !== JSON.stringify(comparable(row));
+      return !currentRow || (selectiveRevision && (!Number.isSafeInteger(Number(currentRow.state_revision)) || Number(currentRow.state_revision)<1 || Number(currentRow.state_revision)>revision)) || JSON.stringify(comparable(currentRow)) !== JSON.stringify(comparable(row));
     });
     if (changedRows.length) {
       const { error: upsertError } = await admin.from("workshop_live_status").upsert(changedRows,{onConflict:"employee_id"});
