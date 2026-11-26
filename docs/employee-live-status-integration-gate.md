@@ -20,3 +20,20 @@ Status: candidate only. CI now runs the actual candidate SQL function in a dispo
 - Existing SQL commit and API repair have NOT been changed.
 - No QA database integration test or concurrent benchmark has been executed.
 - No production changes are authorized by this PR.
+
+## QA read-only preflight — 2026-11-26
+- QA project: `omqgkqknbdcnotabffek` (separate from production).
+- Workshop revision 865; four live-status rows; all four at revision 865.
+- Zero future, null/invalid, or duplicate employee revisions/IDs.
+- Database sessions: four idle ClientRead, two extension waits, one active without a wait event; no lock wait observed in this sample.
+- Existing QA `private.commit_workshop_time_changes(bigint,jsonb,text,jsonb)` hash (MD5 of pg_get_functiondef): `106903561fe9ef75eb8e654e88db291d`.
+- QA writer still compares excluded.state_revision; candidate writer NOT installed.
+- No writes or deployments performed in this preflight.
+
+### Required next controlled QA acceptance
+1. Capture a fresh QA-only recovery snapshot and confirm QA users are not actively testing.
+2. Compare the candidate SQL function with the installed QA function, including all archive-normalization and undo/audit dependencies; stage SQL on QA only.
+3. Deploy the matching API to a QA-only function, preserving the existing QA endpoint. Enable selective-revision flag only for the isolated candidate.
+4. Test Employee Start/Pause/Resume/Finish and duplicate action IDs; Manager/Supervisor views; ID001; two simultaneous employees; reconnect; forced conflict/retry; historical audit and undo.
+5. Compare workshop revision, per-employee status and number of live-status row writes before and after. Confirm unchanged rows keep their revision and changed rows advance.
+6. Disable candidate endpoint and revert QA SQL as a unit if any mismatch; do not merge or deploy to production until these checks pass.
