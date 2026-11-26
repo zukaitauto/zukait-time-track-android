@@ -1,0 +1,29 @@
+name: Audit API QA package
+on:
+  pull_request:
+    branches: [architecture-v2]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Validate candidate dependency graph
+        working-directory: supabase/functions/workshop-api
+        run: deno check --no-lock index.ts
+      - name: Package exact source and checksums
+        run: |
+          git rev-parse HEAD > candidate-commit.txt
+          find supabase/functions/workshop-api -type f -print0 | sort -z | xargs -0 sha256sum > candidate-sha256.txt
+          tar -czf workshop-audit-qa.tar.gz supabase/functions/workshop-api candidate-commit.txt candidate-sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workshop-audit-qa
+          path: workshop-audit-qa.tar.gz
+          retention-days: 7
