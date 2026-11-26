@@ -23,7 +23,7 @@ create trigger audit_live_write after insert or update on public.workshop_live_s
 for each row execute function public.audit_live_write();
 insert into public.workshop_state(id,revision,data,updated_by) values ('main',10,'{}','QA');
 \i tests/sql/candidate-commit-workshop-time-changes.sql
-do $timer_test$$
+do $timer_test$
 declare payload jsonb; result jsonb; writes int; revision bigint;
 begin
  select jsonb_agg(jsonb_build_object('employee_id','E'||g,'employee_name','Employee '||g,'status','Available'))
@@ -51,7 +51,7 @@ begin
 end $timer_test$;
 -- Exercise conflict safety, deleted employees, and unchanged employee revisions
 -- after an unrelated workshop revision advances.
-do $
+do $timer_test$
 declare payload jsonb; result jsonb; writes int; revision bigint; n int;
 begin
  select jsonb_agg(jsonb_build_object('employee_id','E'||g,'employee_name','Employee '||g,'status',case when g=7 then 'Working' else 'Available' end))
