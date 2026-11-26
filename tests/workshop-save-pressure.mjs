@@ -29,6 +29,29 @@ r=await scenario('slow');assert.equal(r.commits,1,'do not start another expensiv
 r=await scenario('success');assert.equal(r.commits,1);assert.equal(r.result.body.ok,true);assert.equal(r.result.body.server_revision,2);assert.equal(r.result.body.attempts,1);
 r=await scenario('success',true);assert.equal(r.commits,1);assert.equal(r.result.body.ok,true);
 r=await scenario('conflict',true);assert.equal(r.commits,3);assert.equal(r.result.body.code,'conflict_busy');
+// Exercise the real save route in both wire representations; DB and unrelated
+// business authorities are mocked. The previous revision must remain exact.
+const a={job:'QA1',at:1},b={job:'QA1',at:2},c={job:'QA1',at:3},d={job:'QA1',at:4};
+const full={jobs:[{no:'QA1'}],assign:[],users:[],sublets:[],subletAudit:[],jobEdits:[a,b]};
+const compact={...full,jobEditArchive:{snapshotRevision:1,prefixCount:1},jobEdits:[b,c]};
+async function archivedSave({proposed,base=full,current=compact,revision=3,expected=2,capability=false}){
+ let writes=0,stored=null;
+ const prefixReader=async(rev,n)=>{assert.equal(rev,1);assert.equal(n,1);return {ok:true,snapshotRevision:1,prefixCount:1,entries:[a]}};
+ const legacyWire=data=>jobEditWireState(data,false,prefixReader);
+ const admin={from:()=>({select:()=>({eq:()=>({single:async()=>({data:{revision,data:structuredClone(current)}})})})}),
+ rpc:async(name,p)=>{if(name==='zukait_job_edit_legacy_current'){assert.equal(p.p_expected_revision,revision);return {data:{ok:true,revision,jobEdits:[a,...current.jobEdits]}}}assert.equal(name,'zukait_commit_workshop_state_v2');assert.equal(p.p_expected_revision,revision);writes++;stored=p.p_data;return {data:{ok:true,revision:revision+1}}}};
+ const result=await run('save',{expected_revision:expected,data:proposed,...(capability?{job_edit_sync_mode:'compact-v1'}:{})},admin,{id:'QA_MANAGER',role:'Manager'},(body,status=200)=>({body,status}),structuredClone,(_base,_current,p)=>structuredClone(p),async()=>base,...preserve.map(()=>x=>x),()=>null,()=>null,{validateNewOrders:()=>null},()=>[],(a,b)=>JSON.stringify(a)===JSON.stringify(b),{now:()=>0},()=>null,normalizeCompletedSessionStatuses,{env:{get:()=>undefined}},sharedWorkshopSections,jobEditSaveMode,jobEditWireState,COMPACT_JOB_EDIT_MODE,prefixReader,legacyWire,reconcileCompactJobEditAudit);
+ return {result,writes,stored};
+}
+let ar=await archivedSave({proposed:{...full,jobEdits:[a,b,d]}});
+assert.equal(ar.result.body.ok,true);assert.deepEqual(ar.stored.jobEdits,[b,c,d]);assert.deepEqual(ar.result.body.data.jobEdits,[a,b,c,d]);assert.equal(ar.result.body.data.jobEditArchive,undefined);
+ar=await archivedSave({proposed:{...compact,jobEdits:[b,d]},base:{...compact,jobEdits:[b]},capability:true});
+assert.equal(ar.result.body.ok,true);assert.deepEqual(ar.stored.jobEdits,[b,c,d]);assert.deepEqual(ar.result.body.data.jobEdits,[b,c,d]);assert.deepEqual(ar.result.body.data.jobEditArchive,compact.jobEditArchive);
+ar=await archivedSave({proposed:{...full,jobEdits:[a,b,c]},expected:3});assert.equal(ar.result.body.ok,true);assert.deepEqual(ar.stored.jobEdits,[b,c]);
+ar=await archivedSave({proposed:{...full,jobEdits:[a,b,c]}});assert.equal(ar.result.body.code,'audit_replay_ambiguous');assert.equal(ar.writes,0);
+ar=await archivedSave({proposed:compact,current:full,capability:true});assert.equal(ar.result.body.code,'audit_refresh_required');assert.equal(ar.writes,0);
+ar=await archivedSave({proposed:compact,base:null,capability:true});assert.equal(ar.result.body.code,'audit_refresh_required');assert.equal(ar.writes,0);
+console.log('PASS: legacy and compact save/rebase, receipt representation, ambiguous replay, missing base, and restored-state rejection.');
 for(const name of preserve)assert.ok(code.includes(name),'authority preserved: '+name);
 const catchBlock=source.slice(source.lastIndexOf('  } catch (e) {'));
 const busy=catchBlock.slice(catchBlock.indexOf('    const databaseCode'),catchBlock.indexOf('\n  }\n});'));
