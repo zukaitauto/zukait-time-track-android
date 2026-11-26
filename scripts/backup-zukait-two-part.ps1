@@ -15,7 +15,7 @@ param(
  [ValidateSet('Core','History','Verify')][string]$Phase='Core',
  [string]$BackupRoot='Z:\Zukait-20261025',
  [string]$SessionFolder='',
- [ValidateRange(1,100)][int]$ChunkRows=50,
+ [ValidateRange(1,100)][int]$ChunkRows=5,
  [string]$DbHost='aws-0-ap-south-1.pooler.supabase.com',
  [string]$DbUser='postgres.pjknotnjkufadqavcmii',
  [ValidateRange(1,65535)][int]$DbPort=5432,
@@ -62,20 +62,20 @@ function GetHistoryIds([long]$before) {
  if($result.Count -lt 1){throw 'No archived revisions returned; do not declare a complete history backup.'}
  return $result.ToArray()
 }
-function GetArchiveInventory() {
+function GetArchiveInventory([long]$before) {
  $sql=@'
 SELECT kind || ':' || count(*)::text || ':' || md5(coalesce(string_agg(id, ',' ORDER BY id),''))
 FROM (
- SELECT 'compact-history' AS kind,revision::text AS id FROM private.workshop_archive_conversion_pilot
- UNION ALL SELECT 'consumables-shadow',revision::text FROM private.workshop_consumables_shadow_history
+ SELECT 'compact-history' AS kind,revision::text AS id FROM private.workshop_archive_conversion_pilot WHERE revision < __CUTOFF__
+ UNION ALL SELECT 'consumables-shadow',revision::text FROM private.workshop_consumables_shadow_history WHERE revision < __CUTOFF__
  UNION ALL SELECT 'consumables-manifest',manifest_hash FROM private.consumables_manifests
  UNION ALL SELECT 'consumables-record',content_hash FROM private.consumables_record_versions
- UNION ALL SELECT 'manager-undo',prior_revision::text FROM private.workshop_manager_edit_revision
- UNION ALL SELECT 'time-undo',prior_revision::text FROM private.workshop_time_edit_revision
- UNION ALL SELECT 'job-notes-undo',prior_revision::text FROM private.workshop_job_notes_delta
+ UNION ALL SELECT 'manager-undo',prior_revision::text FROM private.workshop_manager_edit_revision WHERE prior_revision < __CUTOFF__
+ UNION ALL SELECT 'time-undo',prior_revision::text FROM private.workshop_time_edit_revision WHERE prior_revision < __CUTOFF__
+ UNION ALL SELECT 'job-notes-undo',prior_revision::text FROM private.workshop_job_notes_delta WHERE prior_revision < __CUTOFF__
 ) archive_inventory GROUP BY kind ORDER BY kind
 '@
- $rows=@(GetLines $sql)
+ $rows=@(GetLines ($sql.Replace('__CUTOFF__',$before.ToString([Globalization.CultureInfo]::InvariantCulture))))
  foreach($v in $rows){if("$v" -notmatch '^[a-z-]+:[0-9]+:[0-9a-f]{32}$'){throw 'Invalid compact archive inventory.'}}
  foreach($required in @('compact-history','consumables-shadow','consumables-manifest','consumables-record')){
   if(-not ($rows|Where-Object {$_ -like ($required+':*')})){throw "Missing archive inventory category: $required"}
@@ -161,7 +161,7 @@ try {
   $root=Join-Path $root ('ZUKAIT-TWO-PART-'+$stamp+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
   New-Item -ItemType Directory -Path $root -ErrorAction Stop|Out-Null
   $before=GetRevision
-  $archiveInventoryBefore=@(GetArchiveInventory)
+  $archiveInventoryBefore=@(GetArchiveInventory $before)
   $rawIdsBefore=@(GetHistoryIds $before)
   $archive=Join-Path $root 'operational-public-mechanical-vehicle.dump'
   $args=@('-w','-h',$DbHost,'-p',"$DbPort",'-U',$DbUser,'-d','postgres',
@@ -190,7 +190,7 @@ try {
   }
   if($toc|Where-Object {$_ -like '*TABLE DATA public workshop_state_history *'}){throw 'History data unexpectedly included in core export.'}
   $ids=@(GetHistoryIds $before)
-  $archiveInventoryAfter=@(GetArchiveInventory)
+  $archiveInventoryAfter=@(GetArchiveInventory $before)
   if(($archiveInventoryBefore -join ',') -ne ($archiveInventoryAfter -join ',') -or ($rawIdsBefore -join ',') -ne ($ids -join ',') -or (GetRevision) -ne $before){throw 'History membership or workshop revision changed during core export; do not certify.'}
   $gapCount=0
   for($g=1;$g -lt $ids.Count;$g++){if($ids[$g] -ne ($ids[$g-1]+1)){$gapCount++}}
@@ -232,7 +232,7 @@ try {
    if((GetRevision) -lt [long]$manifest.source_revision){throw 'Production revision is behind the core snapshot; stop.'}
    $sourceIds=@(GetHistoryIds ([long]$manifest.source_revision))
    if(($sourceIds -join ',') -ne ($ids -join ',')){throw 'Archived revision membership changed; cannot export coherent history.'}
-   if((@(GetArchiveInventory) -join ',') -ne (@($manifest.compact_archive_inventory) -join ',')){throw 'Compact history membership changed; start a new Core export.'}
+   if((@(GetArchiveInventory ([long]$manifest.source_revision)) -join ',') -ne (@($manifest.compact_archive_inventory) -join ',')){throw 'Compact history membership changed; start a new Core export.'}
   }
   for($i=0;$i -lt $chunks;$i++){
    $start=$i*$rowsPerChunk;$end=[Math]::Min($ids.Count-1,$start+$rowsPerChunk-1)
@@ -259,11 +259,12 @@ try {
    Remove-Item -LiteralPath $csv -Force
    WriteJson $record ([ordered]@{file=($name+'.csv.gz');sha256=(HashFile $zip);bytes=(Get-Item $zip).Length;first=$first;last=$last;rows=$count})
    Write-Host ('History chunk '+($i+1)+'/'+$chunks+' complete')
+   Start-Sleep -Seconds 8
   }
   if($Phase -eq 'History'){
    $sourceIds=@(GetHistoryIds ([long]$manifest.source_revision))
    if(($sourceIds -join ',') -ne ($ids -join ',')){throw 'History membership changed before export completed. Do NOT certify.'}
-   if((@(GetArchiveInventory) -join ',') -ne (@($manifest.compact_archive_inventory) -join ',')){throw 'Compact history membership changed; start a new Core export.'}
+   if((@(GetArchiveInventory ([long]$manifest.source_revision)) -join ',') -ne (@($manifest.compact_archive_inventory) -join ',')){throw 'Compact history membership changed; start a new Core export.'}
   }
   $manifest.status='FILES_COMPLETE_AND_HASH_VERIFIED__ISOLATED_RESTORE_PENDING'
   $manifest.ready_for_recovery=$false
