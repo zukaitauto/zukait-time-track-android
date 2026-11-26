@@ -1037,8 +1037,16 @@ async function loadAuthoritativeLiveStatus() {
   if (error) throw error;
   const stale = !matches(rows,expected);
   if (stale) {
-    if (expected.length) {
-      const { error: upsertError } = await admin.from("workshop_live_status").upsert(expected,{onConflict:"employee_id"});
+    // Repair only rows that differ from the authoritative snapshot. Keep the
+    // strict state_revision comparison until the atomic SQL commit and API
+    // projection revision contract are migrated together.
+    const currentById = new Map((rows||[]).map((row:any)=>[String(row.employee_id),row]));
+    const changedRows = expected.filter((row:any)=>{
+      const currentRow = currentById.get(String(row.employee_id));
+      return !currentRow || JSON.stringify(comparable(currentRow)) !== JSON.stringify(comparable(row));
+    });
+    if (changedRows.length) {
+      const { error: upsertError } = await admin.from("workshop_live_status").upsert(changedRows,{onConflict:"employee_id"});
       if (upsertError) throw upsertError;
     }
     const existingIds = new Set((rows||[]).map((r:any)=>String(r.employee_id)));
