@@ -36,7 +36,7 @@ c.liveStatusLastFetchedAt=93000;await tasks.at(-1).fn();assert.equal(live,2,'exp
 const previous=probes;await tasks[0].fn();assert.equal(probes,previous,'old-generation timer cannot duplicate polling');
 assert.match(cloud,/if\(cloudDirty&&!cloudPushing\)await push\(0\)/,'resume flushes queued actions');
 assert.match(cloud,/if\(document.visibilityState==='visible'\)refreshVisibleSharedState\(\)/,'visibility resume retains immediate shared-state refresh');
-const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=2026112501/);assert.match(html,/notifications\/center\.js\?v=20261110-server-receipts/);
+const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');assert.match(html,/cloud_sync\.js\?v=2026112601/);assert.match(html,/notifications\/center\.js\?v=20261110-server-receipts/);
 console.log('Hidden read traffic: no hidden report/live requests, foreground cadence, resume, offline/login and timer generation passed.');
 
 // Exercise the actual live reader, not only the scheduler stub.
@@ -58,7 +58,7 @@ vm.createContext(rc);vm.runInContext(cloud.slice(reportStart,reportEnd),rc);
 const read=()=>vm.runInContext('readLatest()',rc);
 let first=read(),duplicate=read();assert.equal(calls.length,1);assert.equal(calls[0].known_revision,undefined);
 pending.shift()({ok:true,revision:4,data:{jobs:[{id:'A'}]}});await Promise.all([first,duplicate]);
-let repeat=read();assert.equal(calls.at(-1).known_revision,4);pending.shift()({ok:true,revision:4,not_modified:true});assert.equal((await repeat).data.jobs[0].id,'A');
+let repeat=read();assert.equal(calls.at(-1).known_revision,4);assert.equal(calls.at(-1).known_job_edit_sync_mode,'legacy-v1');pending.shift()({ok:true,revision:4,not_modified:true});assert.equal((await repeat).data.jobs[0].id,'A');
 let changedRead=read();pending.shift()({ok:true,revision:5,data:{jobs:[{id:'B'}]}});assert.equal((await changedRead).data.jobs[0].id,'B');
 let invalid=read();pending.shift()({ok:true,revision:6,not_modified:true});await assert.rejects(invalid,/INVALID_NOT_MODIFIED/);
 let old=read();const oldRejected=assert.rejects(old,/STALE_SESSION/);rc.sessionEpoch++;rc.readLatestInFlight=null;rc.confirmedReadState=null;rc.confirmedReadRevision=-1;
