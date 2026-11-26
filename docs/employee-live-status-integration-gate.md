@@ -43,3 +43,10 @@ Status: candidate only. CI now runs the actual candidate SQL function in a dispo
 - Restored that normalization call before the unchanged-submission guard in the candidate function. Updated disposable PostgreSQL integration harness with the dependency stub.
 - This is a candidate compatibility fix only; no QA or production SQL was replaced.
 - The latest CI run must pass again after this correction, and the complete QA function body must be reconciled before deployment.
+
+## Full QA timer-function comparison — 2026-11-26
+- Re-fetched the installed QA `pg_get_functiondef` (read only).
+- Normalized whitespace/comments and compared the full function before and after the `ON CONFLICT ... WHERE row(...) IS DISTINCT FROM row(...)` predicate: both segments match exactly.
+- The only functional SQL difference is removing `state_revision` and `updated_by` from the conflict-update predicate; both fields remain assigned when an employee's business status changes.
+- CI passed on `7b05a599` after adding the missing archive-normalization stub; later documentation-only commit checks may still be pending.
+- **No QA function replaced.** A recoverable QA snapshot and coordinated QA-only API/SQL rollout with authenticated workflow acceptance remain prerequisites.
