@@ -987,7 +987,7 @@ let verifiedLiveProjection: {revision:number,updated_at:any,updated_by:any,expec
 async function loadAuthoritativeLiveStatus() {
   // Opt in only after the atomic SQL writer is migrated and QA verified.
   // Default remains strict for existing production deployments.
-  const selectiveRevision = Deno.env.get("ZUKAIT_LIVE_STATUS_SELECTIVE_REVISION") === "true";
+  const selectiveRevision = globalThis.Deno?.env?.get("ZUKAIT_LIVE_STATUS_SELECTIVE_REVISION") === "true";
   const comparable = (r:any) => ({
     employee_id: String(r?.employee_id || ""),
     employee_name: String(r?.employee_name || ""),
