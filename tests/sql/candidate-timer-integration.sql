@@ -48,5 +48,34 @@ begin
  if revision<>10 then raise exception 'unchanged employee revision changed: %',revision; end if;
  select state_revision into revision from public.workshop_live_status where employee_id='E7';
  if revision<>11 then raise exception 'changed employee revision not advanced: %',revision; end if;
-end $$;
+end $;
+-- Exercise conflict safety, deleted employees, and unchanged employee revisions
+-- after an unrelated workshop revision advances.
+do $
+declare payload jsonb; result jsonb; writes int; revision bigint; n int;
+begin
+ select jsonb_agg(jsonb_build_object('employee_id','E'||g,'employee_name','Employee '||g,'status',case when g=7 then 'Working' else 'Available' end))
+ into payload from generate_series(1,19) g;
+ truncate public.live_write_audit;
+ result:=private.commit_workshop_time_changes(10,'{}','QA',payload);
+ if result->>'code'<>'conflict' then raise exception 'stale revision was accepted: %',result; end if;
+ select count(*) into writes from public.live_write_audit;
+ if writes<>0 then raise exception 'stale revision wrote % rows',writes; end if;
+ select count(*) into n from public.workshop_live_status;
+ if n<>20 then raise exception 'stale revision deleted employee rows'; end if;
+ result:=private.commit_workshop_time_changes(11,'{}','QA',payload);
+ if result->>'ok'<>'true' then raise exception 'removal commit failed: %',result; end if;
+ select count(*) into n from public.workshop_live_status;
+ if n<>19 then raise exception 'expected 19 rows after removal, got %',n; end if;
+ select count(*) into writes from public.live_write_audit;
+ if writes<>0 then raise exception 'removal rewrote unchanged employees: %',writes; end if;
+ select state_revision into revision from public.workshop_live_status where employee_id='E7';
+ if revision<>11 then raise exception 'E7 revision changed unexpectedly: %',revision; end if;
+ -- A revision advance unrelated to live status must not rewrite any row.
+ update public.workshop_state set revision=12 where id='main';
+ result:=private.commit_workshop_time_changes(12,'{}','QA',payload);
+ if result->>'ok'<>'true' then raise exception 'no-op after revision advance failed: %',result; end if;
+ select count(*) into writes from public.live_write_audit;
+ if writes<>0 then raise exception 'revision-only update wrote % rows',writes; end if;
+end $;
 rollback;
