@@ -168,7 +168,7 @@ await check('actual syncNow with an expired local session cannot reuse an older 
 await check('an actual successful workshop load authorizes installation', async () => {
   const h = workshop();
   await h.run();
-  assert.deepEqual(h.requests, [{action: 'load'}]);
+  assert.deepEqual(h.requests, [{action: 'load',job_edit_sync_mode:'compact-v1'}]);
   assert.deepEqual(h.decisions, [true]);
 });
 await check('a revoked DB session postpones installation', async () => {
