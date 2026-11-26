@@ -1,0 +1,28 @@
+name: Compact backup validation
+on:
+  pull_request:
+    paths:
+      - 'scripts/backup-zukait-two-part.ps1'
+      - '.github/workflows/compact-backup-validation.yml'
+permissions:
+  contents: read
+jobs:
+  powershell-parse:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate script without production credentials
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = Join-Path $PWD 'scripts/backup-zukait-two-part.ps1'
+          $tokens = $null
+          $errors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile($path,[ref]$tokens,[ref]$errors)
+          if($errors.Count -ne 0){$errors | Format-List | Out-String | Write-Error; exit 1}
+          $source = Get-Content -LiteralPath $path -Raw
+          foreach($required in @('--schema=private','TABLE DATA private workshop_archive_conversion_pilot ','TABLE DATA private workshop_consumables_shadow_history ','TABLE DATA private consumables_record_versions ','TABLE DATA private consumables_manifests ','TABLE DATA private workshop_manager_edit_revision ','TABLE DATA private workshop_time_edit_revision ','TABLE DATA private workshop_job_notes_delta ','backup_format=2','ready_for_recovery=$false','Start-Sleep -Seconds 8')){
+            if(-not $source.Contains($required)){throw "Missing archive safeguard: $required"}
+          }
+          if(-not $source.Contains('prior_revision < __CUTOFF__')){throw 'Undo inventory must be bounded to the source revision'}
+          Write-Host 'PowerShell syntax and archive coverage checks passed. No production connection used.'
