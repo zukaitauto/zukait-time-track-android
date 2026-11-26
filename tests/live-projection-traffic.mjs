@@ -62,7 +62,7 @@ console.log('Live projection parity passed: Working, Paused, ID001, Overtime, Av
      for(const field of q.columns.split(',')){const m=field.match(/^(\w+):data->(\w+)$/);if(m)result[m[1]]=structuredClone(data[m[2]]??null)}
      return {data:result}},
    async order(){return {data:structuredClone(rows)}},
-   async upsert(expected){repairWrites.push('upsert');rows=[...rows.map(row=>expected.find(next=>next.employee_id===row.employee_id)||row),...expected.filter(next=>!rows.some(row=>row.employee_id===next.employee_id))];return {}},
+   async upsert(expected){repairWrites.push({operation:'upsert',count:expected.length});rows=[...rows.map(row=>expected.find(next=>next.employee_id===row.employee_id)||row),...expected.filter(next=>!rows.some(row=>row.employee_id===next.employee_id))];return {}},
    delete(){return{async in(_field,ids){repairWrites.push('delete');rows=rows.filter(r=>!ids.includes(r.employee_id));return {}}}}
  };return q}}};
  vm.createContext(cacheCtx);vm.runInContext(stripTypeScriptTypes(optimized)+';this.project=computeLiveStatus;this.load=loadAuthoritativeLiveStatus;',cacheCtx);
@@ -73,7 +73,7 @@ console.log('Live projection parity passed: Working, Paused, ID001, Overtime, Av
  assert.equal(heavy(),1,'25 same-revision refreshes use one JSON read per warm isolate');
  assert.equal(repairWrites.length,0);
  // A same-revision corrupt or missing row must never be served from cache.
- rows[0].status='CORRUPT';const repaired=await cacheCtx.load();assert.equal(heavy(),2);
+ rows[0].status='CORRUPT';const repairCountBefore=repairWrites.length;const repaired=await cacheCtx.load();assert.equal(heavy(),2);assert.equal(repairWrites.length,repairCountBefore+1,'corrupt single employee requires one repair upsert');assert.equal(repairWrites.at(-1).count,1,'repair must update only the corrupt employee');
  assert.equal(repaired.rows[0].status,first.rows[0].status);
  await cacheCtx.load();assert.equal(heavy(),2);
  rows=rows.slice(1);const missing=await cacheCtx.load();assert.equal(missing.rows.length,first.rows.length);
