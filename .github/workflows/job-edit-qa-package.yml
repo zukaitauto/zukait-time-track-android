@@ -14,9 +14,33 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Validate candidate dependency graph
-        working-directory: supabase/functions/workshop-api
-        run: deno check --no-lock index.ts
+      - name: Compare type diagnostics against base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          NO_COLOR: "1"
+        run: |
+          git fetch --depth=1 origin "$BASE_SHA"
+          git worktree add --detach /tmp/audit-base "$BASE_SHA"
+          set +e
+          (cd /tmp/audit-base/supabase/functions/workshop-api && deno check --no-lock index.ts) > /tmp/base.log 2>&1
+          base_status=$?
+          (cd supabase/functions/workshop-api && deno check --no-lock index.ts) > /tmp/candidate.log 2>&1
+          candidate_status=$?
+          set -e
+          cat /tmp/candidate.log
+          python3 - "$base_status" "$candidate_status" <<'PY'
+          import sys,re,collections
+          def diagnostics(path):
+              return collections.Counter(re.findall(r'TS\d+\s*\[ERROR\]:[^\n]+',open(path).read()))
+          base=diagnostics('/tmp/base.log')
+          candidate=diagnostics('/tmp/candidate.log')
+          if (int(sys.argv[1]) and not base) or (int(sys.argv[2]) and not candidate):
+              raise SystemExit('Non-type-check failure; inspect logs')
+          new=candidate-base
+          print('Baseline:',sum(base.values()),'Candidate:',sum(candidate.values()))
+          for message,count in new.items(): print(count,message)
+          if new: raise SystemExit('New type diagnostics detected')
+          PY
       - name: Package exact source and checksums
         run: |
           git rev-parse HEAD > candidate-commit.txt
