@@ -28,3 +28,30 @@ assert.equal((await run('Manager',{action:all})).status,409);
 response={error:{message:'db unavailable'}};
 assert.equal((await run('Manager',{action:all})).status,503);
 console.log('Audit API route contract: role denials, request validation, RPC arguments, stale and unavailable responses passed (mock database/session boundary).');
+
+const {jobEditWireState}=await import('../supabase/functions/workshop-api/extensions/job_edit_archive_wire.js');
+const backupStart=source.indexOf('    if (action === "backup") {');
+const backupEnd=source.indexOf('    if (action === "backup_list") {',backupStart);
+assert.ok(backupStart>=0&&backupEnd>backupStart);
+const backupRoute=new (Object.getPrototypeOf(async function(){}).constructor)('action','user','admin','reply','legacyWire',source.slice(backupStart,backupEnd));
+const marker={snapshotRevision:100,prefixCount:2},a={job:'JC1',at:1},b={job:'JC2',at:2};
+let snapshot={jobEditArchive:marker,jobEdits:[b],jobs:[{no:'JC1'}]},inserted=[],reads=0,prefixReads=0,prefixValid=true;
+const backupAdmin={from(name){
+ if(name==='workshop_state'){reads++;return {select(){return {eq(){return {single:async()=>({data:{revision:101,data:snapshot}})}}}}};}
+ assert.equal(name,'workshop_backups');
+ return {insert(row){inserted.push(row);return {select(){return {single:async()=>({data:{id:1,revision:row.revision}})}}}}};
+}};
+const backupRun=role=>backupRoute('backup',{role,id:'manager-qa'},backupAdmin,reply,data=>jobEditWireState(data,false,async(revision,count)=>{
+ prefixReads++;return prefixValid?{ok:true,snapshotRevision:revision,prefixCount:count,entries:[a,a]}:{ok:false};
+}));
+assert.equal((await backupRun('Employee')).status,403);
+assert.equal(reads,0);assert.equal(inserted.length,0);
+assert.equal((await backupRun('Manager')).status,200);
+assert.deepEqual(inserted[0],{created_by:'manager-qa',revision:101,data:{jobEdits:[a,a,b],jobs:[{no:'JC1'}]}});
+assert.deepEqual(snapshot.jobEditArchive,marker);assert.deepEqual(snapshot.jobEdits,[b]);assert.equal(prefixReads,1);
+prefixValid=false;
+assert.equal((await backupRun('Manager')).status,503);assert.equal(inserted.length,1);
+snapshot={jobEdits:[a,b],jobs:[]};
+assert.equal((await backupRun('Manager')).status,200);assert.deepEqual(inserted[1].data,snapshot);
+assert.equal(prefixReads,2);
+console.log('Manager manual backup route: complete ordered history, duplicate preservation, unchanged source, legacy compatibility, fail-closed missing prefix and role denial passed.');
