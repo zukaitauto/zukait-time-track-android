@@ -7,6 +7,8 @@ on:
       - 'tests/job-edit-audit-pagination-client.mjs'
       - 'tests/compact-job-edit-audit-compatibility.mjs'
       - 'tests/job-edit-audit-api-contract.mjs'
+      - 'tests/job-edit-archive-wire.mjs'
+      - 'supabase/functions/workshop-api/extensions/job_edit_archive_wire.js'
       - 'supabase/functions/workshop-api/extensions/compact_job_edit_audit.js'
       - 'scripts/sql/job-edit-*.sql'
       - 'supabase/functions/workshop-api/index.ts'
@@ -29,3 +31,4 @@ jobs:
       - run: node tests/reception-job-edit.mjs
       - run: node tests/compact-job-edit-audit-compatibility.mjs
       - run: node tests/job-edit-audit-api-contract.mjs
+      - run: node tests/job-edit-archive-wire.mjs
