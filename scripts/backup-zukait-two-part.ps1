@@ -62,6 +62,11 @@ function GetHistoryIds([long]$before) {
  if($result.Count -lt 1){throw 'No archived revisions returned; do not declare a complete history backup.'}
  return $result.ToArray()
 }
+function GetBlockArchiveInstalled() {
+ $rows=@(GetLines "SELECT CASE WHEN to_regclass('private.workshop_snapshot_blocks') IS NOT NULL AND to_regclass('private.workshop_snapshot_manifests') IS NOT NULL AND to_regprocedure('private.read_workshop_snapshot_blocks(bigint)') IS NOT NULL THEN 'complete' WHEN to_regclass('private.workshop_snapshot_blocks') IS NULL AND to_regclass('private.workshop_snapshot_manifests') IS NULL AND to_regprocedure('private.read_workshop_snapshot_blocks(bigint)') IS NULL THEN 'absent' ELSE 'partial' END")
+ if($rows.Count -ne 1 -or "$($rows[0])" -notin @('complete','absent')){throw 'Block archive schema is incomplete; stop backup.'}
+ return ("$($rows[0])" -eq 'complete')
+}
 function GetArchiveInventory([long]$before) {
  $sql=@'
 SELECT kind || ':' || count(*)::text || ':' || md5(coalesce(string_agg(id, ',' ORDER BY id),''))
@@ -75,7 +80,19 @@ FROM (
  UNION ALL SELECT 'job-notes-undo',prior_revision::text FROM private.workshop_job_notes_delta WHERE prior_revision < __CUTOFF__
 ) archive_inventory GROUP BY kind ORDER BY kind
 '@
- $rows=@(GetLines ($sql.Replace('__CUTOFF__',$before.ToString([Globalization.CultureInfo]::InvariantCulture))))
+ $cutoff=$before.ToString([Globalization.CultureInfo]::InvariantCulture)
+ $rows=@(GetLines ($sql.Replace('__CUTOFF__',$cutoff)))
+ if(GetBlockArchiveInstalled){
+  $blockSql=@'
+SELECT 'snapshot-block:' || count(*)::text || ':' || md5(coalesce(string_agg(hash, ',' ORDER BY hash),''))
+FROM private.workshop_snapshot_blocks
+UNION ALL
+SELECT 'snapshot-manifest:' || count(*)::text || ':' || md5(coalesce(string_agg(revision::text, ',' ORDER BY revision::text),''))
+FROM private.workshop_snapshot_manifests WHERE revision < __CUTOFF__
+'@
+  $rows+=@(GetLines ($blockSql.Replace('__CUTOFF__',$cutoff)))
+ }
+ $rows=@($rows|Sort-Object)
  foreach($v in $rows){if("$v" -notmatch '^[a-z-]+:[0-9]+:[0-9a-f]{32}$'){throw 'Invalid compact archive inventory.'}}
  foreach($required in @('compact-history','consumables-shadow','consumables-manifest','consumables-record')){
   if(-not ($rows|Where-Object {$_ -like ($required+':*')})){throw "Missing archive inventory category: $required"}
@@ -188,6 +205,11 @@ try {
     'FUNCTION private read_workshop_consumables_shadow(')){
    if(-not ($toc|Where-Object {$_ -like ('*'+$required+'*')})){throw "Missing required core archive entry: $required"}
   }
+  if($archiveInventoryBefore|Where-Object {$_ -like 'snapshot-block:*'}){
+   foreach($required in @('TABLE DATA private workshop_snapshot_blocks ','TABLE DATA private workshop_snapshot_manifests ','FUNCTION private read_workshop_snapshot_blocks(','FUNCTION private workshop_snapshot_unpack(','FUNCTION private workshop_snapshot_block_get(')){
+    if(-not ($toc|Where-Object {$_ -like ('*'+$required+'*')})){throw "Missing block archive entry: $required"}
+   }
+  }
   if($toc|Where-Object {$_ -like '*TABLE DATA public workshop_state_history *'}){throw 'History data unexpectedly included in core export.'}
   $ids=@(GetHistoryIds $before)
   $archiveInventoryAfter=@(GetArchiveInventory $before)
@@ -197,7 +219,7 @@ try {
   $inventory=Join-Path $root 'history-revisions.txt'
   [IO.File]::WriteAllText($inventory,($ids -join [Environment]::NewLine)+[Environment]::NewLine,[Text.Encoding]::ASCII)
   $manifest=[ordered]@{
-   project_ref=$project;backup_format=2;compact_archive_inventory=$archiveInventoryAfter;finished_utc=$null;status='CORE_COMPLETE__HISTORY_NOT_EXPORTED__RESTORE_NOT_TESTED'
+   project_ref=$project;backup_format=3;compact_archive_inventory=$archiveInventoryAfter;finished_utc=$null;status='CORE_COMPLETE__HISTORY_NOT_EXPORTED__RESTORE_NOT_TESTED'
    source_revision=$before;history_min=$ids[0];history_max=$ids[$ids.Count-1]
    history_count=$ids.Count;history_internal_gaps=$gapCount;chunk_rows=$ChunkRows
    core_file='operational-public-mechanical-vehicle.dump'
@@ -218,7 +240,7 @@ try {
   if(-not (Test-Path -LiteralPath $manifestFile)){throw 'No validated core manifest found.'}
   $manifest=Get-Content -LiteralPath $manifestFile -Raw|ConvertFrom-Json
   if($manifest.project_ref -ne $project){throw 'Wrong project backup.'}
-  if(-not $manifest.PSObject.Properties['backup_format'] -or $manifest.backup_format -ne 2){throw 'Legacy backup set cannot establish compact archive coverage. Preserve it; start a new Core export.'}
+  if(-not $manifest.PSObject.Properties['backup_format'] -or $manifest.backup_format -ne 3){throw 'Legacy backup set cannot establish compact archive coverage. Preserve it; start a new Core export.'}
   $archive=Join-Path $root $manifest.core_file
   $inventory=Join-Path $root $manifest.inventory_file
   if((HashFile $archive) -ne $manifest.core_sha256 -or (HashFile $inventory) -ne $manifest.inventory_sha256){throw 'Core/inventory checksum mismatch.'}
