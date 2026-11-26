@@ -1,12 +1,12 @@
 # Employee live-status selective write integration gate
 
-Status: candidate only. Do not merge or deploy based on the pure comparison tests.
+Status: candidate only. CI now runs the actual candidate SQL function in a disposable PostgreSQL 17 database and exercises the real API projection loader in a mocked database harness. These are NOT end-to-end QA server tests. Do not merge or deploy based on CI alone.
 
 ## Confirmed existing contracts
 - The API computes a full employee projection from workshop users, sessions, assignments and jobs.
-- The API's live-status repair currently compares each row's state_revision to the global revision, and upserts **all** expected rows when any row differs.
-- The SQL timer commit updates live rows with state_revision in its ON CONFLICT comparison, so a global revision increment can update otherwise unchanged employees.
-- The current cached projection validates rows against the full expected projection. Relaxing revision equality in only one layer is unsafe.
+- The candidate API repair compares business fields and updates only differing rows. Its default mode still compares state_revision strictly; the selective revision contract requires an explicit opt-in after SQL migration.
+- The production SQL timer commit still compares state_revision, so global revision increments can rewrite otherwise unchanged employees. A business-only ON CONFLICT comparison is staged in tests/sql/candidate-commit-workshop-time-changes.sql and has passed isolated PostgreSQL CI.
+- The candidate cached projection validates business fields and (when selective mode is enabled) checks that each row revision is a valid positive integer no newer than the global revision. Changing only one layer remains unsafe.
 
 ## Required integration (single coherent change)
 1. Preserve the API's global revision and authoritative workshop snapshot checks.
