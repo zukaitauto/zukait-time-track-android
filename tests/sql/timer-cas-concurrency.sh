@@ -29,7 +29,7 @@ declare current_revision bigint;
 begin
  select revision into current_revision from public.timer_cas_qa where id='main' for update;
  if current_revision = 1 then
-   update public.timer_cas_qa set revision=2 where id='main';
+   raise exception 'FAIL: competing writer observed old revision and would commit';
  else
    raise notice 'PASS: second session saw conflict at revision %', current_revision;
  end if;
@@ -39,4 +39,4 @@ SQL
 wait "$first"
 result=$(psql -X -At -v ON_ERROR_STOP=1 -c "select revision from public.timer_cas_qa where id='main'")
 test "$result" = 2 || { echo "FAIL: expected one committed revision, got $result"; exit 1; }
-echo 'PASS: row lock serialized simultaneous expected-revision writers.'
+echo 'PASS: competing writer observed committed revision 2 and was rejected.'
