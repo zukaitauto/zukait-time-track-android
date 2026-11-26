@@ -15,7 +15,7 @@ BEGIN
 END
 $guard$;
 DO $verify$
-DECLARE r record; restored jsonb; raw jsonb; n bigint:=0; m bigint:=0;
+DECLARE r record; restored jsonb; raw jsonb; n bigint:=0; m bigint:=0; b bigint:=0; raw_exists boolean;
 BEGIN
  IF (SELECT count(*) FROM private.workshop_archive_conversion_pilot WHERE revision<=17683)<>2970 THEN
    RAISE EXCEPTION 'Compact legacy history count mismatch';
@@ -39,14 +39,39 @@ BEGIN
       AND h.updated_at IS NOT DISTINCT FROM r.updated_at
       AND h.updated_by IS NOT DISTINCT FROM r.updated_by
       AND h.archived_at IS NOT DISTINCT FROM r.source_archived_at;
-   IF NOT FOUND OR restored->'data' IS DISTINCT FROM raw OR
-      private.consumables_content_hash(raw) IS DISTINCT FROM r.source_digest OR
-      public.zukait_read_workshop_merge_base(r.revision) IS DISTINCT FROM raw THEN
+   raw_exists:=FOUND;
+   IF (EXISTS(SELECT 1 FROM public.workshop_state_history WHERE revision=r.revision) AND NOT raw_exists)
+      OR (raw_exists AND restored->'data' IS DISTINCT FROM raw)
+      OR private.consumables_content_hash(restored->'data') IS DISTINCT FROM r.source_digest
+      OR public.zukait_read_workshop_merge_base(r.revision) IS DISTINCT FROM restored->'data' THEN
      RAISE EXCEPTION 'Consumables snapshot or metadata mismatch at revision %',r.revision;
    END IF;
    m:=m+1;
  END LOOP;
- RAISE NOTICE 'All % legacy revisions recover; all % consumables snapshots match original data and metadata',n,m;
+ IF to_regclass('private.workshop_snapshot_manifests') IS NOT NULL OR to_regclass('private.workshop_snapshot_blocks') IS NOT NULL THEN
+   IF to_regclass('private.workshop_snapshot_manifests') IS NULL OR to_regclass('private.workshop_snapshot_blocks') IS NULL OR to_regprocedure('private.read_workshop_snapshot_blocks(bigint)') IS NULL THEN
+     RAISE EXCEPTION 'Incomplete restored block archive schema';
+   END IF;
+   FOR r IN EXECUTE 'SELECT * FROM private.workshop_snapshot_manifests ORDER BY revision' LOOP
+     restored:=private.read_workshop_snapshot_blocks(r.revision);
+     IF restored->>'revision' IS DISTINCT FROM r.revision::text OR
+        private.consumables_content_hash(restored->'data') IS DISTINCT FROM r.source_digest OR
+        (restored->>'updated_at')::timestamptz IS DISTINCT FROM r.updated_at OR
+        restored->>'updated_by' IS DISTINCT FROM r.updated_by OR
+        (restored->>'archived_at')::timestamptz IS DISTINCT FROM r.archived_at THEN
+        RAISE EXCEPTION 'Block checkpoint recovery mismatch at revision %',r.revision;
+     END IF;
+     IF EXISTS(SELECT 1 FROM public.workshop_state_history h WHERE h.revision=r.revision AND
+         (h.data IS DISTINCT FROM restored->'data' OR h.updated_at IS DISTINCT FROM r.updated_at OR h.updated_by IS DISTINCT FROM r.updated_by OR h.archived_at IS DISTINCT FROM r.archived_at)) THEN
+       RAISE EXCEPTION 'Block checkpoint differs from retained original at revision %',r.revision;
+     END IF;
+     IF public.zukait_read_workshop_merge_base(r.revision) IS DISTINCT FROM restored->'data' THEN
+       RAISE EXCEPTION 'Block recovery API mismatch at revision %',r.revision;
+     END IF;
+     b:=b+1;
+   END LOOP;
+ END IF;
+ RAISE NOTICE 'Verified % legacy revisions, % consumables checkpoints and % block checkpoints',n,m,b;
 END
 $verify$;
 ROLLBACK;
