@@ -18,3 +18,17 @@ assert.equal(liveStatusProjectionMatches(changed.map(x=>({...x,state_revision:12
 assert.equal(liveStatusProjectionMatches(rows.slice(1),rows,11),false,'missing employee fails closed');
 assert.equal(liveStatusProjectionMatches(rows,rows,0),false,'invalid global revision fails closed');
 console.log('Revision-safe projection contract: 6 assertions passed.');
+
+for(let round=0;round<1000;round++){
+  const before=rows.map(x=>({...x,state_revision:10+round}));
+  const after=before.map(x=>({...x,state_revision:11+round}));
+  const index=round%18;
+  after[index]={...after[index],status:round%2?'Paused':'Working',job_no:'JC'+round};
+  const delta=liveStatusDiff(before,after);
+  assert.equal(delta.changed.length,1,'one employee change must touch one row');
+  assert.equal(delta.changed[0].employee_id,'E'+(index+1));
+  assert.equal(delta.removed.length,0);
+  assert.equal(liveStatusProjectionMatches(before,after,11+round),false);
+  assert.equal(liveStatusProjectionMatches(after,after,11+round),true);
+}
+console.log('1000 deterministic 18-employee transition simulations passed.');
