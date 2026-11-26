@@ -1055,8 +1055,7 @@ async function loadAuthoritativeLiveStatus() {
       const { error: upsertError } = await admin.from("workshop_live_status").upsert(changedRows,{onConflict:"employee_id"});
       if (upsertError) throw upsertError;
     }
-    const existingIds = new Set((rows||[]).map((r:any)=>String(r.employee_id)));
-    const staleIds = [...existingIds].filter(id=>!expectedIds.has(id));
+    const staleIds = [...currentById.keys()].filter(id=>!expectedIds.has(id));
     if (staleIds.length) {
       const { error: deleteError } = await admin.from("workshop_live_status").delete().in("employee_id",staleIds);
       if (deleteError) throw deleteError;
