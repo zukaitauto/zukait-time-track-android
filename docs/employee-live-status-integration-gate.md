@@ -50,3 +50,11 @@ Status: candidate only. CI now runs the actual candidate SQL function in a dispo
 - The only functional SQL difference is removing `state_revision` and `updated_by` from the conflict-update predicate; both fields remain assigned when an employee's business status changes.
 - CI passed on `7b05a599` after adding the missing archive-normalization stub; later documentation-only commit checks may still be pending.
 - **No QA function replaced.** A recoverable QA snapshot and coordinated QA-only API/SQL rollout with authenticated workflow acceptance remain prerequisites.
+
+## QA rollback readiness — 2026-11-26
+- The QA timer function is currently installed with MD5 `106903561fe9ef75eb8e654e88db291d`; retain its exact `pg_get_functiondef` SQL before replacing it.
+- QA workshop revision was 865 with four live rows at the same revision and no duplicates/invalid revisions at read-only preflight.
+- Candidate must be deployed only after a verified QA database backup/snapshot and confirmation that QA is idle; this GitHub branch does not constitute a backup.
+- Rollback requires restoring both the old SQL writer and the prior QA API deployment/feature flag. Restoring SQL alone while the API still accepts older per-row revisions is not a coordinated rollback.
+- Before switching, record API function version and deployed source, database revision, row count, and row write counters. After switching, run a single controlled test user first, then multi-user concurrency.
+- Do not claim the backup is verified or QA acceptance passed until independently demonstrated. No deployment was performed during this readiness review.
