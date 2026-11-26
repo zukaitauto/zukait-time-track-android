@@ -1248,11 +1248,17 @@ Deno.serve(async (req: Request) => {
       user = await sessionUser(token);
     }
     if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
-    const prefixReader=requestArchivePrefixReader(async (revision:number,count:number)=>{
-      const {data,error}=await admin.rpc("zukait_job_edit_archive_prefix",{p_snapshot_revision:revision,p_prefix_count:count});
-      if(error)throw Error("audit_history_unavailable");
-      return data;
-    });
+    // Initialize the immutable-prefix cache only when a legacy compact-state
+    // response actually needs it; unrelated routes never enter archive logic.
+    let cachedPrefixReader: any = null;
+    const prefixReader=(revision:number,count:number)=>{
+      cachedPrefixReader ??= requestArchivePrefixReader(async (r:number,n:number)=>{
+        const {data,error}=await admin.rpc("zukait_job_edit_archive_prefix",{p_snapshot_revision:r,p_prefix_count:n});
+        if(error)throw Error("audit_history_unavailable");
+        return data;
+      });
+      return cachedPrefixReader(revision,count);
+    };
     const legacyWire=(data:any)=>jobEditWireState(data,false,prefixReader);
 
     if (user._jobNumbers?.length) {
