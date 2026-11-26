@@ -37,3 +37,7 @@ jobs:
           PGUSER: postgres
           PGDATABASE: timer_regression
         run: bash tests/sql/timer-cas-concurrency.sh
+      - name: Run actual candidate timer SQL integration on disposable PostgreSQL
+        env:
+          PGPASSWORD: qa_only
+        run: psql -X -v ON_ERROR_STOP=1 -h localhost -U postgres -d timer_regression -f tests/sql/candidate-timer-integration.sql
