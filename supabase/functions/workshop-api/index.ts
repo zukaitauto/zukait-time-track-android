@@ -985,6 +985,9 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
 // matching row contents (not just a revision number or row count) are required.
 let verifiedLiveProjection: {revision:number,updated_at:any,updated_by:any,expected:any[],expiresAt:number}|null=null;
 async function loadAuthoritativeLiveStatus() {
+  // Opt in only after the atomic SQL writer is migrated and QA verified.
+  // Default remains strict for existing production deployments.
+  const selectiveRevision = globalThis.Deno?.env?.get("ZUKAIT_LIVE_STATUS_SELECTIVE_REVISION") === "true";
   const comparable = (r:any) => ({
     employee_id: String(r?.employee_id || ""),
     employee_name: String(r?.employee_name || ""),
@@ -998,7 +1001,7 @@ async function loadAuthoritativeLiveStatus() {
     vehicle: String(r?.vehicle || ""),
     registration: String(r?.registration || ""),
     overtime: r?.overtime === true,
-    state_revision: Number(r?.state_revision || 0)
+    ...(selectiveRevision ? {} : {state_revision: Number(r?.state_revision || 0)})
   });
   const matches = (rows:any[],expected:any[]) => {
     if (!Array.isArray(rows)||rows.length!==expected.length) return false;
@@ -1008,6 +1011,9 @@ async function loadAuthoritativeLiveStatus() {
       const id=String(r.employee_id),e=expectedById.get(id);
       if(!e||seen.has(id))return false;
       seen.add(id);
+      // Per-employee revision may lag the global revision, never lead it.
+      const rowRevision = Number(r?.state_revision);
+      if (selectiveRevision && (!Number.isSafeInteger(rowRevision) || rowRevision < 1 || rowRevision > Number(e.state_revision))) return false;
       return JSON.stringify(comparable(r))===JSON.stringify(comparable(e));
     });
   };
@@ -1037,12 +1043,19 @@ async function loadAuthoritativeLiveStatus() {
   if (error) throw error;
   const stale = !matches(rows,expected);
   if (stale) {
-    if (expected.length) {
-      const { error: upsertError } = await admin.from("workshop_live_status").upsert(expected,{onConflict:"employee_id"});
+    // Repair only rows that differ from the authoritative snapshot. Keep the
+    // strict state_revision comparison until the atomic SQL commit and API
+    // projection revision contract are migrated together.
+    const currentById = new Map((rows||[]).map((row:any)=>[String(row.employee_id),row]));
+    const changedRows = expected.filter((row:any)=>{
+      const currentRow = currentById.get(String(row.employee_id));
+      return !currentRow || (selectiveRevision && (!Number.isSafeInteger(Number(currentRow.state_revision)) || Number(currentRow.state_revision)<1 || Number(currentRow.state_revision)>revision)) || JSON.stringify(comparable(currentRow)) !== JSON.stringify(comparable(row));
+    });
+    if (changedRows.length) {
+      const { error: upsertError } = await admin.from("workshop_live_status").upsert(changedRows,{onConflict:"employee_id"});
       if (upsertError) throw upsertError;
     }
-    const existingIds = new Set((rows||[]).map((r:any)=>String(r.employee_id)));
-    const staleIds = [...existingIds].filter(id=>!expectedIds.has(id));
+    const staleIds = [...currentById.keys()].filter(id=>!expectedIds.has(id));
     if (staleIds.length) {
       const { error: deleteError } = await admin.from("workshop_live_status").delete().in("employee_id",staleIds);
       if (deleteError) throw deleteError;
@@ -1736,7 +1749,11 @@ Deno.serve(async (req: Request) => {
         }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
-        const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+        const projectUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+        const compactTimerProject = projectUrl === "https://pjknotnjkufadqavcmii.supabase.co" ||
+          (projectUrl === "https://omqgkqknbdcnotabffek.supabase.co" &&
+           Deno.env.get("ZUKAIT_QA_COMPACT_EMPLOYEE_TIME_ENABLED") === "true");
+        const useCompactTime = compactTimerProject &&
           Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
           ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
         const sections = useCompactTime ? employeeTimeSections(current.data, result.data) : null;

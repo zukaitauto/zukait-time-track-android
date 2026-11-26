@@ -1,0 +1,48 @@
+name: Employee live-status selective diff
+on:
+  push:
+    branches: [optimization/employee-live-status-selective-write]
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: qa_only
+          POSTGRES_DB: timer_regression
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/employee-live-status-diff.mjs
+      - run: node tests/live-status-migration-gate.mjs
+      - run: node tests/live-status-selective-api-integration.mjs
+      - name: Run disposable PostgreSQL selective-write regression
+        env:
+          PGPASSWORD: qa_only
+        run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d timer_regression -f tests/sql/employee-live-status-selective-write.sql
+      - name: Run two-session revision lock concurrency regression
+        env:
+          PGPASSWORD: qa_only
+          PGHOST: localhost
+          PGUSER: postgres
+          PGDATABASE: timer_regression
+        run: bash tests/sql/timer-cas-concurrency.sh
+      - name: Run actual candidate timer SQL integration on disposable PostgreSQL
+        env:
+          PGPASSWORD: qa_only
+        run: psql -X -v ON_ERROR_STOP=1 -h localhost -U postgres -d timer_regression -f tests/sql/candidate-timer-integration.sql
+      - name: Compare compact timer writes with the state trigger enabled
+        env:
+          PGPASSWORD: qa_only
+        run: psql -X -v ON_ERROR_STOP=1 -h localhost -U postgres -d timer_regression -f tests/sql/timer-trigger-writes.sql

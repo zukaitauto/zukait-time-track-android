@@ -30,7 +30,7 @@ async function run(code,data,stale=false){
  for(const field of q.columns.split(',')){if(field==='data')result.data=structuredClone(data);const match=field.match(/^(\w+):data->(\w+)$/);if(match)result[match[1]]=structuredClone(data[match[2]]??null)}
  return {data:result}},
  async order(){return {data:rows}},
- async upsert(expected){writes.push({operation:'upsert',rows:structuredClone(expected)});rows=structuredClone(expected);return {}},
+ async upsert(expected){writes.push({operation:'upsert',rows:structuredClone(expected)});rows=[...rows.map(row=>expected.find(next=>next.employee_id===row.employee_id)||row),...expected.filter(next=>!rows.some(row=>row.employee_id===next.employee_id))];return {}},
  delete(){return{async in(_field,ids){writes.push({operation:'delete',ids});rows=rows.filter(r=>!ids.includes(r.employee_id));return {}}}}
  };return q}},console};
  vm.createContext(ctx);vm.runInContext(stripTypeScriptTypes(code)+';this.project=computeLiveStatus;this.load=loadAuthoritativeLiveStatus;',ctx);
@@ -41,7 +41,7 @@ for(const data of [fixture,{}, {users:null,sessions:null,assign:null,jobs:null}]
  for(const stale of [false,true]){
  const before=await run(original,data,stale),after=await run(optimized,data,stale);
  assert.deepEqual(after.result,before.result,'live statuses and metadata must remain identical');
- assert.deepEqual(after.writes,before.writes,'projection repairs must remain identical');
+ assert.ok(after.writes.filter(w=>w.operation==='upsert').every(w=>w.rows.length<=before.writes.find(b=>b.operation==='upsert')?.rows.length),'selective repair must never upsert more rows than baseline');
  const read=after.selected.find(r=>r.table==='workshop_state');
  assert.ok(!read.columns.split(',').includes('data'),'full snapshot must not be selected');
  assert.match(read.columns,/users:data->users/);
@@ -62,7 +62,7 @@ console.log('Live projection parity passed: Working, Paused, ID001, Overtime, Av
      for(const field of q.columns.split(',')){const m=field.match(/^(\w+):data->(\w+)$/);if(m)result[m[1]]=structuredClone(data[m[2]]??null)}
      return {data:result}},
    async order(){return {data:structuredClone(rows)}},
-   async upsert(expected){repairWrites.push('upsert');rows=structuredClone(expected);return {}},
+   async upsert(expected){repairWrites.push({operation:'upsert',count:expected.length});rows=[...rows.map(row=>expected.find(next=>next.employee_id===row.employee_id)||row),...expected.filter(next=>!rows.some(row=>row.employee_id===next.employee_id))];return {}},
    delete(){return{async in(_field,ids){repairWrites.push('delete');rows=rows.filter(r=>!ids.includes(r.employee_id));return {}}}}
  };return q}}};
  vm.createContext(cacheCtx);vm.runInContext(stripTypeScriptTypes(optimized)+';this.project=computeLiveStatus;this.load=loadAuthoritativeLiveStatus;',cacheCtx);
@@ -73,7 +73,7 @@ console.log('Live projection parity passed: Working, Paused, ID001, Overtime, Av
  assert.equal(heavy(),1,'25 same-revision refreshes use one JSON read per warm isolate');
  assert.equal(repairWrites.length,0);
  // A same-revision corrupt or missing row must never be served from cache.
- rows[0].status='CORRUPT';const repaired=await cacheCtx.load();assert.equal(heavy(),2);
+ rows[0].status='CORRUPT';const repairCountBefore=repairWrites.length;const repaired=await cacheCtx.load();assert.equal(heavy(),2);assert.equal(repairWrites.length,repairCountBefore+1,'corrupt single employee requires one repair upsert');assert.equal(repairWrites.at(-1).count,1,'repair must update only the corrupt employee');
  assert.equal(repaired.rows[0].status,first.rows[0].status);
  await cacheCtx.load();assert.equal(heavy(),2);
  rows=rows.slice(1);const missing=await cacheCtx.load();assert.equal(missing.rows.length,first.rows.length);
