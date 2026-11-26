@@ -23,3 +23,19 @@ export function requestArchivePrefixReader(fetchPrefix){
   return pending.get(key);
  };
 }
+
+// Explicit capability negotiation. A server flag may stop new compact loads;
+// already-compact saves still acknowledge in the submitted representation so
+// a concurrent local mutation cannot merge a full prefix into the live tail.
+export const COMPACT_JOB_EDIT_MODE='compact-v1';
+export const LEGACY_JOB_EDIT_MODE='legacy-v1';
+export function jobEditLoadMode(request,enabled){
+ return enabled===true&&request?.job_edit_sync_mode===COMPACT_JOB_EDIT_MODE?COMPACT_JOB_EDIT_MODE:LEGACY_JOB_EDIT_MODE;
+}
+export function jobEditKnownModeMatches(request,mode){
+ if(request?.job_edit_sync_mode!==COMPACT_JOB_EDIT_MODE)return mode===LEGACY_JOB_EDIT_MODE;
+ return request.known_job_edit_sync_mode===mode;
+}
+export function jobEditSaveMode(request){
+ return request?.job_edit_sync_mode===COMPACT_JOB_EDIT_MODE&&request.data!=null&&own(request.data,'jobEditArchive')?COMPACT_JOB_EDIT_MODE:LEGACY_JOB_EDIT_MODE;
+}
