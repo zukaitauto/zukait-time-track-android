@@ -45,7 +45,7 @@ create temporary table employee_status_full (
 ) on commit drop;
 insert into employee_status_full values
  ('E1','Employee One','Paint','Working','JC1','A1','S1',100,60,'Toyota','123-M',false,5,'Manager');
-do $
+do $$
 declare n integer;
 begin
  -- Same business state, newer global revision and different actor: no write.
@@ -72,5 +72,5 @@ begin
  row('Employee One','Paint','Working','JC1','A1',null::text,100::bigint,60::numeric,'Toyota','123-M',false);
  get diagnostics n=row_count;
  if n<>0 then raise exception 'duplicate session removal rewrote row'; end if;
-end $;
+end $$;
 rollback;
