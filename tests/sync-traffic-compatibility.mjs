@@ -60,3 +60,20 @@ c=await clientPull({response:{ok:true,revision:42,data:fixture}});assert.deepEqu
 await assert.rejects(clientPull({baseline:null}),/INVALID_NOT_MODIFIED/);
 await assert.rejects(clientPull({response:{ok:true,revision:43,not_modified:true}}),/INVALID_NOT_MODIFIED/);
 console.log(JSON.stringify({result:'legacy compatibility, conditional reads, role isolation, client race and baseline checks passed',unchangedFullSnapshotBytes:Buffer.byteLength(payload),unchangedConditionalBytes:Buffer.byteLength(JSON.stringify({ok:true,revision:42,not_modified:true,user:{id:'TEST',role:'Employee'}}))},null,2));
+
+
+const probeStart=client.indexOf('  async function probeRevision(){');
+const probeEnd=client.indexOf('  async function push(',probeStart);
+async function checkLiveRepair({remote=42,baseline=fixture,dirty=false,role=true}={}){
+ const calls=[];
+ const ctx={sessionEpoch:0,revisionProbeInFlight:false,pullInFlight:false,cloudPushing:false,cloudDirty:dirty,cloudRevision:42,lastSyncedState:baseline,lastSuccessfulSyncAt:0,lastRevisionProbeAt:0,lastProbedRevision:-1,navigator:{onLine:true},sessionToken:()=>true,api:async()=>({ok:true,revision:remote}),pollWarnings:new Set(),setServerConnection(){},liveRole:()=>role,pull:async()=>true,push:async()=>{ctx.cloudDirty=false},pullLiveStatus:async(scheduled=false)=>calls.push(scheduled),stale:()=>false,Date};
+ vm.createContext(ctx);vm.runInContext(client.slice(probeStart,probeEnd)+';this.probeRevision=probeRevision',ctx);
+ assert.equal(await ctx.probeRevision(),true);
+ return calls;
+}
+assert.deepEqual(await checkLiveRepair(),[true]);
+assert.deepEqual(await checkLiveRepair({remote:43}),[false]);
+assert.deepEqual(await checkLiveRepair({baseline:null}),[false]);
+assert.deepEqual(await checkLiveRepair({dirty:true}),[false]);
+assert.deepEqual(await checkLiveRepair({role:false}),[]);
+console.log('Live status cache repair routing: five scenarios passed');
