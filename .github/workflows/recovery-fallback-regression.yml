@@ -1,0 +1,72 @@
+name: Recovery fallback regression
+on:
+  pull_request:
+    paths:
+      - 'scripts/sql/workshop-recovery-consumables-fallback-live.sql'
+      - '.github/workflows/recovery-fallback-regression.yml'
+permissions:
+  contents: read
+jobs:
+  recovery:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test-only
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: test-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create isolated synthetic fixtures
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create schema private;
+          create table public.workshop_backups(id bigint generated always as identity, revision bigint, data jsonb);
+          create table public.workshop_state_history(revision bigint,data jsonb);
+          create table public.workshop_state(id text,revision bigint,data jsonb);
+          create table private.workshop_archive_conversion_pilot(revision bigint);
+          create table private.workshop_consumables_shadow_history(revision bigint);
+          create table private.workshop_snapshot_manifests(revision bigint);
+          create table private.workshop_manager_edit_revision(prior_revision bigint,delta jsonb);
+          create table private.workshop_job_notes_delta(prior_revision bigint);
+          create table private.workshop_time_edit_revision(prior_revision bigint,delta jsonb);
+          create function private.read_workshop_archive_pilot(bigint) returns jsonb language sql as $$select '{"source":"archive"}'::jsonb$$;
+          create function private.read_workshop_consumables_shadow(bigint) returns jsonb language sql as $$select '{"data":{"source":"shadow"}}'::jsonb$$;
+          create function private.read_workshop_snapshot_blocks_fast(bigint) returns jsonb language sql as $$select '{"data":{"source":"blocks"}}'::jsonb$$;
+          insert into public.workshop_backups(revision,data) values
+          (10,'{"jobs":[],"sessions":[],"assign":[],"users":[],"marker":10}'),
+          (11,'{"jobs":[],"sessions":[],"assign":[],"users":[],"marker":11}'),
+          (12,'{"jobs":[],"sessions":[],"assign":[],"users":[],"marker":12}'),
+          (12,'{"jobs":[],"sessions":[],"assign":[],"users":[],"marker":99}'),
+          (13,'{"jobs":[],"sessions":[],"assign":[],"users":[],"marker":13}');
+          insert into public.workshop_state_history values (13,'{"source":"raw"}');
+          insert into private.workshop_snapshot_manifests values (20);
+          insert into private.workshop_archive_conversion_pilot values (21);
+          insert into private.workshop_consumables_shadow_history values (22);
+          SQL
+          psql -v ON_ERROR_STOP=1 -f scripts/sql/workshop-recovery-consumables-fallback-live.sql
+      - name: Verify exact recovery and rejection
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          do $$
+          begin
+            if private.recover_workshop_revision(10)->>'marker' is distinct from '10' then raise exception 'backup 10 failed'; end if;
+            if private.recover_workshop_revision(11)->>'marker' is distinct from '11' then raise exception 'backup 11 failed'; end if;
+            if private.recover_workshop_revision(13)->>'source' is distinct from 'raw' then raise exception 'raw priority failed'; end if;
+            if private.recover_workshop_revision(20)->>'source' is distinct from 'blocks' then raise exception 'blocks failed'; end if;
+            if private.recover_workshop_revision(21)->>'source' is distinct from 'archive' then raise exception 'archive failed'; end if;
+            if private.recover_workshop_revision(22)->>'source' is distinct from 'shadow' then raise exception 'shadow failed'; end if;
+            begin
+              perform private.recover_workshop_revision(12);
+              raise exception 'conflicting backup accepted';
+            exception when others then
+              if sqlerrm not like 'workshop_recovery_gap_at_revision_%' then raise; end if;
+            end;
+          end $$;
+          SQL
