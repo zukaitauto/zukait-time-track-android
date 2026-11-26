@@ -5,10 +5,11 @@ CREATE TABLE private.workshop_history_cleanup_approval(
  revision bigint PRIMARY KEY,
  source_digest text NOT NULL CHECK(source_digest ~ '^[0-9a-f]{64}$'),
  backup_reference text NOT NULL CHECK(length(btrim(backup_reference))>0),
+ archive_verified_at timestamptz NOT NULL,
  backup_created_at timestamptz NOT NULL,
  backup_verified_at timestamptz NOT NULL,
  approved_at timestamptz NOT NULL DEFAULT clock_timestamp(),
- CHECK(backup_created_at<=backup_verified_at AND backup_verified_at<=approved_at)
+ CHECK(archive_verified_at<=backup_created_at AND backup_created_at<=backup_verified_at AND backup_verified_at<=approved_at)
 );
 ALTER TABLE private.workshop_history_cleanup_approval ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON private.workshop_history_cleanup_approval FROM PUBLIC,anon,authenticated,service_role;
@@ -44,11 +45,11 @@ BEGIN
  IF NOT private.workshop_snapshot_maintenance_window(clock_timestamp()) THEN RAISE EXCEPTION 'cleanup_outside_window'; END IF;
  IF NOT pg_try_advisory_xact_lock(7290145563301::bigint) OR NOT pg_try_advisory_xact_lock(hashtextextended('workshop_archive_conversion',0)) THEN RAISE EXCEPTION 'cleanup_busy'; END IF;
  IF EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND wait_event_type IN ('Lock','IO')) THEN RAISE EXCEPTION 'cleanup_database_busy'; END IF;
- IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.workshop_state_history'::regclass AND NOT tgisinternal)
+ IF EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.workshop_state_history'::regclass AND NOT tgisinternal AND (tgtype::integer & 8)<>0)
  OR EXISTS(SELECT 1 FROM pg_constraint WHERE confrelid='public.workshop_state_history'::regclass) THEN RAISE EXCEPTION 'cleanup_source_dependencies_changed'; END IF;
  SELECT * INTO h FROM public.workshop_state_history WHERE revision=p_revision FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'cleanup_source_missing'; END IF;
- IF approval.backup_created_at<=h.archived_at THEN RAISE EXCEPTION 'cleanup_backup_predates_source'; END IF;
+ IF approval.archive_verified_at<=h.archived_at OR approval.backup_created_at<=h.archived_at THEN RAISE EXCEPTION 'cleanup_backup_predates_source'; END IF;
  IF h.revision >= (SELECT revision FROM public.workshop_state WHERE id='main') THEN RAISE EXCEPTION 'cleanup_not_historical'; END IF;
  digest:=private.verify_workshop_history_cleanup_copy(p_revision);
  IF approval.source_digest IS DISTINCT FROM digest THEN RAISE EXCEPTION 'cleanup_approval_digest_mismatch'; END IF;
