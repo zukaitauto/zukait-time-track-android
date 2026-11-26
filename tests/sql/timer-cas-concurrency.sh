@@ -31,6 +31,9 @@ begin
  if current_revision = 1 then
    raise exception 'FAIL: competing writer observed old revision and would commit';
  else
+   if current_revision <> 2 then
+     raise exception 'FAIL: unexpected revision after competing commit: %',current_revision;
+   end if;
    raise notice 'PASS: second session saw conflict at revision %', current_revision;
  end if;
 end $$;
