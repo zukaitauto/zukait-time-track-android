@@ -9,6 +9,26 @@
   try{deniedSnapshot=JSON.parse(localStorage.getItem(DENIED_KEY)||'null')}catch(_){}
   function isMechanicalConflict(code){return ['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict','mechanical_job_identity_conflict','mechanical_mixed_job_not_allowed'].includes(code)}
   function isAuditConflict(code){return ['audit_refresh_required','audit_replay_ambiguous','audit_history_unavailable'].includes(code)}
+  // Keep the compact audit prefix immutable during a local conflict/ack rebase.
+  // The ordinary three-way merge treats unkeyed arrays as replaceable.
+  function compactAuditRebase(base,remote,local){
+    const own=v=>v!=null&&Object.prototype.hasOwnProperty.call(v,'jobEditArchive');
+    if(![base,remote,local].some(own))return null;
+    const canonical=v=>Array.isArray(v)?'['+v.map(canonical).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}':JSON.stringify(v);
+    const fail=code=>{const e=new Error(code);e.code=code;e.httpStatus=409;throw e;};
+    if(![base,remote,local].every(v=>own(v)&&v.jobEditArchive&&Array.isArray(v.jobEdits))||
+      canonical(base.jobEditArchive)!==canonical(remote.jobEditArchive)||canonical(base.jobEditArchive)!==canonical(local.jobEditArchive))fail('audit_refresh_required');
+    const additions=changed=>{
+      const counts=new Map(),extra=[];
+      for(const row of base.jobEdits){const k=canonical(row);counts.set(k,(counts.get(k)||0)+1)}
+      for(const row of changed){const k=canonical(row),n=counts.get(k)||0;if(n)counts.set(k,n-1);else extra.push(row)}
+      if([...counts.values()].some(n=>n>0))fail('audit_refresh_required');
+      return extra;
+    };
+    const extra=additions(local.jobEdits),remoteKeys=new Set(additions(remote.jobEdits).map(canonical));
+    if(extra.some(row=>remoteKeys.has(canonical(row))))fail('audit_replay_ambiguous');
+    return {jobEditArchive:clone(remote.jobEditArchive),jobEdits:[...clone(remote.jobEdits),...clone(extra)]};
+  }
   function permissionBlocked(snapshot){
     if(!deniedSnapshot)return false;
     // A different account must never silently submit another user's queue.
@@ -857,12 +877,16 @@
         // Acknowledge exactly the snapshot sent by this request. If another
         // Start/Pause/Stop/Assign click happened while it was in flight, keep
         // that newer mutation dirty and immediately send a second request.
-        cloudRevision=Number(r.server_revision||r.revision||cloudRevision+1);
-        localStorage.setItem(REV_KEY,String(cloudRevision));
+        const nextRevision=Number(r.server_revision||r.revision||cloudRevision+1);
         const newerPending=dirtyGeneration!==pushGeneration;
         const authoritativeSnapshot=r.data&&typeof r.data==='object'
           ? reconcileConsumablesDuplicates(clone(r.data))
           : clone(localSnapshot);
+        // Validate the representation before advancing the saved revision.
+        // If the server already committed, retain the old queue for review.
+        const pendingAudit=newerPending?compactAuditRebase(localSnapshot,authoritativeSnapshot,payloadState()):null;
+        cloudRevision=nextRevision;
+        localStorage.setItem(REV_KEY,String(cloudRevision));
         lastSyncedState=clone(authoritativeSnapshot);
 
         if(newerPending){
@@ -874,6 +898,7 @@
           const mergedPending=me?.role==='Employee'
             ? mergeEmployeeConflict(authoritativeSnapshot,pendingSnapshot,me.id)
             : threeWayMerge(localSnapshot,authoritativeSnapshot,pendingSnapshot);
+          if(pendingAudit)Object.assign(mergedPending,pendingAudit);
           cloudApplying=true;
           try{state=reconcileConsumablesDuplicates(mergedPending);ensureShape();persistLocal()}finally{cloudApplying=false}
           cloudDirty=true;
@@ -906,9 +931,11 @@
       if(r.code==='conflict'&&r.data){
         const remote=clone(r.data||{});
         const base=lastSyncedState?clone(lastSyncedState):clone(remote);
+        const audit=compactAuditRebase(base,remote,localSnapshot);
         const merged=me?.role==='Employee'
           ? mergeEmployeeConflict(remote,localSnapshot,me.id)
           : threeWayMerge(base,remote,localSnapshot);
+        if(audit)Object.assign(merged,audit);
         try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(r.revision||cloudRevision)},'LEGACY_CONFLICT_MERGE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
         const beforeConflictRender=clone(state||{});
         cloudApplying=true;
@@ -952,9 +979,11 @@
             if(latest?.ok&&latest.data){
               const remote=clone(latest.data||{});
               const base=lastSyncedState?clone(lastSyncedState):clone(remote);
+              const audit=compactAuditRebase(base,remote,localSnapshot);
               const merged=me?.role==='Employee'
                 ? mergeEmployeeConflict(remote,localSnapshot,me.id)
                 : threeWayMerge(base,remote,localSnapshot);
+              if(audit)Object.assign(merged,audit);
               try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(latest.revision||cloudRevision)},'LEGACY_PERMISSION_REBASE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
               cloudApplying=true;
               try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
@@ -967,7 +996,7 @@
               cloudPushing=false;
               return await push(retry+1);
             }
-          }catch(e){console.warn('Permission rebase failed',e)}
+          }catch(e){if(isAuditConflict(e?.code))throw e;console.warn('Permission rebase failed',e)}
         }
         // Do not keep retrying an unauthorized full snapshot. Clear the dirty
         // snapshot before pulling so every device returns to one clean revision.
