@@ -30,3 +30,10 @@ jobs:
         env:
           PGPASSWORD: qa_only
         run: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d timer_regression -f tests/sql/employee-live-status-selective-write.sql
+      - name: Run two-session revision lock concurrency regression
+        env:
+          PGPASSWORD: qa_only
+          PGHOST: localhost
+          PGUSER: postgres
+          PGDATABASE: timer_regression
+        run: bash tests/sql/timer-cas-concurrency.sh
