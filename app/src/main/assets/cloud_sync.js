@@ -8,10 +8,11 @@
   let deniedSnapshot=null;
   try{deniedSnapshot=JSON.parse(localStorage.getItem(DENIED_KEY)||'null')}catch(_){}
   function isMechanicalConflict(code){return ['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict','mechanical_job_identity_conflict','mechanical_mixed_job_not_allowed'].includes(code)}
+  function isAuditConflict(code){return ['audit_refresh_required','audit_replay_ambiguous','audit_history_unavailable'].includes(code)}
   function permissionBlocked(snapshot){
     if(!deniedSnapshot)return false;
     // A different account must never silently submit another user's queue.
-    return String(deniedSnapshot.user)!==String(me?.id||'') || isMechanicalConflict(deniedSnapshot.error) || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
+    return String(deniedSnapshot.user)!==String(me?.id||'') || isMechanicalConflict(deniedSnapshot.error) || isAuditConflict(deniedSnapshot.error) || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
   }
 
   let sessionEpoch=0;
@@ -184,6 +185,15 @@
   const syncRecoveryKey=action=>action==='save'?'save':['revision','load','live_status','monthly_followup'].includes(action)?'read':null;
   const retryDelay=()=>Math.max(0,...[...syncRecovery.values()].map(x=>x.until-Date.now()));
   async function api(payload){
+    // Older servers ignore these optional fields; compact responses require
+    // explicit server activation. Never advertise a known representation
+    // unless the request carries an in-memory baseline revision.
+    if(payload.action==='load'||payload.action==='save'){
+      payload={...payload,job_edit_sync_mode:'compact-v1'};
+      if(payload.action==='load'&&Number.isSafeInteger(payload.known_revision)&&lastSyncedState){
+        payload.known_job_edit_sync_mode=lastSyncedState.jobEditArchive?'compact-v1':'legacy-v1';
+      }
+    }
     const epoch=sessionEpoch;
     const token=sessionToken();
     const checkSession=()=>{if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');};
@@ -815,13 +825,13 @@
     if(cloudPushing||managerEditInFlight||!cloudDirty)return false;
     if(api.retryAfter?.('save')>0)return false;
     if(permissionBlocked(payloadState())){
-      const mechanicalBlocked=isMechanicalConflict(deniedSnapshot?.error);
+      const mechanicalBlocked=isMechanicalConflict(deniedSnapshot?.error),auditBlocked=isAuditConflict(deniedSnapshot?.error);
       // A later click must also survive a restart while this queue is blocked.
-      if(mechanicalBlocked&&String(deniedSnapshot.user)===String(me?.id||'')){
+      if((mechanicalBlocked||auditBlocked)&&String(deniedSnapshot.user)===String(me?.id||'')){
         const pending=payloadState();deniedSnapshot={...deniedSnapshot,data:clone(pending)};
         try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot));localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pending,error:deniedSnapshot.error}))}catch(_){}
       }
-      status(mechanicalBlocked?'WORK CHANGED — SYNC REVIEW REQUIRED':'PERMISSION DENIED — CHANGE PRESERVED','bad');return false;
+      status(auditBlocked?'HISTORY CHANGED — CHANGE PRESERVED':mechanicalBlocked?'WORK CHANGED — SYNC REVIEW REQUIRED':'PERMISSION DENIED — CHANGE PRESERVED','bad');return false;
     }
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
@@ -988,8 +998,11 @@
       lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
       const assignmentConflict=e?.code==='id001_already_assigned'&&e?.httpStatus===409;
       const mechanicalConflict=['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict'].includes(e?.code);
-      const permissionDenied=e?.httpStatus===403,blocked=permissionDenied||assignmentConflict;
-      if(mechanicalConflict){
+      const auditConflict=isAuditConflict(e?.code)&&e?.httpStatus===409;
+      const permissionDenied=e?.httpStatus===403,blocked=permissionDenied||assignmentConflict||auditConflict;
+      if(auditConflict){
+        setServerConnection('connected','Server reachable. History changed; pending changes are preserved for Manager review.');
+      }else if(mechanicalConflict){
         setServerConnection('connected','Server reachable. A Mechanical handover changed this work. Pending changes are preserved; use Sync to review.');
       }else if(assignmentConflict){
         setServerConnection('connected','Server reachable. ID001 is already assigned; pending changes are preserved for review.');
@@ -1007,7 +1020,7 @@
         try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot))}catch(_){}
       }
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pendingSnapshot,error:lastSyncError}))}catch(_){}
-      status(mechanicalConflict?'WORK CHANGED — SYNC REVIEW REQUIRED':assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
+      status(auditConflict?'HISTORY CHANGED — CHANGE PRESERVED':mechanicalConflict?'WORK CHANGED — SYNC REVIEW REQUIRED':assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
       if(!blocked&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.max(api.retryAfter?.('save')||0,Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4)))));
       return false;
     }finally{
@@ -1304,7 +1317,9 @@
   async function syncNow(){
     if(cloudDirty&&permissionBlocked(payloadState())){
       if(String(deniedSnapshot.user)!==String(me?.id||'')){alert('Pending changes belong to another account. They are preserved; sign in as their author to review them.');return;}
-      if(isMechanicalConflict(deniedSnapshot.error)){
+      if(isAuditConflict(deniedSnapshot.error)){
+        alert('History changed while this data was pending. Your changes are preserved. Ask the Manager to review them before retrying.');return false;
+      }else if(isMechanicalConflict(deniedSnapshot.error)){
         if(!await recoverMechanicalQueue())return;
       }else{
         if(!confirm('The server rejected a pending change. Your local data is preserved. Retry this change once after its permission or attribution issue has been corrected?'))return;
