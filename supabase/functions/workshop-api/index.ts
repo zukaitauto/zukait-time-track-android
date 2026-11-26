@@ -1,6 +1,6 @@
 import { sharedWorkshopSections } from "./extensions/shared_workshop_sections.js";
 import { reconcileCompactJobEditAudit } from "./extensions/compact_job_edit_audit.js";
-import { jobEditWireState, requestArchivePrefixReader } from "./extensions/job_edit_archive_wire.js";
+import { jobEditWireState, requestArchivePrefixReader, jobEditLoadMode, jobEditKnownModeMatches, jobEditSaveMode, COMPACT_JOB_EDIT_MODE } from "./extensions/job_edit_archive_wire.js";
 import { employeeTimeSections } from "./extensions/employee_time_sections.js";
 import { saveWorkshopJobNotes } from "./workshop_job_notes_editor.mjs";
 import { invoicePriceReconcileApi } from "./extensions/invoice_price_reconcile_api.js";
@@ -1835,9 +1835,9 @@ Deno.serve(async (req: Request) => {
             return Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]]));
           }))
         : null;
-      const savedReply = (saved: any) => {
+      const savedReply = async (saved: any) => {
         if (numberChange) numberCodec=jobNumberCodec(saved.number_rows || []);
-        return reply({ok:true,job:saved.job,server_revision:saved.revision,...(numberChange?{data:saved.data}:{})});
+        return reply({ok:true,job:saved.job,server_revision:saved.revision,...(numberChange?{data:await legacyWire(saved.data)}:{})});
       };
       const findReceipt = async () => {
         if (!requestKey) return null;
@@ -1971,19 +1971,21 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "load") {
+      const wireMode=jobEditLoadMode(body,Deno.env.get("ZUKAIT_JOB_EDIT_COMPACT_SYNC_ENABLED")==="true");
+      const loadWire=(data:any)=>jobEditWireState(data,wireMode===COMPACT_JOB_EDIT_MODE,prefixReader);
       // Opt-in only: older clients continue to receive the full response.
       if (Number.isSafeInteger(body.known_revision) && body.known_revision >= 0) {
         const {data: metadata,error: metadataError} = await admin.from("workshop_state")
           .select("revision,updated_at,updated_by").eq("id","main").single();
         if (metadataError) throw metadataError;
-        if (Number(metadata.revision) === body.known_revision) {
-          return reply({ok:true,...metadata,not_modified:true,user});
+        if (Number(metadata.revision) === body.known_revision && jobEditKnownModeMatches(body,wireMode)) {
+          return reply({ok:true,...metadata,not_modified:true,user,job_edit_sync_mode:wireMode});
         }
       }
       const { data, error } = await admin.from("workshop_state")
         .select("revision,data,updated_at,updated_by").eq("id","main").single();
       if (error) throw error;
-      return reply({ ok: true, ...data, data:await legacyWire(data.data), user });
+      return reply({ ok: true, ...data, data:await loadWire(data.data), user,job_edit_sync_mode:wireMode });
     }
 
     if (action === "live_status") {
@@ -2351,6 +2353,8 @@ Deno.serve(async (req: Request) => {
     if (action === "save") {
       const originalExpected = Number(body.expected_revision);
       const originalProposed = body.data;
+      const saveMode=jobEditSaveMode(body);
+      const saveWire=(data:any)=>jobEditWireState(data,saveMode===COMPACT_JOB_EDIT_MODE,prefixReader);
       if (!Number.isFinite(originalExpected) || !originalProposed || typeof originalProposed !== "object") {
         return reply({ ok: false, code: "bad_request" }, 400);
       }
@@ -2373,6 +2377,8 @@ Deno.serve(async (req: Request) => {
 
         let candidate:any;
         const currentRevision = Number(current.revision || 0);
+        // Never silently merge a compact cache into a restored full state.
+        if(Object.hasOwn(originalProposed,"jobEditArchive")&&!Object.hasOwn(current.data,"jobEditArchive")) return reply({ok:false,code:"audit_refresh_required",revision:currentRevision},409);
         if (currentRevision === originalExpected) {
           candidate = cloneValue(originalProposed);
         } else {
@@ -2381,7 +2387,8 @@ Deno.serve(async (req: Request) => {
             // Very old revisions created before history was enabled still fall back
             // to the legacy client conflict path once. The next retry will use a
             // revision that exists in history.
-            return reply({ ok: false, code: "conflict", revision: current.revision, data: await legacyWire(current.data) }, 409);
+            if(saveMode===COMPACT_JOB_EDIT_MODE)return reply({ok:false,code:"audit_refresh_required",revision:currentRevision},409);
+            return reply({ ok: false, code: "conflict", revision: current.revision, data: await saveWire(current.data) }, 409);
           }
           candidate = threeWayMerge(baseData, current.data, originalProposed);
         }
@@ -2411,7 +2418,7 @@ Deno.serve(async (req: Request) => {
         candidate.sublets = cloneValue(current.data?.sublets || []);
         candidate.subletAudit = cloneValue(current.data?.subletAudit || []);
         const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
-        if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:await legacyWire(current.data)},403);
+        if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:await saveWire(current.data)},403);
         candidate = preserveEstimateHistory(candidate, current.data);
         if (user.role !== "Manager") {
           const existingLeaves = mapById(current.data?.leaves || []);
@@ -2427,13 +2434,13 @@ Deno.serve(async (req: Request) => {
         candidate = preserveReceptionPromiseAuthority(candidate, current.data);
 
         const idleConflict=id001AssignmentConflict(candidate,current.data);
-        if(idleConflict)return reply({ok:false,code:"id001_already_assigned",message:"This technician already has an unfinished ID001 assignment. Review the existing assignment; pending changes are preserved.",employee:idleConflict.employee,revision:current.revision,data:await legacyWire(current.data)},409);
+        if(idleConflict)return reply({ok:false,code:"id001_already_assigned",message:"This technician already has an unfinished ID001 assignment. Review the existing assignment; pending changes are preserved.",employee:idleConflict.employee,revision:current.revision,data:await saveWire(current.data)},409);
 
         const paintCorrectionIssue=validatePaintManagerCorrections(candidate,current.data,user);
-        if (paintCorrectionIssue) return reply({ok:false,code:"paint_correction_forbidden",message:paintCorrectionIssue,revision:current.revision,data:await legacyWire(current.data)},403);
+        if (paintCorrectionIssue) return reply({ok:false,code:"paint_correction_forbidden",message:paintCorrectionIssue,revision:current.revision,data:await saveWire(current.data)},403);
 
         const paintOrderIssue=paintOrderRules.validateNewOrders(candidate.paintPurchasing?.orders || [],current.data?.paintPurchasing?.orders || []);
-        if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:await legacyWire(current.data)},409);
+        if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:await saveWire(current.data)},409);
 
         // Keep profiles whose credentials are still active. Inactive staff may be
         // intentionally removed; an old full-state save must not remove active staff.
@@ -2457,7 +2464,7 @@ Deno.serve(async (req: Request) => {
           a && a.job === "ID001" && !a.cancelled && !a.completed && Number(a.idealSafeVersion || 0) < 1
         );
         if (unsafeIdeal) {
-          return reply({ ok: false, code: "id001_update_required", revision: current.revision, data: await legacyWire(current.data) }, 409);
+          return reply({ ok: false, code: "id001_update_required", revision: current.revision, data: await saveWire(current.data) }, 409);
         }
 
         if (user.role === "Employee" && !validateEmployeeChange(user.id, current.data, candidate)) {
@@ -2474,7 +2481,7 @@ Deno.serve(async (req: Request) => {
           Deno.env.get("ZUKAIT_SHARED_SECTION_SAVE_ENABLED") !== "false"
           ? sharedWorkshopSections(current.data, candidate) : null;
         const commitArgs = {p_expected_revision:currentRevision,p_changed_by:user.id,p_live:live};
-        const wireCandidate=await legacyWire(candidate);
+        const wireCandidate=await saveWire(candidate);
         const { data: committed, error } = sections !== null
           ? await admin.rpc("zukait_commit_workshop_state_sections", {...commitArgs,...sections})
           : await admin.rpc("zukait_commit_workshop_state_v2", {...commitArgs,p_data:candidate});
@@ -2491,6 +2498,7 @@ Deno.serve(async (req: Request) => {
             // so its existing poller is forced to reload the authoritative state.
             revision: rebased ? originalExpected : committedRevision,
             server_revision: committedRevision,
+            job_edit_sync_mode:saveMode,
             data: rebased || reconciled ? wireCandidate : undefined,
             force_pull: rebased || reconciled,
             updated_by: user.id,
@@ -2509,7 +2517,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const latest = lastCurrent || (await admin.from("workshop_state").select("revision,data").eq("id","main").single()).data;
-      return reply({ ok: false, code: "conflict_busy", revision: latest?.revision, data: await legacyWire(latest?.data), retryable:true, retry_after_ms:3000 }, 409);
+      return reply({ ok: false, code: "conflict_busy", revision: latest?.revision, data: await saveWire(latest?.data), retryable:true, retry_after_ms:3000 }, 409);
     }
 
     if (action === "backup") {
