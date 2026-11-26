@@ -16,3 +16,21 @@ export function liveStatusDiff(current,expected){
   }
   return {changed,removed:[...old.keys()].filter(id=>!seen.has(id))};
 }
+
+/**
+ * Validate the API's authoritative projection without requiring every row's
+ * state_revision to equal the global workshop revision. Callers must obtain
+ * expected rows from a fresh workshop snapshot; this is NOT a cache validator.
+ * Reject future row revisions and any changed business fields.
+ */
+export function liveStatusProjectionMatches(actual,expected,globalRevision){
+  if(!Number.isSafeInteger(globalRevision)||globalRevision<=0)return false;
+  try{
+    const diff=liveStatusDiff(actual,expected);
+    return diff.changed.length===0&&diff.removed.length===0&&
+      actual.length===expected.length&&actual.every(row=>{
+        const revision=Number(row?.state_revision);
+        return Number.isSafeInteger(revision)&&revision>0&&revision<=globalRevision;
+      });
+  }catch{return false;}
+}
