@@ -13,7 +13,7 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionAuthenticatedAcceptance": "NOT_RUN",
-  "reason": "V425 held candidate: account-scoped durable Stock and purchase invoice retry recovery, Estimate teardown and UI-only safety fixes. No backend deployment or publication approved.",
+  "reason": "V425 held candidate: account-scoped durable Stock and purchase invoice retry recovery, Estimate teardown, Supervisor monthly card layout and UI-only safety fixes. No backend deployment or publication approved.",
   "previousPublishedRelease": {
     "versionName": "V424",
     "versionCode": 387,
