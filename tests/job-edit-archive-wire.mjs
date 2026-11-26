@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {jobEditWireState,requestArchivePrefixReader} from '../supabase/functions/workshop-api/extensions/job_edit_archive_wire.js';
+import {jobEditWireState,requestArchivePrefixReader,jobEditLoadMode,jobEditKnownModeMatches,jobEditSaveMode} from '../supabase/functions/workshop-api/extensions/job_edit_archive_wire.js';
 const a={job:'JC1',at:1},b={job:'JC2',at:2};
 const current={jobs:[{no:'JC1'}],jobEditArchive:{snapshotRevision:100,prefixCount:2},jobEdits:[b]};
 const original=JSON.stringify(current);
@@ -19,3 +19,18 @@ await assert.rejects(jobEditWireState(current,false,async()=>({ok:false})),/audi
 await assert.rejects(jobEditWireState(current,false,async()=>({ok:true,snapshotRevision:100,prefixCount:2,entries:[a]})),/audit_history_unavailable/);
 await assert.rejects(jobEditWireState(current,false,async()=>({ok:true,snapshotRevision:101,prefixCount:2,entries:[a,a]})),/audit_history_unavailable/);
 console.log('12 wire compatibility assertions passed');
+
+const optIn={job_edit_sync_mode:'compact-v1'};
+assert.equal(jobEditLoadMode({},true),'legacy-v1');
+assert.equal(jobEditLoadMode(optIn,false),'legacy-v1');
+assert.equal(jobEditLoadMode(optIn,true),'compact-v1');
+assert.equal(jobEditLoadMode({job_edit_sync_mode:true},true),'legacy-v1');
+assert.equal(jobEditKnownModeMatches({},'legacy-v1'),true);
+assert.equal(jobEditKnownModeMatches(optIn,'compact-v1'),false);
+assert.equal(jobEditKnownModeMatches({...optIn,known_job_edit_sync_mode:'legacy-v1'},'compact-v1'),false);
+assert.equal(jobEditKnownModeMatches({...optIn,known_job_edit_sync_mode:'compact-v1'},'compact-v1'),true);
+assert.equal(jobEditKnownModeMatches({...optIn,known_job_edit_sync_mode:'compact-v1'},'legacy-v1'),false);
+assert.equal(jobEditSaveMode({...optIn,data:expected}),'legacy-v1');
+assert.equal(jobEditSaveMode({...optIn,data:current}),'compact-v1');
+assert.equal(jobEditSaveMode({data:current}),'legacy-v1');
+console.log('12 sync negotiation assertions passed');
