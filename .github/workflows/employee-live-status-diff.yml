@@ -25,6 +25,7 @@ jobs:
         with:
           node-version: '22'
       - run: node tests/employee-live-status-diff.mjs
+      - run: node tests/live-status-migration-gate.mjs
       - name: Run disposable PostgreSQL selective-write regression
         env:
           PGPASSWORD: qa_only
