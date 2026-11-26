@@ -35,4 +35,42 @@ begin
   get diagnostics changed = row_count;
   if changed<>0 then raise exception 'duplicate transition rewrote % rows',changed; end if;
 end $$;
+
+-- Check all live-status business fields, not just status/job number.
+create temporary table employee_status_full (
+ employee_id text primary key, employee_name text, department text, status text,
+ job_no text, assignment_id text, session_id text, session_start bigint,
+ suggested_minutes numeric, vehicle text, registration text, overtime boolean,
+ state_revision bigint, updated_by text
+) on commit drop;
+insert into employee_status_full values
+ ('E1','Employee One','Paint','Working','JC1','A1','S1',100,60,'Toyota','123-M',false,5,'Manager');
+do $
+declare n integer;
+begin
+ -- Same business state, newer global revision and different actor: no write.
+ update employee_status_full set state_revision=6,updated_by='Supervisor'
+ where employee_id='E1' and
+ row(employee_name,department,status,job_no,assignment_id,session_id,session_start,suggested_minutes,vehicle,registration,overtime)
+ is distinct from
+ row('Employee One','Paint','Working','JC1','A1','S1',100::bigint,60::numeric,'Toyota','123-M',false);
+ get diagnostics n=row_count;
+ if n<>0 then raise exception 'metadata-only rewrite'; end if;
+ -- Null-safe session change must write exactly once.
+ update employee_status_full set session_id=null,state_revision=6,updated_by='Supervisor'
+ where employee_id='E1' and
+ row(employee_name,department,status,job_no,assignment_id,session_id,session_start,suggested_minutes,vehicle,registration,overtime)
+ is distinct from
+ row('Employee One','Paint','Working','JC1','A1',null::text,100::bigint,60::numeric,'Toyota','123-M',false);
+ get diagnostics n=row_count;
+ if n<>1 then raise exception 'session null transition missed'; end if;
+ -- Repeating the same session removal must not write.
+ update employee_status_full set session_id=null,state_revision=7
+ where employee_id='E1' and
+ row(employee_name,department,status,job_no,assignment_id,session_id,session_start,suggested_minutes,vehicle,registration,overtime)
+ is distinct from
+ row('Employee One','Paint','Working','JC1','A1',null::text,100::bigint,60::numeric,'Toyota','123-M',false);
+ get diagnostics n=row_count;
+ if n<>0 then raise exception 'duplicate session removal rewrote row'; end if;
+end $;
 rollback;
