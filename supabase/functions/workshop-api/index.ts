@@ -1288,7 +1288,7 @@ Deno.serve(async (req: Request) => {
       const result=await consumablesStockApi(admin,user,body,{
         enabled:Deno.env.get('ZUKAIT_STOCK_ENABLED')==='true',
         writesEnabled:Deno.env.get('ZUKAIT_STOCK_WRITES_ENABLED')==='true',
-        mechanicalWritesEnabled:false,
+        mechanicalWritesEnabled:Deno.env.get('ZUKAIT_MECHANICAL_STOCK_ENABLED')==='true',
         masterLinkEnabled:Deno.env.get('ZUKAIT_STOCK_MASTER_LINK_ENABLED')==='true',
         invoiceEnabled:Deno.env.get('ZUKAIT_PURCHASE_INVOICE_ENABLED')==='true',
         countedReads:Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co",
