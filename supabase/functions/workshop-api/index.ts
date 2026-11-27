@@ -1721,8 +1721,13 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "employee_time_action") {
+      const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+        Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
+        ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
+      const reducedRead = useCompactTime && Deno.env.get("ZUKAIT_EMPLOYEE_TIME_REDUCED_READ_ENABLED") === "true";
       for(let attempt=0;attempt<8;attempt++){
-        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        const {data:raw,error:readError}=await admin.from("workshop_state").select(reducedRead ? "revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,employeeTimeActionAudit:data->employeeTimeActionAudit,lastActions:data->lastActions" : "revision,data").eq("id","main").single();
+        const current:any = reducedRead && raw ? {revision:raw.revision,data:Object.fromEntries(["users","sessions","assign","jobs","employeeTimeActionAudit","lastActions"].map(key=>[key,(raw as any)[key]]))} : raw;
         if(readError)throw readError;
         const result:any=employeeTimeTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
@@ -1736,10 +1741,8 @@ Deno.serve(async (req: Request) => {
         }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
-        const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
-          Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
-          ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
         const sections = useCompactTime ? employeeTimeSections(current.data, result.data) : null;
+        if(reducedRead && sections === null) return reply({ok:false,code:"employee_time_reduced_read_unsupported"},409);
         const commitArgs = {p_expected_revision:Number(current.revision||0),p_changed_by:String(user.id),p_live:live};
         const {data:committed,error:commitError} = sections !== null
           ? await admin.rpc("zukait_commit_workshop_employee_time_sections",{...commitArgs,p_sections:sections})
