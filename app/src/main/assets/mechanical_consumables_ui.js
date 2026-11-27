@@ -304,7 +304,8 @@ async function section(id){
   open(s.title,back+'<div class="mc-cons-card"><label for="mcConsReturnJc">Mechanical Job Card Number</label>'+
     '<input id="mcConsReturnJc" maxlength="36" autocomplete="off" placeholder="Enter Mechanical JC number">'+
     '<button type="button" id="mcConsReturnFind" onclick="mechanicalConsumablesFindReturnable(0)">Find issued materials</button>'+
-    '<div id="mcConsReturnResult" role="status">Read-only verification. Returning materials is disabled until safe receipt/retry handling is tested.</div></div>');
+    '<div id="mcConsReturnResult" role="status"></div>'+
+    '<div id="mcConsReturnForm"></div><div id="mcConsReturnStatus" role="status"></div></div>');
   return;
  }
  if(id==='totals'){
@@ -349,6 +350,91 @@ async function showTotals(page=0){
  }catch(_){if(generation===totalsGeneration&&section===sectionRequest&&canIssue()&&issueOwner()===owner&&String(window.zukaitAuth?.getToken?.()||'')===auth&&document.getElementById('mcConsTotalsResult')===result)result.textContent='Unable to verify Mechanical Job Card totals. No stock changes were made.';}
  finally{if(generation===totalsGeneration&&document.getElementById('mcConsTotalsGo')===button)button.disabled=false;}
 }
+let returnGeneration=0,returnLines=[],returnBusy=false,returnPendingBlocked=false;
+const returnKey=owner=>'zukait_mechanical_return_pending_v1:'+encodeURIComponent(owner);
+function savedReturn(owner){
+ if(!owner)throw Error('Staff identity unavailable');
+ const raw=window.localStorage.getItem(returnKey(owner));
+ if(!raw)return null;
+ const entry=JSON.parse(raw);
+ if(entry.owner!==owner||!entry.requestId||!entry.data||entry.fingerprint!==JSON.stringify(entry.data)||
+    !entry.data.lineId||!entry.data.jobCard||!entry.data.reason)throw Error('Unconfirmed return requires manual review');
+ return entry;
+}
+function returnForm(){
+ const target=document.getElementById('mcConsReturnForm');if(!target)return;
+ const owner=issueOwner();
+ let pending;
+ try{pending=savedReturn(owner);returnPendingBlocked=false}
+ catch(_){returnPendingBlocked=true}
+ if(returnPendingBlocked){target.textContent='Saved return receipt cannot be verified. New returns are blocked; contact Manager.';return}
+ if(pending){
+  target.innerHTML='<p class="mc-cons-alert">Unconfirmed return for JC '+escapeHtml(pending.data.jobCard)+
+   '. Retry the original request only.</p><button type="button" onclick="mechanicalConsumablesRetryReturn()"'+
+   (returnBusy?' disabled':'')+'>Retry original return</button>';
+  return;
+ }
+ if(!returnLines.length){target.textContent='No returnable issued lines selected.';return}
+ target.innerHTML='<label for="mcConsReturnLine">Original issued line</label><select id="mcConsReturnLine" onchange="mechanicalConsumablesReturnLineChanged()">'+
+  returnLines.map((row,i)=>'<option value="'+i+'">'+escapeHtml(row.name||'Material')+' · '+escapeHtml(row.brand||'')+
+  ' · '+escapeHtml(row.availableToReturn)+' '+escapeHtml(row.unit||'')+'</option>').join('')+
+  '</select><p id="mcConsReturnRemaining"></p>'+
+  '<label for="mcConsReturnQty">Unused quantity</label><input id="mcConsReturnQty" type="number" min="0.0001" step="0.0001">'+
+  '<label for="mcConsReturnReason">Reason for return</label><input id="mcConsReturnReason" maxlength="180" autocomplete="off">'+
+  '<button type="button" onclick="mechanicalConsumablesSubmitReturn()"'+(returnBusy?' disabled':'')+'>Return unused material</button>';
+ returnLineChanged();
+}
+function returnLineChanged(){
+ const index=Number(document.getElementById('mcConsReturnLine')?.value),line=returnLines[index];
+ const note=document.getElementById('mcConsReturnRemaining'),qty=document.getElementById('mcConsReturnQty');
+ if(!line||!note||!qty)return;
+ note.textContent='Available to return: '+Number(line.availableToReturn)+' '+String(line.unit||'');
+ qty.step=line.unit==='Piece'?'1':'0.0001';
+}
+async function sendReturn(retry=false){
+ if(!canIssue()||!issueOwner()||returnBusy)return;
+ const owner=issueOwner(),auth=String(window.zukaitAuth?.getToken?.()||'');
+ const current=()=>canIssue()&&issueOwner()===owner&&String(window.zukaitAuth?.getToken?.()||'')===auth;
+ const status=document.getElementById('mcConsReturnStatus');
+ const show=msg=>{if(current()&&status&&document.getElementById('mcConsReturnStatus')===status)status.textContent=msg};
+ if(typeof navigator!=='undefined'&&navigator.onLine===false){show('Offline. No request sent.');return}
+ let entry;
+ try{
+  entry=savedReturn(owner);
+  if(!entry){
+   if(retry)throw Error('No saved return to retry');
+   const jc=String(document.getElementById('mcConsReturnJc')?.value||'').trim().toUpperCase();
+   const line=returnLines[Number(document.getElementById('mcConsReturnLine')?.value)];
+   const raw=String(document.getElementById('mcConsReturnQty')?.value||'').trim(),quantity=Number(raw);
+   const reason=String(document.getElementById('mcConsReturnReason')?.value||'').trim();
+   if(!line||String(line.jobCard)!==jc||!line.lineId)throw Error('Find an original issue for this Job Card');
+   if(!/^(?:\\d+(?:\\.\\d{1,4})?|\\.\\d{1,4})$/.test(raw)||!Number.isFinite(quantity)||quantity<=0||
+      !Number.isInteger(Math.round(quantity*10000))||quantity>Number(line.availableToReturn))throw Error('Invalid unused quantity');
+   if(line.unit==='Piece'&&!Number.isInteger(quantity))throw Error('Whole pieces only');
+   if(reason.length<5||reason.length>180)throw Error('Reason must be 5–180 characters');
+   const data={jobCard:jc,lineId:line.lineId,quantity,reason};
+   entry={owner,data,fingerprint:JSON.stringify(data),requestId:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():'mechanical-return-'+Date.now()+'-'+Math.random().toString(36).slice(2)};
+   window.localStorage.setItem(returnKey(owner),JSON.stringify(entry));
+   if(savedReturn(owner)?.requestId!==entry.requestId)throw Error('Cannot preserve retry receipt');
+  }
+ }catch(e){show(String(e.message||e)+'. No new return sent.');return}
+ returnBusy=true;returnForm();show('Checking audited return receipt…');
+ try{
+  if(!current())throw Error('Staff session changed');
+  const response=await window.zukaitCloud.stockRequest({operation:'WRITE',command:'MECHANICAL_RETURN',requestId:entry.requestId,data:entry.data});
+  if(!current())return;
+  const receipt=response?.receipt;
+  if(response?.ok!==true||receipt?.final!==true||String(receipt.lineId)!==String(entry.data.lineId)||
+     String(receipt.jobCard)!==entry.data.jobCard||Number(receipt.quantity)!==Number(entry.data.quantity))
+   throw Error(response?.code||'Return receipt not confirmed');
+  if(savedReturn(owner)?.requestId===entry.requestId)window.localStorage.removeItem(returnKey(owner));
+  returnLines=[];show('RETURNED · '+entry.data.quantity+' · Cost credited OMR '+Number(receipt.credit||0).toFixed(3)+'.');
+ }catch(e){show('Return not confirmed. Retry the SAME request. '+String(e.message||e))}
+ finally{returnBusy=false;if(current())returnForm()}
+}
+window.mechanicalConsumablesSubmitReturn=()=>sendReturn(false);
+window.mechanicalConsumablesRetryReturn=()=>sendReturn(true);
+window.mechanicalConsumablesReturnLineChanged=returnLineChanged;
 let returnGeneration=0;
 async function findReturnable(page=0){
  const input=document.getElementById('mcConsReturnJc'),result=document.getElementById('mcConsReturnResult'),button=document.getElementById('mcConsReturnFind');
@@ -362,12 +448,14 @@ async function findReturnable(page=0){
   if(generation!==returnGeneration||section!==sectionRequest||!canIssue()||issueOwner()!==owner||String(window.zukaitAuth?.getToken?.()||'')!==auth||document.getElementById('mcConsReturnResult')!==result||String(input.value||'').trim().toUpperCase()!==jc)return;
   const data=response?.returnable;
   if(response?.ok!==true||!Array.isArray(data?.items))throw Error('Original issues not confirmed');
+  returnLines=data.items;
   result.innerHTML=data.items.length?data.items.map(row=>'<p>'+escapeHtml(row.name||'Material')+' · '+escapeHtml(row.brand||'')+
    ' · Available to return: '+escapeHtml(row.availableToReturn||0)+' '+escapeHtml(row.unit||'')+'</p>').join(''):
    '<p>No unused issued materials available on this page.</p>';
-  result.innerHTML+='<p>Read-only. Return submission remains disabled pending audited retry tests.</p>'+
+  result.innerHTML+=
    (page>0?'<button type="button" onclick="mechanicalConsumablesFindReturnable('+(page-1)+')">Previous</button>':'')+
    (data.hasMore===true&&page<49?'<button type="button" onclick="mechanicalConsumablesFindReturnable('+(page+1)+')">Next 20</button>':'');
+  returnForm();
  }catch(_){if(generation===returnGeneration&&section===sectionRequest&&canIssue()&&issueOwner()===owner&&String(window.zukaitAuth?.getToken?.()||'')===auth&&document.getElementById('mcConsReturnResult')===result)result.textContent='Unable to verify issued materials. No stock changes were made.';}
  finally{if(generation===returnGeneration&&document.getElementById('mcConsReturnFind')===button)button.disabled=false;}
 }
