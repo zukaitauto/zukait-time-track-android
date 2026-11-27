@@ -350,7 +350,7 @@ async function showTotals(page=0){
  }catch(_){if(generation===totalsGeneration&&section===sectionRequest&&canIssue()&&issueOwner()===owner&&String(window.zukaitAuth?.getToken?.()||'')===auth&&document.getElementById('mcConsTotalsResult')===result)result.textContent='Unable to verify Mechanical Job Card totals. No stock changes were made.';}
  finally{if(generation===totalsGeneration&&document.getElementById('mcConsTotalsGo')===button)button.disabled=false;}
 }
-let returnGeneration=0,returnLines=[],returnBusy=false,returnPendingBlocked=false;
+let returnLines=[],returnBusy=false,returnPendingBlocked=false;
 const returnKey=owner=>'zukait_mechanical_return_pending_v1:'+encodeURIComponent(owner);
 function savedReturn(owner){
  if(!owner)throw Error('Staff identity unavailable');
