@@ -409,7 +409,19 @@ function patchSummary(box){
  }else box.innerHTML=markup;
  box.__woSummaryMarkup=markup;removeManagerSummaryReady();
 }
-function refreshVisibleOverview(){if(document.visibilityState==='hidden')return;ensurePanel();ensureFloatingJobSearch();if(role()==='Manager'){const box=document.getElementById('woDailySummary');if(box)patchSummary(box);window.v273SettleTimeAttention?.()}}
+function refreshVisibleOverview(){
+ if(document.visibilityState==='hidden')return;
+ const currentRole=role();
+ if(currentRole!=='Manager'&&currentRole!=='Supervisor')return;
+ const root=document.getElementById(currentRole==='Manager'?'managerView':'supervisorView');
+ if(!root||root.classList.contains('hidden'))return;
+ ensurePanel();ensureFloatingJobSearch();
+ if(currentRole==='Manager'){
+  const box=document.getElementById('woDailySummary');
+  if(box)patchSummary(box);
+  window.v273SettleTimeAttention?.();
+ }
+}
 setInterval(refreshVisibleOverview,5000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshVisibleOverview()});
 // Dashboard/report links are purpose-specific. Full review is entered only by top-search results.
