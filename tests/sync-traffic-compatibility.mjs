@@ -64,16 +64,17 @@ console.log(JSON.stringify({result:'legacy compatibility, conditional reads, rol
 
 const probeStart=client.indexOf('  async function probeRevision(){');
 const probeEnd=client.indexOf('  async function push(',probeStart);
-async function checkLiveRepair({remote=42,baseline=fixture,dirty=false,role=true}={}){
+async function checkLiveRepair({remote=42,baseline=fixture,dirty=false,role=true,expected=true}={}){
  const calls=[];
  const ctx={sessionEpoch:0,revisionProbeInFlight:false,pullInFlight:false,cloudPushing:false,cloudDirty:dirty,cloudRevision:42,lastSyncedState:baseline,lastSuccessfulSyncAt:0,lastRevisionProbeAt:0,lastProbedRevision:-1,navigator:{onLine:true},sessionToken:()=>true,api:async()=>({ok:true,revision:remote}),pollWarnings:new Set(),setServerConnection(){},liveRole:()=>role,pull:async()=>true,push:async()=>{ctx.cloudDirty=false},pullLiveStatus:async(scheduled=false)=>calls.push(scheduled),stale:()=>false,Date};
  vm.createContext(ctx);vm.runInContext(client.slice(probeStart,probeEnd)+';this.probeRevision=probeRevision',ctx);
- assert.equal(await ctx.probeRevision(),true);
+ assert.equal(await ctx.probeRevision(),expected);
  return calls;
 }
 assert.deepEqual(await checkLiveRepair(),[true]);
 assert.deepEqual(await checkLiveRepair({remote:43}),[false]);
 assert.deepEqual(await checkLiveRepair({baseline:null}),[false]);
-assert.deepEqual(await checkLiveRepair({dirty:true}),[false]);
+assert.deepEqual(await checkLiveRepair({dirty:true,expected:false}),[]);
+assert.deepEqual(await checkLiveRepair({dirty:true,remote:43}),[false]);
 assert.deepEqual(await checkLiveRepair({role:false}),[]);
-console.log('Live status cache repair routing: five scenarios passed');
+console.log('Live status cache repair routing: six scenarios passed');
