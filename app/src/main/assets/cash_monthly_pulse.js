@@ -173,10 +173,12 @@ function install(){
  if(!['Manager','Supervisor'].includes(role()))return;
  const root=document.getElementById(role()==='Manager'?'managerView':'supervisorView');if(!root||root.classList.contains('hidden'))return;
  const id=role()==='Manager'?'managerCashPulseSlot':'supervisorCashPulseSlot';let slot=root.querySelector('#'+id);
- if(!slot){slot=document.createElement('div');slot.id=id;slot.className='cash-pulse-slot';root.prepend(slot);}
- const header=root.querySelector(role()==='Manager'?'.v135-manager-header,.v111-manager-header':'.v143-header');
- // Manager placement belongs to the dashboard renderer, not background refresh.
- if(role()==='Supervisor'&&header&&header.nextElementSibling!==slot)header.insertAdjacentElement('afterend',slot);
+ if(!slot){
+  slot=document.createElement('div');slot.id=id;slot.className='cash-pulse-slot';
+  // Mount once: refresh must not reposition an already visible dashboard section.
+  const header=root.querySelector(role()==='Manager'?'.v135-manager-header,.v111-manager-header':'.v143-header');
+  if(header)header.insertAdjacentElement('afterend',slot);else root.prepend(slot);
+ }
  const markup='<div class="v251-followup-layout">'+html()+(role()==='Manager'?insuranceHtml():'')+'</div>',old=slot.querySelector('[data-v251-cash-pulse]');
  if(!old||slot.__cashPulseMarkup!==markup){if(old)patchCards(slot,markup);else slot.innerHTML=markup;slot.__cashPulseMarkup=markup;}
 }
