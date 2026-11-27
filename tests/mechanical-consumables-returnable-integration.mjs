@@ -42,4 +42,14 @@ vm.runInContext("me={id:'accountant-1',role:'Accountant'}",context);
 await window.mechanicalConsumablesFindReturnable(0);
 assert.equal(calls.length,2);
 assert.equal(calls.some(x=>x.operation==='WRITE'),false,'read-only lookup must never write stock');
+// A pending response must not populate a reused modal after staff session changes.
+vm.runInContext("me={id:'supervisor-1',role:'Mechanical Supervisor'}",context);
+let resolveSlow;
+window.zukaitCloud.stockRequest=()=>new Promise(resolve=>{resolveSlow=resolve});
+const before=elements.mcConsReturnResult.innerHTML;
+const inflight=window.mechanicalConsumablesFindReturnable(0);
+vm.runInContext("me={id:'other-supervisor',role:'Mechanical Supervisor'}",context);
+resolveSlow({ok:true,returnable:{items:[{name:'LEAKED',availableToReturn:1,unit:'Piece'}]}});
+await inflight;
+assert.doesNotMatch(elements.mcConsReturnResult.innerHTML,/LEAKED/,'stale response must not render after session change');
 console.log('Mechanical returnable read-only integration regression PASS');
