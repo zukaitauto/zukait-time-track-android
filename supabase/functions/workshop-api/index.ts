@@ -1704,7 +1704,8 @@ Deno.serve(async (req: Request) => {
       }
       const operation = String(command.operation||"").toUpperCase();
       const procedure = operation==="LINK_EXISTING_JOB" ? "zukait_reception_link_existing_job" : ["CORRECT_EXISTING_JOB_LINK","UNLINK_EXISTING_JOB"].includes(operation) ? "zukait_reception_correct_existing_job_link" : "zukait_reception_command";
-      const {data,error} = await admin.rpc(procedure,{p_actor_id:String(user.id),p_command:command});
+      const {data:rpcData,error} = await admin.rpc(procedure,{p_actor_id:String(user.id),p_command:command});
+      let data=rpcData;
       if (error) {
         const code = String(error.message || "").match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
         if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
