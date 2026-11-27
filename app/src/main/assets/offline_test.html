@@ -519,7 +519,6 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
   window.openManagerJobsPopup=function(type){if(type==='today'||type==='working'||type==='notstarted'||type==='paused'){let rows=liveAssign();if(type==='today'){let [d]=dayBounds();rows=rows.filter(a=>(a.assignedAt||0)>=d)}else if(type==='working')rows=rows.filter(a=>empStatus(a)==='Started');else if(type==='notstarted')rows=rows.filter(a=>empStatus(a)==='New');else rows=rows.filter(a=>empStatus(a)==='Paused');showManagerModal(type==='today'?'Today Job Cards':type==='working'?'Working Now':type==='notstarted'?'Work Not Started':'Work Paused',supervisorRowsTable(rows,false));return} if(oldOpenManagerJobsPopup)oldOpenManagerJobsPopup(type)}
   window.showManagerTechnician=function(emp){let rows=liveAssign().filter(a=>a.emp===emp);showManagerModal(user(emp).name+' — Technician Detail',supervisorRowsTable(rows,false))}
   // Monthly employee productivity on manager is now completed-job only.
-  const _oldManagerTechPopup=window.openManagerTechniciansPopup;
   window.openManagerTechniciansPopup=function(){let rows=users.filter(u=>u.role==='Employee').map(u=>{let rr=liveAssign().filter(a=>a.emp===u.id&&jobComplete(a.job)),sg=rr.reduce((x,a)=>x+a.suggested,0),ac=rr.reduce((x,a)=>x+totalForAssignment(a),0);return {u,rr,sg,ac,eff:ac?sg/ac*100:0}});showManagerModal('👷 Completed Technician Production','<table><tr><th>Employee</th><th>Completed JC Assignments</th><th>Suggested</th><th>Actual</th><th>Efficiency</th><th>Incentive</th><th></th></tr>'+rows.map(x=>`<tr><td>${x.u.name}</td><td>${x.rr.length}</td><td>${fmt(x.sg)}</td><td>${fmt(x.ac)}</td><td>${x.ac?x.eff.toFixed(1)+'%':'—'}</td><td>${fmt(incentiveFor(x.u.id).incentive)}</td><td><button onclick="showManagerTechnician('${x.u.id}')">Details</button></td></tr>`).join('')+'</table>')}
 })();
 
@@ -1061,10 +1060,8 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
     const el=document.getElementById('v30AssignedList');if(el)el.innerHTML=supervisorRowsTable(rows);
   };
   // Add labour cost to existing manager production rows/details where applicable.
-  const oldWorkshop=window.openWorkshopStatusDetails;
   window.openWorkshopStatusDetails=function(){let rows=allAssign();showManagerModal('🏭 Workshop Status','<table><tr><th>Employee</th><th>JC</th><th>Vehicle</th><th>Reg.</th><th>Status</th><th>Suggested</th><th>Actual</th><th>Labour Cost</th><th>Overtime</th></tr>'+rows.map(a=>{let s=activeSession(a.emp),ot=s&&s.job===a.job?window.sessionOvertimeMinutes(s):0;return '<tr><td>'+user(a.emp).name+'</td><td>'+a.job+'</td><td>'+esc(formatVehicleName(job(a.job)?.vehicle)||'')+'</td><td>'+esc(job(a.job)?.reg||'')+'</td><td>'+statusHTML(empStatus(a))+'</td><td>'+fmt(a.suggested)+'</td><td>'+fmt(totalForAssignment(a))+'</td><td><b>'+money(labourCost(a))+'</b></td><td>'+(ot?'<span class="over-alert">'+fmt(ot)+'</span>':'—')+'</td></tr>'}).join('')+'</table>')};
   // Correct overtime boundaries: 13:05 and 19:05; after 19:05 remains overtime until midnight.
-  const oldOT=window.sessionOvertimeMinutes;
   window.sessionOvertimeMinutes=function(s,to=Date.now()){
     let end=Math.max(s.start,Math.min(to,s.end||to)); if(end<=s.start)return 0; let total=0,cur=s.start;
     while(cur<end){let d=new Date(cur),ds=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),next=ds+86400000,se=Math.min(end,next);if(d.getDay()===5){total+=(se-cur)/60000;}else{let a=ds+13*3600000,b=ds+19*3600000; if(se>a)total+=Math.max(0,(Math.min(se,b)-Math.max(cur,a))/60000); if(se>b)total+=Math.max(0,(se-Math.max(cur,b))/60000);}cur=se;} return total;
@@ -1553,7 +1550,6 @@ window.openIncentiveList=function(){let{from,to}=bounds(),rows=users.filter(u=>u
 /* V62 TRIAL — assignment editing/splitting + Manager worked-hours cards. */
 (function(){
   const esc62=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  const open62=()=> (state.assign||[]).filter(a=>a&&!a.cancelled&&!a.completed).slice().sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
   const actual62=a=>{try{return totalForAssignment(a)||0}catch(_){return 0}};
   const status62=a=>{try{return empStatus(a)}catch(_){return actual62(a)>0?'Working':'Not Started'}};
   const employees62=()=>users.filter(u=>u.role==='Employee');
