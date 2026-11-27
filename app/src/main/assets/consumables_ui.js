@@ -83,7 +83,8 @@ function consPurchaseLockForm(locked){
  if(root?.querySelectorAll)for(const button of root.querySelectorAll('button'))button.disabled=locked;
 }
 function consPurchaseClearPending(owner){
- try{window.localStorage?.removeItem(consPurchaseStorageKey(owner));}catch(_){}
+ // Never unlock a new invoice if the durable receipt could not be removed.
+ try{window.localStorage.removeItem(consPurchaseStorageKey(owner));if(window.localStorage.getItem(consPurchaseStorageKey(owner))!==null)throw Error('Receipt remains');}catch(_){throw Error('Invoice receipt cleanup failed. Retry the original invoice after storage is available.');}
  if(consPurchaseOwner===owner)consPurchasePending=null;
 }
 const consPurchaseApi=body=>window.zukaitCloud?.stockRequest?.(body)||Promise.reject(Error('Stock server unavailable'));
@@ -213,7 +214,7 @@ window.consPurchaseSave=async function(){
   alert(r.invoice.status==='cancelled'?'Invoice was already saved and subsequently cancelled. No stock was added again.':'Invoice saved. Stock updated. Total OMR '+Number(r.invoice.total_amount).toFixed(3));
   window.consOpenPurchaseInvoices();
  }catch(error){
-  if(document.getElementById('cpFinish')===button){status.textContent=String(error?.message||error)+'. Draft retained.';button.disabled=false;consPurchaseLockForm(Boolean(consPurchasePending));}
+  if(owner===consPurchaseActor()&&document.getElementById('cpFinish')===button){status.textContent=String(error?.message||error)+'. Draft retained.';button.disabled=false;consPurchaseLockForm(Boolean(consPurchasePending));}
  }finally{consPurchaseBusy=false}
 };
 window.consOpenPurchaseInvoices=function(){
