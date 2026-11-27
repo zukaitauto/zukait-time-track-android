@@ -16,7 +16,7 @@ async function syncReceipts(force=false){
   try{
     const response=await window.zukaitReception.action({action:'notification_receipts',operation:'GET'});
     if(readKey()!==actor)return;
-    if(!Array.isArray(response.ids))throw Error('Notification server read is incomplete');
+    if(!response?.ok||!Array.isArray(response.ids))throw Error('Notification server read is incomplete');
     remoteIds=new Set(response.ids);remoteThrough=Math.max(0,Number(response.through)||0);
     receiptsActor=actor;receiptsLastFetch=Date.now();
     const missing=[...new Set([...readIds(),...paintReadIds()])].filter(id=>!remoteIds.has(id));
@@ -51,7 +51,13 @@ function role(){return String(meNow()?.role||'')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function readKey(){return 'zukait-notification-read-'+String(meNow()?.id||role()||'guest')}
 function readIds(){try{return new Set(JSON.parse(localStorage.getItem(readKey()+'-items')||'[]'))}catch(_){return new Set()}}
-function markRead(id){const ids=readIds();ids.add(id);localStorage.setItem(readKey()+'-items',JSON.stringify([...ids]));updateBadges();queueReceiptSync()}
+function markRead(id){const ids=readIds();ids.add(id);localStorage.setItem(readKey()+'-items',JSON.stringify([...ids]));updateBadges();removeReadRows();queueReceiptSync()}
+function removeReadRows(){
+ const list=document.querySelector('.zukait-notify-list');if(!list)return;
+ const unreadIds=new Set(unreadRows().map(n=>n.id));
+ list.querySelectorAll('[data-notification-id]').forEach(row=>{if(!unreadIds.has(row.getAttribute('data-notification-id')))row.remove()});
+ if(!list.querySelector('[data-notification-id]'))list.innerHTML='<p class="muted">No unread notifications.</p>';
+}
 function paintReadIds(){try{return new Set(JSON.parse(localStorage.getItem(readKey()+'-paint')||'[]'))}catch(_){return new Set()}}
 function stateNow(){try{return (typeof state!=='undefined'&&state)||window.state||{}}catch(_){return window.state||{}}}
 function paintNotifications(){
@@ -73,7 +79,7 @@ async function openPaintRecord(id){
  const fn=n.kind==='material'?window.consOpenNotificationMaterial:window.paintOpenNotificationOrder;
  if(typeof fn!=='function')return alert('Please update the app to open this record.');
  const owner=readKey();
- try{if(typeof closeModal==='function')closeModal();const result=await fn(n.recordId);if(result!==false&&owner===readKey())markPaintRead(n.id)}catch(e){console.warn('Notification record could not be opened',e);alert('Unable to open this record. Please try again.')}
+ try{if(typeof closeModal==='function')closeModal();const result=await fn(n.recordId);if(result!==false&&owner===readKey()){markPaintRead(n.id);removeReadRows()}}catch(e){console.warn('Notification record could not be opened',e);alert('Unable to open this record. Please try again.')}
 }
 function eventTime(v){if(typeof v==='number'&&Number.isFinite(v))return v;const n=Date.parse(String(v||''));return Number.isFinite(n)?n:0}
 function partsRows(){try{return window.zukaitV2?.sparePartsMain?.reportRows?.()||[]}catch(_){return[]}}
@@ -156,7 +162,7 @@ function markAllRead(){
 }
 function openCenter(){
  const rows=unreadRows();updateBadges();
- const body='<div class="zukait-notify-list">'+(rows.length?rows.slice(0,30).map(n=>'<div class="zukait-notify-row"><b>'+esc(n.title)+'</b><span>'+esc(n.message)+'</span><small>'+esc(n.at?new Date(n.at).toLocaleString():'')+'</small>'+(n.recordId?'<button class="blue" onclick="zukaitNotificationCenter.openPaintRecord(decodeURIComponent(\''+esc(encodeURIComponent(n.id).replace(/'/g,'%27'))+'\'))">'+(n.kind==='material'?'Open Material List':'Open Purchase Order')+'</button>':'')+(n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openItem(\''+esc(n.id)+'\')">Open Spare Parts</button>':'')+(!n.recordId&&!n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openItem(\''+esc(n.id)+'\')">Open notification</button>':'')+'</div>').join(''):'<p class="muted">No unread notifications.</p>')+'</div>';
+ const body='<div class="zukait-notify-list">'+(rows.length?rows.slice(0,30).map(n=>'<div class="zukait-notify-row" data-notification-id="'+esc(n.id)+'"><b>'+esc(n.title)+'</b><span>'+esc(n.message)+'</span><small>'+esc(n.at?new Date(n.at).toLocaleString():'')+'</small>'+(n.recordId?'<button class="blue" onclick="zukaitNotificationCenter.openPaintRecord(decodeURIComponent(\''+esc(encodeURIComponent(n.id).replace(/'/g,'%27'))+'\'))">'+(n.kind==='material'?'Open Material List':'Open Purchase Order')+'</button>':'')+(n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openItem(\''+esc(n.id)+'\')">Open Spare Parts</button>':'')+(!n.recordId&&!n.listNo?'<button class="blue" onclick="zukaitNotificationCenter.openItem(\''+esc(n.id)+'\')">Open notification</button>':'')+'</div>').join(''):'<p class="muted">No unread notifications.</p>')+'</div>';
  if(typeof openModal==='function')openModal('<div class="row"><h3 style="margin:0;flex:1">🔔 Notifications</h3><button class="danger" onclick="closeModal()">✕ Close</button></div><button type="button" onclick="zukaitNotificationCenter.markAllRead()">Mark all as read</button><p id="zukaitNotifyReadStatus" role="status" aria-live="polite"></p>'+body);
 }
 function openItem(id){
