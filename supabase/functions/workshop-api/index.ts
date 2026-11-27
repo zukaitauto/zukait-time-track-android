@@ -1186,30 +1186,30 @@ function id001AssignmentConflict(candidate: any, previous: any) {
 // ID001_ASSIGNMENT_RULE_END
 
 // Public numbers can change; stored work, events and append-only accounting keys cannot.
-const key=v=>String(v??'').trim().toUpperCase();
+const key=(v:unknown)=>String(v??'').trim().toUpperCase();
 const references=new Set(['job','jobCard','job_card','job_no','jobNo','jobCardNo','job_card_no','jobNumber','job_number','preliminaryLinkedJob','preliminarySourceJob','sourceJob','source_job','previousJob','nextJob','previous_job','next_job']);
 const dictionaries=new Set(['paintCosting','managerReviews']);
-function jobNumberCodec(rows=[]){
- const input=new Map(),output=new Map();
+function jobNumberCodec(rows:{number:unknown;stable_job:unknown;current_number:unknown}[]=[]){
+ const input=new Map<string,unknown>(),output=new Map<string,unknown>();
  for(const r of rows){input.set(key(r.number),r.stable_job);output.set(key(r.stable_job),r.current_number);}
- const ref=(v,map)=>typeof v==='string'||typeof v==='number'?(map.get(key(v))??v):v;
- function walk(v,map,parent=''){
+ const ref=(v:unknown,map:Map<string,unknown>)=>typeof v==='string'||typeof v==='number'?(map.get(key(v))??v):v;
+ function walk(v:unknown,map:Map<string,unknown>,parent=''):unknown{
   if(Array.isArray(v))return v.map(x=>walk(x,map,parent));
   if(!v||typeof v!=='object')return v;
   const jobObject=['jobs','job','expectedJob','linked_job'].includes(parent)||('no' in v&&['jobType','make','reg','receptionNo'].some(k=>k in v));
   return Object.fromEntries(Object.entries(v).map(([k,value])=>[
    dictionaries.has(parent)?String(ref(k,map)):k,
    k==='jobCards'&&Array.isArray(value)&&'invoiceId' in v&&'materialId' in v?value.map(number=>ref(number,map)):
-   references.has(k)||k==='no'&&jobObject||k==='number'&&parent==='manualJobCard'||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(v.eventType||v.event_type||''))?walk(ref(value,map),map,k):walk(value,map,k)
+   references.has(k)||k==='no'&&jobObject||k==='number'&&parent==='manualJobCard'||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(('eventType' in v && v.eventType)||('event_type' in v && v.event_type)||''))?walk(ref(value,map),map,k):walk(value,map,k)
   ]));
  }
  return {
-  toInternal:value=>walk(value,input),toPublic:value=>walk(value,output),
+  toInternal:(value:unknown)=>walk(value,input),toPublic:(value:unknown)=>walk(value,output),
   // Search/cursor identifiers are not free text fields in stored records.
-  internalNumber:value=>ref(value,input),publicNumber:value=>ref(value,output)
+  internalNumber:(value:unknown)=>ref(value,input),publicNumber:(value:unknown)=>ref(value,output)
  };
 }
-function jobNumberChange(request){
+function jobNumberChange(request:{newJobNumber?:unknown;numberChangeConfirmed?:unknown;expectedJobNumber?:unknown}){
  if(request.newJobNumber===undefined)return null;
  const number=String(request.newJobNumber).trim();
  if(!/^[1-9]\d{0,9}$/.test(number))return {ok:false,code:'job_number_invalid'};
