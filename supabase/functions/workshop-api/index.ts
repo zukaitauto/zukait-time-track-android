@@ -882,12 +882,14 @@ async function baseStateForRevision(revision: number, currentRevision: number, c
 
 
 // FINAL_SESSION_STATUS_BEGIN
-function normalizeCompletedSessionStatuses(data, at=Date.now()) {
+type NormalizationSession = {id?:unknown; emp?:unknown; job?:unknown; assignmentId?:unknown; start?:unknown; end?:unknown; cancelled?:unknown; voided?:unknown; deleted?:unknown; finished?:unknown; paused?:unknown};
+type NormalizationAssignment = {id?:unknown; emp?:unknown; job?:unknown; cancelled?:unknown; completed?:unknown; handedOverToAssignmentId?:unknown};
+function normalizeCompletedSessionStatuses<T extends {assign?:NormalizationAssignment[];sessions?:NormalizationSession[]}>(data:T, at=Date.now()) {
   if(!data||!Array.isArray(data.assign)||!Array.isArray(data.sessions))return data;
-  const groups=new Map(),byId=new Map(),duplicateAssignments=new Set(),sessionCounts=new Map();
+  const groups=new Map<string,NormalizationAssignment[]>(),byId=new Map<string,NormalizationAssignment>(),duplicateAssignments=new Set<string>(),sessionCounts=new Map<string,number>();
   for(const a of data.assign){if(!a||a.cancelled)continue;const id=String(a.id||'');if(byId.has(id))duplicateAssignments.add(id);byId.set(id,a);const key=JSON.stringify([String(a.emp),String(a.job)]);const rows=groups.get(key)||[];rows.push(a);groups.set(key,rows);}
   for(const s of data.sessions)if(s?.id)sessionCounts.set(String(s.id),(sessionCounts.get(String(s.id))||0)+1);
-  const grouped=new Map();
+  const grouped=new Map<string,NormalizationSession[]>();
   for(const s of data.sessions){
     if(!s||s.cancelled||s.voided||s.deleted||!s.id||sessionCounts.get(String(s.id))!==1)continue;
     const possible=s.assignmentId?[byId.get(String(s.assignmentId))]:(groups.get(JSON.stringify([String(s.emp),String(s.job)]))||[]);
