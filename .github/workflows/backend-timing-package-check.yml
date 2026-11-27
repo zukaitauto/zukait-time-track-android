@@ -20,9 +20,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.5.6
+      - name: Compare existing baseline diagnostics
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/backend-baseline" 8d0e40a10b4da664d86dd2a790d6bcd3eea26a62
+          cd "$RUNNER_TEMP/backend-baseline/supabase/functions/workshop-api"
+          if deno check index.ts; then
+            echo "Baseline type check passed"
+          else
+            echo "::warning::Baseline type check failed; compare diagnostics with candidate"
+          fi
       - name: Resolve and type-check complete API
         working-directory: supabase/functions/workshop-api
         run: deno check index.ts
