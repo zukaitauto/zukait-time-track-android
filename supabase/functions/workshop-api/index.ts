@@ -930,10 +930,15 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
       .filter((a:any)=>a && a.emp===s.emp && a.job===s.job && !a.cancelled)
       .sort((a:any,b:any)=>(Number(b.assignedAt)||0)-(Number(a.assignedAt)||0))[0] || null;
   };
+  const sessionsByEmployee = new Map<any, any[]>();
+  for (const session of sessions) {
+    if (!session || session.cancelled) continue;
+    const group = sessionsByEmployee.get(session.emp);
+    if (group) group.push(session);
+    else sessionsByEmployee.set(session.emp, [session]);
+  }
   return users.filter((u:any)=>u && u.role==="Employee").map((u:any)=>{
-    const empSessions = sessions
-      .filter((s:any)=>s && !s.cancelled && s.emp===u.id)
-      .slice()
+    const empSessions = (sessionsByEmployee.get(u.id) || []).slice()
       .sort((a:any,b:any)=>(Number(b.start)||0)-(Number(a.start)||0) || String(b.id||"").localeCompare(String(a.id||"")));
     const open = empSessions.find((s:any)=>s.end==null) || null;
     let status = "Available";
@@ -1721,9 +1726,15 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "employee_time_action") {
+      const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+        Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
+        ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
+      const reducedRead = useCompactTime && Deno.env.get("ZUKAIT_EMPLOYEE_TIME_REDUCED_READ_ENABLED") === "true";
       for(let attempt=0;attempt<8;attempt++){
-        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        const {data:raw,error:readError}=await admin.from("workshop_state").select(reducedRead ? "revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,employeeTimeActionAudit:data->employeeTimeActionAudit,lastActions:data->lastActions" : "revision,data").eq("id","main").single();
+        const current:any = reducedRead && raw ? {revision:raw.revision,data:Object.fromEntries(["users","sessions","assign","jobs","employeeTimeActionAudit","lastActions"].map(key=>[key,(raw as any)[key]]))} : raw;
         if(readError)throw readError;
+        if(reducedRead && (!current || !Number.isSafeInteger(Number(current.revision)) || Number(current.revision)<1 || !["users","sessions","assign","jobs"].every(key=>Array.isArray(current.data[key])))) return reply({ok:false,code:"employee_time_reduced_read_invalid_state"},503);
         const result:any=employeeTimeTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
         if(result.duplicate){
@@ -1736,10 +1747,8 @@ Deno.serve(async (req: Request) => {
         }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
-        const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
-          Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
-          ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
         const sections = useCompactTime ? employeeTimeSections(current.data, result.data) : null;
+        if(reducedRead && sections === null) return reply({ok:false,code:"employee_time_reduced_read_unsupported"},409);
         const commitArgs = {p_expected_revision:Number(current.revision||0),p_changed_by:String(user.id),p_live:live};
         const {data:committed,error:commitError} = sections !== null
           ? await admin.rpc("zukait_commit_workshop_employee_time_sections",{...commitArgs,p_sections:sections})
