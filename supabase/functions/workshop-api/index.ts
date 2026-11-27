@@ -1729,6 +1729,7 @@ Deno.serve(async (req: Request) => {
         const {data:raw,error:readError}=await admin.from("workshop_state").select(reducedRead ? "revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,employeeTimeActionAudit:data->employeeTimeActionAudit,lastActions:data->lastActions" : "revision,data").eq("id","main").single();
         const current:any = reducedRead && raw ? {revision:raw.revision,data:Object.fromEntries(["users","sessions","assign","jobs","employeeTimeActionAudit","lastActions"].map(key=>[key,(raw as any)[key]]))} : raw;
         if(readError)throw readError;
+        if(reducedRead && (!current || !Number.isSafeInteger(Number(current.revision)) || Number(current.revision)<1 || !["users","sessions","assign","jobs"].every(key=>Array.isArray(current.data[key])))) return reply({ok:false,code:"employee_time_reduced_read_invalid_state"},503);
         const result:any=employeeTimeTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
         if(result.duplicate){
