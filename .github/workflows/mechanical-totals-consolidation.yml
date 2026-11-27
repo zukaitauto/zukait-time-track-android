@@ -7,6 +7,7 @@ on:
     paths:
       - 'app/src/main/assets/mechanical_consumables_ui.js'
       - 'tests/mechanical-consumables-totals-integration.mjs'
+      - 'tests/mechanical-consumables-returnable-integration.mjs'
       - '.github/workflows/mechanical-totals-consolidation.yml'
   workflow_dispatch:
 jobs:
@@ -22,3 +23,4 @@ jobs:
           node-version: '22'
       - run: node --check app/src/main/assets/mechanical_consumables_ui.js
       - run: node tests/mechanical-consumables-totals-integration.mjs
+      - run: node tests/mechanical-consumables-returnable-integration.mjs
