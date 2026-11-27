@@ -1,0 +1,54 @@
+{
+  "engine": "native PostgreSQL 17",
+  "synthetic_only": true,
+  "linked_receptions": 4,
+  "jobs": 1000,
+  "sessions": 7000,
+  "parity_cases": 17,
+  "trials": [
+    {
+      "pair": 0,
+      "label": "before",
+      "ms": 104.959,
+      "temp": 494
+    },
+    {
+      "pair": 0,
+      "label": "after",
+      "ms": 101.028,
+      "temp": 494
+    },
+    {
+      "pair": 1,
+      "label": "before",
+      "ms": 110.014,
+      "temp": 494
+    },
+    {
+      "pair": 1,
+      "label": "after",
+      "ms": 99.316,
+      "temp": 494
+    },
+    {
+      "pair": 2,
+      "label": "before",
+      "ms": 84.591,
+      "temp": 494
+    },
+    {
+      "pair": 2,
+      "label": "after",
+      "ms": 83.686,
+      "temp": 494
+    }
+  ],
+  "before_ms": 104.959,
+  "after_ms": 99.316,
+  "before_temp": 494,
+  "after_temp": 494,
+  "run": 39809223484,
+  "tested_source": "51c3539e59b6f146a67e8dd1f57ea49dd068eeff",
+  "concurrency": "PASS",
+  "recommendation": "retain as experiment; not a production timeout fix"
+}
