@@ -1353,7 +1353,6 @@
   window.cloudBackupNow=backupNow;
   window.cloudBackupList=backupList;
 
-  const coreReset=window.resetData;
   window.resetData=function(){
     alert('Reset Test Data is disabled in the production pilot to protect shared workshop data.');
   };
