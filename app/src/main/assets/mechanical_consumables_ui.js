@@ -300,12 +300,12 @@ async function section(id){
    renderMaterialRows();return;
  }
  if(id==='returns'){
-   open(s.title,back+'<p class="mc-cons-muted">Unused Mechanical materials return to stock against the original final issue; the original issue remains in history.</p>'+ 
-     '<div class="mc-cons-card"><label for="mcConsJc">Mechanical Job Card Number</label>'+ 
-     '<input id="mcConsJc" type="text" placeholder="Enter Mechanical JC number" autocomplete="off">'+ 
-     '<p class="mc-cons-muted">After backend integration, choose the original issued line, enter return quantity and reason, and confirm an audited reversal at the locked issue cost.</p></div>'+ 
-     '<div class="mc-cons-alert">Returns are not active yet. No material quantity, cost or Job Card has been changed.</div>');
-   return;
+  if(!canIssue()||!issueOwner()){open(s.title,back+'<div class="mc-cons-alert">Mechanical returns are not enabled.</div>');return;}
+  open(s.title,back+'<div class="mc-cons-card"><label for="mcConsReturnJc">Mechanical Job Card Number</label>'+
+    '<input id="mcConsReturnJc" maxlength="36" autocomplete="off" placeholder="Enter Mechanical JC number">'+
+    '<button type="button" id="mcConsReturnFind" onclick="mechanicalConsumablesFindReturnable(0)">Find issued materials</button>'+
+    '<div id="mcConsReturnResult" role="status">Read-only verification. Returning materials is disabled until safe receipt/retry handling is tested.</div></div>');
+  return;
  }
  if(id==='totals'){
   if(!canIssue()||!issueOwner()){open(s.title,back+'<div class="mc-cons-alert">Mechanical stock totals are not enabled.</div>');return;}
@@ -349,6 +349,29 @@ async function showTotals(page=0){
  }catch(_){if(generation===totalsGeneration&&canIssue()&&issueOwner()===owner)result.textContent='Unable to verify Mechanical Job Card totals. No stock changes were made.';}
  finally{if(generation===totalsGeneration&&document.getElementById('mcConsTotalsGo'))button.disabled=false;}
 }
+let returnGeneration=0;
+async function findReturnable(page=0){
+ const input=document.getElementById('mcConsReturnJc'),result=document.getElementById('mcConsReturnResult'),button=document.getElementById('mcConsReturnFind');
+ if(!input||!result||!canIssue()||!issueOwner()||!Number.isInteger(page)||page<0||page>49)return;
+ const jc=String(input.value||'').trim().toUpperCase();
+ if(!/^[A-Z0-9_. -]{1,36}$/.test(jc)){result.textContent='Enter a valid Mechanical Job Card number.';return;}
+ const owner=issueOwner(),generation=++returnGeneration;
+ button.disabled=true;result.textContent='Checking original Mechanical issues…';
+ try{
+  const response=await window.zukaitCloud.stockRequest({operation:'MECHANICAL_RETURNABLE',jobCard:jc,page});
+  if(generation!==returnGeneration||!canIssue()||issueOwner()!==owner||!document.getElementById('mcConsReturnResult'))return;
+  const data=response?.returnable;
+  if(response?.ok!==true||!Array.isArray(data?.items))throw Error('Original issues not confirmed');
+  result.innerHTML=data.items.length?data.items.map(row=>'<p>'+escapeHtml(row.name||'Material')+' · '+escapeHtml(row.brand||'')+
+   ' · Available to return: '+escapeHtml(row.availableToReturn||0)+' '+escapeHtml(row.unit||'')+'</p>').join(''):
+   '<p>No unused issued materials available on this page.</p>';
+  result.innerHTML+='<p>Read-only. Return submission remains disabled pending audited retry tests.</p>'+
+   (page>0?'<button type="button" onclick="mechanicalConsumablesFindReturnable('+(page-1)+')">Previous</button>':'')+
+   (data.hasMore===true&&page<49?'<button type="button" onclick="mechanicalConsumablesFindReturnable('+(page+1)+')">Next 20</button>':'');
+ }catch(_){if(generation===returnGeneration&&canIssue()&&issueOwner()===owner)result.textContent='Unable to verify issued materials. No stock changes were made.';}
+ finally{if(generation===returnGeneration&&document.getElementById('mcConsReturnFind'))button.disabled=false;}
+}
+window.mechanicalConsumablesFindReturnable=findReturnable;
 window.mechanicalConsumablesShowTotals=showTotals;
 window.openMechanicalConsumables=menu;
 window.openMechanicalConsumablesSection=section;
