@@ -721,7 +721,7 @@ function exportManagerReport(type){let headers=[],rows=[],filename='zukait-repor
 
   // Refresh only while a user is actively working, not the supervisor dashboard.
   if(window.v24OvertimeTimer)clearInterval(window.v24OvertimeTimer);
-  window.v24OvertimeTimer=setInterval(()=>{if(!me)return;ensureOvertimeFlags();if(me.role==='Employee')window.refreshActiveRunningTime&&window.refreshActiveRunningTime();},1000);
+  window.v24OvertimeTimer=setInterval(()=>{if(!me)return;ensureOvertimeFlags();if(me.role==='Employee'&&!employeeClockTimer)window.refreshActiveRunningTime&&window.refreshActiveRunningTime();},1000);
 })();
 </script><script>
 (function(){
