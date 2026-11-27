@@ -102,7 +102,7 @@ function renderManager67(){
  if(el.classList.contains('hidden'))el.classList.remove('hidden');
  // Manager identity/menu is owned by the final V135 header authority; do not render a second Manager/ONLINE header.\n el.dataset.managerBaseAuthority='v202';
  el.innerHTML=
- '<div id="managerCashPulseSlot" class="cash-pulse-slot">'+(window.v251CashPulse?.html?.()||'')+'</div>'+
+ '<div id="managerCashPulseSlot" class="cash-pulse-slot">'+(window.v251CashPulse?.layoutHtml?.()||'')+'</div>'+
  '<div class="v67-first-row">'+
  featureCard('blue','Employee Requests',requestCount(),'New / pending requests','v65OpenRequests()')+
  featureCard('rose','Attention',attentionCount(),'Jobs needing review','v66OpenAttention()')+

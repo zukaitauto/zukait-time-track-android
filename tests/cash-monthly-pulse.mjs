@@ -31,11 +31,15 @@ const jobs=[job('IN',start,10),job('OLD',start-1,20),job('OUT',start+1,30,{deliv
 sandbox.fixture=jobs;vm.runInContext('state={jobs:fixture}',ctx);
 assert.equal(sandbox.window.state,undefined,'exercise the actual lexical application state');
 assert.equal(pulse.rows('in').length,3);assert.equal(pulse.rows('out').length,2);assert.equal(pulse.total(pulse.rows('out'),'out'),35);assert.equal(pulse.pendingAll().length,2);
-pulse.install();let slot=supervisor.children[1];assert.equal(slot.id,'supervisorCashPulseSlot');assert.equal((slot.innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);assert.ok(slot.innerHTML.includes('OMR 80.000'));assert.ok(slot.innerHTML.includes('OMR 30.000'));assert.ok(slot.innerHTML.includes('OMR 35.000'));
+pulse.install();let slot=supervisor.children[1];assert.equal(slot.id,'supervisorCashPulseSlot');
+const supervisorOrder=[...supervisor.children];pulse.install();
+assert.deepEqual(supervisor.children,supervisorOrder,'Supervisor refresh must not relocate monthly follow-up');
+assert.equal((slot.innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);assert.ok(slot.innerHTML.includes('OMR 80.000'));assert.ok(slot.innerHTML.includes('OMR 30.000'));assert.ok(slot.innerHTML.includes('OMR 35.000'));
 const writes=slot.writes;pulse.install();assert.equal(slot.writes,writes,'unchanged refresh must not rebuild DOM');
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,amount:15}:j)}',ctx);pulse.install();assert.ok(slot.innerHTML.includes('OMR 85.000'));
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,jobType:"INSURANCE"}:j)}',ctx);pulse.install();assert.equal(pulse.rows('in').length,2);assert.equal(pulse.pendingAll().length,1);
-vm.runInContext('me={role:"Manager"}',ctx);pulse.install();assert.equal(manager.children[1].id,'managerCashPulseSlot');assert.equal((manager.children[1].innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);
+vm.runInContext('me={role:"Manager"}',ctx);pulse.install();assert.equal(manager.children[1].id,'managerCashPulseSlot');
+const managerOrder=[...manager.children];pulse.install();assert.deepEqual(manager.children,managerOrder,'Manager refresh must not relocate monthly follow-up');assert.equal((manager.children[1].innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);
 await sandbox.window.v251OpenCashPulse('out');assert.ok(modal.includes('Cash Vehicle Out'));assert.ok(modal.includes('OMR 35.000'));assert.ok(modal.includes('OMR 0.000'));assert.ok(modal.includes('zukaitOpenCashDetails'));assert.ok(!modal.includes('360°'));
 await sandbox.window.v251OpenCashPendingAll();assert.ok(modal.includes('JC OLD'));assert.ok(!modal.includes('JC IN'));assert.ok(modal.includes('Not delivered'));
 // Integration regression: identity display helpers must never overwrite financial fields.
