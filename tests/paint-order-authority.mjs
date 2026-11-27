@@ -23,3 +23,26 @@ console.log('Paint PO authority: one main, concurrent duplicates, original refer
 const authorization=api.indexOf('!validateEmployeeChange(user.id, current.data, candidate)'),costing=api.indexOf('reconcilePaintOrderCosts(candidate)');
 assert.ok(authorization>=0&&costing>=0,'Both employee authorization and derived paint costing must remain in the save route');
 assert.ok(authorization<costing,'Derived paint costing must follow employee authorization, including when wrapped by session normalization');
+
+// Status badges are presentational and read the actual PO receipt state.
+const paintUI=fs.readFileSync('app/src/main/assets/paint_module.js','utf8');
+const statusFn=paintUI.split(/\r?\n/).find(x=>x.startsWith('function paintOrderStatus('));
+const badgeFn=paintUI.slice(paintUI.indexOf('function paintStatusBadge('),paintUI.indexOf('function paintPOAppearance('));
+const badgeCtx=vm.createContext({state:{jobs:[{no:'D',delivered:true}]},esc:s=>String(s)});
+vm.runInContext(statusFn+'\n'+badgeFn,badgeCtx);
+for(const [fixture,tone,label] of [[{receivedAt:1},'received','RECEIVED'],[{},'pending','PENDING'],[{jobCard:'D'},'pending','INVOICE PENDING'],[{voided:true,receivedAt:1},'cancelled','CANCELLED'],[{nilPaintPurchase:true},'neutral','NIL']]){
+ badgeCtx.fixture=fixture;
+ const html=vm.runInContext('paintStatusBadge(fixture)',badgeCtx);
+ assert.ok(html.includes('paint-status-badge '+tone)&&html.includes(label));
+}
+assert.ok(paintUI.includes("Status: '+paintStatusBadge(o)"));
+assert.ok(paintUI.includes('.paint-status-badge.received{background:#166534!important'));
+const partsUI=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8');
+const partStatus=partsUI.split(/\r?\n/).find(x=>x.startsWith('function statusColour('));
+const receipt=partsUI.split(/\r?\n/).find(x=>x.startsWith('function receiptComplete('));
+const partCtx=vm.createContext({});vm.runInContext(partStatus+'\n'+receipt,partCtx);
+assert.equal(vm.runInContext("statusColour('RECEIVED',{qty:2,receivedQty:2})",partCtx),'#166534');
+assert.equal(vm.runInContext("statusColour('RECEIVED',{qty:2,receivedQty:1})",partCtx),'#b45309');
+assert.equal(vm.runInContext("statusColour('RECEIVED',{qty:2})",partCtx),'#b45309');
+assert.equal(vm.runInContext("statusColour('RETURNED',{})",partCtx),'#dc2626');
+console.log('Paint PO and spare-parts status badge palette, partial receipt safeguards and authoritative status passed');
