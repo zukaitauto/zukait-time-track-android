@@ -76,3 +76,35 @@ test('offline and unauthorized situations do not erase local acknowledgements',(
  assert.match(code,/receiptResyncPending/);
  assert.match(code,/receiptsLastFetch=0;refresh\(\)/);
 });
+
+test('individual Manager notification remains read after refresh and on a fresh device',async()=>{
+ const server=new Map(),first=environment('M1',server,'Manager');
+ await first.refresh();
+ first.w.zukaitNotificationCenter.openItem('system-first');
+ assert.equal(first.w.zukaitNotificationCenter.unread(),1);
+ await drain();await drain();
+ await first.refresh();
+ assert.equal(first.w.zukaitNotificationCenter.unread(),1);
+ const second=environment('M1',server,'Manager');
+ await second.refresh();
+ assert.equal(second.w.zukaitNotificationCenter.unread(),1);
+ assert.ok(server.get('M1')?.ids.has('system-first'));
+});
+test('individual Supervisor notification stays read while other account remains unread',async()=>{
+ const server=new Map(),first=environment('S1',server,'Supervisor');
+ await first.refresh();
+ first.w.zukaitNotificationCenter.openItem('system-first');
+ await drain();await drain();
+ const same=environment('S1',server,'Supervisor');
+ await same.refresh();
+ assert.equal(same.w.zukaitNotificationCenter.unread(),1);
+ const other=environment('S2',server,'Supervisor');
+ await other.refresh();
+ assert.equal(other.w.zukaitNotificationCenter.unread(),2);
+});
+test('individual notification row removal is wired to read acknowledgement',()=>{
+ assert.match(code,/function markRead\(id\).*removeReadRows\(\)/);
+ assert.match(code,/data-notification-id/);
+ assert.match(code,/function removeReadRows\(\)/);
+ assert.match(code,/markPaintRead\(n\.id\);removeReadRows\(\)/);
+});
