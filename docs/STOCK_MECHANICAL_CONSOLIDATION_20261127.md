@@ -34,3 +34,16 @@ These differences establish major drift, not automatically missing functionality
 
 ## Release decision
 **HOLD**. #61/#62/#63 have reported merge conflicts; current production code is significantly newer than #63. Do not close source PRs until exact parity is proved and tested.
+
+## Function-level comparison — 2026-11-27
+Compared exact file contents on `architecture-v2` and the old combined #63 branch:
+- `consumables_stock_ui.js`: no old named function missing from current file; current file adds stock session ownership, opening-stock picker, balance/status, history/report and preview helpers. **Keep current file; no wholesale replacement.**
+- `mechanical_consumables_ui.js`: all old named functions except a generic local `id` helper appear in current file; current file adds pending-issue identity and retry handling. **Keep current file.**
+- `consumables_stock_api.js`: no named top-level function missing, but this does **not** prove route/RPC parity; compare command names and auth rules separately.
+- Old #63 contains three separate host files absent from current branch: `mechanical_consumables_host.js`, `mechanical_consumables_returns_host.js`, `mechanical_consumables_totals_host.js`. Current Mechanical UI already advertises issued/returns/totals and contains its own issue flow. **Do not copy old hosts without confirming actual command/return/totals parity; otherwise duplicate UI and retries.**
+- Current Mechanical UI gates stock requests on `ZUKAIT_MECHANICAL_STOCK_ENABLED===true` and Manager/Mechanical Supervisor roles. Preserve that gate until production-safe release acceptance.
+
+### Next focused verification
+- [ ] Trace current `mechanical_consumables_ui.js` issued/returns/totals handlers to backend `stockRequest` commands and compare against #63 host flows.
+- [ ] Verify current `consumables_stock_api.js` dispatch has equivalent MECHANICAL issue/return/total semantics and scoped denial.
+- [ ] Add exact-contract regression tests before moving any code.
