@@ -46,4 +46,14 @@ response={ok:true,totals:{readOnly:true,jobCard:'MC123',grossCost:1,returnCredit
 await window.mechanicalConsumablesShowTotals(0);
 assert.doesNotMatch(elements.mcConsTotalsResult.innerHTML,/<img/,'material names must be escaped');
 assert.match(elements.mcConsTotalsResult.innerHTML,/&lt;img/);
+// A pending response must not populate a reused modal after staff session changes.
+vm.runInContext("me={id:'supervisor-1',role:'Mechanical Supervisor'}",context);
+let resolveSlow;
+window.zukaitCloud.stockRequest=()=>new Promise(resolve=>{resolveSlow=resolve});
+const before=elements.mcConsTotalsResult.innerHTML;
+const inflight=window.mechanicalConsumablesShowTotals(0);
+vm.runInContext("me={id:'other-supervisor',role:'Mechanical Supervisor'}",context);
+resolveSlow({ok:true,totals:{readOnly:true,jobCard:'MC123',grossCost:999,returnCredit:0,netCost:999,items:[]}});
+await inflight;
+assert.doesNotMatch(elements.mcConsTotalsResult.innerHTML,/999\.000/,'stale response must not render after session change');
 console.log('Mechanical totals integration regression PASS');
