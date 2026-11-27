@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - integration/backend-timing-optimization-20261127
+  pull_request:
+    branches:
+      - architecture-v2
+    paths:
+      - 'supabase/functions/workshop-api/**'
+      - '.github/workflows/backend-timing-package-check.yml'
   workflow_dispatch:
 permissions:
   contents: read
