@@ -408,7 +408,7 @@ async function sendReturn(retry=false){
    const raw=String(document.getElementById('mcConsReturnQty')?.value||'').trim(),quantity=Number(raw);
    const reason=String(document.getElementById('mcConsReturnReason')?.value||'').trim();
    if(!line||String(line.jobCard)!==jc||!line.lineId)throw Error('Find an original issue for this Job Card');
-   if(!/^(?:\\d+(?:\\.\\d{1,4})?|\\.\\d{1,4})$/.test(raw)||!Number.isFinite(quantity)||quantity<=0||
+   if(!/^(?:\d+(?:\.\d{1,4})?|\.\d{1,4})$/.test(raw)||!Number.isFinite(quantity)||quantity<=0||
       !Number.isInteger(Math.round(quantity*10000))||quantity>Number(line.availableToReturn))throw Error('Invalid unused quantity');
    if(line.unit==='Piece'&&!Number.isInteger(quantity))throw Error('Whole pieces only');
    if(reason.length<5||reason.length>180)throw Error('Reason must be 5–180 characters');
@@ -448,7 +448,7 @@ async function findReturnable(page=0){
   if(generation!==returnGeneration||section!==sectionRequest||!canIssue()||issueOwner()!==owner||String(window.zukaitAuth?.getToken?.()||'')!==auth||document.getElementById('mcConsReturnResult')!==result||String(input.value||'').trim().toUpperCase()!==jc)return;
   const data=response?.returnable;
   if(response?.ok!==true||!Array.isArray(data?.items))throw Error('Original issues not confirmed');
-  returnLines=data.items;
+  returnLines=data.items.map(row=>({...row,jobCard:jc}));
   result.innerHTML=data.items.length?data.items.map(row=>'<p>'+escapeHtml(row.name||'Material')+' · '+escapeHtml(row.brand||'')+
    ' · Available to return: '+escapeHtml(row.availableToReturn||0)+' '+escapeHtml(row.unit||'')+'</p>').join(''):
    '<p>No unused issued materials available on this page.</p>';
