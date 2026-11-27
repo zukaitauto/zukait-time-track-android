@@ -31,7 +31,10 @@ const jobs=[job('IN',start,10),job('OLD',start-1,20),job('OUT',start+1,30,{deliv
 sandbox.fixture=jobs;vm.runInContext('state={jobs:fixture}',ctx);
 assert.equal(sandbox.window.state,undefined,'exercise the actual lexical application state');
 assert.equal(pulse.rows('in').length,3);assert.equal(pulse.rows('out').length,2);assert.equal(pulse.total(pulse.rows('out'),'out'),35);assert.equal(pulse.pendingAll().length,2);
-pulse.install();let slot=supervisor.children[1];assert.equal(slot.id,'supervisorCashPulseSlot');assert.equal((slot.innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);assert.ok(slot.innerHTML.includes('OMR 80.000'));assert.ok(slot.innerHTML.includes('OMR 30.000'));assert.ok(slot.innerHTML.includes('OMR 35.000'));
+pulse.install();let slot=supervisor.children[1];assert.equal(slot.id,'supervisorCashPulseSlot');
+const supervisorOrder=[...supervisor.children];pulse.install();
+assert.deepEqual(supervisor.children,supervisorOrder,'Supervisor refresh must not relocate monthly follow-up');
+assert.equal((slot.innerHTML.match(/class="v251-cash-circle /g)||[]).length,3);assert.ok(slot.innerHTML.includes('OMR 80.000'));assert.ok(slot.innerHTML.includes('OMR 30.000'));assert.ok(slot.innerHTML.includes('OMR 35.000'));
 const writes=slot.writes;pulse.install();assert.equal(slot.writes,writes,'unchanged refresh must not rebuild DOM');
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,amount:15}:j)}',ctx);pulse.install();assert.ok(slot.innerHTML.includes('OMR 85.000'));
 vm.runInContext('state={jobs:state.jobs.map(j=>j.no==="IN"?{...j,jobType:"INSURANCE"}:j)}',ctx);pulse.install();assert.equal(pulse.rows('in').length,2);assert.equal(pulse.pendingAll().length,1);
