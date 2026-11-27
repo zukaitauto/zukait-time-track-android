@@ -1,4 +1,6 @@
 import { sharedWorkshopSections } from "./extensions/shared_workshop_sections.js";
+import { reconcileCompactJobEditAudit } from "./extensions/compact_job_edit_audit.js";
+import { jobEditWireState, requestArchivePrefixReader, jobEditLoadMode, jobEditKnownModeMatches, jobEditSaveMode, COMPACT_JOB_EDIT_MODE } from "./extensions/job_edit_archive_wire.js";
 import { employeeTimeSections } from "./extensions/employee_time_sections.js";
 import { saveWorkshopJobNotes } from "./workshop_job_notes_editor.mjs";
 import { invoicePriceReconcileApi } from "./extensions/invoice_price_reconcile_api.js";
@@ -1246,12 +1248,63 @@ Deno.serve(async (req: Request) => {
       user = await sessionUser(token);
     }
     if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
+    // Initialize the immutable-prefix cache only when a legacy compact-state
+    // response actually needs it; unrelated routes never enter archive logic.
+    let cachedPrefixReader: any = null;
+    const prefixReader=(revision:number,count:number)=>{
+      cachedPrefixReader ??= requestArchivePrefixReader(async (r:number,n:number)=>{
+        const {data,error}=await admin.rpc("zukait_job_edit_archive_prefix",{p_snapshot_revision:r,p_prefix_count:n});
+        if(error)throw Error("audit_history_unavailable");
+        return data;
+      });
+      return cachedPrefixReader(revision,count);
+    };
+    const legacyWire=(data:any)=>jobEditWireState(data,false,prefixReader);
+
     if (user._jobNumbers?.length) {
       numberCodec = jobNumberCodec(user._jobNumbers);
       body = numberCodec.toInternal(body);
       for (const field of ["search","query"]) if (typeof body[field] === "string") body[field] = numberCodec.internalNumber(body[field]);
     }
     if(body.newJobNumber !== undefined && action !== "manager_job_full_edit") return reply({ok:false,code:"job_edit_invalid_fields"},400);
+
+    // Manager-only job-specific consumables projection. This route is read-only.
+    if (action === "job_consumables_read") {
+      if (user.role !== "Manager") return reply({ok:false,code:"consumables_forbidden"},403);
+      if (Object.keys(body).some(k=>!["action","jobCard"].includes(k)) ||
+          typeof body.jobCard !== "string" || !body.jobCard.trim() || body.jobCard.length > 80)
+        return reply({ok:false,code:"invalid_job_card"},400);
+      const {data,error}=await admin.rpc("zukait_job_consumables_read",{p_job_no:body.jobCard.trim()});
+      if (error || !data?.ok) return reply({ok:false,code:"consumables_unavailable"},503);
+      return reply({ok:true,revision:data.revision,issues:data.issues,actuals:data.actuals});
+    }
+
+    // Read-only, opt-in history endpoint. Keep legacy load/save responses unchanged
+    // until the archived-prefix cutover and old-client compatibility are proven.
+    if (action === "job_edit_audit_page" || action === "job_edit_audit_all_page") {
+      const all = action === "job_edit_audit_all_page";
+      if (user.role !== "Manager") return reply({ok:false,code:"job_edit_forbidden"},403);
+      const allowed = new Set(["action","before_position","limit","expected_revision",...(all ? [] : ["jobCard"])]);
+      if (Object.keys(body).some(k => !allowed.has(k)) ||
+          (!all && (typeof body.jobCard !== "string" || !body.jobCard.trim() || body.jobCard.length > 80)) ||
+          (body.limit !== undefined && (!Number.isSafeInteger(body.limit) || body.limit < 1 || body.limit > 100)) ||
+          (body.expected_revision != null && (!Number.isSafeInteger(body.expected_revision) || body.expected_revision < 0)) ||
+          (body.before_position != null && (!Number.isSafeInteger(body.before_position) || body.before_position < 1 || body.expected_revision == null))) {
+        return reply({ok:false,code:"invalid_audit_cursor"},400);
+      }
+      const {data,error} = await admin.rpc(all ? "zukait_job_edit_all_page" : "zukait_job_edit_current_page", {
+        ...(!all ? {p_job_no: body.jobCard.trim().toUpperCase()} : {}),
+        p_before_position: body.before_position ?? null,
+        p_limit: body.limit ?? 50,
+        p_expected_revision: body.expected_revision ?? null
+      });
+      if (error) return reply({ok:false,code:"audit_history_unavailable"},503);
+      if (!data?.ok) return reply({ok:false,code:data?.code || "audit_history_unavailable",
+        ...(data?.revision != null ? {revision:data.revision} : {})},
+        data?.code === "audit_revision_changed" ? 409 : data?.code === "invalid_audit_cursor" ? 400 : 503);
+      return reply({ok:true,revision:data.revision,rows:data.rows,next_position:data.next_position});
+    }
+
 
     // Separate, default-off audited costing route. Never route this through
     // the stock ledger write API or accept browser-supplied workshop state.
@@ -1788,9 +1841,9 @@ Deno.serve(async (req: Request) => {
             return Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]]));
           }))
         : null;
-      const savedReply = (saved: any) => {
+      const savedReply = async (saved: any) => {
         if (numberChange) numberCodec=jobNumberCodec(saved.number_rows || []);
-        return reply({ok:true,job:saved.job,server_revision:saved.revision,...(numberChange?{data:saved.data}:{})});
+        return reply({ok:true,job:saved.job,server_revision:saved.revision,...(numberChange?{data:await legacyWire(saved.data)}:{})});
       };
       const findReceipt = async () => {
         if (!requestKey) return null;
@@ -1924,19 +1977,21 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "load") {
+      const wireMode=jobEditLoadMode(body,Deno.env.get("ZUKAIT_JOB_EDIT_COMPACT_SYNC_ENABLED")==="true");
+      const loadWire=(data:any)=>jobEditWireState(data,wireMode===COMPACT_JOB_EDIT_MODE,prefixReader);
       // Opt-in only: older clients continue to receive the full response.
       if (Number.isSafeInteger(body.known_revision) && body.known_revision >= 0) {
         const {data: metadata,error: metadataError} = await admin.from("workshop_state")
           .select("revision,updated_at,updated_by").eq("id","main").single();
         if (metadataError) throw metadataError;
-        if (Number(metadata.revision) === body.known_revision) {
-          return reply({ok:true,...metadata,not_modified:true,user});
+        if (Number(metadata.revision) === body.known_revision && jobEditKnownModeMatches(body,wireMode)) {
+          return reply({ok:true,...metadata,not_modified:true,user,job_edit_sync_mode:wireMode});
         }
       }
       const { data, error } = await admin.from("workshop_state")
         .select("revision,data,updated_at,updated_by").eq("id","main").single();
       if (error) throw error;
-      return reply({ ok: true, ...data, user });
+      return reply({ ok: true, ...data, data:await loadWire(data.data), user,job_edit_sync_mode:wireMode });
     }
 
     if (action === "live_status") {
@@ -2304,6 +2359,8 @@ Deno.serve(async (req: Request) => {
     if (action === "save") {
       const originalExpected = Number(body.expected_revision);
       const originalProposed = body.data;
+      const saveMode=jobEditSaveMode(body);
+      const saveWire=(data:any)=>jobEditWireState(data,saveMode===COMPACT_JOB_EDIT_MODE,prefixReader);
       if (!Number.isFinite(originalExpected) || !originalProposed || typeof originalProposed !== "object") {
         return reply({ ok: false, code: "bad_request" }, 400);
       }
@@ -2326,6 +2383,8 @@ Deno.serve(async (req: Request) => {
 
         let candidate:any;
         const currentRevision = Number(current.revision || 0);
+        // Never silently merge a compact cache into a restored full state.
+        if(Object.hasOwn(originalProposed,"jobEditArchive")&&!Object.hasOwn(current.data,"jobEditArchive")) return reply({ok:false,code:"audit_refresh_required",revision:currentRevision},409);
         if (currentRevision === originalExpected) {
           candidate = cloneValue(originalProposed);
         } else {
@@ -2334,9 +2393,30 @@ Deno.serve(async (req: Request) => {
             // Very old revisions created before history was enabled still fall back
             // to the legacy client conflict path once. The next retry will use a
             // revision that exists in history.
-            return reply({ ok: false, code: "conflict", revision: current.revision, data: current.data }, 409);
+            if(saveMode===COMPACT_JOB_EDIT_MODE)return reply({ok:false,code:"audit_refresh_required",revision:currentRevision},409);
+            return reply({ ok: false, code: "conflict", revision: current.revision, data: await saveWire(current.data) }, 409);
           }
           candidate = threeWayMerge(baseData, current.data, originalProposed);
+        }
+
+        // This path stays inactive until the server-owned compact marker is installed.
+        // Recover the exact old base before merging any legacy audit additions.
+        if (current.data?.jobEditArchive) {
+          let auditBase = currentRevision === originalExpected ? current.data : baseData;
+          if(!Object.hasOwn(originalProposed,"jobEditArchive")) auditBase=await legacyWire(auditBase);
+          let expandedCurrent: any = undefined;
+          if (!auditBase?.jobEditArchive) {
+            const {data:expanded,error:expandError}=await admin.rpc("zukait_job_edit_legacy_current",{p_expected_revision:currentRevision});
+            if(expandError) return reply({ok:false,code:"audit_history_unavailable"},503);
+            if(expanded?.code==="audit_revision_changed") continue;
+            if(!expanded?.ok || expanded.revision!==currentRevision) return reply({ok:false,code:"audit_history_unavailable"},503);
+            expandedCurrent=expanded.jobEdits;
+          }
+          const audit=reconcileCompactJobEditAudit({base:auditBase,current:current.data,proposed:originalProposed,expandedCurrent});
+          if(!audit.ok) return reply({ok:false,code:audit.code,revision:currentRevision},409);
+          if(!audit.active) return reply({ok:false,code:"audit_history_unavailable"},503);
+          candidate.jobEditArchive=audit.marker;
+          candidate.jobEdits=audit.jobEdits;
         }
 
         candidate = preservePaintPurchasingHistory(preserveConsumablesHistory(preserveOperationalHistory(reconcileAutoOvertime(preserveClosedSessions(candidate, current.data), current.data), current.data, user), current.data), current.data);
@@ -2344,7 +2424,7 @@ Deno.serve(async (req: Request) => {
         candidate.sublets = cloneValue(current.data?.sublets || []);
         candidate.subletAudit = cloneValue(current.data?.subletAudit || []);
         const consumablesCorrectionIssue=validateConsumablesManagerCorrections(candidate,current.data,user);
-        if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:current.data},403);
+        if(consumablesCorrectionIssue) return reply({ok:false,code:"consumables_correction_forbidden",message:consumablesCorrectionIssue,revision:current.revision,data:await saveWire(current.data)},403);
         candidate = preserveEstimateHistory(candidate, current.data);
         if (user.role !== "Manager") {
           const existingLeaves = mapById(current.data?.leaves || []);
@@ -2360,13 +2440,13 @@ Deno.serve(async (req: Request) => {
         candidate = preserveReceptionPromiseAuthority(candidate, current.data);
 
         const idleConflict=id001AssignmentConflict(candidate,current.data);
-        if(idleConflict)return reply({ok:false,code:"id001_already_assigned",message:"This technician already has an unfinished ID001 assignment. Review the existing assignment; pending changes are preserved.",employee:idleConflict.employee,revision:current.revision,data:current.data},409);
+        if(idleConflict)return reply({ok:false,code:"id001_already_assigned",message:"This technician already has an unfinished ID001 assignment. Review the existing assignment; pending changes are preserved.",employee:idleConflict.employee,revision:current.revision,data:await saveWire(current.data)},409);
 
         const paintCorrectionIssue=validatePaintManagerCorrections(candidate,current.data,user);
-        if (paintCorrectionIssue) return reply({ok:false,code:"paint_correction_forbidden",message:paintCorrectionIssue,revision:current.revision,data:current.data},403);
+        if (paintCorrectionIssue) return reply({ok:false,code:"paint_correction_forbidden",message:paintCorrectionIssue,revision:current.revision,data:await saveWire(current.data)},403);
 
         const paintOrderIssue=paintOrderRules.validateNewOrders(candidate.paintPurchasing?.orders || [],current.data?.paintPurchasing?.orders || []);
-        if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:current.data},409);
+        if (paintOrderIssue) return reply({ok:false,code:"paint_po_invalid",message:paintOrderIssue,revision:current.revision,data:await saveWire(current.data)},409);
 
         // Keep profiles whose credentials are still active. Inactive staff may be
         // intentionally removed; an old full-state save must not remove active staff.
@@ -2390,7 +2470,7 @@ Deno.serve(async (req: Request) => {
           a && a.job === "ID001" && !a.cancelled && !a.completed && Number(a.idealSafeVersion || 0) < 1
         );
         if (unsafeIdeal) {
-          return reply({ ok: false, code: "id001_update_required", revision: current.revision, data: current.data }, 409);
+          return reply({ ok: false, code: "id001_update_required", revision: current.revision, data: await saveWire(current.data) }, 409);
         }
 
         if (user.role === "Employee" && !validateEmployeeChange(user.id, current.data, candidate)) {
@@ -2407,6 +2487,7 @@ Deno.serve(async (req: Request) => {
           Deno.env.get("ZUKAIT_SHARED_SECTION_SAVE_ENABLED") !== "false"
           ? sharedWorkshopSections(current.data, candidate) : null;
         const commitArgs = {p_expected_revision:currentRevision,p_changed_by:user.id,p_live:live};
+        const wireCandidate=await saveWire(candidate);
         const { data: committed, error } = sections !== null
           ? await admin.rpc("zukait_commit_workshop_state_sections", {...commitArgs,...sections})
           : await admin.rpc("zukait_commit_workshop_state_v2", {...commitArgs,p_data:candidate});
@@ -2415,7 +2496,7 @@ Deno.serve(async (req: Request) => {
         if (committed?.ok) {
           const committedRevision = Number(committed.revision || next);
           const rebased = currentRevision !== originalExpected;
-          const reconciled = !same(candidate, originalProposed);
+          const reconciled = !same(wireCandidate, originalProposed);
           return reply({
             ok: true,
             // Backward compatibility: legacy clients only understand "revision".
@@ -2423,7 +2504,8 @@ Deno.serve(async (req: Request) => {
             // so its existing poller is forced to reload the authoritative state.
             revision: rebased ? originalExpected : committedRevision,
             server_revision: committedRevision,
-            data: rebased || reconciled ? candidate : undefined,
+            job_edit_sync_mode:saveMode,
+            data: rebased || reconciled ? wireCandidate : undefined,
             force_pull: rebased || reconciled,
             updated_by: user.id,
             rebased,
@@ -2441,7 +2523,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const latest = lastCurrent || (await admin.from("workshop_state").select("revision,data").eq("id","main").single()).data;
-      return reply({ ok: false, code: "conflict_busy", revision: latest?.revision, data: latest?.data, retryable:true, retry_after_ms:3000 }, 409);
+      return reply({ ok: false, code: "conflict_busy", revision: latest?.revision, data: await saveWire(latest?.data), retryable:true, retry_after_ms:3000 }, 409);
     }
 
     if (action === "backup") {
@@ -2449,10 +2531,18 @@ Deno.serve(async (req: Request) => {
       const { data: current, error } = await admin.from("workshop_state")
         .select("revision,data").eq("id","main").single();
       if (error) throw error;
+      // Manager backups must contain the full audit, independent of the
+      // archive baseline or the compact-sync feature flag.
+      let backupData;
+      try {
+        backupData=await legacyWire(current.data);
+      } catch {
+        return reply({ok:false,code:"audit_history_unavailable"},503);
+      }
       const { data: created, error: backupError } = await admin.from("workshop_backups").insert({
         created_by: user.id,
         revision: current.revision,
-        data: current.data
+        data: backupData
       }).select("id,created_at,revision").single();
       if (backupError) throw backupError;
       return reply({ ok:true, backup:created });

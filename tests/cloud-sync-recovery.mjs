@@ -81,3 +81,27 @@ await api({action:'revision'});assert.equal(api.retryAfter('revision'),90000);
 now+=90000;c.fetch=async()=>({status:429,headers:{get:()=>new Date(now+120000).toUTCString()},json:async()=>({ok:false,code:'rate_limited'})});
 await api({action:'revision'});assert.equal(api.retryAfter('revision'),120000);
 console.log('PASS: Retry-After seconds and HTTP-date honored beyond ordinary exponential cap.');
+
+ // Execute the real compact rebase helper extracted from the client prefix.
+const marker={snapshotRevision:7,prefixCount:2},aa={job:'A',at:1},bb={job:'B',at:2},cc={job:'C',at:3};
+const snap=rows=>({jobEditArchive:marker,jobEdits:rows});
+const check=(base,remote,local)=>p.compactAuditRebase(base,remote,local);
+assert.deepEqual(JSON.parse(JSON.stringify(check(snap([aa]),snap([aa,bb]),snap([aa,cc,cc])))),snap([aa,bb,cc,cc]));
+assert.deepEqual(JSON.parse(JSON.stringify(check(snap([aa,aa]),snap([aa,aa,bb]),snap([cc,aa,aa])))),snap([aa,aa,bb,cc]));
+assert.equal(check({jobEdits:[aa]},{jobEdits:[aa,bb]},{jobEdits:[aa,cc]}),null);
+assert.throws(()=>check(snap([aa]),snap([aa,bb]),snap([aa,bb])),e=>e.code==='audit_replay_ambiguous'&&e.httpStatus===409);
+assert.throws(()=>check(snap([aa]),{jobEdits:[aa,bb]},snap([aa,cc])),e=>e.code==='audit_refresh_required'&&e.httpStatus===409);
+assert.throws(()=>check(snap([aa]),snap([aa,bb]),snap([])),e=>e.code==='audit_refresh_required');
+assert.throws(()=>check(snap([aa]),{...snap([aa,bb]),jobEditArchive:{...marker,prefixCount:3}},snap([aa,cc])),e=>e.code==='audit_refresh_required');
+// In a real push, a server flag transition must not replace a pending compact
+// queue with a legacy full history through the permission-rebase branch.
+p.state={...snap([aa,cc]),jobs:[{no:'QA_JOB'}]};p.lastSyncedState={...snap([aa]),jobs:[{no:'QA_JOB'}]};
+p.cloudRevision=8;p.cloudDirty=true;p.dirtyGeneration=2;
+p.api=async body=>body.action==='load'?{ok:true,revision:9,data:{jobEdits:[aa,bb],jobs:[{no:'QA_JOB'}]}}:{ok:false,code:'forbidden_change',_status:403};
+p.console.warn=()=>{};
+await p.push();
+assert.equal(p.cloudRevision,8);assert.equal(p.cloudDirty,true);
+const preserved=JSON.parse(storage.get('zukait_cloud_pending_conflict_v42'));
+assert.equal(preserved.error,'audit_refresh_required');assert.deepEqual(preserved.data.jobEdits,[aa,cc]);assert.deepEqual(preserved.data.jobEditArchive,marker);
+assert.equal(JSON.parse(storage.get('zukait_cloud_denied_snapshot_v42')).error,'audit_refresh_required');
+console.log('PASS: compact client rebase preserves ordered audit multiplicity, blocks ambiguous/mixed representations, preserves actual push queue.');

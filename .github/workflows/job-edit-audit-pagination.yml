@@ -1,0 +1,34 @@
+name: Job edit audit pagination regression
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/job_card_edit.js'
+      - 'tests/job-edit-audit-pagination-client.mjs'
+      - 'tests/compact-job-edit-audit-compatibility.mjs'
+      - 'tests/job-edit-audit-api-contract.mjs'
+      - 'tests/job-edit-archive-wire.mjs'
+      - 'supabase/functions/workshop-api/extensions/job_edit_archive_wire.js'
+      - 'supabase/functions/workshop-api/extensions/compact_job_edit_audit.js'
+      - 'scripts/sql/job-edit-*.sql'
+      - 'supabase/functions/workshop-api/index.ts'
+      - '.github/workflows/job-edit-audit-pagination.yml'
+permissions:
+  contents: read
+jobs:
+  audit-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node --check app/src/main/assets/job_card_edit.js
+      - run: node tests/job-edit-audit-pagination-client.mjs
+      - run: node tests/reception-job-edit.mjs
+      - run: node tests/compact-job-edit-audit-compatibility.mjs
+      - run: node tests/job-edit-audit-api-contract.mjs
+      - run: node tests/job-edit-archive-wire.mjs

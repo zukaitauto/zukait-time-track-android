@@ -1,0 +1,96 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {JSDOM} from 'jsdom';
+const source=fs.readFileSync('app/src/main/assets/job_card_edit.js','utf8');
+const dom=new JSDOM('<div id="modal"></div>',{url:'https://qa.invalid',runScripts:'outside-only'});
+const w=dom.window;
+w.me={id:'QA',role:'Manager'};
+w.zukaitAuth={getToken:()=> 'qa-session'};
+w.openModal=html=>w.document.querySelector('#modal').innerHTML=html;
+w.closeModal=()=>w.document.querySelector('#modal').replaceChildren();
+w.alert=message=>{throw Error(message)};
+w.state={jobEdits:[{job:'JC1',at:1,reason:'Cached record'},{job:'JC2',reason:'Other job'}]};
+let calls=[],mode='normal';
+const savedActual={jobCard:'JC1',department:'Painting',locked:true,totalCost:2.450,lines:[{materialId:'QA-M',brandId:'QA-B',actualQuantity:2,unit:'L',unitPriceSnapshot:1.225,lineCost:2.450,materialName:'<img src=x onerror=alert(1)>'}]};
+const savedIssue={jobCard:'JC1',department:'Mechanical',lines:[{materialId:'QA-M',quantity:3}]};
+w.state.consumables={actuals:[savedActual,{jobCard:'JC2',totalCost:999}],issues:[savedIssue]};
+const item=(audit_position,reason)=>({audit_position,payload:{job:'JC1',at:1,reason,old:{notes:'before'},newValue:{notes:'after'}}});
+w.fetch=async(_url,opts)=>{
+ const body=JSON.parse(opts.body);calls.push(body);
+ if(body.operation==='GET')return {ok:true,status:200,json:async()=>({ok:true,job:{no:'JC1'}})};
+ let status=200,result;
+ if(body.action==='job_consumables_read'){
+  if(mode==='denied')return {ok:false,status:403,json:async()=>({ok:false,code:'consumables_forbidden'})};
+  if(mode==='offline')return {ok:false,status:503,json:async()=>({ok:false,code:'consumables_unavailable'})};
+  return {ok:true,status:200,json:async()=>({ok:true,revision:7,issues:[savedIssue],actuals:[savedActual]})};
+ }
+ if(mode==='denied'){status=403;result={ok:false,code:'job_edit_forbidden'};}
+ else if(mode==='offline'){status=503;result={ok:false,code:'audit_history_unavailable'};}
+ else if(mode==='stale'&&body.before_position){status=409;result={ok:false,code:'audit_revision_changed'};}
+ else if(body.before_position)result={ok:true,revision:7,rows:[item(3,'Older record')],next_position:null};
+ else result={ok:true,revision:7,rows:[item(5,'<img src=x onerror=alert(1)>'),item(4,'Recent record')],next_position:4};
+ return {ok:status===200,status,json:async()=>result};
+};
+const click=async id=>{w.document.getElementById(id).click();await new Promise(resolve=>setTimeout(resolve,0));};
+const panel=()=>w.document.querySelector('#jce-history-panel');
+try{
+ w.eval(source);
+ await w.zukaitJobEdit.view('JC1');
+ assert.equal(calls.length,1,'history must be fetched only on demand');
+ await click('jce-view-history');
+ assert.equal(calls.at(-1).action,'job_edit_audit_page');
+ assert.equal(calls.at(-1).limit,25);
+ assert.equal(panel().querySelectorAll('details').length,2);
+ assert.equal(panel().querySelector('img'),null,'untrusted audit content must be escaped');
+ await click('jce-history-next');
+ assert.equal(calls.at(-1).before_position,4);
+ assert.equal(calls.at(-1).expected_revision,7);
+ assert.equal(panel().querySelectorAll('details').length,3);
+ assert.equal(w.document.getElementById('jce-history-next'),null);
+ mode='stale';await w.zukaitJobEdit.view('JC1');await click('jce-view-history');await click('jce-history-next');
+ assert.match(panel().textContent,/Workshop data changed/);
+ assert.equal(panel().querySelectorAll('details').length,0);
+ mode='offline';await w.zukaitJobEdit.view('JC1');await click('jce-view-history');
+ assert.match(panel().textContent,/cached records only/i);
+ assert.equal(panel().querySelectorAll('details').length,1);
+ assert.doesNotMatch(panel().textContent,/Other job/);
+ mode='denied';await w.zukaitJobEdit.view('JC1');await click('jce-view-history');
+ assert.match(panel().textContent,/History access denied/);
+ assert.equal(panel().querySelectorAll('details').length,0);
+ mode='normal';await w.zukaitJobEdit.view('JC1');
+ assert.equal(w.document.getElementById('jce-materials-panel').hidden,true);
+ const cachedBefore=JSON.stringify(w.state.consumables);
+ await click('jce-view-materials');
+ const mp=()=>w.document.getElementById('jce-materials-panel');
+ assert.deepEqual(calls.at(-1),{action:'job_consumables_read',jobCard:'JC1'});
+ assert.match(mp().textContent,/OMR 2\.450/);
+ assert.match(mp().textContent,/OMR 1\.225/);
+ assert.match(mp().textContent,/Mechanical/);
+ assert.match(mp().textContent,/Painting/);
+ assert.equal(mp().querySelector('img'),null);
+ assert.equal(JSON.stringify(w.state.consumables),cachedBefore);
+ mode='offline';await click('jce-materials-refresh');assert.match(mp().textContent,/cached records only/i);assert.doesNotMatch(mp().textContent,/999/);
+ mode='denied';await click('jce-materials-refresh');assert.match(mp().textContent,/Materials access denied/);assert.equal(mp().querySelectorAll('details').length,0);
+ mode='normal';
+ const globalOpen=async()=>{w.openModal('<section id="jce-global-history"></section>');w.zukaitJobEdit.bindGlobalHistory(w.document.getElementById('jce-global-history'));await new Promise(resolve=>setTimeout(resolve,0));};
+ const globalPanel=()=>w.document.getElementById('jce-global-history');
+ await globalOpen();
+ assert.deepEqual(calls.at(-1),{action:'job_edit_audit_all_page',limit:25});
+ assert.equal(globalPanel().querySelectorAll('details').length,2);
+ assert.equal(globalPanel().querySelector('img'),null);
+ await click('jce-global-next');
+ assert.equal(calls.at(-1).before_position,4);
+ assert.equal(calls.at(-1).expected_revision,7);
+ assert.equal(globalPanel().querySelectorAll('details').length,1,'replace instead of accumulate pages');
+ await click('jce-global-prev');
+ assert.equal(calls.at(-1).expected_revision,7);
+ assert.equal(globalPanel().querySelectorAll('details').length,2);
+ mode='stale';await click('jce-global-next');assert.match(globalPanel().textContent,/Workshop data changed/);assert.equal(globalPanel().querySelectorAll('details').length,0);
+ mode='offline';w.state.jobEdits=Array.from({length:60},(_,i)=>({job:'JC'+i,reason:'Cached '+i}));await globalOpen();assert.match(globalPanel().textContent,/cached records only/i);assert.equal(globalPanel().querySelectorAll('details').length,25);await click('jce-global-next');assert.equal(globalPanel().querySelectorAll('details').length,25);await click('jce-global-next');assert.equal(globalPanel().querySelectorAll('details').length,10);
+ mode='denied';await globalOpen();assert.match(globalPanel().textContent,/History access denied/);assert.equal(globalPanel().querySelectorAll('details').length,0);
+ w.me.role='Supervisor';const callCount=calls.length;await globalOpen();assert.equal(calls.length,callCount);assert.equal(globalPanel().querySelectorAll('details').length,0);
+ w.me.role='Supervisor';await w.zukaitJobEdit.view('JC1');
+ assert.equal(w.document.getElementById('jce-view-materials'),null);
+ assert.equal(w.document.getElementById('jce-view-history'),null);
+ console.log('Job edit audit history: lazy load, pagination, stale reset, fallback, permission denial and escaped output passed.');
+}finally{dom.window.close();}

@@ -1,0 +1,38 @@
+name: Compact sync isolated QA HTTPS smoke
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - '.github/workflows/compact-sync-qa-smoke.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa-smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check isolated QA endpoint without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          QA_REF=omqgkqknbdcnotabffek
+          QA_KEY="$(sed -n 's/^      ZUKAIT_ACCEPTANCE_PUBLISHABLE_KEY: //p' .github/workflows/insurance-isolated-acceptance.yml)"
+          [[ "$QA_KEY" =~ ^sb_publishable_[A-Za-z0-9_-]+$ ]]
+          URL="https://${QA_REF}.supabase.co/functions/v1/workshop-api-compact-sync-qa"
+          out="$(mktemp -d)"
+          trap 'rm -rf "$out"' EXIT
+          code="$(curl -sS --max-time 20 -o "$out/body" -w '%{http_code}' -X OPTIONS -H 'Origin: https://qa.example.invalid' -H 'Access-Control-Request-Method: POST' "$URL")"
+          test "$code" = 200
+          for action in load job_edit_audit_all_page job_edit_audit_page; do
+            code="$(curl -sS --max-time 20 -o "$out/body" -w '%{http_code}' -X POST -H 'Content-Type: application/json' -H "apikey: $QA_KEY" -H 'x-zukait-session: QA_DOES_NOT_EXIST' --data "{\"action\":\"$action\"}" "$URL")"
+            test "$code" = 401
+            jq -e '.ok == false and .code == "invalid_session"' "$out/body" >/dev/null
+            echo "PASS: $action rejected an invalid session"
+          done
+          code="$(curl -sS --max-time 20 -o "$out/body" -w '%{http_code}' -X POST -H 'Content-Type: application/json' -H 'apikey: sb_publishable_invalid_qa_probe' --data '{"action":"load"}' "$URL")"
+          test "$code" = 401
+          echo 'PASS: unrelated API key rejected'
+          echo 'Isolated QA endpoint smoke only; authenticated staff acceptance still required.' >> "$GITHUB_STEP_SUMMARY"

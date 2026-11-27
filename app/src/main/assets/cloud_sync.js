@@ -8,10 +8,31 @@
   let deniedSnapshot=null;
   try{deniedSnapshot=JSON.parse(localStorage.getItem(DENIED_KEY)||'null')}catch(_){}
   function isMechanicalConflict(code){return ['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict','mechanical_job_identity_conflict','mechanical_mixed_job_not_allowed'].includes(code)}
+  function isAuditConflict(code){return ['audit_refresh_required','audit_replay_ambiguous','audit_history_unavailable'].includes(code)}
+  // Keep the compact audit prefix immutable during a local conflict/ack rebase.
+  // The ordinary three-way merge treats unkeyed arrays as replaceable.
+  function compactAuditRebase(base,remote,local){
+    const own=v=>v!=null&&Object.prototype.hasOwnProperty.call(v,'jobEditArchive');
+    if(![base,remote,local].some(own))return null;
+    const canonical=v=>Array.isArray(v)?'['+v.map(canonical).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}':JSON.stringify(v);
+    const fail=code=>{const e=new Error(code);e.code=code;e.httpStatus=409;throw e;};
+    if(![base,remote,local].every(v=>own(v)&&v.jobEditArchive&&Array.isArray(v.jobEdits))||
+      canonical(base.jobEditArchive)!==canonical(remote.jobEditArchive)||canonical(base.jobEditArchive)!==canonical(local.jobEditArchive))fail('audit_refresh_required');
+    const additions=changed=>{
+      const counts=new Map(),extra=[];
+      for(const row of base.jobEdits){const k=canonical(row);counts.set(k,(counts.get(k)||0)+1)}
+      for(const row of changed){const k=canonical(row),n=counts.get(k)||0;if(n)counts.set(k,n-1);else extra.push(row)}
+      if([...counts.values()].some(n=>n>0))fail('audit_refresh_required');
+      return extra;
+    };
+    const extra=additions(local.jobEdits),remoteKeys=new Set(additions(remote.jobEdits).map(canonical));
+    if(extra.some(row=>remoteKeys.has(canonical(row))))fail('audit_replay_ambiguous');
+    return {jobEditArchive:clone(remote.jobEditArchive),jobEdits:[...clone(remote.jobEdits),...clone(extra)]};
+  }
   function permissionBlocked(snapshot){
     if(!deniedSnapshot)return false;
     // A different account must never silently submit another user's queue.
-    return String(deniedSnapshot.user)!==String(me?.id||'') || isMechanicalConflict(deniedSnapshot.error) || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
+    return String(deniedSnapshot.user)!==String(me?.id||'') || isMechanicalConflict(deniedSnapshot.error) || isAuditConflict(deniedSnapshot.error) || JSON.stringify(deniedSnapshot.data)===JSON.stringify(snapshot);
   }
 
   let sessionEpoch=0;
@@ -191,6 +212,13 @@
   const syncRecoveryKey=action=>action==='save'?'save':['revision','load','live_status','monthly_followup'].includes(action)?'read':null;
   const retryDelay=()=>Math.max(0,...[...syncRecovery.values()].map(x=>x.until-Date.now()));
   async function api(payload){
+    // Older servers ignore these optional fields; compact responses require
+    // explicit server activation. Never advertise a known representation
+    // unless the request carries an in-memory baseline revision.
+    if(payload.action==='load'||payload.action==='save'){
+      payload={...payload,job_edit_sync_mode:'compact-v1'};
+
+    }
     const epoch=sessionEpoch;
     const token=sessionToken();
     const checkSession=()=>{if(stale(epoch)||token!==sessionToken())throw Error('STALE_SESSION');};
@@ -730,7 +758,7 @@
       if(pullBaseline&&confirmedRevision===pullRevision&&lastProbedRevision===pullRevision&&Date.now()-lastRevisionProbeAt<700){
         r={ok:true,revision:pullRevision,not_modified:true,user:me};
       }else{
-        r=await api(pullBaseline?{action:'load',known_revision:pullRevision}:{action:'load'});
+        r=await api(pullBaseline?{action:'load',known_revision:pullRevision,known_job_edit_sync_mode:pullBaseline.jobEditArchive?'compact-v1':'legacy-v1'}:{action:'load'});
       }
     }finally{if(!stale(epoch))pullInFlight=false}
     if(!r.ok){
@@ -825,13 +853,13 @@
     if(cloudPushing||managerEditInFlight||!cloudDirty)return false;
     if(api.retryAfter?.('save')>0)return false;
     if(permissionBlocked(payloadState())){
-      const mechanicalBlocked=isMechanicalConflict(deniedSnapshot?.error);
+      const mechanicalBlocked=isMechanicalConflict(deniedSnapshot?.error),auditBlocked=isAuditConflict(deniedSnapshot?.error);
       // A later click must also survive a restart while this queue is blocked.
-      if(mechanicalBlocked&&String(deniedSnapshot.user)===String(me?.id||'')){
+      if((mechanicalBlocked||auditBlocked)&&String(deniedSnapshot.user)===String(me?.id||'')){
         const pending=payloadState();deniedSnapshot={...deniedSnapshot,data:clone(pending)};
         try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot));localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pending,error:deniedSnapshot.error}))}catch(_){}
       }
-      status(mechanicalBlocked?'WORK CHANGED — SYNC REVIEW REQUIRED':'PERMISSION DENIED — CHANGE PRESERVED','bad');return false;
+      status(auditBlocked?'HISTORY CHANGED — CHANGE PRESERVED':mechanicalBlocked?'WORK CHANGED — SYNC REVIEW REQUIRED':'PERMISSION DENIED — CHANGE PRESERVED','bad');return false;
     }
     if(!sessionToken()){status('LOGIN REQUIRED','bad');return false}
     if(!navigator.onLine){status('OFFLINE — CHANGE QUEUED','warn');return false}
@@ -849,12 +877,16 @@
         // Acknowledge exactly the snapshot sent by this request. If another
         // Start/Pause/Stop/Assign click happened while it was in flight, keep
         // that newer mutation dirty and immediately send a second request.
-        cloudRevision=Number(r.server_revision||r.revision||cloudRevision+1);
-        localStorage.setItem(REV_KEY,String(cloudRevision));
+        const nextRevision=Number(r.server_revision||r.revision||cloudRevision+1);
         const newerPending=dirtyGeneration!==pushGeneration;
         const authoritativeSnapshot=r.data&&typeof r.data==='object'
           ? reconcileConsumablesDuplicates(clone(r.data))
           : clone(localSnapshot);
+        // Validate the representation before advancing the saved revision.
+        // If the server already committed, retain the old queue for review.
+        const pendingAudit=newerPending?compactAuditRebase(localSnapshot,authoritativeSnapshot,payloadState()):null;
+        cloudRevision=nextRevision;
+        localStorage.setItem(REV_KEY,String(cloudRevision));
         lastSyncedState=clone(authoritativeSnapshot);
 
         if(newerPending){
@@ -866,6 +898,7 @@
           const mergedPending=me?.role==='Employee'
             ? mergeEmployeeConflict(authoritativeSnapshot,pendingSnapshot,me.id)
             : threeWayMerge(localSnapshot,authoritativeSnapshot,pendingSnapshot);
+          if(pendingAudit)Object.assign(mergedPending,pendingAudit);
           cloudApplying=true;
           try{state=reconcileConsumablesDuplicates(mergedPending);ensureShape();persistLocal()}finally{cloudApplying=false}
           cloudDirty=true;
@@ -898,9 +931,11 @@
       if(r.code==='conflict'&&r.data){
         const remote=clone(r.data||{});
         const base=lastSyncedState?clone(lastSyncedState):clone(remote);
+        const audit=compactAuditRebase(base,remote,localSnapshot);
         const merged=me?.role==='Employee'
           ? mergeEmployeeConflict(remote,localSnapshot,me.id)
           : threeWayMerge(base,remote,localSnapshot);
+        if(audit)Object.assign(merged,audit);
         try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(r.revision||cloudRevision)},'LEGACY_CONFLICT_MERGE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
         const beforeConflictRender=clone(state||{});
         cloudApplying=true;
@@ -944,9 +979,11 @@
             if(latest?.ok&&latest.data){
               const remote=clone(latest.data||{});
               const base=lastSyncedState?clone(lastSyncedState):clone(remote);
+              const audit=compactAuditRebase(base,remote,localSnapshot);
               const merged=me?.role==='Employee'
                 ? mergeEmployeeConflict(remote,localSnapshot,me.id)
                 : threeWayMerge(base,remote,localSnapshot);
+              if(audit)Object.assign(merged,audit);
               try{if(me?.role==='Employee')window.zukaitV2?.reconnectAudit?.record?.({assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:cloudRevision,syncState:'pending'},{assignmentId:'snapshot:'+me.id,employeeId:me.id,serverRevision:Number(latest.revision||cloudRevision)},'LEGACY_PERMISSION_REBASE')}catch(e){console.warn('V2 reconnect shadow audit skipped',e)}
               cloudApplying=true;
               try{state=merged;ensureShape();persistLocal()}finally{cloudApplying=false}
@@ -959,7 +996,7 @@
               cloudPushing=false;
               return await push(retry+1);
             }
-          }catch(e){console.warn('Permission rebase failed',e)}
+          }catch(e){if(isAuditConflict(e?.code))throw e;console.warn('Permission rebase failed',e)}
         }
         // Do not keep retrying an unauthorized full snapshot. Clear the dirty
         // snapshot before pulling so every device returns to one clean revision.
@@ -998,8 +1035,11 @@
       lastSyncError=String(e?.code||e?.message||'SAVE_FAILED');consecutiveSyncErrors++;
       const assignmentConflict=e?.code==='id001_already_assigned'&&e?.httpStatus===409;
       const mechanicalConflict=['mechanical_authority_conflict','mechanical_live_authority_conflict','mechanical_delivery_authority_conflict'].includes(e?.code);
-      const permissionDenied=e?.httpStatus===403,blocked=permissionDenied||assignmentConflict;
-      if(mechanicalConflict){
+      const auditConflict=isAuditConflict(e?.code)&&e?.httpStatus===409;
+      const permissionDenied=e?.httpStatus===403,blocked=permissionDenied||assignmentConflict||auditConflict;
+      if(auditConflict){
+        setServerConnection('connected','Server reachable. History changed; pending changes are preserved for Manager review.');
+      }else if(mechanicalConflict){
         setServerConnection('connected','Server reachable. A Mechanical handover changed this work. Pending changes are preserved; use Sync to review.');
       }else if(assignmentConflict){
         setServerConnection('connected','Server reachable. ID001 is already assigned; pending changes are preserved for review.');
@@ -1017,7 +1057,7 @@
         try{localStorage.setItem(DENIED_KEY,JSON.stringify(deniedSnapshot))}catch(_){}
       }
       try{localStorage.setItem(PENDING_KEY,JSON.stringify({savedAt:Date.now(),user:me?.id||'',revision:cloudRevision,data:pendingSnapshot,error:lastSyncError}))}catch(_){}
-      status(mechanicalConflict?'WORK CHANGED — SYNC REVIEW REQUIRED':assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
+      status(auditConflict?'HISTORY CHANGED — CHANGE PRESERVED':mechanicalConflict?'WORK CHANGED — SYNC REVIEW REQUIRED':assignmentConflict?'ID001 ALREADY ASSIGNED — CHANGE PRESERVED':permissionDenied?'PERMISSION DENIED — CHANGE PRESERVED':(navigator.onLine?'SYNC ERROR — RETRYING':'OFFLINE — CHANGE QUEUED'),navigator.onLine?'bad':'warn');
       if(!blocked&&navigator.onLine&&sessionToken())setTimeout(()=>{if(cloudDirty&&!cloudPushing)push(0)},Math.max(api.retryAfter?.('save')||0,Math.min(15000,1000*Math.pow(2,Math.min(consecutiveSyncErrors,4)))));
       return false;
     }finally{
@@ -1082,7 +1122,7 @@
     const request=(async()=>{
       // Reuse only a server-confirmed read baseline from this session.
       const baseline=confirmedReadState&&confirmedReadRevision>=0?{revision:confirmedReadRevision,data:confirmedReadState}:null;
-      const r=await api(baseline?{action:'load',known_revision:baseline.revision}:{action:'load'});
+      const r=await api(baseline?{action:'load',known_revision:baseline.revision,known_job_edit_sync_mode:baseline.data.jobEditArchive?'compact-v1':'legacy-v1'}:{action:'load'});
       if(!r.ok)throw new Error(r.code||'LOAD_FAILED');
       if(stale(epoch))throw Error('STALE_SESSION');
       if(r.not_modified===true){
@@ -1323,7 +1363,9 @@
   async function syncNow(){
     if(cloudDirty&&permissionBlocked(payloadState())){
       if(String(deniedSnapshot.user)!==String(me?.id||'')){alert('Pending changes belong to another account. They are preserved; sign in as their author to review them.');return;}
-      if(isMechanicalConflict(deniedSnapshot.error)){
+      if(isAuditConflict(deniedSnapshot.error)){
+        alert('History changed while this data was pending. Your changes are preserved. Ask the Manager to review them before retrying.');return false;
+      }else if(isMechanicalConflict(deniedSnapshot.error)){
         if(!await recoverMechanicalQueue())return;
       }else{
         if(!confirm('The server rejected a pending change. Your local data is preserved. Retry this change once after its permission or attribution issue has been corrected?'))return;

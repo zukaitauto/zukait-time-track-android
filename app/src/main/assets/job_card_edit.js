@@ -8,7 +8,7 @@ let draft=null,busy=false,loadId=0;
 async function api(body){
  if(!navigator.onLine)throw Error('Connect to the server to edit a Job Card.');
  const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':window.zukaitAuth?.getToken?.()||''},body:JSON.stringify({action:'job_card_edit',...body})});
- const result=await response.json();if(!response.ok||!result.ok)throw Error(messages[result.code]||(body.operation==='GET'?'Job Card could not be loaded. Refresh and try again.':'Job Card could not be saved. Refresh and try again.'));return result;
+ const result=await response.json();if(!response.ok||!result.ok){const error=Error(messages[result.code]||(body.operation==='GET'?'Job Card could not be loaded. Refresh and try again.':'Job Card could not be saved. Refresh and try again.'));error.code=result.code;error.status=response.status;throw error;}return result;
 }
 async function open(no){
  if(!['Manager','Supervisor','Receptionist'].includes(actor()?.role))return;
@@ -96,6 +96,7 @@ function viewCss(){return `
 @media print{.jce-view{background:#fff;border-radius:0;padding:0}.jce-view .jce-view-header{background:#fff;color:#172f43;box-shadow:none;border-radius:0;border-bottom:2px solid #126b70;padding:0 0 12px}.jce-view .jce-view-header h3{color:#172f43!important}.jce-view .jce-view-header small{color:#496579}.jce-view .jce-view-section{box-shadow:none;border-radius:0}.jce-view .jce-view-field{padding:7px 10px}.jce-view .jce-view-value{font-size:11px}}
 
 
+.jce-audit-entry{border-bottom:1px solid #dce3e9;padding:10px 0}.jce-audit-entry summary{cursor:pointer;overflow-wrap:anywhere}.jce-audit-entry pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:260px;overflow:auto}#jce-history-panel[hidden],#jce-materials-panel[hidden]{display:none!important}.jce-material-record{border-bottom:1px solid #dce3e9;padding:10px 0}.jce-material-record summary{cursor:pointer;overflow-wrap:anywhere}.jce-material-line{margin:6px 0;overflow-wrap:anywhere}@media print{#jce-history-panel,#jce-materials-panel{display:none!important}}
 /* Compact, bold A4 document: scoped to the read-only Job Card view. */
 .jce-view.jce-view-document{width:100%;max-width:210mm;padding:12px;font-size:13px;line-height:1.35}
 .jce-view-document .jce-view-header{padding:12px 15px;gap:9px;border-radius:10px}
@@ -142,12 +143,12 @@ function viewHtml(j,actions=true){
  const vehicle=jobName(j.vehicle||[first('make','vehicleMake','brand'),first('model','vehicleModel')].filter(Boolean).join(' '));
  const work=['workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','notes','jobNotes','remarks'];
  const descriptions=[...new Set(work.map(k=>j[k]).filter(v=>v!=null&&v!=='').map(viewValue))];
- return '<section class="jce-view jce-view-document" data-job-card="'+esc(j.no)+'"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Job Card · '+esc(j.no)+'</h3><div>'+esc(vehicle||'—')+'</div>'+(j.delivered?'<strong class="jce-delivered-status" style="display:inline-block;margin-top:8px;padding:5px 9px;border-radius:7px;background:#dcfce7;color:#166534">Delivered'+(j.deliveryDate||j.deliveredAt?' · '+esc(jobDate(j.deliveredAt||j.deliveryDate)):'')+'</strong>':'')+'</div>'+(actions?'<nav class="jce-view-nav"><button type="button" id="jce-view-back">← Back</button><button type="button" id="jce-view-print">Print</button><button type="button" id="jce-view-close">Close</button></nav>':'')+'</header>'+ 
+ return '<section class="jce-view jce-view-document" data-job-card="'+esc(j.no)+'"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Job Card · '+esc(j.no)+'</h3><div>'+esc(vehicle||'—')+'</div>'+(j.delivered?'<strong class="jce-delivered-status" style="display:inline-block;margin-top:8px;padding:5px 9px;border-radius:7px;background:#dcfce7;color:#166534">Delivered'+(j.deliveryDate||j.deliveredAt?' · '+esc(jobDate(j.deliveredAt||j.deliveryDate)):'')+'</strong>':'')+'</div>'+(actions?'<nav class="jce-view-nav"><button type="button" id="jce-view-back">← Back</button><button type="button" id="jce-view-print">Print</button>'+(actor()?.role==='Manager'?'<button type="button" id="jce-view-history">History</button><button type="button" id="jce-view-materials">Materials</button>':'')+'<button type="button" id="jce-view-close">Close</button></nav>':'')+'</header>'+ 
  section('Job Details', [['Job Card number',j.no],['Created · Oman time',jobDate(j.createdAt)],['Job type',jobName(j.jobType)],['Status',j.delivered?'Delivered':jobName(j.status||(j.completed?'Completed':'Open'))],['Promise date',j.promiseDate],['Linked Reception Checklist',j.receptionNo]])+
  section('Vehicle Details', [['Make',jobName(first('make','vehicleMake','brand'))],['Model',jobName(first('model','vehicleModel'))],['Year',first('year','modelYear','vehicleYear')],['Registration',first('reg','registration','registrationNo')],['Vehicle',vehicle,true],['VIN / Chassis',String(first('vin','VIN','vinNumber','chassis','chassisNo')).toUpperCase(),true],['Vehicle colour',jobName(first('color','colour'))],['Paint colour code',first('colorCode','colourCode')],['Intake odometer',first('jobIntakeOdometer','odometer')],['Odometer unit',first('jobIntakeOdometerUnit','jobIntakeUnit','odometerUnit')]])+
  section('Customer Details', [['Customer',jobName(first('customer','customerName')),true],['Contact',first('mobile','customerMobile','customerContact','contact','phone','tel')],['Email',j.email],['Customer address',first('customerAddress','address'),true]])+
  section(jobType==='INSURANCE'?'Insurance & Payment':'Payment Details', [...(jobType==='INSURANCE'?[['Insurance company',jobName(first('insuranceCompany','insurance'))],['Claim number',first('claimNo','claimNumber','claim')]]:[]),['Amount',money(j.amount)],['Final invoice amount',money(j.finalInvoiceAmount??j.invoiceAmount)],['Invoice date',j.invoiceDate],...(jobType==='CREDIT'?[['Credit account / reference',j.creditAccount]]:[]),['Delivered · Oman time',j.deliveredAt||j.deliveryDate?jobDate(j.deliveredAt||j.deliveryDate):'Not delivered']])+
- '<section class="jce-view-section"><h4>Work Descriptions / Notes</h4><div class="jce-view-work">'+esc(descriptions.join('\n\n')||'No work description recorded.')+'</div></section>'+(actions&&j.delivered&&typeof window.zukaitDeliveredMaterialsSummary==='function'?window.zukaitDeliveredMaterialsSummary(j.no,'job-view'):'')+'</section>';
+ '<section class="jce-view-section"><h4>Work Descriptions / Notes</h4><div class="jce-view-work">'+esc(descriptions.join('\n\n')||'No work description recorded.')+'</div></section>'+(actions&&j.delivered&&typeof window.zukaitDeliveredMaterialsSummary==='function'?window.zukaitDeliveredMaterialsSummary(j.no,'job-view'):'')+(actions&&actor()?.role==='Manager'?'<section id="jce-history-panel" class="jce-view-section" hidden></section><section id="jce-materials-panel" class="jce-view-section" hidden></section>':'')+'</section>';
 }
 function printView(j){
  const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Job Card '+esc(j.no)+'</title><style>'+viewCss()+'</style></head><body>'+viewHtml(j,false)+'</body></html>';
@@ -158,6 +159,108 @@ function printView(j){
  popup.document.open();popup.document.write(html);popup.document.close();
  popup.onload=()=>{popup.focus();popup.print()};
 }
+
+ // Manager-only, opt-in history; never writes or merges the cached snapshot.
+ function bindHistory(j,id){
+  const trigger=document.getElementById('jce-view-history'),panel=document.getElementById('jce-history-panel');
+  if(!trigger||!panel)return;
+  const token=window.zukaitAuth?.getToken?.()||'',actorId=actor()?.id;
+  let revision=null,before=null,rows=[],busy=false,started=false,finished=false,local=false,notice='';
+  const valid=()=>id===loadId&&panel.isConnected&&actor()?.role==='Manager'&&actor()?.id===actorId&&Boolean(token)&&window.zukaitAuth?.getToken?.()===token;
+  const legacyRows=()=>{
+   const list=typeof state!=='undefined'?state?.jobEdits:window.state?.jobEdits;
+   const key=String(j.no).trim().toUpperCase();
+   return (Array.isArray(list)?list:[]).map((payload,i)=>({audit_position:i+1,payload})).filter(({payload:p})=>String(p?.job||p?.old?.no||p?.newValue?.no||'').trim().toUpperCase()===key).reverse();
+  };
+  const entry=row=>{
+   const p=row.payload||{};
+   return '<details class="jce-audit-entry"><summary><b>'+esc(p.operation||'Job edit')+'</b> · '+esc(jobDate(p.at))+' · '+esc(p.byName||p.by||'Unknown user')+'</summary>'+
+    (p.reason?'<p>Reason: '+esc(p.reason)+'</p>':'')+
+    '<div><b>Before</b><pre>'+esc(viewValue(p.before??p.old??null))+'</pre><b>After</b><pre>'+esc(viewValue(p.after??p.newValue??null))+'</pre></div></details>';
+  };
+  function render(){
+   if(!valid()){panel.replaceChildren();panel.hidden=true;return;}
+   panel.hidden=false;
+   panel.innerHTML='<h4>Job Edit History</h4><div class="jce-view-work"><p role="status">'+esc(notice|| (local?'Cached history only; it may be incomplete.':busy?'Loading history…':rows.length?rows.length+' records loaded':'No job edits found.'))+'</p>'+rows.map(entry).join('')+
+    (!busy&&!finished&&!local?'<button type="button" id="jce-history-next">'+(rows.length?'Older entries':'Try again')+'</button>':'')+
+    (!busy&&(local||notice)&&notice!=='History access denied. Sign in again if needed.'?'<button type="button" id="jce-history-refresh">Refresh from server</button>':'')+'</div>';
+   panel.querySelector('#jce-history-next')?.addEventListener('click',()=>load());
+   panel.querySelector('#jce-history-refresh')?.addEventListener('click',()=>{reset();load();});
+  }
+  function reset(){revision=null;before=null;rows=[];finished=false;local=false;notice='';}
+  async function load(){
+   if(busy||!valid()||finished)return;
+   busy=true;notice='';render();
+   try{
+    const result=await api({action:'job_edit_audit_page',jobCard:String(j.no),limit:25,...(before!=null?{before_position:before,expected_revision:revision}:{})});
+    if(!valid())return;
+    if(!Number.isSafeInteger(result.revision)||!Array.isArray(result.rows)||result.rows.some((r,i)=>!r||!Number.isSafeInteger(r.audit_position)||r.audit_position<1||!r.payload||typeof r.payload!=='object'||(i>0&&r.audit_position>=result.rows[i-1].audit_position))||
+       (before!=null&&(result.revision!==revision||result.rows.some(r=>r.audit_position>=before)))||
+       (result.next_position!=null&&(!Number.isSafeInteger(result.next_position)||!result.rows.length||result.next_position!==result.rows[result.rows.length-1].audit_position)))throw Error('Invalid history response');
+    revision=result.revision;rows.push(...result.rows);before=result.next_position??null;finished=before===null;
+   }catch(error){
+    if(!valid())return;
+    if(error.code==='audit_revision_changed'){reset();notice='Workshop data changed. Refresh history to start from the newest record.';}
+    else if(error.status===401||error.status===403||['invalid_session','job_edit_forbidden'].includes(error.code)){reset();finished=true;notice='History access denied. Sign in again if needed.';}
+    else if(!rows.length){rows=legacyRows();local=true;finished=true;notice='Server history unavailable. Showing cached records only; history may be incomplete.';}
+    else notice='Older history could not be loaded. Try again.';
+   }finally{busy=false;render();}
+  }
+  trigger.onclick=()=>{if(!valid())return;if(started){panel.hidden=!panel.hidden;return;}started=true;load();};
+ }
+
+ // Fetch only the selected job's materials on demand. Read-only: never replace
+ // the authoritative state, reprice a line, or use these records for a write.
+ function bindMaterials(j,id){
+  const trigger=document.getElementById('jce-view-materials'),panel=document.getElementById('jce-materials-panel');
+  if(!trigger||!panel)return;
+  const token=window.zukaitAuth?.getToken?.()||'',actorId=actor()?.id;
+  const valid=()=>id===loadId&&panel.isConnected&&actor()?.role==='Manager'&&actor()?.id===actorId&&Boolean(token)&&window.zukaitAuth?.getToken?.()===token;
+  const key=String(j.no).trim().toUpperCase();
+  const localData=()=>typeof state!=='undefined'?state?.consumables:window.state?.consumables;
+  const sameJob=row=>row&&String(row.jobCard??'').trim().toUpperCase()===key;
+  const money=v=>v==null||v===''||!Number.isFinite(Number(v))?'Not recorded':'OMR '+Number(v).toFixed(3);
+  let busy=false,loaded=false;
+  const record=(row,kind)=>{
+   const masters=localData()||{};
+   const lines=Array.isArray(row.lines)?row.lines:[];
+   const status=row.voided?'Voided':kind==='actual'?(row.locked?'Finalized':'Not finalized'):'Issued';
+   return '<details class="jce-material-record"><summary><b>'+esc(row.department||'Consumables')+'</b> · '+esc(status)+' · '+esc(jobDate(row.actualAt||row.createdAt))+(kind==='actual'?' · '+esc(money(row.totalCost)):'')+'</summary>'+
+    lines.map(l=>{
+     const material=(masters.materials||[]).find(x=>x.id===l.materialId),brand=(masters.brands||[]).find(x=>x.id===l.brandId);
+     const name=[l.materialName||material?.name||l.materialId,l.brandName||brand?.name||l.brandId].filter(Boolean).join(' / ');
+     const quantity=kind==='actual'?l.actualQuantity??l.quantity:l.quantity??l.issuedQuantity;
+     return '<div class="jce-material-line"><b>'+esc(name||'Material')+'</b> · '+esc(quantity??'Not recorded')+' '+esc(l.unit||'')+(kind==='actual'?' · Saved unit price '+esc(money(l.unitPriceSnapshot??l.unitPrice))+' · Saved line cost '+esc(money(l.lineCost)):'')+'</div>';
+    }).join('')+'</details>';
+  };
+  function show(rows,notice){
+   if(!valid())return;
+   const group=(title,kind,list)=>'<h5>'+title+'</h5>'+(list.length?list.map(r=>record(r,kind)).join(''):'<p>No records.</p>');
+   panel.hidden=false;
+   panel.innerHTML='<h4>Job Consumables</h4><div class="jce-view-work"><p role="status">'+esc(notice)+'</p>'+group('Issued / Additional','issue',rows.issues)+group('Actual Materials','actual',rows.actuals)+'<button type="button" id="jce-materials-refresh">Refresh</button></div>';
+   panel.querySelector('#jce-materials-refresh')?.addEventListener('click',load);
+  }
+  async function load(){
+   if(busy||!valid())return;busy=true;panel.hidden=false;
+   panel.innerHTML='<h4>Job Consumables</h4><div class="jce-view-work" role="status">Loading materials…</div>';
+   try{
+    const r=await api({action:'job_consumables_read',jobCard:String(j.no)});
+    if(!valid())return;
+    if(!Number.isSafeInteger(r.revision)||!Array.isArray(r.issues)||!Array.isArray(r.actuals)||![...r.issues,...r.actuals].every(sameJob))throw Error('Invalid material response');
+    show(r,'Server records · recorded prices and costs · revision '+r.revision);loaded=true;
+   }catch(e){
+    if(!valid())return;
+    if(e.status===401||e.status===403||['invalid_session','consumables_forbidden'].includes(e.code)){
+     panel.innerHTML='<h4>Job Consumables</h4><p role="status">Materials access denied. Sign in again if needed.</p>';
+    }else{
+     const c=localData()||{};
+     show({issues:(Array.isArray(c.issues)?c.issues:[]).filter(sameJob),actuals:(Array.isArray(c.actuals)?c.actuals:[]).filter(sameJob)},'Server records unavailable. Cached records only; they may be incomplete.');
+    }
+    loaded=true;
+   }finally{busy=false;}
+  }
+  trigger.onclick=()=>{if(!valid())return;if(loaded||busy){panel.hidden=!panel.hidden;return;}load();};
+ }
 async function view(no,options={}){
  if(!['Manager','Supervisor','Receptionist'].includes(actor()?.role))return;
  const id=++loadId;draft=null;viewStyle();
@@ -173,9 +276,54 @@ async function view(no,options={}){
   document.getElementById('jce-view-back').onclick=back;
   document.getElementById('jce-view-close').onclick=close;
   document.getElementById('jce-view-print').onclick=()=>printView(j);
+   bindHistory(j,id);
+   bindMaterials(j,id);
  }catch(e){if(id===loadId){alert(e.message);await back()}}
 }
-window.zukaitJobEdit={open,save,view};
+
+ // Global Manager history: retain only one page of audit entries in the DOM.
+ // Cached fallback is explicitly labelled and never used after access denial.
+ function bindGlobalHistory(panel){
+  if(!panel||actor()?.role!=='Manager')return;
+  const token=window.zukaitAuth?.getToken?.()||'',actorId=actor()?.id;
+  const valid=()=>panel.isConnected&&actor()?.role==='Manager'&&actor()?.id===actorId&&Boolean(token)&&window.zukaitAuth?.getToken?.()===token;
+  let revision=null,cursor=null,next=null,stack=[],rows=[],busy=false,local=false,notice='',denied=false;
+  const cached=()=>{const d=typeof state!=='undefined'?state:window.state;return Array.isArray(d?.jobEdits)?d.jobEdits:[];};
+  const entry=row=>{const p=row.payload||{};return '<details class="jce-audit-entry"><summary><b>'+esc(p.job||p.old?.no||p.newValue?.no||'Job edit')+'</b> · '+esc(p.operation||'Job edit')+' · '+esc(jobDate(p.at))+' · '+esc(p.byName||p.by||'Unknown user')+'</summary>'+
+   (p.reason?'<p>Reason: '+esc(p.reason)+'</p>':'')+'<div><b>Before</b><pre>'+esc(viewValue(p.before??p.old??null))+'</pre><b>After</b><pre>'+esc(viewValue(p.after??p.newValue??null))+'</pre></div></details>';};
+  function render(){
+   if(!valid()){panel.replaceChildren();return;}
+   panel.innerHTML='<h3>Job Edit History</h3><p role="status">'+esc(notice||(busy?'Loading history…':local?'Cached records only; history may be incomplete.':rows.length?rows.length+' entries on this page':'No job edits found.'))+'</p>'+rows.map(entry).join('')+
+    (!busy&&!denied?'<div><button type="button" id="jce-global-refresh">Newest / refresh</button> <button type="button" id="jce-global-prev"'+(stack.length?'':' disabled')+'>Newer entries</button> <button type="button" id="jce-global-next"'+(next!=null?'':' disabled')+'>Older entries</button></div>':'');
+   panel.querySelector('#jce-global-refresh')?.addEventListener('click',()=>load(null,[],true));
+   panel.querySelector('#jce-global-prev')?.addEventListener('click',()=>{if(stack.length)load(stack[stack.length-1],stack.slice(0,-1));});
+   panel.querySelector('#jce-global-next')?.addEventListener('click',()=>{if(next!=null)load(next,[...stack,cursor]);});
+  }
+  function localPage(target){const list=cached();const end=Math.min(list.length,target==null?list.length:target-1),start=Math.max(0,end-25);rows=list.slice(start,end).map((payload,i)=>({audit_position:start+i+1,payload})).reverse();next=start>0?start+1:null;}
+  async function load(target,history,refresh=false){
+   if(busy||!valid()||denied)return;
+   busy=true;notice='';render();
+   try{
+    if(local&&!refresh){localPage(target);cursor=target;stack=history;return;}
+    const pinned=refresh?null:revision;
+    const result=await api({action:'job_edit_audit_all_page',limit:25,...(pinned!=null?{expected_revision:pinned}:{}),...(target!=null?{before_position:target}:{})});
+    if(!valid())return;
+    if(!Number.isSafeInteger(result.revision)||!Array.isArray(result.rows)||result.rows.length>25||
+       result.rows.some((r,i)=>!r||!Number.isSafeInteger(r.audit_position)||r.audit_position<1||!r.payload||typeof r.payload!=='object'||(i>0&&r.audit_position>=result.rows[i-1].audit_position)||(target!=null&&r.audit_position>=target))||
+       (pinned!=null&&result.revision!==pinned)||(result.next_position!=null&&(!Number.isSafeInteger(result.next_position)||!result.rows.length||result.next_position!==result.rows[result.rows.length-1].audit_position)))throw Error('Invalid history response');
+    revision=result.revision;rows=result.rows;next=result.next_position??null;cursor=target;stack=history;local=false;
+   }catch(e){
+    if(!valid())return;
+    if(e.status===401||e.status===403||['invalid_session','job_edit_forbidden'].includes(e.code)){rows=[];stack=[];next=null;denied=true;notice='History access denied. Sign in again if needed.';}
+    else if(e.code==='audit_revision_changed'){rows=[];stack=[];next=null;cursor=null;revision=null;local=false;notice='Workshop data changed. Select Newest / refresh.';}
+    else if(refresh||revision==null){revision=null;local=true;cursor=null;stack=[];localPage(null);notice='Server history unavailable. Cached records only; history may be incomplete.';}
+    else notice='History page could not be loaded. Try again.';
+   }finally{busy=false;render();}
+  }
+  load(null,[],true);
+ }
+
+window.zukaitJobEdit={open,save,view,bindGlobalHistory};
 window.v132OpenSupervisorVehicleEdit=open;
 })();
 
