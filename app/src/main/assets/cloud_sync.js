@@ -806,8 +806,9 @@
       }
       if(cloudPushing)return false;
 
+      const unchangedCacheRepair=!!lastSyncedState&&remoteRevision===cloudRevision;
       await pull(true,remoteRevision);
-      if(liveRole())await pullLiveStatus();
+      if(liveRole())await pullLiveStatus(unchangedCacheRepair);
       return true;
     }catch(e){
       if(stale(epoch))return false;
