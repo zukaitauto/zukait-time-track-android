@@ -1,0 +1,28 @@
+name: Mechanical totals consolidation regression
+on:
+  push:
+    branches:
+      - integration/stock-mechanical-consolidation-20261127
+  pull_request:
+    paths:
+      - 'app/src/main/assets/mechanical_consumables_ui.js'
+      - 'tests/mechanical-consumables-totals-integration.mjs'
+      - 'tests/mechanical-consumables-returnable-integration.mjs'
+      - 'tests/mechanical-consumables-return-write-integration.mjs'
+      - '.github/workflows/mechanical-totals-consolidation.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check app/src/main/assets/mechanical_consumables_ui.js
+      - run: node tests/mechanical-consumables-totals-integration.mjs
+      - run: node tests/mechanical-consumables-returnable-integration.mjs
+      - run: node tests/mechanical-consumables-return-write-integration.mjs
