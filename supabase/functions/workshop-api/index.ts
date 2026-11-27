@@ -1732,7 +1732,7 @@ Deno.serve(async (req: Request) => {
       const reducedRead = useCompactTime && Deno.env.get("ZUKAIT_EMPLOYEE_TIME_REDUCED_READ_ENABLED") === "true";
       for(let attempt=0;attempt<8;attempt++){
         const {data:raw,error:readError}=await admin.from("workshop_state").select(reducedRead ? "revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,employeeTimeActionAudit:data->employeeTimeActionAudit,lastActions:data->lastActions" : "revision,data").eq("id","main").single();
-        const current:any = reducedRead && raw ? {revision:raw.revision,data:Object.fromEntries(["users","sessions","assign","jobs","employeeTimeActionAudit","lastActions"].map(key=>[key,(raw as any)[key]]))} : raw;
+        const current:any = reducedRead && raw ? {revision:(raw as unknown as {revision:unknown}).revision,data:Object.fromEntries(["users","sessions","assign","jobs","employeeTimeActionAudit","lastActions"].map(key=>[key,(raw as any)[key]]))} : raw;
         if(readError)throw readError;
         if(reducedRead && (!current || !Number.isSafeInteger(Number(current.revision)) || Number(current.revision)<1 || !["users","sessions","assign","jobs"].every(key=>Array.isArray(current.data[key])))) return reply({ok:false,code:"employee_time_reduced_read_invalid_state"},503);
         const result:any=employeeTimeTransition(current.data,user,body,Date.now());
