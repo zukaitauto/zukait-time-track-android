@@ -308,9 +308,12 @@ async function section(id){
    return;
  }
  if(id==='totals'){
-   open(s.title,back+'<div class="mc-cons-alert">Mechanical material totals cannot be calculated until the Mechanical Job Card material transactions are connected and verified. Existing Painting totals are not shown here.</div>'+
-     '<button class="mc-cons-secondary" onclick="openMechanicalConsumablesSection(\'search\')">Browse Material Master</button>');
-   return;
+  if(!canIssue()||!issueOwner()){open(s.title,back+'<div class="mc-cons-alert">Mechanical stock totals are not enabled.</div>');return;}
+  open(s.title,back+'<div class="mc-cons-card"><label for="mcConsTotalsJc">Mechanical Job Card Number</label>'+
+    '<input id="mcConsTotalsJc" type="text" maxlength="36" autocomplete="off" placeholder="Enter Mechanical JC number">'+
+    '<button type="button" id="mcConsTotalsGo" onclick="mechanicalConsumablesShowTotals(0)">Show Total</button>'+
+    '<div id="mcConsTotalsResult" role="status"></div></div>');
+  return;
  }
  if(sending)return;
  draftLines.length=0;pendingIssue=null;currentIssueKind=id;
@@ -319,6 +322,34 @@ async function section(id){
    (canIssue()?'':'<div class="mc-cons-alert">Preview only: no materials have been issued or deducted from stock.</div>'));
  renderDraft();loadBalance();
 }
+let totalsGeneration=0;
+async function showTotals(page=0){
+ const input=document.getElementById('mcConsTotalsJc'),result=document.getElementById('mcConsTotalsResult'),button=document.getElementById('mcConsTotalsGo');
+ if(!input||!result||!canIssue()||!issueOwner()||!Number.isInteger(page)||page<0||page>49)return;
+ const jc=String(input.value||'').trim().toUpperCase();
+ if(!/^[A-Z0-9_. -]{1,36}$/.test(jc)){result.textContent='Enter a valid Mechanical Job Card number.';return;}
+ const owner=issueOwner(),generation=++totalsGeneration;
+ button.disabled=true;result.textContent='Loading verified Mechanical totals…';
+ try{
+  const response=await window.zukaitCloud.stockRequest({operation:'MECHANICAL_TOTALS',jobCard:jc,page});
+  if(generation!==totalsGeneration||!canIssue()||issueOwner()!==owner||!document.getElementById('mcConsTotalsResult'))return;
+  const t=response?.totals;
+  if(response?.ok!==true||t?.readOnly!==true||String(t.jobCard)!==jc||!Array.isArray(t.items))throw Error('Mechanical totals not confirmed');
+  const money=n=>Number(n||0).toFixed(3);
+  if(![t.grossCost,t.returnCredit,t.netCost].every(v=>Number.isFinite(Number(v))))throw Error('Invalid cost total');
+  result.innerHTML='<p><b>JC '+escapeHtml(jc)+'</b></p>'+
+   '<p>Total issued: OMR '+money(t.grossCost)+'</p>'+
+   '<p>Returned unused: − OMR '+money(t.returnCredit)+'</p>'+
+   '<p><b>Net consumables: OMR '+money(t.netCost)+'</b></p>'+
+   t.items.map(row=>'<p>'+escapeHtml(row.name||'Material')+' · '+escapeHtml(row.brand||'')+
+     ' · '+escapeHtml(row.issuedQty||0)+' '+escapeHtml(row.unit||'')+' issued, '+
+     escapeHtml(row.returnedQty||0)+' returned · Net OMR '+money(row.netCost)+'</p>').join('')+
+   (page>0?'<button type="button" onclick="mechanicalConsumablesShowTotals('+(page-1)+')">Previous</button>':'')+
+   (t.hasMore===true&&page<49?'<button type="button" onclick="mechanicalConsumablesShowTotals('+(page+1)+')">Next 20</button>':'');
+ }catch(_){if(generation===totalsGeneration&&canIssue()&&issueOwner()===owner)result.textContent='Unable to verify Mechanical Job Card totals. No stock changes were made.';}
+ finally{if(generation===totalsGeneration&&document.getElementById('mcConsTotalsGo'))button.disabled=false;}
+}
+window.mechanicalConsumablesShowTotals=showTotals;
 window.openMechanicalConsumables=menu;
 window.openMechanicalConsumablesSection=section;
 window.mechanicalConsumablesFilter=renderMaterialRows;
