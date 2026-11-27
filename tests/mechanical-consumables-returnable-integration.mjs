@@ -5,7 +5,9 @@ import vm from 'node:vm';
 const elements={
  mcConsReturnJc:{value:'MC123'},
  mcConsReturnResult:{innerHTML:'',textContent:''},
- mcConsReturnFind:{disabled:false}
+ mcConsReturnFind:{disabled:false},
+ mcConsReturnForm:{innerHTML:'',textContent:''},
+ mcConsReturnStatus:{textContent:''}
 };
 const calls=[];
 let response={ok:true,returnable:{items:[{lineId:'line1',name:'<img src=x onerror=alert(1)>',brand:'Brand & Co',availableToReturn:2,unit:'L'}],hasMore:false}};
@@ -25,7 +27,7 @@ assert.equal(calls[0].jobCard,'MC123');
 assert.equal(calls[0].page,0);
 assert.doesNotMatch(elements.mcConsReturnResult.innerHTML,/<img/);
 assert.match(elements.mcConsReturnResult.innerHTML,/&lt;img/);
-assert.match(elements.mcConsReturnResult.innerHTML,/Return submission remains disabled/);
+assert.match(elements.mcConsReturnForm.innerHTML,/Return unused material/);
 assert.equal(elements.mcConsReturnFind.disabled,false);
 elements.mcConsReturnJc.value='bad@jc';
 await window.mechanicalConsumablesFindReturnable(0);
@@ -52,4 +54,4 @@ vm.runInContext("me={id:'other-supervisor',role:'Mechanical Supervisor'}",contex
 resolveSlow({ok:true,returnable:{items:[{name:'LEAKED',availableToReturn:1,unit:'Piece'}]}});
 await inflight;
 assert.doesNotMatch(elements.mcConsReturnResult.innerHTML,/LEAKED/,'stale response must not render after session change');
-console.log('Mechanical returnable read-only integration regression PASS');
+console.log('Mechanical returnable integration regression PASS');
