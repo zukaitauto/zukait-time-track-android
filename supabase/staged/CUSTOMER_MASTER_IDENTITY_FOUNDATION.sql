@@ -22,6 +22,7 @@ create table zukait_customer.visit_links (
  confirmed_at timestamptz not null default now(),
  reason text not null check(length(trim(reason)) between 1 and 500),
  request_id uuid not null unique,
+ requested_customer_id uuid,
  primary key(source_kind,source_id)
 );
 create index customer_visit_history on zukait_customer.visit_links(customer_id,confirmed_at desc);
@@ -51,7 +52,7 @@ begin
   if existing.source_kind<>p_source_kind or existing.source_id<>p_source_id
     or existing.confirmed_by<>p_actor or existing.contact_name_snapshot is distinct from p_expected_name
     or existing.contact_mobile_snapshot is distinct from p_expected_mobile
-    or existing.reason<>trim(p_reason) or (p_customer_id is not null and existing.customer_id<>p_customer_id)
+    or existing.reason<>trim(p_reason) or existing.requested_customer_id is distinct from p_customer_id
     then raise exception 'customer_master_request_conflict'; end if;
   return jsonb_build_object('ok',true,'customer_id',existing.customer_id,'duplicate',true);
  end if;
@@ -78,8 +79,8 @@ begin
   select id into cid from zukait_customer.customers where id=p_customer_id;
   if not found then raise exception 'customer_master_unknown_customer'; end if;
  end if;
- insert into zukait_customer.visit_links(source_kind,source_id,customer_id,contact_name_snapshot,contact_mobile_snapshot,confirmed_by,reason,request_id)
- values(p_source_kind,p_source_id,cid,n,m,p_actor,trim(p_reason),p_request_id);
+ insert into zukait_customer.visit_links(source_kind,source_id,customer_id,contact_name_snapshot,contact_mobile_snapshot,confirmed_by,reason,request_id,requested_customer_id)
+ values(p_source_kind,p_source_id,cid,n,m,p_actor,trim(p_reason),p_request_id,p_customer_id);
  return jsonb_build_object('ok',true,'customer_id',cid,'duplicate',false);
 end $$;
 revoke all on function public.zukait_customer_confirm_visit(text,text,text,text,text,uuid,uuid,text) from public,anon,authenticated;
