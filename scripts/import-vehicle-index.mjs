@@ -7,13 +7,23 @@ import {pathToFileURL} from 'node:url';
 const require=createRequire(import.meta.url);
 const {validate}=require('../app/src/main/assets/vehicle_index.js');
 const MAX_ROWS=15000,MAX_BYTES=16*1024*1024;
-export const query=
- 'PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n'+
+// Verified entity IDs, deliberately narrow initial retry scope. Additional batches
+// can be appended after checking source IDs and reviewing the first retrieval.
+export const batches=Object.freeze([
+ Object.freeze(['Q53268','Q20165','Q9584']),
+ Object.freeze(['Q124966860','Q35886','Q26777551','Q35907','Q234803'])
+]);
+export function batchQuery(ids){
+ if(!Array.isArray(ids)||!ids.length||ids.length>12||ids.some(id=>!/^Q[1-9]\d*$/.test(id)))throw Error('invalid_batch');
+ return 'PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n'+
  'SELECT DISTINCT ?model ?modelLabel ?make ?makeLabel WHERE {\n'+
- ' ?model wdt:P31 wd:Q3231690; rdfs:label ?modelLabel. FILTER(LANG(?modelLabel)="en")\n'+
+ ' VALUES ?make { '+ids.map(id=>'wd:'+id).join(' ')+' }\n'+
  ' { ?model wdt:P1716 ?make. } UNION { ?model wdt:P176 ?make. FILTER NOT EXISTS { ?model wdt:P1716 ?brand. } }\n'+
+ ' ?model wdt:P31 wd:Q3231690; rdfs:label ?modelLabel. FILTER(LANG(?modelLabel)="en")\n'+
  ' ?make rdfs:label ?makeLabel. FILTER(LANG(?makeLabel)="en")\n'+
- '} ORDER BY ?model ?make ?modelLabel ?makeLabel LIMIT '+(MAX_ROWS+1);
+ '} LIMIT '+(MAX_ROWS+1);
+}
+export const query=batches.map(batchQuery).join('\n\n# NEXT REQUEST\n\n');
 const norm=x=>String(x??'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
 const qid=v=>/^https?:\/\/www\.wikidata\.org\/entity\/(Q[1-9]\d*)$/.exec(v||'')?.[1]||'';
 const value=(r,k)=>r?.[k]?.value;
@@ -27,7 +37,7 @@ export function build(seed,raw,retrievedAt){
  const next=structuredClone(base),sourceId='wikidata-bulk-'+retrievedAt;
  if(next.sources.some(s=>s.id===sourceId))throw Error('use_reviewed_seed_or_new_date');
  next.version++;
- next.coverage='Unreviewed global Wikidata candidate; incomplete GCC and commercial coverage';
+ next.coverage='Unreviewed targeted Wikidata candidate; incomplete worldwide, GCC and commercial coverage';
  next.sources.push({id:sourceId,license:'CC0-1.0',url:'https://www.wikidata.org/wiki/Wikidata:Licensing',retrievedAt});
  const makes=new Map(next.makes.map(m=>[norm(m.name),m])),modelIds=new Map(next.models.map(m=>[m.id,m]));
  const makeIds=new Set(next.makes.map(m=>m.id)),modelNames=new Set(next.models.map(m=>m.makeId+'\n'+norm(m.name)));
@@ -72,11 +82,19 @@ export function build(seed,raw,retrievedAt){
  return {catalogue:next,report:{retrievedAt,sourceRows:rows.length,previousMakes:base.makes.length,previousModels:base.models.length,makes:next.makes.length,models:next.models.length,addedMakes:next.makes.length-base.makes.length,addedModels:next.models.length-base.models.length,skipped,reviewRequired:true}};
 }
 async function download(){
- const url=new URL('https://query.wikidata.org/sparql');url.searchParams.set('format','json');url.searchParams.set('query',query);
- const res=await fetch(url,{headers:{accept:'application/sparql-results+json','user-agent':'ZukaitVehicleIndex/1.0 (https://github.com/zukaitauto/zukait-time-track-android)'},signal:AbortSignal.timeout(55000),redirect:'error'});
- if(!res.ok||!res.body)throw Error('Wikidata HTTP '+res.status);
- const chunks=[];let size=0;for await(const chunk of res.body){size+=chunk.length;if(size>MAX_BYTES)throw Error('source_too_large');chunks.push(chunk)}
- return Buffer.concat(chunks);
+ const responses=[],bindings=[];let totalBytes=0;
+ for(const ids of batches){
+  const url=new URL('https://query.wikidata.org/sparql');
+  url.searchParams.set('format','json');url.searchParams.set('query',batchQuery(ids));
+  const res=await fetch(url,{headers:{accept:'application/sparql-results+json','user-agent':'ZukaitVehicleIndex/1.0 (https://github.com/zukaitauto/zukait-time-track-android)'},signal:AbortSignal.timeout(55000),redirect:'error'});
+  if(!res.ok||!res.body)throw Error('Wikidata HTTP '+res.status+' for '+ids.join(','));
+  const chunks=[];for await(const chunk of res.body){totalBytes+=chunk.length;if(totalBytes>MAX_BYTES/2)throw Error('source_too_large');chunks.push(chunk)}
+  const bytes=Buffer.concat(chunks),raw=JSON.parse(bytes),rows=raw?.results?.bindings;
+  if(!Array.isArray(rows)||!rows.length||rows.length>MAX_ROWS||bindings.length+rows.length>MAX_ROWS)throw Error('empty_or_truncated_batch '+ids.join(','));
+  bindings.push(...rows);
+  responses.push({ids,sha256:createHash('sha256').update(bytes).digest('hex'),body:bytes.toString('base64')});
+ }
+ return Buffer.from(JSON.stringify({batches:responses,results:{bindings}}));
 }
 async function main(){
  const args=process.argv.slice(2),out=args[0];
@@ -89,7 +107,7 @@ async function main(){
  const {catalogue,report}=build(seed,JSON.parse(bytes),day);
  report.sha256=createHash('sha256').update(bytes).digest('hex');
  report.querySha256=createHash('sha256').update(query).digest('hex');
- report.source='Wikidata SPARQL structured CC0; raw snapshot pinned by SHA256, entity revision IDs not retrieved';
+ report.source='Wikidata SPARQL structured CC0; targeted batch response bytes and hashes retained, entity revisions not retrieved';
  await fs.mkdir(out,{recursive:true});
  await fs.writeFile(path.join(out,'raw.json'),bytes,{flag:'wx'});
  await fs.writeFile(path.join(out,'candidate.json'),JSON.stringify(catalogue,null,2)+'\n',{flag:'wx'});

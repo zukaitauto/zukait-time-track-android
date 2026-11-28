@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {build} from '../scripts/import-vehicle-index.mjs';
+import {build,batchQuery,batches} from '../scripts/import-vehicle-index.mjs';
 const seed=JSON.parse(fs.readFileSync('app/src/main/assets/vehicle_index_pilot.json','utf8'));
 const original=JSON.stringify(seed);
 const uri=id=>({value:'http://www.wikidata.org/entity/'+id});
@@ -36,3 +36,8 @@ assert.throws(()=>build(seed,{results:{bindings:[]}},'2026-11-28'));
 assert.throws(()=>build(seed,{results:{bindings:Array(15001).fill(rows[0])}},'2026-11-28'));
 assert.equal(c.aliases.length,0);
 console.log('Vehicle importer: stable IDs, seed preservation, deterministic deduplication, ambiguous row review, and truncation guard passed');
+
+assert.ok(batches.every(ids=>ids.length<=12));
+assert.match(batchQuery(['Q53268']),/VALUES \?make \{ wd:Q53268 \}/);
+assert.throws(()=>batchQuery(['invalid']));
+assert.throws(()=>batchQuery([]));
