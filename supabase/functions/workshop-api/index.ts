@@ -7,6 +7,7 @@ import { consumablesStockApi } from "./extensions/consumables_stock_api.js";
 import { stockMasterApi } from "./extensions/stock_master_api.js";
 import { vehicleIndexApprovalApi } from "./extensions/vehicle_index_approval_api.js";
 import { vehicleIndexReadApi } from "./extensions/vehicle_index_read_api.js";
+import { captureCommittedVehicleIntake, receptionIntakeRecords, mechanicalIntakeRecords, newSavedJobs } from "./extensions/vehicle_index_intake.js";
 import {vehicleMovement} from './vehicle_movement_rules.js';
 import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
@@ -1376,6 +1377,10 @@ Deno.serve(async (req: Request) => {
       }
       if(action==='mechanical_section'){
         const result=await mechanicalSectionApi(admin,user,body,{enabled,qcEnabled:Deno.env.get('ZUKAIT_MECHANICAL_QC_ENABLED')==='true',deliveryEnabled:Deno.env.get('ZUKAIT_MECHANICAL_DELIVERY_ENABLED')==='true',sessionHash:enabled?await sha256Hex(token):'',verifySession:()=>sessionUser(token)});
+        if(enabled&&Deno.env.get('ZUKAIT_VEHICLE_INDEX_INTAKE_ENABLED')==='true'&&result.status===200&&body.command?.operation==='CREATE'){
+          try{await captureCommittedVehicleIntake(admin,user,result.body,mechanicalIntakeRecords('CREATE',result.body),{enabled:true,sessionHash:await sha256Hex(token),onFailure:()=>console.warn('vehicle_index_intake_deferred:mechanical')});}
+          catch(_){console.warn('vehicle_index_intake_deferred:mechanical');}
+        }
         return reply(result.body,result.status);
       }
       if(action==='mechanical_time_management'){
@@ -1716,6 +1721,10 @@ Deno.serve(async (req: Request) => {
         if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
         console.error("reception_command_failed",error);
         return reply({ok:false,code:"reception_unavailable"},503);
+      }
+      if(Deno.env.get('ZUKAIT_VEHICLE_INDEX_INTAKE_ENABLED')==='true'&&data?.ok===true&&['CREATE','CREATE_DIRECT_JOB','CREATE_EXTERNAL_JOB','CREATE_CHECKLIST_JOB','CREATE_JOB'].includes(operation)){
+        try{await captureCommittedVehicleIntake(admin,user,data,receptionIntakeRecords(operation,data),{enabled:true,sessionHash:await sha256Hex(token),onFailure:()=>console.warn('vehicle_index_intake_deferred:reception')});}
+        catch(_){console.warn('vehicle_index_intake_deferred:reception');}
       }
       if(String(command.operation||"").toUpperCase()==="GET"&&data?.record&&!data.record.job_card){
         const {data:linked,error:linkReadError}=await admin.from("workshop_reception_existing_job_links").select("job_card").eq("rc_no",String(data.record.rc_no)).maybeSingle();
@@ -2424,6 +2433,11 @@ Deno.serve(async (req: Request) => {
         if (error) throw error;
 
         if (committed?.ok) {
+          if(Deno.env.get('ZUKAIT_VEHICLE_INDEX_INTAKE_ENABLED')==='true'&&['Manager','Supervisor'].includes(String(user.role))){
+            try{const records=newSavedJobs(current.data?.jobs,candidate.jobs);
+              if(records.length)await captureCommittedVehicleIntake(admin,user,committed,records,{enabled:true,sessionHash:await sha256Hex(token),onFailure:()=>console.warn('vehicle_index_intake_deferred:workshop')});}
+            catch(_){console.warn('vehicle_index_intake_deferred:workshop');}
+          }
           const committedRevision = Number(committed.revision || next);
           const rebased = currentRevision !== originalExpected;
           const reconciled = !same(candidate, originalProposed);

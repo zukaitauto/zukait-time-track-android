@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
-import {planVehicleIntake,newSavedJobs} from '../supabase/functions/workshop-api/extensions/vehicle_index_intake.js';
+import {planVehicleIntake,newSavedJobs,receptionIntakeRecords,mechanicalIntakeRecords,captureCommittedVehicleIntake} from '../supabase/functions/workshop-api/extensions/vehicle_index_intake.js';
 const require=createRequire(import.meta.url),core=require('../app/src/main/assets/vehicle_index.js');
 const index=core.create(JSON.parse(fs.readFileSync('app/src/main/assets/vehicle_index_reviewed.json','utf8')));
 const saved={kind:'RECEPTION_CHECKLIST',id:'RC123',make:'Nissan',model:'New Example',vin:'never copied',customer:'never copied'};
@@ -15,3 +15,21 @@ assert.deepEqual(planVehicleIntake(index,actor,receipt,[{...saved,model:'Patrol'
 const newJobs=newSavedJobs([{no:'JC1',make:'Nissan',model:'Patrol'}],[{no:'JC1',make:'Nissan',model:'Edited'},{no:'JC2',brand:'Mazda',model:'Unlisted'}]);
 assert.equal(newJobs.length,1);assert.equal(newJobs[0].id,'JC2');
 console.log('Vehicle intake: confirmed saves only, unknown pairs, normalized deduplication, staff role boundaries and no personal data copied passed');
+
+const recReceipt={ok:true,record:{rc_no:'RC123',details:{make:'Nissan',model:'New Example',vin:'secret'}}};
+const projected=receptionIntakeRecords('CREATE',recReceipt);
+assert.deepEqual(projected,[{kind:'RECEPTION_CHECKLIST',id:'RC123',make:'Nissan',model:'New Example'}]);
+assert.deepEqual(receptionIntakeRecords('EDIT',recReceipt),[]);
+assert.deepEqual(receptionIntakeRecords('CREATE_DIRECT_JOB',{...recReceipt,job:{no:'JC9',make:'Nissan',model:'New Example'}}),[{kind:'BODYSHOP_JOB_CARD',id:'JC9',make:'Nissan',model:'New Example',deleted:undefined,cancelled:undefined}]);
+assert.equal(mechanicalIntakeRecords('CREATE',{ok:true,checklist:{checklist_number:'MC-P1',vehicle:{make:'Mazda',model:'New Example'}}})[0].kind,'MECHANICAL_CHECKLIST');
+assert.equal(newSavedJobs([],[{no:'MJC1',make:'Mazda',model:'2'}])[0].kind,'MECHANICAL_JOB_CARD');
+let calls=0,failures=0;
+const db={rpc:async(name,args)=>{calls++;assert.equal(name,'zukait_vehicle_index_observe_batch');assert.equal(args.p_records.length,1);assert.deepEqual(args.p_records[0],{make:'Nissan',model:'New Example',sourceKind:'RECEPTION_CHECKLIST',sourceId:'RC123'});return {data:{ok:true,count:1}}}};
+const opts={enabled:true,sessionHash:'a'.repeat(64),onFailure:()=>failures++};
+assert.equal((await captureCommittedVehicleIntake(db,actor,recReceipt,projected,opts)).status,'CAPTURED');
+assert.equal((await captureCommittedVehicleIntake(db,actor,{ok:false},projected,opts)).status,'SKIPPED');
+assert.equal((await captureCommittedVehicleIntake(db,actor,recReceipt,[],opts)).status,'SKIPPED');
+assert.equal((await captureCommittedVehicleIntake(db,actor,recReceipt,projected,{...opts,enabled:false})).status,'SKIPPED');
+assert.equal(calls,1);
+assert.equal((await captureCommittedVehicleIntake({rpc:async()=>{throw Error('network')}},actor,recReceipt,projected,opts)).status,'DEFERRED');assert.equal(failures,1);
+console.log('Confirmed save adapters, feature flag, deduplication and failure isolation passed');
