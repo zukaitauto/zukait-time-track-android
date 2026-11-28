@@ -9,13 +9,16 @@
   if(data.schemaVersion!==1||!Number.isSafeInteger(data.version)||data.version<1||!Array.isArray(data.makes)||!Array.isArray(data.models)||!Array.isArray(data.aliases)||!Array.isArray(data.sources))throw Error('invalid_catalogue');
   const sources=new Set(),ids=new Set(),makes=new Map(),models=new Map(),names=new Set();
   for(const s of data.sources){
-   if(!text(s.id)||sources.has(s.id)||!['CC0-1.0','US-PUBLIC-DOMAIN','INTERNAL-MANAGER'].includes(s.license)||!/^https:\/\//.test(s.url)||!/^\d{4}-\d{2}-\d{2}$/.test(s.retrievedAt))throw Error('invalid_source');
+   if(!text(s.id)||sources.has(s.id)||!['CC0-1.0','US-PUBLIC-DOMAIN','INTERNAL-MANAGER','FACTUAL-NAMES'].includes(s.license)||!/^https:\/\//.test(s.url)||!/^\d{4}-\d{2}-\d{2}$/.test(s.retrievedAt))throw Error('invalid_source');
    if(s.license==='INTERNAL-MANAGER'&&(s.id!=='zukait-manager-approval'||s.url!=='https://zukaitauto.github.io/zukait-time-track-android/'))throw Error('invalid_internal_source');
+   if(s.license==='FACTUAL-NAMES'&&(!s.id.startsWith('oman-names-')||!/^https:\/\//.test(s.url)))throw Error('invalid_name_source');
    sources.add(s.id);
   }
   function row(r,type){
    if(!text(r.id)||ids.has(r.id)||!text(r.name)||!sources.has(r.sourceId)||!text(r.sourceRecord))throw Error('invalid_'+type);
    if(data.sources.find(s=>s.id===r.sourceId)?.license==='INTERNAL-MANAGER'&&(!r.id.startsWith('local:')||!text(r.approvedBy)||!text(r.approvedAt)||!text(r.sourceRecord)||!r.sourceRecord.startsWith('approval:')))throw Error('invalid_internal_approval');
+   const origin=data.sources.find(s=>s.id===r.sourceId);
+   if(origin?.license==='FACTUAL-NAMES'&&(r.sourceRecord!==origin.url||!(r.id.startsWith('make:oman:')||r.id.startsWith('series:oman:'))))throw Error('invalid_name_provenance');
    ids.add(r.id);
   }
   for(const m of data.makes){row(m,'make');if(m.searchTerms!==undefined&&(!Array.isArray(m.searchTerms)||m.searchTerms.length>12||m.searchTerms.some(x=>!text(x))))throw Error('invalid_make_search_terms');const name=key(m.name);if(names.has(name))throw Error('duplicate_make');names.add(name);makes.set(m.id,m)}

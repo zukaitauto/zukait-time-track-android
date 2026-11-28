@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": 3,
-  "coverage": "Reviewed QA base plus targeted model families; incomplete worldwide coverage",
+  "version": 4,
+  "coverage": "QA catalogue with targeted Oman manufacturer model-name additions; worldwide coverage remains incomplete",
   "sources": [
     {
       "id": "wikidata-reviewed-20261128",
@@ -13,6 +13,66 @@
       "id": "wikidata-priority-series-20261128",
       "license": "CC0-1.0",
       "url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-mg",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.mg-om.com/models/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-isuzu",
+      "license": "FACTUAL-NAMES",
+      "url": "https://isuzuoman.com/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-renault",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.renault.com.om/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-chery",
+      "license": "FACTUAL-NAMES",
+      "url": "https://chery.om/models",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-gac",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.gacmotor-oman.com/new-vehicles//",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-gmc",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.gmcarabia.com/om-en/all-vehicles",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-mitsubishi",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.mitsubishi-motors.com.om/en/cars",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-hyundai",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.hyundaioman.com/en/request-a-brochure",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-mazda",
+      "license": "FACTUAL-NAMES",
+      "url": "https://mazdaoman.com/en/owners-manual/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-mazda-3",
+      "license": "FACTUAL-NAMES",
+      "url": "https://mazdaoman.com/en/vehicles/mazda-3/",
       "retrievedAt": "2026-11-28"
     }
   ],
@@ -193,6 +253,36 @@
       "name": "Lincoln",
       "sourceId": "wikidata-priority-series-20261128",
       "sourceRecord": "https://www.wikidata.org/wiki/Q216796"
+    },
+    {
+      "id": "make:oman:mg",
+      "name": "MG",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "make:oman:isuzu",
+      "name": "Isuzu",
+      "sourceId": "oman-names-isuzu",
+      "sourceRecord": "https://isuzuoman.com/"
+    },
+    {
+      "id": "make:oman:renault",
+      "name": "Renault",
+      "sourceId": "oman-names-renault",
+      "sourceRecord": "https://www.renault.com.om/"
+    },
+    {
+      "id": "make:oman:chery",
+      "name": "Chery",
+      "sourceId": "oman-names-chery",
+      "sourceRecord": "https://chery.om/models"
+    },
+    {
+      "id": "make:oman:gac",
+      "name": "GAC",
+      "sourceId": "oman-names-gac",
+      "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
     }
   ],
   "models": [
@@ -2253,6 +2343,300 @@
       "name": "Corsair",
       "sourceId": "wikidata-priority-series-20261128",
       "sourceRecord": "https://www.wikidata.org/wiki/Q65075518"
+    },
+    {
+      "id": "series:oman:mg:hs",
+      "makeId": "make:oman:mg",
+      "name": "HS",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:hs-hybrid",
+      "makeId": "make:oman:mg",
+      "name": "HS Hybrid+",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:zs",
+      "makeId": "make:oman:mg",
+      "name": "ZS",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:rx9",
+      "makeId": "make:oman:mg",
+      "name": "RX9",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:gt",
+      "makeId": "make:oman:mg",
+      "name": "GT",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:7",
+      "makeId": "make:oman:mg",
+      "name": "7",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:3",
+      "makeId": "make:oman:mg",
+      "name": "3",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:cyberster",
+      "makeId": "make:oman:mg",
+      "name": "Cyberster",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:one",
+      "makeId": "make:oman:mg",
+      "name": "One",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:5",
+      "makeId": "make:oman:mg",
+      "name": "5",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:8-phev",
+      "makeId": "make:oman:mg",
+      "name": "8 PHEV",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:mg:4-ev",
+      "makeId": "make:oman:mg",
+      "name": "4 EV",
+      "sourceId": "oman-names-mg",
+      "sourceRecord": "https://www.mg-om.com/models/"
+    },
+    {
+      "id": "series:oman:isuzu:d-max",
+      "makeId": "make:oman:isuzu",
+      "name": "D-MAX",
+      "sourceId": "oman-names-isuzu",
+      "sourceRecord": "https://isuzuoman.com/"
+    },
+    {
+      "id": "series:oman:isuzu:mu-x",
+      "makeId": "make:oman:isuzu",
+      "name": "MU-X",
+      "sourceId": "oman-names-isuzu",
+      "sourceRecord": "https://isuzuoman.com/"
+    },
+    {
+      "id": "series:oman:renault:duster",
+      "makeId": "make:oman:renault",
+      "name": "Duster",
+      "sourceId": "oman-names-renault",
+      "sourceRecord": "https://www.renault.com.om/"
+    },
+    {
+      "id": "series:oman:renault:koleos",
+      "makeId": "make:oman:renault",
+      "name": "Koleos",
+      "sourceId": "oman-names-renault",
+      "sourceRecord": "https://www.renault.com.om/"
+    },
+    {
+      "id": "series:oman:renault:express-van",
+      "makeId": "make:oman:renault",
+      "name": "Express Van",
+      "sourceId": "oman-names-renault",
+      "sourceRecord": "https://www.renault.com.om/"
+    },
+    {
+      "id": "series:oman:chery:tiggo-7",
+      "makeId": "make:oman:chery",
+      "name": "Tiggo 7",
+      "sourceId": "oman-names-chery",
+      "sourceRecord": "https://chery.om/models"
+    },
+    {
+      "id": "series:oman:chery:arrizo-5",
+      "makeId": "make:oman:chery",
+      "name": "Arrizo 5",
+      "sourceId": "oman-names-chery",
+      "sourceRecord": "https://chery.om/models"
+    },
+    {
+      "id": "series:oman:chery:himla",
+      "makeId": "make:oman:chery",
+      "name": "Himla",
+      "sourceId": "oman-names-chery",
+      "sourceRecord": "https://chery.om/models"
+    },
+    {
+      "id": "series:oman:gac:gs3-emzoom",
+      "makeId": "make:oman:gac",
+      "name": "GS3 Emzoom",
+      "sourceId": "oman-names-gac",
+      "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
+    },
+    {
+      "id": "series:oman:gac:gs8",
+      "makeId": "make:oman:gac",
+      "name": "GS8",
+      "sourceId": "oman-names-gac",
+      "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
+    },
+    {
+      "id": "series:oman:gac:empow",
+      "makeId": "make:oman:gac",
+      "name": "Empow",
+      "sourceId": "oman-names-gac",
+      "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
+    },
+    {
+      "id": "series:oman:gac:empow-r",
+      "makeId": "make:oman:gac",
+      "name": "Empow R",
+      "sourceId": "oman-names-gac",
+      "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
+    },
+    {
+      "id": "series:oman:gac:m8",
+      "makeId": "make:oman:gac",
+      "name": "M8",
+      "sourceId": "oman-names-gac",
+      "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
+    },
+    {
+      "id": "series:oman:gac:gn8",
+      "makeId": "make:oman:gac",
+      "name": "GN8",
+      "sourceId": "oman-names-gac",
+      "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
+    },
+    {
+      "id": "series:oman:gmc:sierra",
+      "makeId": "wikidata-make:Q28993",
+      "name": "Sierra",
+      "sourceId": "oman-names-gmc",
+      "sourceRecord": "https://www.gmcarabia.com/om-en/all-vehicles"
+    },
+    {
+      "id": "series:oman:gmc:canyon",
+      "makeId": "wikidata-make:Q28993",
+      "name": "Canyon",
+      "sourceId": "oman-names-gmc",
+      "sourceRecord": "https://www.gmcarabia.com/om-en/all-vehicles"
+    },
+    {
+      "id": "series:oman:gmc:hummer-ev-suv",
+      "makeId": "wikidata-make:Q28993",
+      "name": "Hummer EV SUV",
+      "sourceId": "oman-names-gmc",
+      "sourceRecord": "https://www.gmcarabia.com/om-en/all-vehicles"
+    },
+    {
+      "id": "series:oman:gmc:hummer-ev-pickup",
+      "makeId": "wikidata-make:Q28993",
+      "name": "Hummer EV Pickup",
+      "sourceId": "oman-names-gmc",
+      "sourceRecord": "https://www.gmcarabia.com/om-en/all-vehicles"
+    },
+    {
+      "id": "series:oman:mitsubishi:l200",
+      "makeId": "wikidata-make:Q36033",
+      "name": "L200",
+      "sourceId": "oman-names-mitsubishi",
+      "sourceRecord": "https://www.mitsubishi-motors.com.om/en/cars"
+    },
+    {
+      "id": "series:oman:mitsubishi:attrage",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Attrage",
+      "sourceId": "oman-names-mitsubishi",
+      "sourceRecord": "https://www.mitsubishi-motors.com.om/en/cars"
+    },
+    {
+      "id": "series:oman:mitsubishi:montero-sport",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Montero Sport",
+      "sourceId": "oman-names-mitsubishi",
+      "sourceRecord": "https://www.mitsubishi-motors.com.om/en/cars"
+    },
+    {
+      "id": "series:oman:mitsubishi:destinator",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Destinator",
+      "sourceId": "oman-names-mitsubishi",
+      "sourceRecord": "https://www.mitsubishi-motors.com.om/en/cars"
+    },
+    {
+      "id": "series:oman:hyundai:creta",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Creta",
+      "sourceId": "oman-names-hyundai",
+      "sourceRecord": "https://www.hyundaioman.com/en/request-a-brochure"
+    },
+    {
+      "id": "series:oman:hyundai:palisade",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Palisade",
+      "sourceId": "oman-names-hyundai",
+      "sourceRecord": "https://www.hyundaioman.com/en/request-a-brochure"
+    },
+    {
+      "id": "series:oman:hyundai:elantra",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Elantra",
+      "sourceId": "oman-names-hyundai",
+      "sourceRecord": "https://www.hyundaioman.com/en/request-a-brochure"
+    },
+    {
+      "id": "series:oman:hyundai:accent",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Accent",
+      "sourceId": "oman-names-hyundai",
+      "sourceRecord": "https://www.hyundaioman.com/en/request-a-brochure"
+    },
+    {
+      "id": "series:oman:mazda:6",
+      "makeId": "wikidata-make:Q35996",
+      "name": "6",
+      "sourceId": "oman-names-mazda",
+      "sourceRecord": "https://mazdaoman.com/en/owners-manual/"
+    },
+    {
+      "id": "series:oman:mazda:cx-3",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-3",
+      "sourceId": "oman-names-mazda",
+      "sourceRecord": "https://mazdaoman.com/en/owners-manual/"
+    },
+    {
+      "id": "series:oman:mazda:cx-5",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-5",
+      "sourceId": "oman-names-mazda",
+      "sourceRecord": "https://mazdaoman.com/en/owners-manual/"
+    },
+    {
+      "id": "series:oman:mazda:3",
+      "makeId": "wikidata-make:Q35996",
+      "name": "3",
+      "sourceId": "oman-names-mazda-3",
+      "sourceRecord": "https://mazdaoman.com/en/vehicles/mazda-3/"
     }
   ],
   "aliases": []

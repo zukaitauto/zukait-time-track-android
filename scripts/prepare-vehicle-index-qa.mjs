@@ -15,7 +15,7 @@ try{
  execFileSync('git',['archive','--format=tar','--output='+tar,'HEAD']);execFileSync('tar',['-xf',tar,'-C',dir]);rmSync(tar);
  const assets=join(dir,'app/src/main/assets'),origin='https://'+QA+'.supabase.co';
  const base=require(join(assets,'vehicle_index.js')).validate(JSON.parse(readFileSync(join(assets,'vehicle_index_reviewed.json'),'utf8')));
- if(base.version!==3||base.makes.length!==29||base.models.length!==294||base.aliases.length!==0)throw Error('unexpected reviewed QA base');
+ if(base.version!==4||base.makes.length!==34||base.models.length!==336||base.aliases.length!==0)throw Error('unexpected reviewed QA base');
  const hosts=['offline_test.html','receptionist.html','mechanical_supervisor.html','mechanical_estimate.html'];
  const boot='vehicle_index_qa_bootstrap.js';
  // Synchronous embedded data for Android WebView and web: no fetch/polling or database access.
@@ -32,7 +32,7 @@ try{
   const file=join(assets,host);let s=readFileSync(file,'utf8');
   if(!/<head(?:\s[^>]*)?>/i.test(s))throw Error('missing head '+host);
   const policy='<meta http-equiv="Content-Security-Policy" content="connect-src \'self\' '+origin+'; form-action \'self\'; frame-src \'self\' blob: data:; object-src \'none\'">';
-  const scripts=hosts.includes(host)?'<script src="vehicle_index.js?v=qa3"></script><script src="vehicle_index_autocomplete.js?v=qa3"></script><script src="'+boot+'"></script>':'';
+  const scripts=hosts.includes(host)?'<script src="vehicle_index.js?v=qa4"></script><script src="vehicle_index_autocomplete.js?v=qa4"></script><script src="'+boot+'"></script>':'';
   s=s.replace(/<head(?:\s[^>]*)?>/i,m=>m+policy+scripts);writeFileSync(file,s);
  }
  function edit(path,fn){const file=join(dir,path),s=readFileSync(file,'utf8'),next=fn(s);if(next===s)throw Error('expected QA edit missing '+path);writeFileSync(file,next);}
