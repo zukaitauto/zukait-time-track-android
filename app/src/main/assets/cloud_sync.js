@@ -806,8 +806,9 @@
       }
       if(cloudPushing)return false;
 
+      const unchangedCacheRepair=!!lastSyncedState&&remoteRevision===cloudRevision;
       await pull(true,remoteRevision);
-      if(liveRole())await pullLiveStatus();
+      if(liveRole())await pullLiveStatus(unchangedCacheRepair);
       return true;
     }catch(e){
       if(stale(epoch))return false;
@@ -1353,7 +1354,6 @@
   window.cloudBackupNow=backupNow;
   window.cloudBackupList=backupList;
 
-  const coreReset=window.resetData;
   window.resetData=function(){
     alert('Reset Test Data is disabled in the production pilot to protect shared workshop data.');
   };
