@@ -107,3 +107,7 @@ QA V3 installed and read back as 29 makes / 294 models with no approval rows. V4
 ### Mazda additions before V4 installation
 
 Added Mazda 2 from official Mazda Oman owner's manual listing, https://mazdaoman.com/en/owners-manual/. Mazda CX-9 was already present; no duplicate entry created. Model suggestions now accept compact alphanumeric codes such as CX9 and offer canonical CX-9, without changing exact resolution or historical alias approval. V4 now contains 34 makes and 337 models. QA database remains V3 until updated tests pass and V4 is installed.
+
+### V5 Chinese, European, American and historical model expansion (staged)
+
+V4 QA catalogue had 34 makes / 337 models, with all latest automated checks passing. V5 adds 17 makes and 92 model names from directly inspected dealer/manufacturer listings and automotive heritage sources. Source URLs and retrieval date are retained; FACTUAL-NAMES covers factual names only. Historic Hummer is a separate make from GMC Hummer EV; no aliases or history changes. Infiniti was included because the Oman workshop may handle its current and legacy vehicles. Local model-family IDs remain stable. Guarded SQL requires unchanged V4 counts and no existing approvals before upgrade. New QA tests are pending; not installed or published. Coverage remains incomplete. Next batches should include Omoda, Jaecoo, Exeed, Hongqi, Alfa Romeo, Fiat, Opel, Citroen, Chrysler, additional discontinued models and other verified name families.

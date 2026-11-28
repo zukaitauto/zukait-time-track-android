@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "version": 4,
-  "coverage": "QA catalogue with targeted Oman manufacturer model-name additions; worldwide coverage remains incomplete",
+  "version": 5,
+  "coverage": "QA catalogue with Oman and international manufacturer/heritage model names; incomplete worldwide coverage",
   "sources": [
     {
       "id": "wikidata-reviewed-20261128",
@@ -73,6 +73,132 @@
       "id": "oman-names-mazda-3",
       "license": "FACTUAL-NAMES",
       "url": "https://mazdaoman.com/en/vehicles/mazda-3/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-jetour",
+      "license": "FACTUAL-NAMES",
+      "url": "https://jetouroman.com/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-baic",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.baicoman.com/landing-page",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-jac",
+      "license": "FACTUAL-NAMES",
+      "url": "https://jacoman.com/en/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-skoda",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.skoda-oman.com/models/range",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-peugeot",
+      "license": "FACTUAL-NAMES",
+      "url": "https://oman.peugeot.com/en/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-volvo",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.volvocars.com/en-om/cars/family-cars/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-volvo-2",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.volvocars.com/en-om/cars/xc90/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-cadillac",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.cadillacarabia.com/om-en/vehicle-manuals",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-dodge",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.dodge.com/hornet.html",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-dodge-2",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.dodge.com/challenger.html",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-ram",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.ramtrucks.com/all-vehicles.html?app=incentives",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-hummer",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.amgeneral.com/hummer-breakoff/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-saab",
+      "license": "FACTUAL-NAMES",
+      "url": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-mercury",
+      "license": "FACTUAL-NAMES",
+      "url": "https://corporate.ford.com/corporate/corporate/articles/history/history-of-the-mercury-brand/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-pontiac",
+      "license": "FACTUAL-NAMES",
+      "url": "https://automotive-heritage.com/brand/290",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-oldsmobile",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.gm.com/heritage/collection/oldsmobile/1970-oldsmobile-cutlass-442",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-jaguar",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.jaguar-oman.com/shop/en/new/jaguar/?models=e-pace",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-mini",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.mini-oman.com/models/",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-infiniti",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.infiniti-oman.com/cars/legacy.html",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-infiniti-2",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.infiniti-oman.com/cars/all-models.html",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "oman-names-infiniti-3",
+      "license": "FACTUAL-NAMES",
+      "url": "https://www.infiniti-oman.com/cars/legacy/qx70.html",
       "retrievedAt": "2026-11-28"
     }
   ],
@@ -283,6 +409,108 @@
       "name": "GAC",
       "sourceId": "oman-names-gac",
       "sourceRecord": "https://www.gacmotor-oman.com/new-vehicles//"
+    },
+    {
+      "id": "make:oman:jetour",
+      "name": "Jetour",
+      "sourceId": "oman-names-jetour",
+      "sourceRecord": "https://jetouroman.com/"
+    },
+    {
+      "id": "make:oman:baic",
+      "name": "BAIC",
+      "sourceId": "oman-names-baic",
+      "sourceRecord": "https://www.baicoman.com/landing-page"
+    },
+    {
+      "id": "make:oman:jac",
+      "name": "JAC",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "make:oman:skoda",
+      "name": "Skoda",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "make:oman:peugeot",
+      "name": "Peugeot",
+      "sourceId": "oman-names-peugeot",
+      "sourceRecord": "https://oman.peugeot.com/en/"
+    },
+    {
+      "id": "make:oman:volvo",
+      "name": "Volvo",
+      "sourceId": "oman-names-volvo",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/family-cars/"
+    },
+    {
+      "id": "make:oman:cadillac",
+      "name": "Cadillac",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "make:oman:dodge",
+      "name": "Dodge",
+      "sourceId": "oman-names-dodge",
+      "sourceRecord": "https://www.dodge.com/hornet.html"
+    },
+    {
+      "id": "make:oman:ram",
+      "name": "Ram",
+      "sourceId": "oman-names-ram",
+      "sourceRecord": "https://www.ramtrucks.com/all-vehicles.html?app=incentives"
+    },
+    {
+      "id": "make:oman:hummer",
+      "name": "Hummer",
+      "sourceId": "oman-names-hummer",
+      "sourceRecord": "https://www.amgeneral.com/hummer-breakoff/"
+    },
+    {
+      "id": "make:oman:saab",
+      "name": "Saab",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "make:oman:mercury",
+      "name": "Mercury",
+      "sourceId": "oman-names-mercury",
+      "sourceRecord": "https://corporate.ford.com/corporate/corporate/articles/history/history-of-the-mercury-brand/"
+    },
+    {
+      "id": "make:oman:pontiac",
+      "name": "Pontiac",
+      "sourceId": "oman-names-pontiac",
+      "sourceRecord": "https://automotive-heritage.com/brand/290"
+    },
+    {
+      "id": "make:oman:oldsmobile",
+      "name": "Oldsmobile",
+      "sourceId": "oman-names-oldsmobile",
+      "sourceRecord": "https://www.gm.com/heritage/collection/oldsmobile/1970-oldsmobile-cutlass-442"
+    },
+    {
+      "id": "make:oman:jaguar",
+      "name": "Jaguar",
+      "sourceId": "oman-names-jaguar",
+      "sourceRecord": "https://www.jaguar-oman.com/shop/en/new/jaguar/?models=e-pace"
+    },
+    {
+      "id": "make:oman:mini",
+      "name": "MINI",
+      "sourceId": "oman-names-mini",
+      "sourceRecord": "https://www.mini-oman.com/models/"
+    },
+    {
+      "id": "make:oman:infiniti",
+      "name": "Infiniti",
+      "sourceId": "oman-names-infiniti",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/legacy.html"
     }
   ],
   "models": [
@@ -2644,6 +2872,650 @@
       "name": "2",
       "sourceId": "oman-names-mazda",
       "sourceRecord": "https://mazdaoman.com/en/owners-manual/"
+    },
+    {
+      "id": "series:oman:jetour:t2-i-dm",
+      "makeId": "make:oman:jetour",
+      "name": "T2 i-DM",
+      "sourceId": "oman-names-jetour",
+      "sourceRecord": "https://jetouroman.com/"
+    },
+    {
+      "id": "series:oman:jetour:t1",
+      "makeId": "make:oman:jetour",
+      "name": "T1",
+      "sourceId": "oman-names-jetour",
+      "sourceRecord": "https://jetouroman.com/"
+    },
+    {
+      "id": "series:oman:jetour:dashing",
+      "makeId": "make:oman:jetour",
+      "name": "Dashing",
+      "sourceId": "oman-names-jetour",
+      "sourceRecord": "https://jetouroman.com/"
+    },
+    {
+      "id": "series:oman:jetour:x70-plus",
+      "makeId": "make:oman:jetour",
+      "name": "X70 Plus",
+      "sourceId": "oman-names-jetour",
+      "sourceRecord": "https://jetouroman.com/"
+    },
+    {
+      "id": "series:oman:jetour:x70",
+      "makeId": "make:oman:jetour",
+      "name": "X70",
+      "sourceId": "oman-names-jetour",
+      "sourceRecord": "https://jetouroman.com/"
+    },
+    {
+      "id": "series:oman:jetour:x50",
+      "makeId": "make:oman:jetour",
+      "name": "X50",
+      "sourceId": "oman-names-jetour",
+      "sourceRecord": "https://jetouroman.com/"
+    },
+    {
+      "id": "series:oman:baic:bj30-hybrid",
+      "makeId": "make:oman:baic",
+      "name": "BJ30 Hybrid",
+      "sourceId": "oman-names-baic",
+      "sourceRecord": "https://www.baicoman.com/landing-page"
+    },
+    {
+      "id": "series:oman:baic:bj40-honor",
+      "makeId": "make:oman:baic",
+      "name": "BJ40 Honor",
+      "sourceId": "oman-names-baic",
+      "sourceRecord": "https://www.baicoman.com/landing-page"
+    },
+    {
+      "id": "series:oman:baic:bj40-pro",
+      "makeId": "make:oman:baic",
+      "name": "BJ40 Pro",
+      "sourceId": "oman-names-baic",
+      "sourceRecord": "https://www.baicoman.com/landing-page"
+    },
+    {
+      "id": "series:oman:baic:u5-plus",
+      "makeId": "make:oman:baic",
+      "name": "U5 Plus",
+      "sourceId": "oman-names-baic",
+      "sourceRecord": "https://www.baicoman.com/landing-page"
+    },
+    {
+      "id": "series:oman:baic:x55",
+      "makeId": "make:oman:baic",
+      "name": "X55",
+      "sourceId": "oman-names-baic",
+      "sourceRecord": "https://www.baicoman.com/landing-page"
+    },
+    {
+      "id": "series:oman:jac:js3-pro",
+      "makeId": "make:oman:jac",
+      "name": "JS3 Pro",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:jac:js4",
+      "makeId": "make:oman:jac",
+      "name": "JS4",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:jac:js6",
+      "makeId": "make:oman:jac",
+      "name": "JS6",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:jac:j7",
+      "makeId": "make:oman:jac",
+      "name": "J7",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:jac:t8",
+      "makeId": "make:oman:jac",
+      "name": "T8",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:jac:m4",
+      "makeId": "make:oman:jac",
+      "name": "M4",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:jac:titan",
+      "makeId": "make:oman:jac",
+      "name": "Titan",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:jac:s3",
+      "makeId": "make:oman:jac",
+      "name": "S3",
+      "sourceId": "oman-names-jac",
+      "sourceRecord": "https://jacoman.com/en/"
+    },
+    {
+      "id": "series:oman:skoda:kodiaq",
+      "makeId": "make:oman:skoda",
+      "name": "Kodiaq",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "series:oman:skoda:karoq",
+      "makeId": "make:oman:skoda",
+      "name": "Karoq",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "series:oman:skoda:kushaq",
+      "makeId": "make:oman:skoda",
+      "name": "Kushaq",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "series:oman:skoda:superb",
+      "makeId": "make:oman:skoda",
+      "name": "Superb",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "series:oman:skoda:octavia-rs",
+      "makeId": "make:oman:skoda",
+      "name": "Octavia RS",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "series:oman:skoda:octavia",
+      "makeId": "make:oman:skoda",
+      "name": "Octavia",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "series:oman:skoda:slavia",
+      "makeId": "make:oman:skoda",
+      "name": "Slavia",
+      "sourceId": "oman-names-skoda",
+      "sourceRecord": "https://www.skoda-oman.com/models/range"
+    },
+    {
+      "id": "series:oman:peugeot:2008",
+      "makeId": "make:oman:peugeot",
+      "name": "2008",
+      "sourceId": "oman-names-peugeot",
+      "sourceRecord": "https://oman.peugeot.com/en/"
+    },
+    {
+      "id": "series:oman:peugeot:3008",
+      "makeId": "make:oman:peugeot",
+      "name": "3008",
+      "sourceId": "oman-names-peugeot",
+      "sourceRecord": "https://oman.peugeot.com/en/"
+    },
+    {
+      "id": "series:oman:peugeot:partner",
+      "makeId": "make:oman:peugeot",
+      "name": "Partner",
+      "sourceId": "oman-names-peugeot",
+      "sourceRecord": "https://oman.peugeot.com/en/"
+    },
+    {
+      "id": "series:oman:peugeot:boxer",
+      "makeId": "make:oman:peugeot",
+      "name": "Boxer",
+      "sourceId": "oman-names-peugeot",
+      "sourceRecord": "https://oman.peugeot.com/en/"
+    },
+    {
+      "id": "series:oman:peugeot:508",
+      "makeId": "make:oman:peugeot",
+      "name": "508",
+      "sourceId": "oman-names-peugeot",
+      "sourceRecord": "https://oman.peugeot.com/en/"
+    },
+    {
+      "id": "series:oman:volvo:xc40",
+      "makeId": "make:oman:volvo",
+      "name": "XC40",
+      "sourceId": "oman-names-volvo",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/family-cars/"
+    },
+    {
+      "id": "series:oman:volvo:xc60",
+      "makeId": "make:oman:volvo",
+      "name": "XC60",
+      "sourceId": "oman-names-volvo",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/family-cars/"
+    },
+    {
+      "id": "series:oman:volvo:s90",
+      "makeId": "make:oman:volvo",
+      "name": "S90",
+      "sourceId": "oman-names-volvo",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/family-cars/"
+    },
+    {
+      "id": "series:oman:volvo:ex30",
+      "makeId": "make:oman:volvo",
+      "name": "EX30",
+      "sourceId": "oman-names-volvo",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/family-cars/"
+    },
+    {
+      "id": "series:oman:volvo:v60",
+      "makeId": "make:oman:volvo",
+      "name": "V60",
+      "sourceId": "oman-names-volvo",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/family-cars/"
+    },
+    {
+      "id": "series:oman:volvo:v90",
+      "makeId": "make:oman:volvo",
+      "name": "V90",
+      "sourceId": "oman-names-volvo",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/family-cars/"
+    },
+    {
+      "id": "series:oman:volvo:xc90",
+      "makeId": "make:oman:volvo",
+      "name": "XC90",
+      "sourceId": "oman-names-volvo-2",
+      "sourceRecord": "https://www.volvocars.com/en-om/cars/xc90/"
+    },
+    {
+      "id": "series:oman:cadillac:xt4",
+      "makeId": "make:oman:cadillac",
+      "name": "XT4",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:xt5",
+      "makeId": "make:oman:cadillac",
+      "name": "XT5",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:xt6",
+      "makeId": "make:oman:cadillac",
+      "name": "XT6",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:escalade",
+      "makeId": "make:oman:cadillac",
+      "name": "Escalade",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:escalade-v",
+      "makeId": "make:oman:cadillac",
+      "name": "Escalade V",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:optiq",
+      "makeId": "make:oman:cadillac",
+      "name": "Optiq",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:escalade-iq",
+      "makeId": "make:oman:cadillac",
+      "name": "Escalade IQ",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:escalade-iql",
+      "makeId": "make:oman:cadillac",
+      "name": "Escalade IQL",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:ct5",
+      "makeId": "make:oman:cadillac",
+      "name": "CT5",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:cadillac:ct5-v",
+      "makeId": "make:oman:cadillac",
+      "name": "CT5-V",
+      "sourceId": "oman-names-cadillac",
+      "sourceRecord": "https://www.cadillacarabia.com/om-en/vehicle-manuals"
+    },
+    {
+      "id": "series:oman:dodge:hornet",
+      "makeId": "make:oman:dodge",
+      "name": "Hornet",
+      "sourceId": "oman-names-dodge",
+      "sourceRecord": "https://www.dodge.com/hornet.html"
+    },
+    {
+      "id": "series:oman:dodge:charger",
+      "makeId": "make:oman:dodge",
+      "name": "Charger",
+      "sourceId": "oman-names-dodge",
+      "sourceRecord": "https://www.dodge.com/hornet.html"
+    },
+    {
+      "id": "series:oman:dodge:durango",
+      "makeId": "make:oman:dodge",
+      "name": "Durango",
+      "sourceId": "oman-names-dodge",
+      "sourceRecord": "https://www.dodge.com/hornet.html"
+    },
+    {
+      "id": "series:oman:dodge:challenger",
+      "makeId": "make:oman:dodge",
+      "name": "Challenger",
+      "sourceId": "oman-names-dodge-2",
+      "sourceRecord": "https://www.dodge.com/challenger.html"
+    },
+    {
+      "id": "series:oman:ram:1500",
+      "makeId": "make:oman:ram",
+      "name": "1500",
+      "sourceId": "oman-names-ram",
+      "sourceRecord": "https://www.ramtrucks.com/all-vehicles.html?app=incentives"
+    },
+    {
+      "id": "series:oman:ram:2500",
+      "makeId": "make:oman:ram",
+      "name": "2500",
+      "sourceId": "oman-names-ram",
+      "sourceRecord": "https://www.ramtrucks.com/all-vehicles.html?app=incentives"
+    },
+    {
+      "id": "series:oman:hummer:h1",
+      "makeId": "make:oman:hummer",
+      "name": "H1",
+      "sourceId": "oman-names-hummer",
+      "sourceRecord": "https://www.amgeneral.com/hummer-breakoff/"
+    },
+    {
+      "id": "series:oman:hummer:h2",
+      "makeId": "make:oman:hummer",
+      "name": "H2",
+      "sourceId": "oman-names-hummer",
+      "sourceRecord": "https://www.amgeneral.com/hummer-breakoff/"
+    },
+    {
+      "id": "series:oman:hummer:h3",
+      "makeId": "make:oman:hummer",
+      "name": "H3",
+      "sourceId": "oman-names-hummer",
+      "sourceRecord": "https://www.amgeneral.com/hummer-breakoff/"
+    },
+    {
+      "id": "series:oman:saab:92",
+      "makeId": "make:oman:saab",
+      "name": "92",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:93",
+      "makeId": "make:oman:saab",
+      "name": "93",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:95",
+      "makeId": "make:oman:saab",
+      "name": "95",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:96",
+      "makeId": "make:oman:saab",
+      "name": "96",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:99",
+      "makeId": "make:oman:saab",
+      "name": "99",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:90",
+      "makeId": "make:oman:saab",
+      "name": "90",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:900",
+      "makeId": "make:oman:saab",
+      "name": "900",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:9000",
+      "makeId": "make:oman:saab",
+      "name": "9000",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:9-3",
+      "makeId": "make:oman:saab",
+      "name": "9-3",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:9-5",
+      "makeId": "make:oman:saab",
+      "name": "9-5",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:9-2x",
+      "makeId": "make:oman:saab",
+      "name": "9-2X",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:9-7x",
+      "makeId": "make:oman:saab",
+      "name": "9-7X",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:9-4x",
+      "makeId": "make:oman:saab",
+      "name": "9-4X",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:saab:sonett",
+      "makeId": "make:oman:saab",
+      "name": "Sonett",
+      "sourceId": "oman-names-saab",
+      "sourceRecord": "https://shop.saabcarmuseum.se/en/books-and-postcards/literature/all-the-cars-english.html"
+    },
+    {
+      "id": "series:oman:mercury:cougar",
+      "makeId": "make:oman:mercury",
+      "name": "Cougar",
+      "sourceId": "oman-names-mercury",
+      "sourceRecord": "https://corporate.ford.com/corporate/corporate/articles/history/history-of-the-mercury-brand/"
+    },
+    {
+      "id": "series:oman:mercury:grand-marquis",
+      "makeId": "make:oman:mercury",
+      "name": "Grand Marquis",
+      "sourceId": "oman-names-mercury",
+      "sourceRecord": "https://corporate.ford.com/corporate/corporate/articles/history/history-of-the-mercury-brand/"
+    },
+    {
+      "id": "series:oman:pontiac:gto",
+      "makeId": "make:oman:pontiac",
+      "name": "GTO",
+      "sourceId": "oman-names-pontiac",
+      "sourceRecord": "https://automotive-heritage.com/brand/290"
+    },
+    {
+      "id": "series:oman:pontiac:grand-prix",
+      "makeId": "make:oman:pontiac",
+      "name": "Grand Prix",
+      "sourceId": "oman-names-pontiac",
+      "sourceRecord": "https://automotive-heritage.com/brand/290"
+    },
+    {
+      "id": "series:oman:pontiac:firebird",
+      "makeId": "make:oman:pontiac",
+      "name": "Firebird",
+      "sourceId": "oman-names-pontiac",
+      "sourceRecord": "https://automotive-heritage.com/brand/290"
+    },
+    {
+      "id": "series:oman:pontiac:vibe",
+      "makeId": "make:oman:pontiac",
+      "name": "Vibe",
+      "sourceId": "oman-names-pontiac",
+      "sourceRecord": "https://automotive-heritage.com/brand/290"
+    },
+    {
+      "id": "series:oman:oldsmobile:cutlass-442",
+      "makeId": "make:oman:oldsmobile",
+      "name": "Cutlass 442",
+      "sourceId": "oman-names-oldsmobile",
+      "sourceRecord": "https://www.gm.com/heritage/collection/oldsmobile/1970-oldsmobile-cutlass-442"
+    },
+    {
+      "id": "series:oman:jaguar:f-pace",
+      "makeId": "make:oman:jaguar",
+      "name": "F-PACE",
+      "sourceId": "oman-names-jaguar",
+      "sourceRecord": "https://www.jaguar-oman.com/shop/en/new/jaguar/?models=e-pace"
+    },
+    {
+      "id": "series:oman:jaguar:e-pace",
+      "makeId": "make:oman:jaguar",
+      "name": "E-PACE",
+      "sourceId": "oman-names-jaguar",
+      "sourceRecord": "https://www.jaguar-oman.com/shop/en/new/jaguar/?models=e-pace"
+    },
+    {
+      "id": "series:oman:jaguar:f-type",
+      "makeId": "make:oman:jaguar",
+      "name": "F-TYPE",
+      "sourceId": "oman-names-jaguar",
+      "sourceRecord": "https://www.jaguar-oman.com/shop/en/new/jaguar/?models=e-pace"
+    },
+    {
+      "id": "series:oman:jaguar:xe",
+      "makeId": "make:oman:jaguar",
+      "name": "XE",
+      "sourceId": "oman-names-jaguar",
+      "sourceRecord": "https://www.jaguar-oman.com/shop/en/new/jaguar/?models=e-pace"
+    },
+    {
+      "id": "series:oman:jaguar:xf",
+      "makeId": "make:oman:jaguar",
+      "name": "XF",
+      "sourceId": "oman-names-jaguar",
+      "sourceRecord": "https://www.jaguar-oman.com/shop/en/new/jaguar/?models=e-pace"
+    },
+    {
+      "id": "series:oman:mini:cooper",
+      "makeId": "make:oman:mini",
+      "name": "Cooper",
+      "sourceId": "oman-names-mini",
+      "sourceRecord": "https://www.mini-oman.com/models/"
+    },
+    {
+      "id": "series:oman:mini:countryman",
+      "makeId": "make:oman:mini",
+      "name": "Countryman",
+      "sourceId": "oman-names-mini",
+      "sourceRecord": "https://www.mini-oman.com/models/"
+    },
+    {
+      "id": "series:oman:infiniti:q50",
+      "makeId": "make:oman:infiniti",
+      "name": "Q50",
+      "sourceId": "oman-names-infiniti",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/legacy.html"
+    },
+    {
+      "id": "series:oman:infiniti:q60",
+      "makeId": "make:oman:infiniti",
+      "name": "Q60",
+      "sourceId": "oman-names-infiniti",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/legacy.html"
+    },
+    {
+      "id": "series:oman:infiniti:qx50",
+      "makeId": "make:oman:infiniti",
+      "name": "QX50",
+      "sourceId": "oman-names-infiniti",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/legacy.html"
+    },
+    {
+      "id": "series:oman:infiniti:qx55",
+      "makeId": "make:oman:infiniti",
+      "name": "QX55",
+      "sourceId": "oman-names-infiniti",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/legacy.html"
+    },
+    {
+      "id": "series:oman:infiniti:qx60",
+      "makeId": "make:oman:infiniti",
+      "name": "QX60",
+      "sourceId": "oman-names-infiniti-2",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/all-models.html"
+    },
+    {
+      "id": "series:oman:infiniti:qx80",
+      "makeId": "make:oman:infiniti",
+      "name": "QX80",
+      "sourceId": "oman-names-infiniti-2",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/all-models.html"
+    },
+    {
+      "id": "series:oman:infiniti:qx70",
+      "makeId": "make:oman:infiniti",
+      "name": "QX70",
+      "sourceId": "oman-names-infiniti-3",
+      "sourceRecord": "https://www.infiniti-oman.com/cars/legacy/qx70.html"
     }
   ],
   "aliases": []
