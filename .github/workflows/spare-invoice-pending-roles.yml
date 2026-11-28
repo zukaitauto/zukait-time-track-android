@@ -5,6 +5,10 @@ on:
       - 'app/src/main/assets/v2/features/spare-parts/main_module.js'
       - 'app/src/main/assets/v2/features/spare-parts/workflow.js'
       - 'tests/v2-spare-parts.mjs'
+      - 'tests/v2-spare-parts-edit-delete.mjs'
+      - 'tests/v2-spare-parts-supervisor-waiting.mjs'
+      - 'app/src/main/assets/v2/core/offline_queue.js'
+      - 'supabase/functions/workshop-api/index.ts'
       - 'tests/spare-invoice-pending-roles.mjs'
       - '.github/workflows/spare-invoice-pending-roles.yml'
 permissions:
@@ -20,6 +24,8 @@ jobs:
       - run: |
           node --check app/src/main/assets/v2/features/spare-parts/main_module.js
           node tests/v2-spare-parts.mjs
+          node tests/v2-spare-parts-edit-delete.mjs
+          node tests/v2-spare-parts-supervisor-waiting.mjs
           node tests/v2-spare-parts-server-authority.mjs
           node tests/v2-spare-parts-hardening.mjs
           node tests/v2-spare-parts-durable-authority.mjs

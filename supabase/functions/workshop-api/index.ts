@@ -2189,7 +2189,8 @@ Deno.serve(async (req: Request) => {
         const arrivalRejected=from==="RECEIVED"&&to==="ORDERED";
         if(p.targetRole==="Purchaser"&&!arrivalRejected)return reply({ok:false,code:"spare_transition_payload_invalid"},400);
         if(arrivalRejected&&["Supervisor","Manager"].includes(callerRole)&&!String(p.reason||"").trim())return reply({ok:false,code:"spare_arrival_rejection_reason_required"},400);
-        const allowed = (callerRole==="Supervisor"&&arrivalRejected) || callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
+        const supervisorWaitingStep=callerRole==="Supervisor"&&((from==="LISTED"&&to==="ENQUIRY")||(["ENQUIRY","QUOTED"].includes(from)&&to==="ORDERED")||(["ORDERED","RECEIVED"].includes(from)&&to==="RECEIVED"));
+        const allowed = supervisorWaitingStep || (callerRole==="Supervisor"&&arrivalRejected) || callerRole==="Manager" || (callerRole==="Purchaser" && purchaserTargets.has(to)) || (callerRole==="Supervisor" && supervisorTargets.has(to));
         if(!allowed) return reply({ok:false,code:"spare_transition_forbidden"},403);
         if(to==="RETURNED"){
           if(["SUPERVISOR_VERIFIED","DENTER_CHECKED","SUPERVISOR_CONFIRMED","FITTED"].includes(from)&&!["Manager","Supervisor"].includes(callerRole)) return reply({ok:false,code:"spare_return_manager_or_supervisor_required"},403);
