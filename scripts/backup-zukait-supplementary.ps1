@@ -192,9 +192,6 @@ $previousIds=@(GetPreviousIds)
 $previousSet=New-Object 'System.Collections.Generic.HashSet[long]'
 foreach($id in $previousIds){if(-not $previousSet.Add($id)){throw 'Duplicate previous revision.'}}
 $previousManifestHash=HashFile (Join-Path $PreviousBackupFolder 'two-part-manifest.json')
-function GetMissingIds([long]$before){
- return @(GetHistoryIds $before|Where-Object {-not $previousSet.Contains($_)})
-}
 $root=AssertLocation
 if($Phase -eq 'Verify' -and [string]::IsNullOrWhiteSpace($SessionFolder)){throw 'Verify needs -SessionFolder.'}
 if($Phase -ne 'Verify'){AssertTools;ConfigureConnection}
@@ -278,6 +275,8 @@ try {
   if((HashFile $archive) -ne $manifest.core_sha256 -or (HashFile $inventory) -ne $manifest.inventory_sha256){throw 'Core/inventory checksum mismatch.'}
   $ids=@(Get-Content -LiteralPath $inventory | ForEach-Object {[long]$_})
   if($ids.Count -ne $manifest.history_count){throw 'History inventory count changed.'}
+  $expected=@($manifest.full_raw_inventory|Where-Object {-not $previousSet.Contains([long]$_)})
+  if(($expected -join ',') -ne ($ids -join ',')){throw 'Supplementary inventory does not match exact set difference.'}
   $rowsPerChunk=[int]$manifest.chunk_rows
   $chunks=[int][Math]::Ceiling($ids.Count/[double]$rowsPerChunk)
   if($Phase -eq 'History'){
@@ -304,7 +303,7 @@ try {
    if($Phase -eq 'Verify'){throw "Missing history chunk $name"}
    if(Test-Path -LiteralPath $zip){throw "Unverified history chunk exists: $zip"}
    if(Test-Path -LiteralPath $csv){Remove-Item -LiteralPath $csv -Force}
-   $script:chunkIds=($ids[$start..$end] -join ',')
+   $script:chunkIds=($ids[($start..$end)] -join ',')
    ExportCsvRaw $first $last $csv
    if((Get-Item -LiteralPath $csv).Length -le 0){throw "Empty history export chunk: $name"}
    $zipPartial=$zip+'.partial'
