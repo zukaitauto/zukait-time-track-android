@@ -1,8 +1,8 @@
 {
-  "versionName": "V425",
-  "versionCode": 388,
+  "versionName": "V426",
+  "versionCode": 389,
   "releaseScope": "standard",
-  "approvedForStaff": true,
+  "approvedForStaff": false,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
@@ -10,55 +10,32 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "productionAuthenticatedAcceptance": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-  "reason": "Owner requested publication and explicitly instructed \"deffer all and publish\". V425 includes sequential Purchaser/Supervisor Parts Waiting and verified durable retry protection. Manual device, HTTPS restart, preservation, backup restore, PC reconciliation and authenticated production acceptance are deferred, not passed. Automated tests, signed artifact/source provenance and public byte parity remain mandatory.",
+  "physicalAcceptanceStatus": "NOT_RUN",
+  "freshProductionBackupRestoreStatus": "NOT_RUN",
+  "productionAuthenticatedAcceptance": "NOT_RUN",
+  "reason": "Owner requested PUBLISH after PR #159 QA verification. V426 adds effective Oman vehicle arrival/release dates, removes duplicate location action, and handles database save timeouts. Hold automated publication until exact-source signed APK and required acceptance evidence. Do not reuse V425 deferrals.",
   "previousPublishedRelease": {
-    "versionName": "V424",
-    "versionCode": 387,
-    "releaseTag": "release-V424-architecture-v2",
-    "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92"
-  },
-  "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-  "signedAcceptanceRun": 46140586268,
-  "verificationRun": 46140586290,
-  "approvedAt": "2026-11-28T11:31:39.916Z",
-  "publishNonce": "26ac23d2809560fdc37aebec87e4691d42ecb7f6",
-  "receptionVerificationRun": 46140586278,
-  "productionBackend": {
-    "project": "pjknotnjkufadqavcmii",
-    "function": "workshop-api",
-    "previousVersion": 158,
-    "version": 159,
-    "bundleSha256": "3f0be9277ff670981372536f28af01d92cca5e35a7b4a43b5fe37da801beaf00",
-    "readbackVerified": true,
-    "changedModules": [
-      "index.ts"
-    ],
-    "scope": "Supervisor sequential waiting steps only; all other live source files and vehicle-index activation preserved; no database migration or staff record write.",
-    "unauthenticatedSmoke": {
-      "status": 401,
-      "code": "bad_api_key"
-    }
-  },
-  "v425AcceptanceDeferral": {
-    "checks": [
-      "client_https_restart",
-      "physical_android",
-      "physical_safari",
-      "full_data_preservation",
-      "fresh_backup_restored",
-      "pc_site_reconciled",
-      "production_backend_smoke"
-    ],
-    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
     "versionName": "V425",
     "versionCode": 388,
-    "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-    "signedAcceptanceRun": 46140586268,
-    "authorizedBy": "Owner in this conversation",
-    "instruction": "deffer all and publish",
-    "recordedDate": "2026-11-28"
+    "releaseTag": "release-V425-architecture-v2",
+    "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a"
+  },
+  "sourceCommit": null,
+  "signedAcceptanceRun": null,
+  "verificationRun": null,
+  "receptionVerificationRun": null,
+  "approvedAt": null,
+  "publishNonce": null,
+  "jobLocationQA": {
+    "pr": 159,
+    "verifiedSource": "788e73dfd4c0146ee2796f5198cb266af54f31d7",
+    "qaProject": "omqgkqknbdcnotabffek",
+    "releaseMs": 316.26,
+    "arrivalMs": 72.29,
+    "duplicateRetrySafe": true,
+    "workPreserved": true,
+    "compactRevisions": 4,
+    "rollbackConfirmed": true,
+    "scope": "SQL-level QA under light load; not physical or authenticated live acceptance"
   }
 }

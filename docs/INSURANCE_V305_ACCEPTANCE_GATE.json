@@ -1,189 +1,56 @@
 {
-  "versionName": "V425",
-  "versionCode": 388,
-  "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
+  "versionName": "V426",
+  "versionCode": 389,
+  "sourceCommit": null,
   "checks": {
     "client_https_restart": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this manual acceptance gate for V425; no test pass is claimed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V425",
-        "versionCode": 388,
-        "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-        "signedAcceptanceRun": 46140586268,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "deffer all and publish",
-        "recordedDate": "2026-11-28"
-      }
+      "verifiedAt": null
     },
     "physical_android": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this manual acceptance gate for V425; no test pass is claimed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V425",
-        "versionCode": 388,
-        "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-        "signedAcceptanceRun": 46140586268,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "deffer all and publish",
-        "recordedDate": "2026-11-28"
-      }
+      "verifiedAt": null
     },
     "physical_safari": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this manual acceptance gate for V425; no test pass is claimed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V425",
-        "versionCode": 388,
-        "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-        "signedAcceptanceRun": 46140586268,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "deffer all and publish",
-        "recordedDate": "2026-11-28"
-      }
+      "verifiedAt": null
     },
     "full_data_preservation": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this manual acceptance gate for V425; no test pass is claimed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V425",
-        "versionCode": 388,
-        "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-        "signedAcceptanceRun": 46140586268,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "deffer all and publish",
-        "recordedDate": "2026-11-28"
-      }
+      "verifiedAt": null
     },
     "fresh_backup_restored": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this manual acceptance gate for V425; no test pass is claimed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V425",
-        "versionCode": 388,
-        "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-        "signedAcceptanceRun": 46140586268,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "deffer all and publish",
-        "recordedDate": "2026-11-28"
-      }
+      "verifiedAt": null
     },
     "pc_site_reconciled": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this manual acceptance gate for V425; no test pass is claimed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V425",
-        "versionCode": 388,
-        "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-        "signedAcceptanceRun": 46140586268,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "deffer all and publish",
-        "recordedDate": "2026-11-28"
-      }
+      "verifiedAt": null
     },
     "production_backend_smoke": {
       "passed": false,
-      "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-      "evidence": "Owner explicitly deferred this manual acceptance gate for V425; no test pass is claimed.",
+      "status": "NOT_RUN",
+      "evidence": null,
       "verifiedBy": null,
-      "verifiedAt": null,
-      "ownerWaiver": {
-        "checks": [
-          "client_https_restart",
-          "physical_android",
-          "physical_safari",
-          "full_data_preservation",
-          "fresh_backup_restored",
-          "pc_site_reconciled",
-          "production_backend_smoke"
-        ],
-        "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
-        "versionName": "V425",
-        "versionCode": 388,
-        "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-        "signedAcceptanceRun": 46140586268,
-        "authorizedBy": "Owner in this conversation",
-        "instruction": "deffer all and publish",
-        "recordedDate": "2026-11-28"
-      }
+      "verifiedAt": null
     }
   }
 }

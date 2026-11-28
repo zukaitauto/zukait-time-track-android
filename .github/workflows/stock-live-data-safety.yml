@@ -71,7 +71,11 @@ jobs:
           const heldV425=request.releaseScope==='standard' && request.versionName==='V425' &&
             request.versionCode===388 && request.approvedForStaff===false && request.approvedAt===null &&
             request.publishNonce===null && request.productionBackendChanges===false && request.backendDeploymentRequired===false;
-          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase && !heldParity && !heldV424 && !heldV425))
+          // V426 adds only audited vehicle movement functionality; no Stock activation.
+          const heldV426=request.releaseScope==='standard' && request.versionName==='V426' &&
+            request.versionCode===389 && request.approvedForStaff===false && request.approvedAt===null &&
+            request.publishNonce===null && request.productionBackendChanges===true && request.backendDeploymentRequired===true;
+          if(request.phase2ActivationApproved!==false || (!uiOnly && !heldPurchase && !heldParity && !heldV424 && !heldV425 && !heldV426))
             throw Error('Unexpected Stock backend activation or release scope');
           const html=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
           if(!html.includes('window.ZUKAIT_STOCK_UI_PREVIEW_ONLY=true'))
