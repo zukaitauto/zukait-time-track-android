@@ -8,6 +8,7 @@ on:
       - 'tests/vehicle-index-autocomplete.mjs'
       - 'tests/vehicle-index-review.mjs'
       - 'tests/vehicle-index-historical-review.mjs'
+      - 'tests/vehicle-index-historical-manager.mjs'
       - 'tests/vehicle-index-approval-api.mjs'
       - 'supabase/functions/workshop-api/extensions/vehicle_index_approval_api.js'
       - 'supabase/functions/workshop-api/index.ts'
@@ -35,6 +36,7 @@ jobs:
       - run: node tests/vehicle-index-autocomplete.mjs
       - run: node tests/vehicle-index-review.mjs
       - run: node tests/vehicle-index-historical-review.mjs
+      - run: node tests/vehicle-index-historical-manager.mjs
       - run: node tests/vehicle-index-approval-api.mjs
       - run: node tests/reception-vehicle-authority.mjs
       - run: node tests/mechanical-inspection-boundary.mjs
