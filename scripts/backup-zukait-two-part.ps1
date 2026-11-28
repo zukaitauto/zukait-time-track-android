@@ -6,7 +6,9 @@ public.workshop_state_history DATA excluded (its table definition is kept).
 Part B: resumable ordered CSV/GZIP raw history batches, each checksummed.
 Compact history, consumables manifests, records and undo deltas are included in Part A.
 NEVER modifies production; never deletes existing backup sets.
-NOT an atomic cross-part snapshot. Recovery acceptance requires isolated restore,
+NOT an atomic cross-part snapshot. Ownership and ACL definitions are retained; role definitions are not exported.
+Restore only to an isolated database; validate role mapping before applying grants.
+Recovery acceptance requires isolated restore,
 revision inventory check, and app-schema/vehicle-FK validation.
 Run only after workshop hours when Supabase I/O and database are healthy.
 #>
@@ -182,7 +184,7 @@ try {
   $rawIdsBefore=@(GetHistoryIds $before)
   $archive=Join-Path $root 'operational-public-mechanical-vehicle.dump'
   $args=@('-w','-h',$DbHost,'-p',"$DbPort",'-U',$DbUser,'-d','postgres',
-   '--format=custom','--compress=1','--serializable-deferrable','--no-owner','--no-acl',
+   '--format=custom','--compress=1','--serializable-deferrable',
    '--lock-wait-timeout=3000','--schema=public','--schema=zukait_mechanical',
    '--schema=zukait_vehicle','--schema=private','--exclude-table-data=public.workshop_state_history',
    ('--file='+$archive))
@@ -220,6 +222,7 @@ try {
   [IO.File]::WriteAllText($inventory,($ids -join [Environment]::NewLine)+[Environment]::NewLine,[Text.Encoding]::ASCII)
   $manifest=[ordered]@{
    project_ref=$project;backup_format=3;compact_archive_inventory=$archiveInventoryAfter;finished_utc=$null;status='CORE_COMPLETE__HISTORY_NOT_EXPORTED__RESTORE_NOT_TESTED'
+   ownership_and_acl_included=$true;role_restore_required=$true
    source_revision=$before;history_min=$ids[0];history_max=$ids[$ids.Count-1]
    history_count=$ids.Count;history_internal_gaps=$gapCount;chunk_rows=$ChunkRows
    core_file='operational-public-mechanical-vehicle.dump'
