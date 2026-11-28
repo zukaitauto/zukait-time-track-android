@@ -32,5 +32,18 @@ for(const linked of [false,true]){await reset(linked);assert.equal((await call()
 await reset(true);await assert.rejects(call('fail'),/full_edit_commit_failed/);assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');assert.equal(Number((await db.query('select count(*) n from workshop_reception_movements')).rows[0].n),0);
 await reset(true);assert.equal((await call('Reason','M',0)).code,'conflict');assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');await assert.rejects(call('Reason','S'),/manager_required/);await assert.rejects(call(''),/reason_required/);
 await reset(true);await db.exec("update workshop_receptions set repair_status='CTL'");await assert.rejects(call('Reason','M',2),/ctl_release_required/);
+// Exercise the staged legacy replacement in the isolated PG-compatible fixture.
+const staged=fs.readFileSync('supabase/staged/MANAGER_JOB_LOCATION_DATE.sql','utf8');
+await db.exec(staged.split('-- LEGACY PATH\n')[1].split('-- COMPACT PATH\n')[0]);
+await reset(true);
+const effective='2026-01-15';
+const historical=structuredClone(r.data);historical.jobs[0].receptionLocationDate=effective;
+assert.equal((await call('dated movement','M',1,historical)).ok,true);
+assert.equal((await db.query("select to_char(occurred_at at time zone 'Asia/Muscat','YYYY-MM-DD') as d from workshop_reception_movements")).rows[0].d,effective);
+await reset(true);
+const future=structuredClone(r.data);future.jobs[0].receptionLocationDate='9999-12-31';
+await assert.rejects(call('future movement','M',1,future),/location_invalid_date/);
+assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');
+console.log('Dated linked movement and rollback on invalid date passed.');
 console.log('Job location: Manager-only audited direct/linked updates, shared VWC, state/live revisions, stale saves, rollback and CTL protection passed.');
 }finally{await db.close()}
