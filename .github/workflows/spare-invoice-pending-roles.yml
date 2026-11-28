@@ -4,7 +4,6 @@ on:
     paths:
       - 'app/src/main/assets/v2/features/spare-parts/main_module.js'
       - 'app/src/main/assets/v2/features/spare-parts/workflow.js'
-      - 'supabase/functions/workshop-api/index.ts'
       - 'tests/v2-spare-parts.mjs'
       - 'tests/spare-invoice-pending-roles.mjs'
       - '.github/workflows/spare-invoice-pending-roles.yml'
@@ -23,6 +22,7 @@ jobs:
           node tests/v2-spare-parts.mjs
           node tests/v2-spare-parts-server-authority.mjs
           node tests/v2-spare-parts-hardening.mjs
+          node tests/v2-spare-parts-durable-authority.mjs
           node tests/spare-invoice-pending-roles.mjs
           node tests/spare-invoice-vehicle-label.mjs
           node tests/v161-spare-parts-actual-cost.mjs
