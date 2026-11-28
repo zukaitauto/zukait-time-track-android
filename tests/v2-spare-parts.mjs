@@ -8,3 +8,28 @@ const hidden=p.sanitize({id:'P1',price:10,billAmount:12,name:'Lamp'},'Denter');a
 const u=p.transition({id:'P1',status:'ENQUIRY'},'UNAVAILABLE',{role:'Purchaser',actorId:'BUY1'});assert.equal(u.ok,true);assert.equal(u.item.cashSettlementRequired,true);
 assert.equal(p.canAct('Supervisor','SUPERVISOR_CONFIRMED','FITTED'),true);assert.equal(p.canAct('Manager','SUPERVISOR_CONFIRMED','FITTED'),true);assert.equal(p.canAct('Purchaser','SUPERVISOR_CONFIRMED','FITTED'),false);assert.equal(p.canAct('Denter','SUPERVISOR_CONFIRMED','FITTED'),false);assert.equal(p.canAct('Denter','RECEIVED','RETURNED'),false);const notice=p.notifySupervisor({id:'P1',jobCard:'JC1',status:'RECEIVED'},{role:'Denter',actorId:'DEN1'});assert.equal(notice.ok,true);assert.equal(notice.notification.targetRole,'Supervisor');assert.match(notice.notification.dedupeKey,/spare:DENTER_NOTICE:P1/);assert.equal(p.notifySupervisor({id:'P1'},{role:'Supervisor'}).ok,false);
 console.log('V2 spare parts workflow: ok');
+for(const status of ['ENQUIRY','QUOTED']){
+ const item={id:'direct',status,qty:3,purchaseAmount:8,supplier:'Existing supplier',quoteAmount:10};
+ assert.equal(p.canAct('Purchaser',status,'RECEIVED'),true);
+ for(const role of ['Supervisor','Denter','Employee','Receptionist','Accountant'])assert.equal(p.canAct(role,status,'RECEIVED'),false);
+ assert.equal(p.transition(item,'RECEIVED',{role:'Purchaser',receivedQty:1}).reason,'DIRECT_ARRIVAL_REASON_REQUIRED');
+ assert.equal(p.transition(item,'RECEIVED',{role:'Purchaser',reason:'Collected from supplier'}).reason,'INVALID_RECEIVED_QUANTITY');
+ assert.equal(p.transition(item,'RECEIVED',{role:'Purchaser',reason:'Collected from supplier',receivedQty:4}).ok,false);
+ const arrived=p.transition(item,'RECEIVED',{role:'Purchaser',actorId:'BUY1',reason:'Collected from supplier',receivedQty:1});
+ assert.equal(arrived.ok,true);assert.equal(arrived.item.receivedQty,1);assert.equal(arrived.item.partialReceipt,true);assert.equal(arrived.item.purchaseAmount,8);assert.equal(arrived.item.supplier,'Existing supplier');assert.equal(arrived.item.quoteAmount,10);assert.equal(arrived.audit.from,status);assert.equal(arrived.audit.actorId,'BUY1');assert.equal(arrived.audit.reason,'Collected from supplier');assert.equal(arrived.item.supervisorVerifiedAt,undefined);
+ assert.equal(p.transition(arrived.item,'SUPERVISOR_VERIFIED',{role:'Supervisor'}).reason,'RECEIPT_INCOMPLETE');
+ const complete=p.transition(arrived.item,'RECEIVED',{role:'Purchaser',receivedQty:2});assert.equal(complete.ok,true);assert.equal(complete.item.receivedQty,3);
+ assert.equal(p.transition(complete.item,'SUPERVISOR_VERIFIED',{role:'Purchaser'}).ok,false);
+ assert.equal(p.transition(complete.item,'SUPERVISOR_VERIFIED',{role:'Supervisor'}).ok,true);
+}
+assert.equal(p.canAct('Purchaser','LISTED','RECEIVED'),false);
+assert.equal(p.canAct('Manager','LISTED','RECEIVED'),true);
+const main=fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8'),api=fs.readFileSync('supabase/functions/workshop-api/index.ts','utf8');
+assert.match(main,/function waitingAction\([^\n]+Parts Arrival<\/button>/);
+assert.match(main,/s==='ORDERED'\|\|\(s==='RECEIVED'&&!receiptComplete\(item\)\)/);
+assert.match(main,/async function waitingStatusClick[^\n]+transitionItem\(no,id,to,reason,\{receivedQty:qty\}\)/);
+const directRule=api.match(/const directArrival=([^\n]+);/)[1];const evaluate=(callerRole,from,to)=>vm.runInNewContext(directRule,{callerRole,from,to});
+assert.equal(evaluate('Purchaser','ENQUIRY','RECEIVED'),true);assert.equal(evaluate('Purchaser','QUOTED','RECEIVED'),true);assert.equal(evaluate('Purchaser','LISTED','RECEIVED'),false);assert.equal(evaluate('Supervisor','ENQUIRY','RECEIVED'),false);
+assert.match(api,/if\(directArrival&&!String\(p.reason\|\|""\).trim\(\)\)/);
+assert.match(api,/if\(directArrival&&\(!\(Number\(p.receivedQty\)>0\)/);
+console.log('Purchaser direct receipt, partial completion, quantity and supervisor verification protections passed');
