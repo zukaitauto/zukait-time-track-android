@@ -164,7 +164,7 @@
     `;
     document.head.appendChild(s);
   }
-  const countFor=key=>["new","create-job","estimate",...masterKeys].includes(key)?"":key==="vwc"?counts.vwc??"":counts[key]??"";
+  const countFor=key=>(["new","create-job","estimate"].includes(key)||masterKeys.includes(key))?"":key==="vwc"?counts.vwc??"":counts[key]??"";
   function tiles(){
     return definitions.filter(d=>(d[0]!=="insurance"||role()==="Manager")&&(!masterKeys.includes(d[0])||masterRole())).map(([key,title,sub,icon])=>
       '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="false" aria-label="Open '+safe(title)+'">'+
