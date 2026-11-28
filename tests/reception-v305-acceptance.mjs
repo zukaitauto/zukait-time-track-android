@@ -25,7 +25,7 @@ else if (request.remainingAcceptanceDeferral) {
 } else if (required.some(key=>actual.checks[key]?.passed!==true)) {
  assert.throws(()=>validate(request,actual),'Incomplete evidence must not validate under another release scope');
 } else assert.equal(validate(request,actual),true);
-const good={...request,v424AcceptanceDeferral:undefined,v423AcceptanceDeferral:undefined,v422AcceptanceDeferral:undefined,v421AcceptanceDeferral:undefined,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
+const good={...request,v425AcceptanceDeferral:undefined,v424AcceptanceDeferral:undefined,v423AcceptanceDeferral:undefined,v422AcceptanceDeferral:undefined,v421AcceptanceDeferral:undefined,remainingAcceptanceDeferral:undefined,physicalDeviceDeferral:undefined,backupRestoreDeferral:undefined,ownerBackupRestoreWaiver:undefined,ownerBrowserBuildWaiver:undefined,approvedForStaff:true,sourceCommit:'a'.repeat(40),approvedAt:'2026-10-10T06:00:00Z',publishNonce:'fixture-only-nonce',signedAcceptanceRun:12345};
 const complete={...actual,versionName:good.versionName,versionCode:good.versionCode,sourceCommit:good.sourceCommit,checks:Object.fromEntries(required.map(k=>[k,{passed:true,evidence:'docs/QA-'+k+'.md',verifiedBy:'QA Reviewer',verifiedAt:'2026-10-10T05:00:00Z'}]))};
 assert.equal(validate(good,complete),true,'Synthetic complete attestation must validate');
 for(const key of required) {
@@ -157,4 +157,22 @@ if(request.versionName==='V424'&&request.v424AcceptanceDeferral){
   assert.throws(()=>validate(altered,{...actual,[key]:value}));
  }
  console.log('PASS: V424 exception is exact-source, owner-directed and cannot fabricate acceptance.');
+}
+
+if(request.versionName==='V425'&&request.v425AcceptanceDeferral){
+ assert.equal(validate(request,actual),true);
+ assert.throws(()=>validate({...request,v425AcceptanceDeferral:undefined},actual),/client_https_restart/);
+ for(const key of required){
+  const fake=structuredClone(actual);fake.checks[key].passed=true;
+  assert.throws(()=>validate(request,fake),/must remain not passed/);
+  const missing=structuredClone(actual);delete missing.checks[key].ownerWaiver;
+  assert.throws(()=>validate(request,missing),/records must match/);
+ }
+ for(const [key,value] of Object.entries({versionName:'V426',versionCode:389,sourceCommit:'b'.repeat(40),signedAcceptanceRun:1,verificationRun:1,ownerPublicationRequested:false,productionBackendChanges:false,phase2ActivationApproved:true})){
+  const changed={...request,[key]:value};assert.throws(()=>validate(changed,{...actual,[key]:value}));
+ }
+ const wrongBackend={...request,productionBackend:{...request.productionBackend,readbackVerified:false}};
+ assert.throws(()=>validate(wrongBackend,actual));
+ const wrongInstruction=structuredClone(request);wrongInstruction.v425AcceptanceDeferral.instruction='publish';assert.throws(()=>validate(wrongInstruction,actual));
+ console.log('PASS: V425 owner deferral is exact-source, exact-signed-artifact, server-readback-bound and cannot fabricate manual acceptance.');
 }
