@@ -728,6 +728,7 @@
       '<label class="rc-check"><input type="checkbox" name="received_confirmed" required>I confirm the vehicle has been received at the workshop.</label><div class="rc-actions"><button type="submit">Open Job Card</button></div></form>');
     const form=document.getElementById('rc-direct-job'),type=form.querySelector('[name="job_type"]'),account=form.querySelector('[name="credit_account"]');
     bindVehicleLookup(form);
+    window.zukaitVehicleAutocomplete?.attach?.(form);
     const validateDirectVin=bindDirectVinValidation(form);
     let linkedChecklist=null,linkedApprovalValid=false,linkedApprovalMode='';
     const searchInput=document.getElementById('rc-direct-checklist-search');
@@ -1313,6 +1314,7 @@
     applyType();
     bindInspection(form);
     if(!no)bindVehicleLookup(form);
+    window.zukaitVehicleAutocomplete?.attach?.(form);
     // Track an in-memory form baseline. Never persist unsaved customer details
     // to localStorage or interfere with the existing server request journal.
     checklistSnapshots.set(form, JSON.stringify([...new FormData(form)]));
