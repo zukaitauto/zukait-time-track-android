@@ -54,6 +54,7 @@ insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key,make
 ('series:oman:mazda:6','ADD_MODEL','6','wikidata-make:Q35996',lower(btrim(regexp_replace(normalize('6',NFKC),'[[:space:]]+',' ','g'))),'wikidata-make:Q35996',null),
 ('series:oman:mazda:cx-3','ADD_MODEL','CX-3','wikidata-make:Q35996',lower(btrim(regexp_replace(normalize('CX-3',NFKC),'[[:space:]]+',' ','g'))),'wikidata-make:Q35996',null),
 ('series:oman:mazda:cx-5','ADD_MODEL','CX-5','wikidata-make:Q35996',lower(btrim(regexp_replace(normalize('CX-5',NFKC),'[[:space:]]+',' ','g'))),'wikidata-make:Q35996',null),
-('series:oman:mazda:3','ADD_MODEL','3','wikidata-make:Q35996',lower(btrim(regexp_replace(normalize('3',NFKC),'[[:space:]]+',' ','g'))),'wikidata-make:Q35996',null);
+('series:oman:mazda:3','ADD_MODEL','3','wikidata-make:Q35996',lower(btrim(regexp_replace(normalize('3',NFKC),'[[:space:]]+',' ','g'))),'wikidata-make:Q35996',null),
+('series:oman:mazda:2','ADD_MODEL','2','wikidata-make:Q35996',lower(btrim(regexp_replace(normalize('2',NFKC),'[[:space:]]+',' ','g'))),'wikidata-make:Q35996',null);
 update public.zukait_vehicle_index_meta set base_version=4,version=4 where id=true;
 commit;

@@ -2637,6 +2637,13 @@
       "name": "3",
       "sourceId": "oman-names-mazda-3",
       "sourceRecord": "https://mazdaoman.com/en/vehicles/mazda-3/"
+    },
+    {
+      "id": "series:oman:mazda:2",
+      "makeId": "wikidata-make:Q35996",
+      "name": "2",
+      "sourceId": "oman-names-mazda",
+      "sourceRecord": "https://mazdaoman.com/en/owners-manual/"
     }
   ],
   "aliases": []

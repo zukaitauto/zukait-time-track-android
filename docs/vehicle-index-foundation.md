@@ -103,3 +103,7 @@ Added 4 makes and 35 models using individually located Wikidata records (IDs and
 ### Oman catalogue model-name expansion, V4 (staged)
 
 QA V3 installed and read back as 29 makes / 294 models with no approval rows. V4 adds 5 makes and 42 model names from official Oman model listings (source URLs and date in JSON). FACTUAL-NAMES denotes factual product names only, not an open licence for the source site or its photos/specifications. Local IDs preserve existing entries; no aliases approved. Regional names such as L200 and Montero Sport are separately searchable and require review before mapping them to other names. The guarded additive SQL refuses to rebase any intervening approval. V4 remains staged until tests pass; not installed or activated. Worldwide coverage remains incomplete.
+
+### Mazda additions before V4 installation
+
+Added Mazda 2 from official Mazda Oman owner's manual listing, https://mazdaoman.com/en/owners-manual/. Mazda CX-9 was already present; no duplicate entry created. Model suggestions now accept compact alphanumeric codes such as CX9 and offer canonical CX-9, without changing exact resolution or historical alias approval. V4 now contains 34 makes and 337 models. QA database remains V3 until updated tests pass and V4 is installed.

@@ -15,7 +15,7 @@ try{
  execFileSync('git',['archive','--format=tar','--output='+tar,'HEAD']);execFileSync('tar',['-xf',tar,'-C',dir]);rmSync(tar);
  const assets=join(dir,'app/src/main/assets'),origin='https://'+QA+'.supabase.co';
  const base=require(join(assets,'vehicle_index.js')).validate(JSON.parse(readFileSync(join(assets,'vehicle_index_reviewed.json'),'utf8')));
- if(base.version!==4||base.makes.length!==34||base.models.length!==336||base.aliases.length!==0)throw Error('unexpected reviewed QA base');
+ if(base.version!==4||base.makes.length!==34||base.models.length!==337||base.aliases.length!==0)throw Error('unexpected reviewed QA base');
  const hosts=['offline_test.html','receptionist.html','mechanical_supervisor.html','mechanical_estimate.html'];
  const boot='vehicle_index_qa_bootstrap.js';
  // Synchronous embedded data for Android WebView and web: no fetch/polling or database access.

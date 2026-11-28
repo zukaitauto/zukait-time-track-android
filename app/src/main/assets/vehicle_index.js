@@ -48,7 +48,9 @@
    return rows.map(r=>{
     const aliases=data.aliases.filter(a=>a.kind===kind&&a.targetId===r.id);
     const terms=[r.name,...(kind==='make'?r.searchTerms||[]:[]),...aliases.map(a=>a.value)].map(key);
-    const rank=terms.includes(q)?0:terms.some(t=>t.startsWith(q))?1:terms.some(t=>t.includes(q))?2:3;
+    const compact=s=>s.replace(/[\s\-]+/g,'');
+    const modelCodeMatch=kind==='model'&&/^[a-z]+[\s\-]*\d+[a-z0-9]*$/i.test(q)&&terms.some(t=>compact(t)===compact(q));
+    const rank=terms.includes(q)||modelCodeMatch?0:terms.some(t=>t.startsWith(q))?1:terms.some(t=>t.includes(q))?2:3;
     return {r,rank};
    }).filter(x=>x.rank<3).sort((a,b)=>a.rank-b.rank||a.r.name.localeCompare(b.r.name,'en')||a.r.id.localeCompare(b.r.id)).slice(0,size).map(x=>x.r);
   }
