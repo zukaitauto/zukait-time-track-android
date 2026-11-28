@@ -1,6 +1,6 @@
 {
-  "versionName": "V425",
-  "versionCode": 388,
+  "versionName": "V426",
+  "versionCode": 389,
   "releaseScope": "standard",
   "approvedForStaff": false,
   "ownerPublicationRequested": false,
@@ -13,12 +13,12 @@
   "physicalAcceptanceStatus": "NOT_RUN",
   "freshProductionBackupRestoreStatus": "NOT_RUN",
   "productionAuthenticatedAcceptance": "NOT_RUN",
-  "reason": "V425 held candidate: account-scoped durable Stock and purchase invoice retry recovery, Estimate teardown and UI-only safety fixes. No backend deployment or publication approved.",
+  "reason": "V426 held UI candidate: dated vehicle movement and duplicate location action removal. Coordinated standard release separately requires verified backend and publication approval.",
   "previousPublishedRelease": {
-    "versionName": "V424",
-    "versionCode": 387,
-    "releaseTag": "release-V424-architecture-v2",
-    "sourceCommit": "20d8364f4c63897000da4270fc4a322113d85a92"
+    "versionName": "V425",
+    "versionCode": 388,
+    "releaseTag": "release-V425-architecture-v2",
+    "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a"
   },
   "sourceCommit": null,
   "signedAcceptanceRun": null,
