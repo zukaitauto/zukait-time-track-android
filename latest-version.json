@@ -1,9 +1,9 @@
 {
-  "versionCode": 388,
-  "versionName": "V425",
+  "versionCode": 389,
+  "versionName": "V426",
   "status": "current",
   "package": "com.zukait.timetrack",
-  "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a",
-  "apkSha256": "de5f265e142b9bfd77dc00b1684983f6b1880677f86936d19b731fb610d2a54f",
-  "releaseTag": "release-V425-architecture-v2"
+  "sourceCommit": "e47889c6631f43395ad548fae7d82b7923ac4ef8",
+  "apkSha256": "f498d740d0f53e0ded37b7f69556652f862700cccab503b418ef1344b41a3e43",
+  "releaseTag": "release-V426-architecture-v2"
 }
