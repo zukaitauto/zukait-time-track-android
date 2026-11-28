@@ -14,6 +14,7 @@ function canAct(role,from,to){
  role=String(role||'');
  if(role==='Manager'&&['LISTED','ENQUIRY','QUOTED'].includes(from)&&to==='RECEIVED')return true;
  if(!allowed(from,to))return false;
+ if(role==='Supervisor'&&((from==='LISTED'&&to==='ENQUIRY')||(['ENQUIRY','QUOTED'].includes(from)&&to==='ORDERED')||(['ORDERED','RECEIVED'].includes(from)&&to==='RECEIVED')))return true;
  if(from==='RECEIVED'&&to==='ORDERED')return ['Supervisor','Purchaser','Manager'].includes(role);
  if((from==='ENQUIRY'&&to==='LISTED')||(from==='ORDERED'&&to==='ENQUIRY')||(from==='RECEIVED'&&to==='ORDERED'))return role==='Purchaser'||role==='Manager';
  if(['ENQUIRY','QUOTED','ORDERED','RECEIVED'].includes(to))return role==='Purchaser'||role==='Manager';
