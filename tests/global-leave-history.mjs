@@ -88,3 +88,22 @@ h.filter('status','all');assert.match(nodes.leaveHistoryResults.innerHTML,/Cance
 vm.runInContext("me.role='Supervisor'",c);h.refresh();assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/data-leave-edit/);
 assert.match(nodes.leaveHistoryResults.innerHTML,/View 4 daily records/);
 assert.equal(vm.runInContext('JSON.stringify(state)',c),groupedBefore);
+
+ // Structured annual approvals with a skipped Friday, distinct approval IDs,
+ // and a cancelled date. No actual leave dates or totals may be fabricated.
+vm.runInContext("me.role='Manager';state={leaves:"+JSON.stringify([
+ {id:'s1',emp:'E1',date:'2026-11-26',period:'FULL',approvalType:'ANNUAL',approvalId:'A',remark:'Travel',by:'M'},
+ {id:'s2',emp:'E1',date:'2026-11-28',period:'FULL',approvalType:'ANNUAL',approvalId:'A',remark:'Travel',by:'M'},
+ {id:'s3',emp:'E1',date:'2026-11-29',period:'FULL',approvalType:'ANNUAL',approvalId:'B',remark:'Travel',by:'M'},
+ {id:'s4',emp:'E1',date:'2026-11-30',period:'FULL',approvalType:'ANNUAL',approvalId:'B',remark:'Travel',by:'M'},
+ {id:'s5',emp:'E1',date:'2026-12-02',period:'FULL',approvalType:'ANNUAL',approvalId:'B',remark:'Travel',by:'M'}
+])+ "}",c);
+h.open('history');
+assert.match(nodes.leaveHistoryResults.innerHTML,/2026-11-26 – 2026-11-28/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/2026-11-29 – 2026-11-30/);
+assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/2026-11-26 – 2026-11-30|2026-11-29 – 2026-12-02/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/<b>5<\/b> leave days/);
+assert.equal(h.rows().length,5);
+h.filter('month','2026-11');assert.equal(h.rows().length,4);
+vm.runInContext("state.leaves.push({id:'cancelled-friday',emp:'E1',date:'2026-11-27',period:'FULL',approvalType:'ANNUAL',approvalId:'A',cancelled:true})",c);
+h.refresh();assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/2026-11-26 – 2026-11-28/);

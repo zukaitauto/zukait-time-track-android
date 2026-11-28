@@ -16,9 +16,12 @@
   patch('leaveHistoryEmployee','<option value="">All employees / supervisors</option>'+staff.map(id=>'<option value="'+E(id)+'" '+(filters.employee===id?'selected':'')+'>'+E(person(id).name||id)+'</option>').join(''));
  }
  // Presentation only: never coalesce or mutate canonical daily records.
- // Legacy records have no period ID or structured leave type. Infer only explicit
- // annual/medical remarks, and never assume a missing date was approved leave.
+ // Prefer structured approval type/ID. Legacy records use explicit remarks.
+ // Bridge only verified closed days within one approval; never infer missing working days.
  function leaveKind(l){
+  if(l.approvalType==='ANNUAL')return 'Annual leave';
+  if(l.approvalType==='MEDICAL')return 'Medical leave';
+  if(l.approvalType)return '';
   const remark=String(l.remark||'').trim().toLowerCase().replace(/\s+/g,' ');
   return remark==='annual leave'||remark==='annual'?'Annual leave':remark==='medical'||remark==='medical leave'?'Medical leave':'';
  }
@@ -27,11 +30,26 @@
   const counts=new Map(),last=new Map(),out=[];
   const key=l=>JSON.stringify([String(l.emp),String(l.date)]);
   const dateMs=l=>/^\d{4}-\d{2}-\d{2}$/.test(String(l.date))?Date.parse(l.date+'T00:00:00Z'):NaN;
-  for(const l of list)counts.set(key(l),(counts.get(key(l))||0)+1);
+  const all=rules.rows(),occupied=new Set(all.filter(Boolean).map(key));
+  for(const l of all.filter(Boolean))counts.set(key(l),(counts.get(key(l))||0)+1);
+  function continuous(newer,older){
+   const a=dateMs(older),b=dateMs(newer),gap=(b-a)/86400000;
+   if(gap===1)return true;
+   if(!older.approvalId||!Number.isInteger(gap)||gap<2||gap>366)return false;
+   for(let t=a+86400000;t<b;t+=86400000){
+    const date=new Date(t).toISOString().slice(0,10);
+    if(occupied.has(key({emp:older.emp,date})))return false;
+    const ts=Date.parse(date+'T08:00:00+04:00');
+    let closed=false;
+    try{closed=typeof window.v75IsClosedWorkshopDay==='function'?window.v75IsClosedWorkshopDay(ts):new Date(t).getUTCDay()===5}catch(_){return false}
+    if(!closed)return false;
+   }
+   return true;
+  }
   for(const l of list){
    const emp=String(l.emp),kind=leaveKind(l),eligible=kind&&!l.cancelled&&l.period==='FULL'&&l.startAt==null&&counts.get(key(l))===1&&Number.isFinite(dateMs(l));
-   const prev=last.get(emp),signature=JSON.stringify([kind,String(l.remark||'').trim().toLowerCase(),String(l.by||'')]);
-   if(eligible&&prev&&prev.signature===signature&&dateMs(prev.group[prev.group.length-1])-dateMs(l)===86400000){
+   const prev=last.get(emp),signature=JSON.stringify([kind,String(l.remark||'').trim().toLowerCase(),String(l.by||''),String(l.approvalId||'')]);
+   if(eligible&&prev&&prev.signature===signature&&continuous(prev.group[prev.group.length-1],l)){
     prev.group.push(l);
    }else{
     const group=[l];out.push(group);
@@ -41,7 +59,7 @@
   return out;
  }
  const span=g=>g.length===1?g[0].date:g[g.length-1].date+' – '+g[0].date;
- const groupLabel=g=>g.length===1?rules.label(g[0]):leaveKind(g[0])+' · '+g.length+' days';
+ const groupLabel=g=>g.length===1?(leaveKind(g[0])?leaveKind(g[0])+' · '+rules.label(g[0]):rules.label(g[0])):leaveKind(g[0])+' · '+g.length+' days';
  const buttons=l=>'<button type="button" data-leave-edit="'+E(l.id)+'">Edit</button> <button type="button" class="danger" data-leave-delete="'+E(l.id)+'">Delete leave</button>';
  function details(g,manager){
   return '<details><summary>View '+g.length+' daily records</summary>'+g.map(l=>'<div>'+E(l.date)+(manager?' '+buttons(l):'')+'</div>').join('')+'</details>';
