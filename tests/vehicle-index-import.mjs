@@ -41,3 +41,19 @@ assert.ok(batches.every(ids=>ids.length<=12));
 assert.match(batchQuery(['Q53268']),/VALUES \?make \{ wd:Q53268 \}/);
 assert.throws(()=>batchQuery(['invalid']));
 assert.throws(()=>batchQuery([]));
+
+const mapped=build(seed,{results:{bindings:[
+ binding('Q301','Q36033','Mitsubishi Pajero','Mitsubishi Motors'),
+ binding('Q302','Q55931','Hyundai Tucson','Hyundai Motor Company'),
+ binding('Q303','Q26678','BMW X5','BMW'),
+ binding('Q303','Q796364','BMW X5','BMW'),
+ binding('Q304','Q44294','Lincoln Navigator','Ford Motor Company'),
+ binding('Q305','Q35935','Lotus Elise','Lotus Cars')
+]}},'2026-11-28');
+assert.equal(mapped.report.addedModels,4);
+assert.equal(mapped.report.addedMakes,4);
+assert.ok(mapped.report.coverageByMake.some(x=>x.make==='Mitsubishi'&&x.models===1));
+assert.ok(mapped.report.coverageByMake.some(x=>x.make==='Lotus'));
+assert.equal(mapped.report.skippedByReason.make_label_mismatch,1);
+assert.ok(mapped.report.missingTargetIds.includes('Q53268'));
+assert.equal(mapped.catalogue.aliases.length,0);

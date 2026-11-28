@@ -11,7 +11,12 @@ const MAX_ROWS=15000,MAX_BYTES=16*1024*1024;
 // can be appended after checking source IDs and reviewing the first retrieval.
 export const batches=Object.freeze([
  Object.freeze(['Q53268','Q20165','Q9584']),
- Object.freeze(['Q124966860','Q35886','Q26777551','Q35907','Q234803'])
+ Object.freeze(['Q124966860','Q35886','Q26777551','Q35907','Q234803']),
+ Object.freeze(['Q35919','Q35996','Q36033','Q181642','Q172741']),
+ Object.freeze(['Q55931','Q35349','Q35935']),
+ Object.freeze(['Q26678','Q796364','Q36008','Q124983953','Q23317']),
+ Object.freeze(['Q40993','Q246','Q20827633','Q44294']),
+ Object.freeze(['Q27423','Q55118127','Q1117001','Q28223947','Q29366'])
 ]);
 export function batchQuery(ids){
  if(!Array.isArray(ids)||!ids.length||ids.length>12||ids.some(id=>!/^Q[1-9]\d*$/.test(id)))throw Error('invalid_batch');
@@ -24,6 +29,14 @@ export function batchQuery(ids){
  '} LIMIT '+(MAX_ROWS+1);
 }
 export const query=batches.map(batchQuery).join('\n\n# NEXT REQUEST\n\n');
+// Source-checked company/brand equivalences. Never use a parent group to
+// infer the brand of a model; a matching canonical brand prefix is still required.
+const canonicalMakes=Object.freeze({
+ Q124966860:'Lamborghini',Q35886:'Lamborghini',Q26777551:'Land Rover',Q35907:'Land Rover',Q234803:'Rolls-Royce',
+ Q35919:'Lexus',Q36033:'Mitsubishi',Q181642:'Suzuki',Q55931:'Hyundai',Q35935:'Lotus',
+ Q26678:'BMW',Q796364:'BMW',Q124983953:'Audi',Q23317:'Audi',Q20827633:'Ford',Q44294:'Ford',
+ Q27423:'BYD',Q55118127:'Geely',Q1117001:'Great Wall',Q29366:'Changan'
+});
 const norm=x=>String(x??'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
 const qid=v=>/^https?:\/\/www\.wikidata\.org\/entity\/(Q[1-9]\d*)$/.exec(v||'')?.[1]||'';
 const value=(r,k)=>r?.[k]?.value;
@@ -49,11 +62,15 @@ export function build(seed,raw,retrievedAt){
   const model=qid(value(r,'model')),make=qid(value(r,'make')),label=value(r,'modelLabel'),makeName=value(r,'makeLabel');
   if(!model||!make||!good(label)||!good(makeName)){skip(model||'unknown','invalid_binding');continue}
   if(!grouped.has(model))grouped.set(model,new Map());
-  grouped.get(model).set(JSON.stringify([make,label,makeName]),{model,make,label,makeName});
+  const canonical=canonicalMakes[make]||makeName;
+  const claimKey=JSON.stringify([canonicalMakes[make]?norm(canonical):make,label,norm(canonical)]);
+  const prior=grouped.get(model).get(claimKey);
+  // Deterministic choice of the source link when equivalent brand/company claims coexist.
+  if(!prior||compare(make,prior.make)<0)grouped.get(model).set(claimKey,{model,make,label,makeName:canonical});
  }
  const makeClaims=new Map();
  for(const items of grouped.values())for(const r of items.values()){
-  const name=norm(r.makeName);if(!makeClaims.has(name))makeClaims.set(name,new Set());makeClaims.get(name).add(r.make);
+  const name=norm(r.makeName);if(!makeClaims.has(name))makeClaims.set(name,new Set());makeClaims.get(name).add(canonicalMakes[r.make]?norm(r.makeName):r.make);
  }
  for(const [id,claims] of [...grouped].sort((a,b)=>compare(a[0],b[0]))){
   if(claims.size!==1){skip(id,'ambiguous_make_or_label');continue}
@@ -79,7 +96,12 @@ export function build(seed,raw,retrievedAt){
  }
  next.makes.sort((a,b)=>compare(a.id,b.id));next.models.sort((a,b)=>compare(a.id,b.id));
  validate(next);
- return {catalogue:next,report:{retrievedAt,sourceRows:rows.length,previousMakes:base.makes.length,previousModels:base.models.length,makes:next.makes.length,models:next.models.length,addedMakes:next.makes.length-base.makes.length,addedModels:next.models.length-base.models.length,skipped,reviewRequired:true}};
+ const counts=new Map();for(const m of next.models)counts.set(m.makeId,(counts.get(m.makeId)||0)+1);
+ const coverageByMake=next.makes.map(m=>({make:m.name,models:counts.get(m.id)||0})).sort((a,b)=>compare(a.make,b.make));
+ const receivedMakeIds=[...new Set(rows.map(r=>qid(value(r,'make'))).filter(Boolean))].sort(compare);
+ const missingTargetIds=batches.flat().filter(id=>!receivedMakeIds.includes(id));
+ const skippedByReason={};for(const x of skipped)skippedByReason[x.reason]=(skippedByReason[x.reason]||0)+1;
+ return {catalogue:next,report:{retrievedAt,sourceRows:rows.length,previousMakes:base.makes.length,previousModels:base.models.length,makes:next.makes.length,models:next.models.length,addedMakes:next.makes.length-base.makes.length,addedModels:next.models.length-base.models.length,coverageByMake,receivedMakeIds,missingTargetIds,skippedByReason,skipped,reviewRequired:true}};
 }
 async function download(){
  const responses=[],bindings=[];let totalBytes=0;
@@ -91,6 +113,7 @@ async function download(){
   const chunks=[];for await(const chunk of res.body){totalBytes+=chunk.length;if(totalBytes>MAX_BYTES/2)throw Error('source_too_large');chunks.push(chunk)}
   const bytes=Buffer.concat(chunks),raw=JSON.parse(bytes),rows=raw?.results?.bindings;
   if(!Array.isArray(rows)||!rows.length||rows.length>MAX_ROWS||bindings.length+rows.length>MAX_ROWS)throw Error('empty_or_truncated_batch '+ids.join(','));
+  if(rows.some(r=>!ids.includes(qid(value(r,'make')))))throw Error('unexpected_make_in_batch '+ids.join(','));
   bindings.push(...rows);
   responses.push({ids,sha256:createHash('sha256').update(bytes).digest('hex'),body:bytes.toString('base64')});
  }
