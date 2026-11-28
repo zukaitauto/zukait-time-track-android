@@ -52,4 +52,51 @@ begin
 end $$;
 revoke all on function public.zukait_vehicle_index_observe_batch(text,jsonb) from public,anon,authenticated;
 grant execute on function public.zukait_vehicle_index_observe_batch(text,jsonb) to service_role;
+-- Manager-only queue. Approved pairs disappear from the pending view;
+-- original observations are retained, not deleted or rewritten.
+create function public.zukait_vehicle_index_intake_list(p_session_hash text,p_after_make text,p_after_model text)
+returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
+declare actor_role text; result jsonb; v bigint;
+begin
+ select c.role into actor_role from public.staff_sessions s join public.staff_credentials c on c.user_id=s.user_id
+ where s.token_hash=p_session_hash and s.revoked_at is null and c.active and not c.must_change for share of s,c;
+ if actor_role is distinct from 'Manager' then return jsonb_build_object('ok',false,'code','manager_required');end if;
+ if (p_after_make is null) is distinct from (p_after_model is null) or char_length(coalesce(p_after_make,''))>200 or char_length(coalesce(p_after_model,''))>200 then return jsonb_build_object('ok',false,'code','invalid_cursor');end if;
+ select version into v from public.zukait_vehicle_index_meta where id=true for share;
+ if v is null then return jsonb_build_object('ok',false,'code','catalogue_not_initialized');end if;
+ select coalesce(jsonb_agg(to_jsonb(q) order by q.make_key,q.model_key),'[]'::jsonb) into result from (
+ select i.make_key,i.model_key,i.entered_make,i.entered_model,i.source_kind,i.source_id,i.submitted_at
+ from public.zukait_vehicle_index_intake i
+ left join public.zukait_vehicle_index_entries m on m.scope='@makes' and m.name_key=i.make_key and m.kind in ('ADD_MAKE','MAKE_ALIAS')
+ left join public.zukait_vehicle_index_entries d on d.scope=case when m.kind='ADD_MAKE' then m.id else m.target_id end and d.name_key=i.model_key and d.kind in ('ADD_MODEL','MODEL_ALIAS')
+ where d.id is null and (p_after_make is null or (i.make_key,i.model_key)>(p_after_make,p_after_model))
+ order by i.make_key,i.model_key limit 50
+ ) q;
+ return jsonb_build_object('ok',true,'version',v,'rows',result);
+end $$;
+revoke all on function public.zukait_vehicle_index_intake_list(text,text,text) from public,anon,authenticated;
+grant execute on function public.zukait_vehicle_index_intake_list(text,text,text) to service_role;
+
+-- Targeted recovery uses authoritative saved records, never client-supplied names.
+-- This is a manual bounded repair, not a scheduled or full workshop scan.
+create function public.zukait_vehicle_index_intake_recover(p_session_hash text,p_source_kind text,p_source_id text)
+returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
+declare actor_role text; v_make text; v_model text;
+begin
+ select c.role into actor_role from public.staff_sessions s join public.staff_credentials c on c.user_id=s.user_id
+ where s.token_hash=p_session_hash and s.revoked_at is null and c.active and not c.must_change for share of s,c;
+ if actor_role is distinct from 'Manager' then return jsonb_build_object('ok',false,'code','manager_required');end if;
+ if p_source_id is null or char_length(btrim(p_source_id)) not between 1 and 80 or p_source_id~'[[:cntrl:]]' then return jsonb_build_object('ok',false,'code','invalid_source');end if;
+ if p_source_kind='RECEPTION_CHECKLIST' then
+  select r.details->>'make',r.details->>'model' into v_make,v_model from public.workshop_receptions r where r.rc_no=btrim(p_source_id);
+ elsif p_source_kind='MECHANICAL_CHECKLIST' then
+  select r.vehicle->>'make',r.vehicle->>'model' into v_make,v_model from zukait_mechanical.prejob_checklists r where r.checklist_number=btrim(p_source_id);
+ else return jsonb_build_object('ok',false,'code','invalid_source');
+ end if;
+ if not found then return jsonb_build_object('ok',false,'code','source_not_found');end if;
+ if v_make is null or v_model is null then return jsonb_build_object('ok',false,'code','invalid_intake');end if;
+ return public.zukait_vehicle_index_observe(p_session_hash,v_make,v_model,p_source_kind,btrim(p_source_id));
+end $$;
+revoke all on function public.zukait_vehicle_index_intake_recover(text,text,text) from public,anon,authenticated;
+grant execute on function public.zukait_vehicle_index_intake_recover(text,text,text) to service_role;
 commit;

@@ -1,7 +1,7 @@
 /* Staged Manager review screen; approval requires an explicitly supplied authenticated transport. */
 (function(root){
  'use strict';
- function mount(container,{actor,snapshot,approve,isCurrent=()=>false,requestId=()=>root.crypto.randomUUID()}={}){
+ function mount(container,{actor,snapshot,approve,queue,isCurrent=()=>false,requestId=()=>root.crypto.randomUUID()}={}){
   if(!container)return null;
   const doc=container.ownerDocument;
   const el=(tag,text)=>{const e=doc.createElement(tag);if(text!==undefined)e.textContent=text;return e};
@@ -70,7 +70,41 @@
     }finally{busy=false;if(!finished)confirm.disabled=false;if(!uncertain&&!finished)lock(false);}
    });
   }
-  container.append(heading,summary,note,form,result);refresh();
+  container.append(heading,summary,note);
+  if(typeof queue==='function'){
+   const section=el('section'),load=el('button','New vehicle names — review'),more=el('button','Next page'),status=el('p'),rows=el('div');
+   load.type=more.type='button';more.hidden=true;status.setAttribute('role','status');let cursor=null,loading=false;
+   async function page(after){
+    if(loading||!container.isConnected||!isCurrent()||busy||uncertain||finished)return;
+    loading=true;load.disabled=more.disabled=true;status.textContent='Loading new names…';rows.replaceChildren();
+    try{
+     const r=await queue({action:'vehicle_index_intake_queue',operation:'LIST',after});
+     if(!container.isConnected||!isCurrent())return;
+     if(!r?.ok||r.version!==data.version||!Array.isArray(r.rows)||r.rows.length>50){status.textContent='Catalogue changed or queue unavailable. Reopen Vehicle Index.';cursor=null;more.hidden=true;return;}
+     status.textContent=r.rows.length?r.rows.length+' pending name(s)':'No pending names on this page.';cursor=r.next;more.hidden=!cursor;
+     for(const entry of r.rows){
+      const line=el('div'),pick=el('button','Review '+entry.make+' '+entry.model);pick.type='button';
+      line.append(pick,el('small',' '+entry.sourceKind+' '+entry.sourceId));
+      pick.addEventListener('click',()=>{
+       if(!container.isConnected||!isCurrent()||busy||uncertain||finished)return;
+       const known=data.makes.find(m=>m.name.normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ')===entry.makeKey)||data.makes.find(m=>data.aliases.some(a=>a.kind==='make'&&a.targetId===m.id&&a.value.normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ')===entry.makeKey));
+       kind.value=known?'ADD_MODEL':'ADD_MAKE';if(known)make.value=known.id;refresh();value.value=known?entry.model:entry.make;reason.value='';status.textContent=known?'Verify spelling or select Model spelling correction before approval.':'Review the new brand first; reopen to review its model.';
+      });rows.append(line);
+     }
+    }catch(_){status.textContent='Queue unavailable. Retry.';cursor=null;more.hidden=true;}
+    finally{loading=false;load.disabled=more.disabled=false;}
+   }
+   load.addEventListener('click',()=>page(null));more.addEventListener('click',()=>{if(cursor)page(cursor)});
+   const sourceKind=el('select'),sourceId=el('input'),recover=el('button','Recover saved checklist');recover.type='button';sourceId.placeholder='Checklist number';sourceId.maxLength=80;
+   option(sourceKind,'RECEPTION_CHECKLIST','Reception Checklist');option(sourceKind,'MECHANICAL_CHECKLIST','Mechanical Checklist');
+   recover.addEventListener('click',async()=>{
+    if(loading||!container.isConnected||!isCurrent()||busy||uncertain||finished||!sourceId.value.trim())return;
+    loading=true;recover.disabled=true;status.textContent='Checking saved checklist…';
+    try{const r=await queue({action:'vehicle_index_intake_queue',operation:'RECOVER',sourceKind:sourceKind.value,sourceId:sourceId.value.trim()});if(!container.isConnected||!isCurrent())return;status.textContent=r?.ok?(r.status==='ALREADY_INDEXED'?'Already in catalogue.':'Captured. Refresh pending names.'):'Unable to recover: '+String(r?.code||'unavailable').replace(/_/g,' ');}
+    catch(_){if(isCurrent())status.textContent='Recovery unavailable. Retry safely.';}finally{loading=false;recover.disabled=false;}
+   });section.append(load,more,status,rows,sourceKind,sourceId,recover);container.append(section);
+  }
+  container.append(form,result);refresh();
   return Object.freeze({form,result,confirm});
  }
  root.zukaitVehicleIndexManager=Object.freeze({mount});

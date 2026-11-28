@@ -13,6 +13,8 @@ on:
       - 'tests/vehicle-index-loader.mjs'
       - 'tests/vehicle-index-reviewed.mjs'
       - 'tests/vehicle-index-intake.mjs'
+      - 'tests/vehicle-index-intake-queue.mjs'
+      - 'supabase/functions/workshop-api/extensions/vehicle_index_intake_queue_api.js'
       - 'supabase/functions/workshop-api/extensions/vehicle_index_intake.js'
       - 'docs/vehicle-index-reviewed-seed.sql'
       - 'supabase/functions/workshop-api/extensions/vehicle_index_read_api.js'
@@ -47,6 +49,7 @@ jobs:
       - run: node tests/vehicle-index-loader.mjs
       - run: node tests/vehicle-index-reviewed.mjs
       - run: node tests/vehicle-index-intake.mjs
+      - run: node tests/vehicle-index-intake-queue.mjs
       - run: node tests/reception-vehicle-authority.mjs
       - run: node tests/mechanical-inspection-boundary.mjs
       - run: node tests/mechanical-inspection-session.mjs

@@ -105,3 +105,36 @@ begin
 end $$;
 reset role;
 select 'Vehicle intake authorization, alias recognition, deduplication and atomic batch rejection passed' as result;
+
+-- Minimal committed-source fixtures, only in the disposable CI database.
+create table public.workshop_receptions(rc_no text primary key,details jsonb not null);
+create schema zukait_mechanical;
+create table zukait_mechanical.prejob_checklists(checklist_number text primary key,vehicle jsonb not null);
+grant select on public.workshop_receptions to service_role;
+grant usage on schema zukait_mechanical to service_role;
+grant select on zukait_mechanical.prejob_checklists to service_role;
+insert into public.workshop_receptions values('RC99','{"make":"Nissan","model":"Recovered Name"}');
+insert into zukait_mechanical.prejob_checklists values('MC-P99','{"make":"Toyota","model":"Recovered Mechanical"}');
+set role service_role;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_intake_list(repeat('b',64),null,null);
+ if r->>'code' is distinct from 'manager_required' then raise exception 'non-manager list';end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('b',64),'RECEPTION_CHECKLIST','RC99');
+ if r->>'code' is distinct from 'manager_required' then raise exception 'non-manager recovery';end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('9',64),'RECEPTION_CHECKLIST','RC99');
+ if r->>'status' is distinct from 'REVIEW_REQUIRED' then raise exception 'recovery: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('9',64),'MECHANICAL_CHECKLIST','MC-P99');
+ if r->>'status' is distinct from 'REVIEW_REQUIRED' then raise exception 'mechanical recovery: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('9',64),'RECEPTION_CHECKLIST','RC99');
+ if (select count(*) from public.zukait_vehicle_index_intake)<>3 then raise exception 'duplicate recovery';end if;
+ r:=public.zukait_vehicle_index_intake_list(repeat('9',64),null,null);
+ if jsonb_array_length(r->'rows')<>3 then raise exception 'queue list: %',r;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('9',64),'resolve-queue',3,'ADD_MODEL','Recovered Name','make:nissan',null,'Confirm model name');
+ if r->>'ok' is distinct from 'true' then raise exception 'approval: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_list(repeat('9',64),null,null);
+ if jsonb_array_length(r->'rows')<>2 or (select count(*) from public.zukait_vehicle_index_intake)<>3 then raise exception 'resolved queue observation lost: %',r;end if;
+end $$;
+reset role;
+select 'Manager intake list, exact saved checklist recovery, idempotency and retained observations passed' as result;
