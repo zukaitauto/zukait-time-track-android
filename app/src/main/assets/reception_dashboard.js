@@ -16,7 +16,9 @@
     ["insurance","Insurance","Manager Insurance & LPO","📊"],
     ["ready","Ready to Deliver","Shared QC authority","🚙"],
     ["delivered","Delivered Vehicle List","Latest delivered first","📦"],
-    ["followup","Delivery Follow-up","Promise date · no promise date","📅"]
+    ["followup","Delivery Follow-up","Promise date · no promise date","📅"],
+    ["vehicle-master","Vehicle Master","Vehicle identity and registration","🚗"],
+    ["customer-master","Customer Master","Customer and visit records","👥"]
   ];
   // Correct the ampersand/angle/quote escapes without passing input as HTML.
   const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -25,6 +27,9 @@
   let screen="home",section="checklists",page=0,filters={search:"",month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all",company_filter:"all"};
   let companyOptions=[{value:'all',label:'All companies / job types'},{value:'cash',label:'Cash'},{value:'credit',label:'Credit'},{value:'insurance',label:'All insurance'}];
   const companyOptionsHtml=()=>companyOptions.map(x=>'<option value="'+safe(x.value)+'"'+(String(filters.company_filter||'all')===String(x.value)?' selected':'')+'>'+safe(x.label)+'</option>').join('');
+  const masterKeys=["vehicle-master","customer-master"];
+  const masterRole=()=>["Manager","Supervisor","Receptionist"].includes(role());
+  let masterQuery="",masterSource="jobs",masterPage=0,masterMore=false;
   let backendAvailable=false;
   let counts={},latest=[],total=0,loading=false,sequence=0,pendingTimer=null;
   function css(){
@@ -144,11 +149,24 @@
     .rdb-move-history{margin-top:15px;padding:12px;border-radius:10px;background:#f5f8fc;max-height:145px;overflow:auto;font-size:12px}.rdb-move-history h4{margin:0 0 8px}
     @media(max-width:580px){.rdb-movement-overlay{padding:8px}.rdb-movement-header,#rdb-movement{padding:16px}.rdb-movement-header h3{font-size:19px}}
 `;
+    s.textContent+=`
+    #rc-root .rdb-card[data-section="vehicle-master"]{background:#edf4fd;border-color:#c0d7ef}
+    #rc-root .rdb-card[data-section="customer-master"]{background:#edf7f2;border-color:#c2e2d2}
+    #rc-root .rdb-master{display:grid;gap:12px;padding:16px;border:1px solid #cbdde9;border-radius:14px;background:#f8fbfd;color:#183b52}
+    #rc-root .rdb-master form{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+    #rc-root .rdb-master label{flex:1 1 180px;display:grid;gap:5px;font-weight:750;min-width:0}
+    #rc-root .rdb-master input,#rc-root .rdb-master select{box-sizing:border-box;width:100%;min-height:42px;border:1px solid #b2c8db;border-radius:9px;padding:8px;background:white;color:#183b52}
+    #rc-root .rdb-master button{min-height:40px;border-radius:9px;background:#14647d;color:white;width:auto}
+    #rc-root .rdb-master article{margin-top:8px;padding:13px;border:1px solid #d0e1ec;border-left:4px solid #478b9e;border-radius:10px;background:white;overflow-wrap:anywhere}
+    #rc-root .rdb-master article small{display:block;line-height:1.6;color:#4c6477}
+    #rc-root .rdb-master nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    #rc-root .rdb-master nav[hidden]{display:none}
+    `;
     document.head.appendChild(s);
   }
-  const countFor=key=>["new","create-job","estimate"].includes(key)?"":key==="vwc"?counts.vwc??"":counts[key]??"";
+  const countFor=key=>["new","create-job","estimate",...masterKeys].includes(key)?"":key==="vwc"?counts.vwc??"":counts[key]??"";
   function tiles(){
-    return definitions.filter(d=>d[0]!=="insurance"||role()==="Manager").map(([key,title,sub,icon])=>
+    return definitions.filter(d=>(d[0]!=="insurance"||role()==="Manager")&&(!masterKeys.includes(d[0])||masterRole())).map(([key,title,sub,icon])=>
       '<button type="button" class="rdb-card" data-rdb="tile" data-section="'+key+'" data-active="false" aria-label="Open '+safe(title)+'">'+
       '<span class="rdb-emoji" aria-hidden="true">'+icon+'</span><span class="rdb-content"><b>'+safe(title)+
       '</b><small>'+safe(!backendAvailable&&!['new','checklists','estimate'].includes(key)?'Server update required':sub)+'</small></span><span class="rdb-count">'+safe(backendAvailable?countFor(key):'')+'</span></button>').join("");
@@ -243,6 +261,45 @@
       '<button type="button" data-rdb="previous">Previous</button> '+
       '<button type="button" data-rdb="next">Next</button></div></div></section>';
   }
+  function masterHtml(){
+    const vehicle=section==="vehicle-master";
+    return '<section class="rdb-master"><h4>'+safe(label(section))+'</h4><p>'+
+      (vehicle?'Search by registration. A plate may belong to different vehicles; confirm VIN during intake.':'Search existing customer contact records by name. Each result is a visit, not a verified unique customer identity.')+
+      '</p><form id="rdb-master-search"><label>'+(vehicle?'Registration number':'Customer name')+'<input name="query" required maxlength="80" autocomplete="off" placeholder="'+(vehicle?'32621-M':'Enter customer name')+'" value="'+safe(masterQuery)+'"></label>'+
+      (vehicle?'':'<label>Search records<select name="source"><option value="jobs"'+(masterSource==="jobs"?' selected':'')+'>Job Cards</option><option value="checklists"'+(masterSource==="checklists"?' selected':'')+'>Checklists</option></select></label>')+
+      '<button type="submit">Search</button></form><div id="rdb-master-results" aria-live="polite">Enter a search to view server-confirmed records.</div><nav id="rdb-master-nav" hidden><button type="button" data-rdb="master-prev">Previous</button><span id="rdb-master-page"></span><button type="button" data-rdb="master-next">Next</button></nav></section>';
+  }
+  async function loadMaster(){
+    if(screen!=="master"||!backendAvailable||!masterRole())return;
+    const host=document.getElementById("rdb-master-results"),nav=document.getElementById("rdb-master-nav");
+    if(!host||!nav)return;
+    const actor=String(window.me?.id||""),actorRole=role(),kind=section,request=++sequence,q=masterQuery,source=masterSource,p=masterPage;
+    const current=()=>request===sequence&&screen==="master"&&section===kind&&actor===String(window.me?.id||"")&&actorRole===role()&&host.isConnected;
+    host.textContent="Searching server…";nav.hidden=true;masterMore=false;
+    try{
+      if(kind==="vehicle-master"){
+        const r=await window.zukaitReception.action({action:"vehicle_master_candidates",registration:q});
+        if(!current())return;
+        if(r.available!==true){host.textContent="Vehicle Master is not available on this server.";return;}
+        const rows=Array.isArray(r.candidates)?r.candidates:[];
+        host.innerHTML=rows.length?rows.map(c=>'<article><strong>'+safe([c.make,c.model,c.year].filter(Boolean).join(" ")||"Vehicle details not recorded")+'</strong><small>Registration: '+safe(r.registration_display||q)+' · '+safe(c.identity_status==="VIN_VERIFIED"?"VIN verified":"Identity not verified")+'</small><small>VIN ending: '+safe(c.vin_last4||"Not recorded")+' · Recorded visits: '+safe(c.visits??0)+'</small><small>Vehicle ID: '+safe(c.vehicle_id)+'</small></article>').join(""):"No matching vehicle candidates. Use the existing intake workflow for a new vehicle.";
+      }else{
+        const r=await window.zukaitReception.action({action:"reception_dashboard",section:source,search:q,page:p,month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all",company_filter:"all"});
+        if(!current())return;
+        const rows=(Array.isArray(r.rows)?r.rows:[]).filter(x=>String(x.customer||"").toLowerCase().includes(q.toLowerCase()));
+        masterMore=(p+1)*Number(r.page_size||50)<Number(r.total||0);
+        host.innerHTML=rows.length?rows.map(x=>'<article><strong>'+safe(x.customer)+'</strong><small>'+safe(x.mobile||"Mobile not recorded")+' · '+safe(x.vehicle||"Vehicle not recorded")+' · '+safe(x.registration||"Registration not recorded")+'</small><small>'+safe(x.job_card||x.rc_no||"Reference unavailable")+'</small></article>').join(""):"No matching customer names on this page.";
+        nav.hidden=!(p>0||masterMore);nav.querySelector('[data-rdb="master-prev"]').disabled=p===0;nav.querySelector('[data-rdb="master-next"]').disabled=!masterMore;nav.querySelector("#rdb-master-page").textContent="Source results · page "+(p+1);
+      }
+    }catch(e){if(current())host.textContent="Search could not be confirmed. Please retry.";}
+  }
+  function onMasterSubmit(event){
+    if(event.target.id!=="rdb-master-search")return;
+    event.preventDefault();if(!masterRole())return;
+    const form=event.target,q=String(form.elements.query.value||"").trim();
+    if(q.length<(section==="vehicle-master"?2:3)||q.length>80){++sequence;masterMore=false;document.getElementById("rdb-master-nav").hidden=true;document.getElementById("rdb-master-results").textContent="Enter a valid search.";return;}
+    masterQuery=q;masterSource=form.elements.source?.value==="checklists"?"checklists":"jobs";masterPage=0;void loadMaster();
+  }
   let vwcSection="vwc-checklists";
   function render(){
     css();
@@ -251,9 +308,10 @@
       home?'<p class="rdb-status">'+(backendAvailable?'Reception operations · Data confirmed by the server · Oman dates':'Checklist intake and list are available. The other dashboard functions need a server update.')+'</p>'+
         '<div class="rdb-grid">'+tiles()+'</div>'+
         (backendAvailable?'':'<section class="rc-box" id="rdb-unavailable" aria-live="polite"><h4>Your Reception dashboard</h4><p>Choose Create Checklist or Checklist List to use the current workshop service. Other sections are not yet available on this server; no counts or empty lists are assumed.</p></section>'):
-        '<div class="rdb-section-nav"><button type="button" data-rdb="back-dashboard">← Reception Dashboard</button></div>'+listHtml());
+        '<div class="rdb-section-nav"><button type="button" data-rdb="back-dashboard">← Reception Dashboard</button></div>'+(screen==="master"?masterHtml():listHtml()));
     const root=document.getElementById("rc-root");if(!root)return;
     root.addEventListener("click",onClick);
+    root.addEventListener("submit",onMasterSubmit);
     root.addEventListener('keydown',event=>{if(event.target.matches('.rdb-checklist-click')&&['Enter',' '].includes(event.key)){event.preventDefault();event.target.click()}});
     root.addEventListener("input",onFilter);
     root.addEventListener("change",onFilter);
@@ -272,7 +330,7 @@
     if(prev)prev.disabled=page===0;
   }
   async function load(background=false){
-    if(!backendAvailable)return;
+    if(!backendAvailable||screen==="master")return;
     const request=++sequence;
     loading=true;if(!background)showRows();
     const requestedSection=screen==="home"?"checklists":section==="vwc"?vwcSection:section;
@@ -318,6 +376,7 @@
       if(typeof window.zukaitEstimate?.openHome!=='function')throw Error('Estimate module is unavailable. Reload and try again.');
       return window.zukaitEstimate.openHome();
     }
+    if(masterKeys.includes(next)){if(!masterRole())throw Error("Reception access required.");++sequence;clearTimeout(pendingTimer);screen="master";section=next;masterQuery="";masterSource="jobs";masterPage=0;masterMore=false;render();return;}
     if(next==='insurance')return window.zukaitInsuranceManagement?.open();
     if(next==="new")return window.zukaitReception.newChecklist();
     if(next==="create-job")return window.zukaitReception.directJob();
@@ -509,6 +568,8 @@
       if(what==="edit-job"){const row=latest.find(x=>String(x.job_card)===button.dataset.job);const movement=row&&!row.delivered&&['Supervisor','Receptionist'].includes(role())?()=>{if(row.rc_no)return window.zukaitReception.openRecord(row.rc_no);return vehicleLocationForm(row);}:null;return window.zukaitJobEdit.open(button.dataset.job,{movement});}
       if(what==="tile"){await choose(button.dataset.section);return;}
       if(what==="back-dashboard"){await showDashboard();return;}
+      if(what==="master-prev"&&screen==="master"&&masterPage>0){masterPage--;return loadMaster();}
+      if(what==="master-next"&&screen==="master"&&masterMore){masterPage++;return loadMaster();}
       if(what==="vwc"){vwcSection=button.dataset.section;page=0;latest=[];total=0;return load();}
       if(what==="refresh"){page=0;return load();}
       if(what==="previous"&&page>0){page--;return load();}
