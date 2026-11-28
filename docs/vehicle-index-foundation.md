@@ -55,3 +55,7 @@ Added a reusable make/model input adapter and optional attachment points for Rec
 ### Staged Job Card and Mechanical Checklist integration
 
 Added optional attachment to Reception Job Card edit, Manager full Job Card edit and Mechanical pre-job checklist forms. The adapter can accept explicit existing make/model inputs without altering their IDs or form payload. Linked read-only vehicle fields are not attached; dynamically locked fields and stale suggestions after programmatic make changes are rejected. The source-of-truth save and VIN workflows remain unchanged. Estimate uses a combined make/model field; that screen is not integrated in this increment. No production host loads the adapter until reviewed data activation.
+
+### Staged Mechanical Job Card and shared Estimate autocomplete
+
+Mechanical direct Job Card creation receives the same optional adapter, preserving checklist locks, existing vehicle selection and review-before-create. Shared Bodyshop/Mechanical estimates retain their single makeModel string; the new two-step combined adapter suggests makes then make-scoped models without altering the stored format. Linked Reception/Job Card estimates are excluded and a newly loaded Job Card blocks stale suggestions. No print layout, saved document, VIN, registration, customer, or existing vehicle identity is modified by the adapter. Both hosts remain inactive until a reviewed catalogue is configured and loaded.

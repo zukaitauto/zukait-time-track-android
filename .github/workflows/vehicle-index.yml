@@ -10,6 +10,8 @@ on:
       - 'app/src/main/assets/job_card_edit.js'
       - 'app/src/main/assets/manager_job_edit.js'
       - 'app/src/main/assets/mechanical_prejob_intake.js'
+      - 'app/src/main/assets/mechanical_sections.js'
+      - 'app/src/main/assets/v2/features/estimate/main_module.js'
       - '.github/workflows/vehicle-index.yml'
 permissions:
   contents: read

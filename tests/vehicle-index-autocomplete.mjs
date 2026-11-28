@@ -59,3 +59,17 @@ assert.equal(section.querySelector('#other').value,'untouched');
 const locked=doc.createElement('form');locked.innerHTML='<label><input name="make" readonly></label><label><input name="model"></label>';doc.body.append(locked);
 assert.equal(ui.attach(locked,index),null);
 for(const file of ['job_card_edit.js','manager_job_edit.js','mechanical_prejob_intake.js'])assert.match(fs.readFileSync('app/src/main/assets/'+file,'utf8'),/zukaitVehicleAutocomplete\?\.attach\?\./);
+
+const estimateForm=doc.createElement('div');estimateForm.innerHTML='<label>Make & Model<input id="combined"></label><input id="linked-job"><input id="estimate-vin" value="untouched">';doc.body.append(estimateForm);
+const combinedField=estimateForm.querySelector('#combined'),linked=estimateForm.querySelector('#linked-job');
+const combinedUI=ui.attachCombined(combinedField,()=>!linked.value,index);
+enter(combinedField,'n');assert.equal(combinedUI.panel.textContent,'Nissan');combinedUI.panel.querySelector('button').click();
+assert.equal(combinedField.value,'Nissan ');
+enter(combinedField,'Nissan p');assert.equal(combinedUI.panel.textContent,'Patrol');combinedUI.panel.querySelector('button').click();
+assert.equal(combinedField.value,'Nissan Patrol');
+assert.equal(estimateForm.querySelector('#estimate-vin').value,'untouched');
+enter(combinedField,'Toyota land');const oldChoice=combinedUI.panel.querySelector('button');linked.value='JC123';oldChoice.click();assert.equal(combinedField.value,'Toyota land','linked estimate selection is rejected');
+linked.value='';enter(combinedField,'Toyota land');const outdated=combinedUI.panel.querySelector('button');combinedField.value='Nissan Patrol';outdated.click();assert.equal(combinedField.value,'Nissan Patrol','stale estimate option cannot overwrite a programmatic lookup');
+combinedField.readOnly=true;enter(combinedField,'n');assert.equal(combinedUI.panel.hidden,true);
+assert.match(fs.readFileSync('app/src/main/assets/mechanical_sections.js','utf8'),/zukaitVehicleAutocomplete\?\.attach\?\.\(form\)/);
+assert.match(fs.readFileSync('app/src/main/assets/v2/features/estimate/main_module.js','utf8'),/zukaitVehicleAutocomplete\?\.attachCombined\?\./);

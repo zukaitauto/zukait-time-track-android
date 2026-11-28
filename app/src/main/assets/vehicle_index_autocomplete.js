@@ -54,7 +54,7 @@
   }
   function render(p){
    hide(p);p.status.textContent='';
-   if(p.field.disabled||p.field.readOnly||!p.field.value.trim())return;
+   if(make.disabled||model.disabled||make.readOnly||model.readOnly||!p.field.value.trim())return;
    const mk=p===dp?exactMake():null;
    if(p===dp&&!mk){p.status.textContent='Select or enter a known vehicle make first. You may still enter a model manually.';return}
    const list=p===mp?index.searchMakes(p.field.value,12):index.searchModels(mk.id,p.field.value,12);
@@ -83,5 +83,58 @@
   const mountedState=Object.freeze({makePanel:mp.panel,modelPanel:dp.panel});
   mounted.set(form,mountedState);return mountedState;
  }
- root.zukaitVehicleAutocomplete=Object.freeze({configure,attach});
+ // Estimates persist a single combined make/model string. Keep its existing
+ // field and payload; offer two-step suggestions without creating named fields.
+ const combined=new WeakMap();
+ function attachCombined(field,canEdit=()=>true,index=provider){
+  if(!field||!index||!field.parentElement||field.readOnly||field.disabled||!canEdit()||combined.has(field))return combined.get(field)||null;
+  const doc=field.ownerDocument,panel=doc.createElement('div'),status=doc.createElement('small');
+  panel.hidden=true;panel.style.cssText='display:none;flex-wrap:wrap;gap:6px;max-height:160px;overflow:auto;margin:5px 0';
+  panel.setAttribute('role','group');panel.setAttribute('aria-label','Vehicle make and model suggestions');
+  status.setAttribute('role','status');status.style.cssText='display:block;margin-top:4px';
+  field.insertAdjacentElement('afterend',panel);panel.insertAdjacentElement('afterend',status);
+  const editable=()=>field.isConnected&&!field.readOnly&&!field.disabled&&canEdit();
+  function hide(){panel.replaceChildren();panel.hidden=true;panel.style.display='none'}
+  function render(){
+   hide();status.textContent='';
+   if(!editable())return;
+   const input=field.value,query=normalize(input);
+   if(!query)return;
+   // Use the longest exact make prefix (e.g. Land Rover, not Land).
+   const words=query.split(' '),prefixes=[];
+   for(let n=words.length;n>=1;n--)prefixes.push(words.slice(0,n).join(' '));
+   let selected=null,rest='';
+   for(const prefix of prefixes){
+    if(prefix===query&&!/\s$/.test(input))continue;
+    const match=index.searchMakes(prefix,100).find(m=>normalize(m.name)===prefix);
+    if(match){selected=match;rest=query.slice(prefix.length).trim();break}
+   }
+   if(selected&&!rest){status.textContent='Type the vehicle model.';return}
+   const rows=selected?index.searchModels(selected.id,rest,12):index.searchMakes(input,12);
+   if(!rows.length){status.textContent='Not in the catalogue. Manual entry remains available.';return}
+   for(const row of rows){
+    const button=doc.createElement('button');button.type='button';button.textContent=row.name;
+    button.style.cssText='padding:7px 10px;max-width:100%;white-space:normal;text-align:left';
+    button.addEventListener('click',()=>{
+     if(!editable()||field.value!==input){hide();return}
+     field.value=selected?selected.name+' '+row.name:row.name+' ';
+     const EventType=doc.defaultView?.Event;
+     if(EventType){field.dispatchEvent(new EventType('input',{bubbles:true}));field.dispatchEvent(new EventType('change',{bubbles:true}));}
+     field.focus();render();
+     if(selected){hide();status.textContent='';}
+    });
+    panel.appendChild(button);
+   }
+   panel.hidden=false;panel.style.display='flex';
+  }
+  field.addEventListener('input',render);field.addEventListener('focus',render);
+  field.addEventListener('keydown',e=>{
+   if(e.key==='Escape')hide();
+   if(e.key==='ArrowDown'&&!panel.hidden){const button=panel.querySelector('button');if(button){e.preventDefault();button.focus()}}
+  });
+  const container=field.parentElement;
+  container.addEventListener('focusout',e=>{if(!container.contains(e.relatedTarget))hide()});
+  const mounted=Object.freeze({panel,status});combined.set(field,mounted);return mounted;
+ }
+ root.zukaitVehicleAutocomplete=Object.freeze({configure,attach,attachCombined});
 })(typeof window!=='undefined'?window:globalThis);
