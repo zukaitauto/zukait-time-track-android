@@ -47,13 +47,14 @@ function v251RefreshManagerKpi(){window.v251CashPulse?.install?.()}
 function techBoard(st){const d=[['Denter','DENTING','🛠️'],['Painter','PAINTING','<svg class="v237-spray-gun" viewBox="0 0 64 64" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><path d="M5 25 18 21M4 32h14M6 39l12-5" stroke="#e87955" stroke-width="3" stroke-linecap="round"/><path d="m35 7 17 4-4 16-14-4z" fill="#fff" stroke="#41576d" stroke-width="3"/><path d="m20 26 26 7-3 10-26-7z" fill="#607c96" stroke="#34485b" stroke-width="3"/><path d="m36 40-7 15 8 3 8-17M25 37c0 6 2 10 7 10" fill="none" stroke="#34485b" stroke-width="4" stroke-linejoin="round"/><path d="m43 39 11 3M38 58c8 2 17-2 18-11" fill="none" stroke="#34485b" stroke-width="3" stroke-linecap="round"/></svg>'],['Mechanic','MECHANICAL','⚙️']],eng=window.zukaitV2?.efficiency,nowTs=Date.now(),md=new Date(nowTs),from=+new Date(md.getFullYear(),md.getMonth(),1),to=+new Date(md.getFullYear(),md.getMonth()+1,1),summary=eng?eng.summarize(S(),{start:from,end:to}):null,deptEff=dept=>{if(!summary)return null;const ids=new Set(U().filter(u=>u&&u.role==='Employee'&&u.department===dept).map(u=>String(u.id))),rows=(summary.rows||[]).filter(r=>ids.has(String(r.employeeId))),sg=rows.reduce((n,r)=>n+(+r.suggestedMinutes||0),0),ac=rows.reduce((n,r)=>n+(+r.actualMinutes||0),0);return ac>0?sg/ac*100:null};return'<div class="card v143-card"><div class="v143-title"><div><h3>Technician Board</h3><small>Live workshop status · monthly efficiency</small></div><span class="v143-live">● LIVE</span></div><div class="v143-tech">'+d.map(x=>{const team=U().filter(u=>u&&u.role==='Employee'&&u.department===x[0]),w=team.filter(u=>{const s=st.find(z=>String(z.emp)===String(u.id));return s&&['Working','Overtime','ID001'].includes(s.status)}).length,ef=deptEff(x[0]);return'<button class="v237-department v237-'+x[0].toLowerCase()+'" onclick="openTechnicianDepartment(\''+x[0]+'\')"><span>'+x[2]+'</span><b>'+x[1]+'</b><strong>'+w+' <em>/ '+team.length+'</em></strong><small>WORKING / TOTAL</small><small class="v242-dept-eff">MTD EFFICIENCY · '+(ef==null?'—':ef.toFixed(1)+'%')+'</small></button>'}).join('')+'</div></div>'}
 
 window.zukaitTechnicianBoardHTML=()=>techBoard(staff());
+const managerTechnicianMarkup=document.createElement('template');
 window.zukaitRefreshManagerTechnicianBoard=function(){
  if(typeof v251RefreshManagerKpi==='function')v251RefreshManagerKpi();
  if(role()!=='Manager')return;
  const root=document.getElementById('managerView');if(!root)return;
  let host=root.querySelector('#managerTechnicianBoard');
  if(!host){host=document.createElement('section');host.id='managerTechnicianBoard';root.appendChild(host)}
- const html=window.zukaitTechnicianBoardHTML();if(host.innerHTML!==html)host.innerHTML=html;
+ const html=window.zukaitTechnicianBoardHTML();managerTechnicianMarkup.innerHTML=html;if(host.innerHTML!==managerTechnicianMarkup.innerHTML)host.innerHTML=html;
 };
 
 let voiceRecognition=null,voiceListening=false;
