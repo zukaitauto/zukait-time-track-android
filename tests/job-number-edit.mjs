@@ -35,7 +35,13 @@ console.log('Job numbers: reference round-trip, immutable amounts/text, dictiona
 // while retaining its queued part update, rather than leaving a detached cache.
 const cache=new Map(),box={window:{me:{id:'M',role:'Manager'}},localStorage:{getItem:k=>cache.get(k)||null,setItem:(k,v)=>cache.set(k,v)},navigator:{onLine:true},document:{getElementById:()=>null},alert:()=>{},Date,console};
 vm.createContext(box);vm.runInContext(fs.readFileSync('app/src/main/assets/v2/features/spare-parts/main_module.js','utf8'),box);
+vm.runInContext(fs.readFileSync('app/src/main/assets/v2/core/offline_queue.js','utf8'),box);
+box.window.zukaitV2.queue.enqueue({eventId:'offline-1',entityId:'part-1',actorId:'M',type:'SPARE_PART_STATUS_CHANGED',serverRevision:2,payload:{partId:'part-1',listNo:'PL001',jobCard:'11965',from:'ENQUIRY',to:'ORDERED'}});
 cache.set('zukait_v2_spare_parts_lists_v1',JSON.stringify([{listNo:'PL001',jobCard:'11965',items:[{id:'part-1',name:'Bumper',qty:1,status:'ORDERED',pendingSync:true,pendingEventId:'offline-1'}]}]));
 box.window.zukaitV2.sparePartsMain.hydrateFromServerRows([{event_type:'SPARE_PART_LIST_CREATED',list_no:'PL001',job_card:'12965',payload:{listNo:'PL001',jobCard:'12965'}}]);
 const cached=JSON.parse(cache.get('zukait_v2_spare_parts_lists_v1'))[0];assert.equal(cached.jobCard,'12965');assert.equal(cached.items[0].pendingEventId,'offline-1');assert.equal(cached.items[0].status,'ORDERED');
 console.log('Pending Spare Parts cache adopts corrected number without losing queued work.');
+assert.equal(box.window.zukaitV2.sparePartsMain.queueState('offline-1'),'pending');
+box.window.zukaitV2.queue.markSynced('offline-1');
+box.window.zukaitV2.sparePartsMain.hydrateFromServerRows([{event_type:'SPARE_PART_LIST_CREATED',list_no:'PL001',job_card:'12965',payload:{listNo:'PL001',jobCard:'12965'}}]);
+assert.equal(JSON.parse(cache.get('zukait_v2_spare_parts_lists_v1'))[0].items.length,0,'Closed queue work must not preserve an orphan part absent from authoritative history');

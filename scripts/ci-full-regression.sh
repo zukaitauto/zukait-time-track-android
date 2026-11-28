@@ -3,6 +3,7 @@ set -euo pipefail
 node tests/v391-release-gate.cjs
 node tests/vehicle-movement.mjs
 node tests/job-identity-preservation.mjs
+node tests/job-number-edit.mjs
 node tests/job-card-manager-open.mjs
 # Every caller runs the same DOM tests with the pinned development dependencies.
 if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
