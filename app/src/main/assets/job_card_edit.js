@@ -10,7 +10,7 @@ async function api(body){
  const response=await fetch('https://pjknotnjkufadqavcmii.supabase.co/functions/v1/workshop-api',{method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_-sg597IpB0MLIHdDoedRIA_MTt0Sa9A','x-zukait-session':window.zukaitAuth?.getToken?.()||''},body:JSON.stringify({action:'job_card_edit',...body})});
  const result=await response.json();if(!response.ok||!result.ok)throw Error(messages[result.code]||(body.operation==='GET'?'Job Card could not be loaded. Refresh and try again.':'Job Card could not be saved. Refresh and try again.'));return result;
 }
-async function open(no){
+async function open(no,options={}){
  if(!['Manager','Supervisor','Receptionist'].includes(actor()?.role))return;
  const id=++loadId;draft=null;viewStyle();
  try{
@@ -26,7 +26,7 @@ async function open(no){
   draft={job:j,locked:result.invoice_locked};
   if(!j.make||!j.model){const n=window.zukaitNormalizeVehicle?.(j.make||'',j.model||'',j.vehicle||'');if(n){j.make=j.make||n.make;j.model=j.model||n.model;}}
   const input=([key,label])=>'<label>'+esc(key==='amount'&&String(j.jobType||'').toUpperCase()==='INSURANCE'?'Approx. Repair Amount (OMR)':label)+'<input id="jce-'+key+'" '+(key==='amount'?'type="number" min="0" max="1000000" step="0.001" inputmode="decimal" ':'')+'value="'+esc(j[key])+'"'+(j.receptionNo&&linked.has(key)||key==='amount'&&result.invoice_locked?' readonly':'')+'></label>';
-  openModal('<section class="jce-form jce-view jce-editor"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Edit Job Card · '+esc(j.no)+'</h3><div>'+esc([j.make,j.model].filter(Boolean).join(' ')||j.vehicle||'')+'</div></div></header>'+(j.receptionNo?'<p>Vehicle identity is linked to '+esc(j.receptionNo)+'. Correct it in Reception Checklist.</p>':'')+(result.invoice_locked?'<p>Final invoice amount is authoritative. Use Invoice Entry for a correction.</p>':'')+'<form id="jce-form"><section class="jce-view-section"><h4>Vehicle, Customer & Payment</h4><div class="grid">'+fields.map(input).join('')+'<label>Job Type<select id="jce-jobType"'+(j.receptionNo?' disabled':'')+'>'+['Cash','Credit','Insurance'].map(t=>'<option'+(t.toUpperCase()===String(j.jobType||'').toUpperCase()?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div></section><label>Reason for Change<textarea id="jce-reason" maxlength="2000" required></textarea></label><button type="submit">Save Changes</button><button type="button" id="jce-cancel">Cancel</button></form></section>');
+  openModal('<section class="jce-form jce-view jce-editor"><header class="jce-view-header"><div><small>ZUKAIT INTERNATIONAL LLC</small><h3>Edit Job Card · '+esc(j.no)+'</h3><div>'+esc([j.make,j.model].filter(Boolean).join(' ')||j.vehicle||'')+'</div></div></header>'+(j.receptionNo?'<p>Vehicle identity is linked to '+esc(j.receptionNo)+'. Correct it in Reception Checklist.</p>':'')+(result.invoice_locked?'<p>Final invoice amount is authoritative. Use Invoice Entry for a correction.</p>':'')+'<form id="jce-form"><section class="jce-view-section"><h4>Vehicle, Customer & Payment</h4><div class="grid">'+fields.map(input).join('')+'<label>Job Type<select id="jce-jobType"'+(j.receptionNo?' disabled':'')+'>'+['Cash','Credit','Insurance'].map(t=>'<option'+(t.toUpperCase()===String(j.jobType||'').toUpperCase()?' selected':'')+'>'+t+'</option>').join('')+'</select></label></div></section><label>Reason for Change<textarea id="jce-reason" maxlength="2000" required></textarea></label><button type="submit">Save Changes</button>'+(typeof options.movement==='function'?'<button type="button" id="jce-location-action">Change Vehicle Location</button>':'')+'<button type="button" id="jce-cancel">Cancel</button></form></section>');
   document.querySelector('.jce-editor')?.closest('.modal-box')?.classList.add('jce-view-modal');
   window.zukaitVehicleAutocomplete?.attach?.(document.getElementById('jce-form'),undefined,{make:document.getElementById('jce-make'),model:document.getElementById('jce-model')});
   const editType=document.getElementById('jce-jobType');
@@ -39,6 +39,7 @@ async function open(no){
   };
   editType.addEventListener('change',updateInsuranceVisibility);
   updateInsuranceVisibility();
+  const locationAction=document.getElementById('jce-location-action');if(locationAction)locationAction.onclick=()=>{if(busy)return;draft=null;loadId++;closeModal();options.movement();};
   document.getElementById('jce-form').onsubmit=e=>{e.preventDefault();save();};
   document.getElementById('jce-cancel').onclick=()=>{draft=null;loadId++;closeModal();window.zukaitReceptionDashboard?.showJobs?.();};
  }catch(e){alert(e.message);}

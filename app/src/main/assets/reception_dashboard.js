@@ -222,7 +222,7 @@
         ?'<input type="date" aria-label="Promise date for JC '+jc+'" data-rdb-promise="'+jc+'" value="'+safe(row.promise_date)+'"><button type="button" data-rdb="promise" data-job="'+jc+'" data-original="'+safe(row.promise_date)+'">Save</button>'
         :safe(date(row.promise_date));
       const actions='<button type="button" data-rdb="open" data-rc="" data-job="'+jc+'">View</button>'+
-        ((!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+jc+'">Edit</button>':'')+(!row.delivered&&['Manager','Supervisor','Receptionist'].includes(role())?'<button type="button" data-rdb="vehicle-location" data-job="'+jc+'">VIG / VWC</button>':'');
+        ((!row.delivered||role()==='Manager')?'<button type="button" data-rdb="edit-job" data-job="'+jc+'">Edit</button>':'');
       return '<tr>'+cells.map(cell=>'<td>'+safe(cell)+'</td>').join('')+'<td>'+status+'</td><td>'+
         (Number.isInteger(row.days_open)?row.days_open:'—')+'</td><td>'+promise+'</td><td>'+actions+'</td></tr>';
     });
@@ -506,7 +506,7 @@
         }finally{button.disabled=false;}
         return;
       }
-      if(what==="edit-job")return window.zukaitJobEdit.open(button.dataset.job);
+      if(what==="edit-job"){const row=latest.find(x=>String(x.job_card)===button.dataset.job);const movement=row&&!row.delivered&&['Supervisor','Receptionist'].includes(role())?()=>{if(row.rc_no)return window.zukaitReception.openRecord(row.rc_no);return vehicleLocationForm(row);}:null;return window.zukaitJobEdit.open(button.dataset.job,{movement});}
       if(what==="tile"){await choose(button.dataset.section);return;}
       if(what==="back-dashboard"){await showDashboard();return;}
       if(what==="vwc"){vwcSection=button.dataset.section;page=0;latest=[];total=0;return load();}
