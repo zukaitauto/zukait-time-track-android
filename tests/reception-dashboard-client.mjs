@@ -79,6 +79,23 @@ for(const key of ["vehicle-master","customer-master"]){
  await click('#rc-root [data-rdb=back-dashboard]');
 }
 
+// A pending master response must not render after the signed-in account or token changes.
+await click('#rc-root [data-rdb=tile][data-section=customer-master]');
+const savedAction=w.zukaitReception.action;
+let finishLookup;w.zukaitReception.action=body=>body.action==="customer_master_search"?new Promise(resolve=>finishLookup=resolve):savedAction(body);
+const staleForm=w.document.querySelector("#rdb-master-search");
+staleForm.elements.query.value="Private QA";
+staleForm.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
+await settle();assert.equal(typeof finishLookup,"function");
+w.zukaitAuth={getToken:()=>"DIFFERENT-SESSION"};
+finishLookup({ok:true,available:true,rows:[{customer:"Private QA",mobile:"99999999"}]});
+await settle();
+assert.doesNotMatch(w.document.querySelector("#rdb-master-results").textContent,/Private QA|99999999/);
+w.zukaitReception.action=savedAction;w.zukaitAuth={getToken:()=>"QA-EXISTING-MANAGER-TOKEN"};
+await click('#rc-root [data-rdb=back-dashboard]');
+const savedActor=w.me;w.me={id:"QA-EMP",role:"Employee"};
+await assert.rejects(()=>w.zukaitReceptionDashboard.choose("customer-master"),/Reception access required/);
+w.me=savedActor;
 const headings={checklists:"Checklist List",jobs:"Job Card List",waiting:"Approval Waiting Insurance",
  vwc:"Vehicle With Customer",approved:"Approved Vehicles",ready:"Ready to Deliver",
  delivered:"Delivered Vehicle List",followup:"Delivery Follow-up"};
@@ -157,7 +174,7 @@ assert.ok([...buttons].some(b=>b.textContent.includes("Delivery Follow-up")));
 assert.equal(w.document.querySelectorAll("#rdb-results").length,0,"Unavailable data must not appear as an empty list");
 assert.ok([...w.document.querySelectorAll('.rdb-count')].every(x=>x.textContent===''),"No invented counts");
 const probeCount=phase1Requests.length;
-for(const key of ['create-job','jobs','waiting','vwc','approved','ready','delivered','followup']){
+for(const key of ['create-job','jobs','waiting','vwc','approved','ready','delivered','followup','vehicle-master','customer-master']){
  await click('#rc-root [data-rdb=tile][data-section='+key+']');
  assert.match(w.document.querySelector('#rdb-unavailable').textContent,/needs the Reception server update/);
 }
