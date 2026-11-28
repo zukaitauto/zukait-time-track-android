@@ -58,3 +58,33 @@ const entry=fs.readFileSync('app/src/main/assets/offline_test.html','utf8');
 assert.ok(entry.indexOf('src="leave_history.js')>entry.indexOf('src="v74_updates.js'),'final history handler loads after legacy overrides');
 console.log('Global leave history: lexical authority, both roles, all months/staff/status, print/share parity, remote refresh, privacy, save status passed.');
 
+
+// Grouping is read-only, preserves original totals and action IDs, and respects filters.
+vm.runInContext("me.role='Manager';state={leaves:["+[
+ {id:'a1',emp:'E1',date:'2026-11-30',period:'FULL',remark:'annual leave',by:'S'},
+ {id:'a2',emp:'E1',date:'2026-11-29',period:'FULL',remark:'annual leave',by:'S'},
+ {id:'a3',emp:'E1',date:'2026-11-28',period:'FULL',remark:'annual leave',by:'S'},
+ {id:'a4',emp:'E1',date:'2026-11-26',period:'FULL',remark:'annual leave',by:'S'},
+ {id:'a5',emp:'E1',date:'2026-12-01',period:'FULL',remark:'annual leave',by:'S'},
+ {id:'m1',emp:'E2',date:'2026-11-29',period:'FULL',remark:'Medical',by:'S'},
+ {id:'m2',emp:'E2',date:'2026-11-28',period:'FULL',remark:'Medical',by:'S'},
+ {id:'half',emp:'E2',date:'2026-11-27',period:'AM',remark:'Medical',by:'S'},
+ {id:'cancel',emp:'E1',date:'2026-11-27',period:'FULL',remark:'annual leave',by:'S',cancelled:true}
+].map(x=>JSON.stringify(x)).join(',')+"]}",c);
+const groupedBefore=vm.runInContext('JSON.stringify(state)',c);
+h.open('history');h.filter('month','2026-11');
+assert.equal(h.rows().length,7);
+assert.match(nodes.leaveHistoryResults.innerHTML,/2026-11-28 – 2026-11-30/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/Annual leave · 3 days/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/Medical leave · 2 days/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/data-leave-edit="a2"/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/<b>6.5<\/b> leave days/);
+assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/2026-11-26 – 2026-11-30/);
+h.print();assert.match(printed,/Annual leave · 3 days/);assert.doesNotMatch(printed,/data-leave-edit/);
+h.share();assert.match(decodeURIComponent(shared),/Medical leave · 2 days/);
+h.setView('daily');assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/Annual leave · 3 days/);
+h.setView('grouped');h.filter('month','');assert.match(nodes.leaveHistoryResults.innerHTML,/Annual leave · 4 days/);
+h.filter('status','all');assert.match(nodes.leaveHistoryResults.innerHTML,/Cancelled/);
+vm.runInContext("me.role='Supervisor'",c);h.refresh();assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/data-leave-edit/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/View 4 daily records/);
+assert.equal(vm.runInContext('JSON.stringify(state)',c),groupedBefore);
