@@ -44,6 +44,18 @@ await reset(true);
 const future=structuredClone(r.data);future.jobs[0].receptionLocationDate='9999-12-31';
 await assert.rejects(call('future movement','M',1,future),/location_invalid_date/);
 assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');
-console.log('Dated linked movement and rollback on invalid date passed.');
+// Use a small isolated projection fixture for the compact wrapper as well.
+// The actual compact delta encoding is covered separately; this tests its date and transaction wiring.
+await db.exec(`create schema private;
+create function private.capture_manager_job_projection(workshop_state,workshop_state,text) returns void language plpgsql as $begin return; end$;
+create function zukait_manager_full_job_edit_before_location_v1_compact(bigint,jsonb,text,text,text,jsonb) returns jsonb language sql as $select zukait_manager_full_job_edit_before_location_v1($1,$2,$3,$4,$5,$6)$;`);
+await db.exec(staged.split('-- COMPACT PATH\n')[1].replace(/commit;\s*$/i,''));
+const compact=async(reason='dated movement',data=historical)=>(await db.query('select zukait_manager_full_job_edit_compact($1,$2::jsonb,$3,$4,$5,$6::jsonb) r',[1,JSON.stringify(data),'M','J',reason,JSON.stringify([{state_revision:2}])])).rows[0].r;
+await reset(true);assert.equal((await compact()).ok,true);
+assert.equal((await db.query("select to_char(occurred_at at time zone 'Asia/Muscat','YYYY-MM-DD') as d from workshop_reception_movements")).rows[0].d,effective);
+assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VWC');
+await reset(true);await assert.rejects(compact('fail'),/full_edit_commit_failed/);assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');assert.equal(Number((await db.query('select count(*) n from workshop_reception_movements')).rows[0].n),0);
+await reset(true);await assert.rejects(compact('future movement',future),/location_invalid_date/);
+console.log('Dated linked movement and rollback on invalid date passed on both SQL wrappers.');
 console.log('Job location: Manager-only audited direct/linked updates, shared VWC, state/live revisions, stale saves, rollback and CTL protection passed.');
 }finally{await db.close()}
