@@ -4,12 +4,12 @@ node tests/v391-release-gate.cjs
 node tests/vehicle-movement.mjs
 node tests/job-identity-preservation.mjs
 node tests/job-number-edit.mjs
-node tests/vehicle-index-autocomplete.mjs
 node tests/job-card-manager-open.mjs
 # Every caller runs the same DOM tests with the pinned development dependencies.
 if ! node -e "require.resolve('jsdom')" >/dev/null 2>&1; then
   npm ci --ignore-scripts --include=dev
 fi
+node tests/vehicle-index-autocomplete.mjs
 node tests/manager-job-sync.mjs
 node tests/manager-full-edit.cjs
 node tests/v377-workshop-performance-ui.mjs
