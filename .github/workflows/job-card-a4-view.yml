@@ -9,6 +9,8 @@ on:
       - 'supabase/staged/MANAGER_JOB_LOCATION_DATE.sql'
       - 'tests/job-vehicle-location.mjs'
       - 'tests/reception-dashboard-client.mjs'
+      - 'tests/reception-receptionist-api.mjs'
+      - 'supabase/staged/CUSTOMER_VISIT_DIRECTORY_V427.sql'
       - 'tests/job-card-a4-view.mjs'
       - '.github/workflows/job-card-a4-view.yml'
 permissions:
@@ -27,3 +29,4 @@ jobs:
       - run: node tests/reception-job-edit.mjs
       - run: node tests/job-vehicle-location.mjs
       - run: node tests/reception-dashboard-client.mjs
+      - run: node tests/reception-receptionist-api.mjs

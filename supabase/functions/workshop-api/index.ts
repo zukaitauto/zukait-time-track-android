@@ -59,6 +59,7 @@ function receptionistRequestAllowed(action: string, body: any) {
   if(action==='reception_vehicle_movement')return Object.keys(body).every(k=>['action','request_id','job_card','location','expected_location','movement_date','reason'].includes(k));
   if (action === "vehicle_lookup") return Object.keys(body).every(k => ["action","registration"].includes(k));
   if (action === "vehicle_master_candidates") return Object.keys(body).every(k => ["action","registration"].includes(k));
+  if (action === "customer_master_search") return Object.keys(body).every(k => ["action","source","query","page"].includes(k));
   if (action === "vehicle_master_verify") return Object.keys(body).every(k => ["action","registration","vehicle_id","vin"].includes(k));
   if (action === "vehicle_master_direct_job_role") return Object.keys(body).every(k => ["action","request_id","customer_role"].includes(k));
   if (action === "vehicle_master_customer_role") return Object.keys(body).every(k => ["action","rc_no","customer_role"].includes(k));
@@ -1417,6 +1418,9 @@ Deno.serve(async (req: Request) => {
     // its server-side promise-date revision guards and permission checks remain unchanged.
     // Accountant leave changes are allowed only through the audited command handler;
     // generic workshop save and Manager operations remain forbidden for Accountant users.
+    // Deny customer-directory access before dispatch to other role-specific modules.
+    if(action==="customer_master_search"&&!["Manager","Supervisor","Receptionist"].includes(String(user.role)))
+      return reply({ok:false,code:"reception_forbidden"},403);
     if (user.role === 'Accountant' || action.startsWith('accountant_')) {
       try {const result=await accountantApi(admin,user,body,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,Date.now(),{computeLiveStatus,coalesceContextReads:Deno.env.get('ZUKAIT_ACCOUNTANT_COALESCE_READS')==='true'||(Deno.env.get('SUPABASE_URL')?.replace(/\/$/,'')==='https://pjknotnjkufadqavcmii.supabase.co'&&Deno.env.get('ZUKAIT_ACCOUNTANT_COALESCE_READS')!=='false'),contextProject:Deno.env.get('SUPABASE_URL')||''});return reply(result.body,result.status);}
       catch(error){const result=accountantError(error);return reply(result.body,result.status);}
@@ -1526,6 +1530,27 @@ Deno.serve(async (req: Request) => {
       const {data,error}=await admin.rpc("zukait_vehicle_lookup",{p_registration:body.registration});
       if (error) throw error;
       return reply({ok:true,...data});
+    }
+
+    if (action === "customer_master_search") {
+      if (!["Manager","Supervisor","Receptionist"].includes(String(user.role))) return reply({ok:false,code:"reception_forbidden"},403);
+      if (Object.keys(body).some(k=>!["action","source","query","page"].includes(k)) ||
+          !["checklists","direct-jobs"].includes(body.source) ||
+          typeof body.query!=="string" || body.query.trim().length<3 || body.query.length>80 ||
+          !Number.isInteger(body.page) || body.page<0 || body.page>100)
+        return reply({ok:false,code:"customer_master_invalid_search"},400);
+      const {data:cap,error:capError}=await admin.rpc("zukait_reception_command",
+        {p_actor_id:String(user.id),p_command:{operation:"CAPABILITIES"}});
+      if(capError)throw capError;
+      if(!cap?.allowed)return reply({ok:false,code:"reception_forbidden"},403);
+      const {data,error}=await admin.rpc("zukait_customer_visit_search",{
+        p_source:body.source,p_query:body.query.trim(),p_page:body.page
+      });
+      if(error){
+        if(error.code==="42883"||error.code==="PGRST202")return reply({ok:true,available:false,rows:[]});
+        throw error;
+      }
+      return reply({ok:true,available:true,...data});
     }
 
     if (action === "reception_dashboard") {

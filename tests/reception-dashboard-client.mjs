@@ -15,9 +15,20 @@ w.fetch=async(_url,args)=>{
  if(body.action==="reception"&&body.command.operation==="CAPABILITIES")res={ok:true,allowed:true,manager:true};
  if(body.action==="reception"&&body.command.operation==="MASTER")res={ok:true,companies:[]};
  if(body.action==="reception"&&body.command.operation==="LIST")res={ok:true,rows:[]};
+ if(body.action==="vehicle_master_candidates"){
+  assert.equal(body.registration,"QA 123");
+  res={ok:true,available:true,registration_display:"QA 123",candidates:[
+   {vehicle_id:"qa-vehicle-one",make:"Toyota",model:"Camry",year:2024,identity_status:"VIN_VERIFIED",vin_last4:"1234",visits:2},
+   {vehicle_id:"qa-vehicle-two",make:"Nissan",model:"Patrol",identity_status:"PROVISIONAL",visits:1}
+  ]};
+ }
+ if(body.action==="customer_master_search"){
+  assert.equal(body.query,"QA Customer");assert.equal(body.source,"direct-jobs");assert.equal(body.page,0);
+  res={ok:true,available:true,has_more:false,rows:[{customer:"QA Customer",mobile:"90000000",vehicle:"Toyota Camry 2024",registration:"QA 123",job_card:"JC120"}]};
+ }
  if(body.action==="reception_dashboard"){
   const row={rc_no:"RC0012",sequence_no:12,job_card:"JC120",vehicle:"Toyota Camry 2024",
-   registration:"QA 123",job_type:"INSURANCE",received_date:"2026-10-10",created_date:"2026-10-10",
+   registration:"QA 123",customer:"QA Customer",mobile:"90000000",job_type:"INSURANCE",received_date:"2026-10-10",created_date:"2026-10-10",
    promise_date:promise,delivered_date:"",location:"VIW",status:"Open",delivered:false};
   res={ok:true,counts:{checklists:1,jobs:1,waiting:0,"vwc-checklists":0,"vwc-jobs":0,vwc:0,
    approved:0,ready:0,delivered:0,followup:1,no_promise_date:promise?0:1},
@@ -36,12 +47,55 @@ w.eval(fs.readFileSync("app/src/main/assets/reception_dashboard.js","utf8"));
 const settle=async()=>{for(let i=0;i<20;i++)await new Promise(resolve=>setImmediate(resolve));};
 await w.zukaitReception.open();await settle();
 let buttons=w.document.querySelectorAll("#rc-root [data-rdb=tile]");
-assert.equal(buttons.length,14,"Reception home includes the authorized Estimate launcher and retains all existing work cards");
+assert.equal(buttons.length,16,"Reception home includes the authorized Estimate launcher and retains all existing work cards");
 assert.ok([...buttons].some(b=>b.dataset.section==='estimate'&&b.textContent.includes('Estimate')),"Estimate tile must remain visible");
+assert.deepEqual([...buttons].slice(-3).map(b=>b.dataset.section),["followup","vehicle-master","customer-master"],"Both masters follow Delivery Follow-up");
 for(const [i,name] of ["Create Checklist","Create Job Card","Checklist List","Job Card List","Approval Waiting Insurance",
 "Vehicle With Customer","Approved Vehicles","Ready to Deliver","Delivered Vehicle List","Delivery Follow-up"].entries())
  assert.ok([...buttons].some(b=>b.textContent.includes(name)),name+" label missing");
 const click=async(selector)=>{const b=w.document.querySelector(selector);assert.ok(b,selector);b.click();await settle();};
+for(const key of ["vehicle-master","customer-master"]){
+ const before=commands.length;
+ await click('#rc-root [data-rdb=tile][data-section='+key+']');
+ assert.equal(commands.length,before,"Master must not query until search submitted");
+ const form=w.document.querySelector("#rdb-master-search");assert.ok(form);
+ const submit=async q=>{form.elements.query.value=q;form.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));await settle();};
+ await submit("Q");assert.equal(commands.length,before,"Reject short query without API traffic");
+ await submit(key==="vehicle-master"?"QA 123":"QA Customer");
+ assert.equal(commands.length,before+1,"One explicit search makes one request");
+ const result=w.document.querySelector("#rdb-master-results");
+ if(key==="vehicle-master"){
+  assert.equal(commands.at(-1).action,"vehicle_master_candidates");
+  assert.match(result.textContent,/Camry/);assert.match(result.textContent,/Patrol/);
+  assert.match(result.textContent,/VIN verified/);assert.match(result.textContent,/Identity not verified/);
+  assert.equal(result.querySelectorAll("article").length,2,"A reused plate retains both physical candidates");
+ }else{
+  assert.equal(commands.at(-1).action,"customer_master_search");
+  assert.equal(commands.at(-1).query,"QA Customer");
+  assert.equal(commands.at(-1).source,"direct-jobs");
+  assert.match(result.textContent,/QA Customer/);assert.match(result.textContent,/90000000/);
+  assert.match(result.textContent,/JC120/);
+ }
+ await click('#rc-root [data-rdb=back-dashboard]');
+}
+
+// A pending master response must not render after the signed-in account or token changes.
+await click('#rc-root [data-rdb=tile][data-section=customer-master]');
+const savedAction=w.zukaitReception.action;
+let finishLookup;w.zukaitReception.action=body=>body.action==="customer_master_search"?new Promise(resolve=>finishLookup=resolve):savedAction(body);
+const staleForm=w.document.querySelector("#rdb-master-search");
+staleForm.elements.query.value="Private QA";
+staleForm.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));
+await settle();assert.equal(typeof finishLookup,"function");
+w.zukaitAuth={getToken:()=>"DIFFERENT-SESSION"};
+finishLookup({ok:true,available:true,rows:[{customer:"Private QA",mobile:"99999999"}]});
+await settle();
+assert.doesNotMatch(w.document.querySelector("#rdb-master-results").textContent,/Private QA|99999999/);
+w.zukaitReception.action=savedAction;w.zukaitAuth={getToken:()=>"QA-EXISTING-MANAGER-TOKEN"};
+await click('#rc-root [data-rdb=back-dashboard]');
+const savedActor=w.me;w.me={id:"QA-EMP",role:"Employee"};
+await assert.rejects(()=>w.zukaitReceptionDashboard.choose("customer-master"),/Reception access required/);
+w.me=savedActor;
 const headings={checklists:"Checklist List",jobs:"Job Card List",waiting:"Approval Waiting Insurance",
  vwc:"Vehicle With Customer",approved:"Approved Vehicles",ready:"Ready to Deliver",
  delivered:"Delivered Vehicle List",followup:"Delivery Follow-up"};
@@ -53,7 +107,7 @@ for(const [key,name] of Object.entries(headings)){
  assert.equal(commands.at(-1).section,key==="vwc"?"vwc-checklists":key);
  if(key==="vwc")assert.equal(w.document.querySelectorAll("[data-rdb=vwc]").length,2,"VWC has two separate lists");
  await click('#rc-root [data-rdb=back-dashboard]');
- assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,14,key+" Back restores all fourteen cards including Estimate");
+ assert.equal(w.document.querySelectorAll("[data-rdb=tile]").length,16,key+" Back restores all sixteen cards including Estimate");
 }
 await click('#rc-root [data-rdb=tile][data-section=jobs]');
 assert.equal(w.document.querySelectorAll(".rdb-job-table tbody tr").length,1,"Job Card list renders a row in the current table layout");
@@ -80,7 +134,7 @@ assert.equal(promise,"2026-10-15");
 assert.equal(commands.filter(x=>x.action==="reception_promise_date").length,1);
 assert.equal(w.document.querySelector("#rc-root [data-rdb-promise]")?.value,"2026-10-15");
 await click('#rc-root [data-rc-action=back]');
-assert.equal(w.document.querySelectorAll('[data-rdb=tile]').length,14,"Header Back restores Reception dashboard including Estimate");
+assert.equal(w.document.querySelectorAll('[data-rdb=tile]').length,16,"Header Back restores Reception dashboard including Estimate");
 await click('#rc-root [data-rdb=tile][data-section=followup]');
 assert.equal(w.document.querySelectorAll('.rdb-followup-table tbody tr').length,1,'Delivery Follow-up is one row per vehicle');
 assert.equal(w.document.querySelectorAll('#rdb-results .rdb-row').length,0,'Delivery Follow-up must not render large cards');
@@ -115,12 +169,12 @@ w.fetch=async(_url,args)=>{
 };
 await w.zukaitReception.open();await settle();
 buttons=w.document.querySelectorAll("#rc-root [data-rdb=tile]");
-assert.equal(buttons.length,14,"Production Phase 1 must retain all tiles including the Estimate launcher");
+assert.equal(buttons.length,16,"Production Phase 1 must retain all tiles including the Estimate launcher");
 assert.ok([...buttons].some(b=>b.textContent.includes("Delivery Follow-up")));
 assert.equal(w.document.querySelectorAll("#rdb-results").length,0,"Unavailable data must not appear as an empty list");
 assert.ok([...w.document.querySelectorAll('.rdb-count')].every(x=>x.textContent===''),"No invented counts");
 const probeCount=phase1Requests.length;
-for(const key of ['create-job','jobs','waiting','vwc','approved','ready','delivered','followup']){
+for(const key of ['create-job','jobs','waiting','vwc','approved','ready','delivered','followup','vehicle-master','customer-master']){
  await click('#rc-root [data-rdb=tile][data-section='+key+']');
  assert.match(w.document.querySelector('#rdb-unavailable').textContent,/needs the Reception server update/);
 }
@@ -129,12 +183,12 @@ await assert.rejects(()=>w.zukaitReceptionDashboard.savePromise('JC120','2026-10
 await click('#rc-root [data-rdb=tile][data-section=checklists]');
 assert.equal(w.document.querySelector('.rc-topbar h3').textContent,'Checklist List');
 await click('#rc-root [data-rc-action=back]');
-assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,14,"Back from list restores Reception dashboard");
+assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,16,"Back from list restores Reception dashboard");
 await click('#rc-root [data-rdb=tile][data-section=new]');
 assert.ok(w.document.querySelector('#rc-form'));
 assert.equal(w.document.querySelectorAll('#rc-form option[value=CASH]').length,0);
 await click('#rc-root [data-rc-action=back]');
-assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,14,"Back from intake restores Reception dashboard");
+assert.equal(w.document.querySelectorAll('#rc-root [data-rdb=tile]').length,16,"Back from intake restores Reception dashboard");
 assert.equal(phase1Requests.filter(x=>x.action==='reception_dashboard').length,1,"Only the read-only capability probe runs");
 dom.window.close();
-console.log("Reception dashboard UI: fourteen Manager tiles, Manager session reuse, category list, date-range filtering, optional Job Card promise field and confirmed promise save passed.");
+console.log("Reception dashboard UI: sixteen Manager tiles, Manager session reuse, category list, date-range filtering, optional Job Card promise field and confirmed promise save passed.");
