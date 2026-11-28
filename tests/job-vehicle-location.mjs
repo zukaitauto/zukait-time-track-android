@@ -47,8 +47,8 @@ assert.equal((await db.query('select location from workshop_receptions')).rows[0
 // Use a small isolated projection fixture for the compact wrapper as well.
 // The actual compact delta encoding is covered separately; this tests its date and transaction wiring.
 await db.exec(`create schema private;
-create function private.capture_manager_job_projection(workshop_state,workshop_state,text) returns void language plpgsql as $begin return; end$;
-create function zukait_manager_full_job_edit_before_location_v1_compact(bigint,jsonb,text,text,text,jsonb) returns jsonb language sql as $select zukait_manager_full_job_edit_before_location_v1($1,$2,$3,$4,$5,$6)$;`);
+create function private.capture_manager_job_projection(workshop_state,workshop_state,text) returns void language plpgsql as $body$begin return; end$body$;
+create function zukait_manager_full_job_edit_before_location_v1_compact(bigint,jsonb,text,text,text,jsonb) returns jsonb language sql as $body$select zukait_manager_full_job_edit_before_location_v1($1,$2,$3,$4,$5,$6)$body$;`);
 await db.exec(staged.split('-- COMPACT PATH\n')[1].replace(/commit;\s*$/i,''));
 const compact=async(reason='dated movement',data=historical)=>(await db.query('select zukait_manager_full_job_edit_compact($1,$2::jsonb,$3,$4,$5,$6::jsonb) r',[1,JSON.stringify(data),'M','J',reason,JSON.stringify([{state_revision:2}])])).rows[0].r;
 await reset(true);assert.equal((await compact()).ok,true);
