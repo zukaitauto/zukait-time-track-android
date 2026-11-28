@@ -882,12 +882,14 @@ async function baseStateForRevision(revision: number, currentRevision: number, c
 
 
 // FINAL_SESSION_STATUS_BEGIN
-function normalizeCompletedSessionStatuses(data, at=Date.now()) {
+type NormalizationSession = {id?:unknown; emp?:unknown; job?:unknown; assignmentId?:unknown; start?:unknown; end?:unknown; cancelled?:unknown; voided?:unknown; deleted?:unknown; finished?:unknown; paused?:unknown};
+type NormalizationAssignment = {id?:unknown; emp?:unknown; job?:unknown; cancelled?:unknown; completed?:unknown; handedOverToAssignmentId?:unknown};
+function normalizeCompletedSessionStatuses<T extends {assign?:NormalizationAssignment[];sessions?:NormalizationSession[]}>(data:T, at=Date.now()) {
   if(!data||!Array.isArray(data.assign)||!Array.isArray(data.sessions))return data;
-  const groups=new Map(),byId=new Map(),duplicateAssignments=new Set(),sessionCounts=new Map();
+  const groups=new Map<string,NormalizationAssignment[]>(),byId=new Map<string,NormalizationAssignment>(),duplicateAssignments=new Set<string>(),sessionCounts=new Map<string,number>();
   for(const a of data.assign){if(!a||a.cancelled)continue;const id=String(a.id||'');if(byId.has(id))duplicateAssignments.add(id);byId.set(id,a);const key=JSON.stringify([String(a.emp),String(a.job)]);const rows=groups.get(key)||[];rows.push(a);groups.set(key,rows);}
   for(const s of data.sessions)if(s?.id)sessionCounts.set(String(s.id),(sessionCounts.get(String(s.id))||0)+1);
-  const grouped=new Map();
+  const grouped=new Map<string,NormalizationSession[]>();
   for(const s of data.sessions){
     if(!s||s.cancelled||s.voided||s.deleted||!s.id||sessionCounts.get(String(s.id))!==1)continue;
     const possible=s.assignmentId?[byId.get(String(s.assignmentId))]:(groups.get(JSON.stringify([String(s.emp),String(s.job)]))||[]);
@@ -930,10 +932,15 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
       .filter((a:any)=>a && a.emp===s.emp && a.job===s.job && !a.cancelled)
       .sort((a:any,b:any)=>(Number(b.assignedAt)||0)-(Number(a.assignedAt)||0))[0] || null;
   };
+  const sessionsByEmployee = new Map<any, any[]>();
+  for (const session of sessions) {
+    if (!session || session.cancelled) continue;
+    const group = sessionsByEmployee.get(session.emp);
+    if (group) group.push(session);
+    else sessionsByEmployee.set(session.emp, [session]);
+  }
   return users.filter((u:any)=>u && u.role==="Employee").map((u:any)=>{
-    const empSessions = sessions
-      .filter((s:any)=>s && !s.cancelled && s.emp===u.id)
-      .slice()
+    const empSessions = (sessionsByEmployee.get(u.id) || []).slice()
       .sort((a:any,b:any)=>(Number(b.start)||0)-(Number(a.start)||0) || String(b.id||"").localeCompare(String(a.id||"")));
     const open = empSessions.find((s:any)=>s.end==null) || null;
     let status = "Available";
@@ -1179,30 +1186,30 @@ function id001AssignmentConflict(candidate: any, previous: any) {
 // ID001_ASSIGNMENT_RULE_END
 
 // Public numbers can change; stored work, events and append-only accounting keys cannot.
-const key=v=>String(v??'').trim().toUpperCase();
+const key=(v:unknown)=>String(v??'').trim().toUpperCase();
 const references=new Set(['job','jobCard','job_card','job_no','jobNo','jobCardNo','job_card_no','jobNumber','job_number','preliminaryLinkedJob','preliminarySourceJob','sourceJob','source_job','previousJob','nextJob','previous_job','next_job']);
 const dictionaries=new Set(['paintCosting','managerReviews']);
-function jobNumberCodec(rows=[]){
- const input=new Map(),output=new Map();
+function jobNumberCodec(rows:{number:unknown;stable_job:unknown;current_number:unknown}[]=[]){
+ const input=new Map<string,unknown>(),output=new Map<string,unknown>();
  for(const r of rows){input.set(key(r.number),r.stable_job);output.set(key(r.stable_job),r.current_number);}
- const ref=(v,map)=>typeof v==='string'||typeof v==='number'?(map.get(key(v))??v):v;
- function walk(v,map,parent=''){
+ const ref=(v:unknown,map:Map<string,unknown>)=>typeof v==='string'||typeof v==='number'?(map.get(key(v))??v):v;
+ function walk(v:unknown,map:Map<string,unknown>,parent=''):unknown{
   if(Array.isArray(v))return v.map(x=>walk(x,map,parent));
   if(!v||typeof v!=='object')return v;
   const jobObject=['jobs','job','expectedJob','linked_job'].includes(parent)||('no' in v&&['jobType','make','reg','receptionNo'].some(k=>k in v));
   return Object.fromEntries(Object.entries(v).map(([k,value])=>[
    dictionaries.has(parent)?String(ref(k,map)):k,
    k==='jobCards'&&Array.isArray(value)&&'invoiceId' in v&&'materialId' in v?value.map(number=>ref(number,map)):
-   references.has(k)||k==='no'&&jobObject||k==='number'&&parent==='manualJobCard'||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(v.eventType||v.event_type||''))?walk(ref(value,map),map,k):walk(value,map,k)
+   references.has(k)||k==='no'&&jobObject||k==='number'&&parent==='manualJobCard'||['entityId','entity_id'].includes(k)&&/^JOB_/.test(String(('eventType' in v && v.eventType)||('event_type' in v && v.event_type)||''))?walk(ref(value,map),map,k):walk(value,map,k)
   ]));
  }
  return {
-  toInternal:value=>walk(value,input),toPublic:value=>walk(value,output),
+  toInternal:(value:unknown)=>walk(value,input),toPublic:(value:unknown)=>walk(value,output),
   // Search/cursor identifiers are not free text fields in stored records.
-  internalNumber:value=>ref(value,input),publicNumber:value=>ref(value,output)
+  internalNumber:(value:unknown)=>ref(value,input),publicNumber:(value:unknown)=>ref(value,output)
  };
 }
-function jobNumberChange(request){
+function jobNumberChange(request:{newJobNumber?:unknown;numberChangeConfirmed?:unknown;expectedJobNumber?:unknown}){
  if(request.newJobNumber===undefined)return null;
  const number=String(request.newJobNumber).trim();
  if(!/^[1-9]\d{0,9}$/.test(number))return {ok:false,code:'job_number_invalid'};
@@ -1699,7 +1706,8 @@ Deno.serve(async (req: Request) => {
       }
       const operation = String(command.operation||"").toUpperCase();
       const procedure = operation==="LINK_EXISTING_JOB" ? "zukait_reception_link_existing_job" : ["CORRECT_EXISTING_JOB_LINK","UNLINK_EXISTING_JOB"].includes(operation) ? "zukait_reception_correct_existing_job_link" : "zukait_reception_command";
-      const {data,error} = await admin.rpc(procedure,{p_actor_id:String(user.id),p_command:command});
+      const {data:rpcData,error} = await admin.rpc(procedure,{p_actor_id:String(user.id),p_command:command});
+      let data=rpcData;
       if (error) {
         const code = String(error.message || "").match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];
         if (code) return reply({ok:false,code}, /forbidden|manager_required/.test(code)?403:/not_found/.test(code)?404:409);
@@ -1721,9 +1729,15 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "employee_time_action") {
+      const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
+        Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
+        ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
+      const reducedRead = useCompactTime && Deno.env.get("ZUKAIT_EMPLOYEE_TIME_REDUCED_READ_ENABLED") === "true";
       for(let attempt=0;attempt<8;attempt++){
-        const {data:current,error:readError}=await admin.from("workshop_state").select("revision,data").eq("id","main").single();
+        const {data:raw,error:readError}=await admin.from("workshop_state").select(reducedRead ? "revision,users:data->users,sessions:data->sessions,assign:data->assign,jobs:data->jobs,employeeTimeActionAudit:data->employeeTimeActionAudit,lastActions:data->lastActions" : "revision,data").eq("id","main").single();
+        const current:any = reducedRead && raw ? {revision:(raw as unknown as {revision:unknown}).revision,data:Object.fromEntries(["users","sessions","assign","jobs","employeeTimeActionAudit","lastActions"].map(key=>[key,(raw as any)[key]]))} : raw;
         if(readError)throw readError;
+        if(reducedRead && (!current || !Number.isSafeInteger(Number(current.revision)) || Number(current.revision)<1 || !["users","sessions","assign","jobs"].every(key=>Array.isArray(current.data[key])))) return reply({ok:false,code:"employee_time_reduced_read_invalid_state"},503);
         const result:any=employeeTimeTransition(current.data,user,body,Date.now());
         if(!result.ok)return reply({ok:false,code:result.code,server_time:Date.now()},result.code==="employee_time_forbidden"?403:409);
         if(result.duplicate){
@@ -1736,10 +1750,8 @@ Deno.serve(async (req: Request) => {
         }
         const nextRevision=Number(current.revision||0)+1;
         const live=computeLiveStatus(result.data,nextRevision,String(user.id));
-        const useCompactTime = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "") === "https://pjknotnjkufadqavcmii.supabase.co" &&
-          Deno.env.get("ZUKAIT_COMPACT_EMPLOYEE_TIME_ENABLED") !== "false" &&
-          ["START","PAUSE","FINISH","STOP_ID001"].includes(String(body.event_type).toUpperCase());
         const sections = useCompactTime ? employeeTimeSections(current.data, result.data) : null;
+        if(reducedRead && sections === null) return reply({ok:false,code:"employee_time_reduced_read_unsupported"},409);
         const commitArgs = {p_expected_revision:Number(current.revision||0),p_changed_by:String(user.id),p_live:live};
         const {data:committed,error:commitError} = sections !== null
           ? await admin.rpc("zukait_commit_workshop_employee_time_sections",{...commitArgs,p_sections:sections})
