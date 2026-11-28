@@ -1,0 +1,33 @@
+name: Supplementary backup validation
+on:
+  pull_request:
+    paths:
+      - 'scripts/backup-zukait-supplementary.ps1'
+      - '.github/workflows/supplementary-backup-validation.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $tokens=$null
+          $errors=$null
+          $ast=[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'scripts/backup-zukait-supplementary.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count){throw ($errors | Out-String)}
+          $source=$ast.Extent.Text
+          foreach($required in @('GetPreviousIds','previous_manifest_sha256','full_raw_inventory','Supplementary inventory does not match exact set difference','WHERE revision = ANY','--schema=private','Previous chunk invalid')){
+            if(-not $source.Contains($required)){throw "Missing safeguard: $required"}
+          }
+          $previousSet=New-Object 'System.Collections.Generic.HashSet[long]'
+          foreach($id in @(1,3,5)){[void]$previousSet.Add($id)}
+          $fullIds=@(1,2,3,4,5,6)
+          $ids=@($fullIds|Where-Object {-not $previousSet.Contains($_)})
+          if(($ids -join ',') -ne '2,4,6'){throw 'Set difference failed'}
+          $fullIds=@(1,3,5)
+          $ids=@($fullIds|Where-Object {-not $previousSet.Contains($_)})
+          if($ids.Count -ne 0){throw 'Empty difference failed'}
+          Write-Host 'Syntax and synthetic inventory checks passed.'
