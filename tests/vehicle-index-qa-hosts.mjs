@@ -3,18 +3,35 @@ import {execFileSync} from 'node:child_process';
 import {readFileSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {JSDOM} from 'jsdom';
+const production='app/src/main/assets';
+const readProduction=file=>readFileSync(join(production,file),'utf8');
+const source=JSON.parse(readProduction('vehicle_index_reviewed.json'));
+const normal=new JSDOM('<form><input name="make"><input name="model"></form>',{runScripts:'outside-only'}).window;
+for(const file of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_bootstrap.js'])normal.eval(readProduction(file));
+assert.equal(normal.ZUKAIT_VEHICLE_INDEX_READY,true);
+assert.equal(JSON.stringify(normal.zukaitVehicleIndexBase),JSON.stringify(normal.zukaitVehicleIndex.validate(source)));
+for(const host of ['offline_test.html','receptionist.html','mechanical_supervisor.html','mechanical_estimate.html']){
+ const html=readProduction(host);
+ for(const file of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_bootstrap.js','vehicle_index_loader.js','vehicle_index_qa_sync.js']){
+  const matches=html.split('src="'+file+'?').length-1;assert.equal(matches,1,host+' '+file);
+ }
+ assert.doesNotMatch(html,/omqgkqknbdcnotabffek/);
+}
+assert.match(readProduction('cloud_sync.js'),/pjknotnjkufadqavcmii/);
+assert.match(readFileSync('app/build.gradle','utf8'),/applicationId 'com\.zukait\.timetrack'/);
+assert.doesNotMatch(readFileSync('app/build.gradle','utf8'),/vehicleqa/);
 const dir=execFileSync(process.execPath,['scripts/prepare-vehicle-index-qa.mjs'],{encoding:'utf8'}).trim();
 try{
  const assets=join(dir,'app/src/main/assets'),read=file=>readFileSync(join(assets,file),'utf8');
  for(const host of ['offline_test.html','receptionist.html','mechanical_supervisor.html','mechanical_estimate.html']){
-  const s=read(host);assert.match(s,/vehicle_index_qa_bootstrap\.js/);assert.match(s,/vehicle_index_qa_sync\.js/);assert.match(s,/connect-src 'self' https:\/\/omqgkqknbdcnotabffek\.supabase\.co/);
+  const s=read(host);assert.match(s,/vehicle_index_bootstrap\.js/);assert.match(s,/vehicle_index_qa_sync\.js/);assert.match(s,/connect-src 'self' https:\/\/omqgkqknbdcnotabffek\.supabase\.co/);
  }
  for(const file of ['cloud_sync.js','secure_auth.js','receptionist_session.js','mechanical_supervisor.js','mechanical_estimate_host.js']){
   assert.ok(read(file).includes('omqgkqknbdcnotabffek'));assert.ok(!read(file).includes('pjknotnjkufadqavcmii'));
  }
  const dom=new JSDOM('<form><label>Make<input name="make"></label><label>Model<input name="model"></label><input name="vin" value="untouched"></form>',{runScripts:'outside-only'}),win=dom.window;
- for(const file of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_qa_bootstrap.js'])win.eval(read(file));
- assert.equal(win.ZUKAIT_VEHICLE_INDEX_QA_READY,true);
+ for(const file of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_bootstrap.js'])win.eval(read(file));
+ assert.equal(win.ZUKAIT_VEHICLE_INDEX_READY,true);
  const form=win.document.querySelector('form'),adapter=win.zukaitVehicleAutocomplete.attach(form);
  const enter=(field,value)=>{field.value=value;field.dispatchEvent(new win.Event('input',{bubbles:true}))};
  enter(form.elements.make,'n');const n=[...adapter.makePanel.querySelectorAll('button')].find(x=>x.textContent==='Nissan');assert.ok(n);n.click();
@@ -35,7 +52,7 @@ try{
  assert.match(read('offline_test.html'),/vehicle_index_qa_manager_host\.js/);
  assert.doesNotMatch(read('receptionist.html'),/vehicle_index_qa_manager_host\.js/);
  const dashboard=new JSDOM('<div id="managerView"><div class="manager-actions"></div></div><div id="modal"></div>',{runScripts:'outside-only'}),w=dashboard.window;
- for(const file of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_qa_bootstrap.js','vehicle_index_loader.js','vehicle_index_review.js','vehicle_index_manager.js'])w.eval(read(file));
+ for(const file of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_bootstrap.js','vehicle_index_loader.js','vehicle_index_review.js','vehicle_index_manager.js'])w.eval(read(file));
  let token='test-token',calls=0;w.me={id:'M1',role:'Manager'};w.zukaitAuth={getToken:()=>token};w.openModal=s=>w.document.querySelector('#modal').innerHTML=s;
  w.zukaitCloud={vehicleIndexRequest:async body=>{calls++;assert.equal(body.action,'vehicle_index_read');return {ok:true,baseVersion:5,version:5,changes:[]}}};
  w.eval(read('vehicle_index_qa_manager_host.js'));w.zukaitVehicleIndexQaHost.install();w.zukaitVehicleIndexQaHost.install();

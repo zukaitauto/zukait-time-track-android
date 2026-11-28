@@ -17,10 +17,7 @@ try{
  const base=require(join(assets,'vehicle_index.js')).validate(JSON.parse(readFileSync(join(assets,'vehicle_index_reviewed.json'),'utf8')));
  if(base.version!==5||base.makes.length!==51||base.models.length!==429||base.aliases.length!==0)throw Error('unexpected reviewed QA base');
  const hosts=['offline_test.html','receptionist.html','mechanical_supervisor.html','mechanical_estimate.html'];
- const boot='vehicle_index_qa_bootstrap.js';
- // Synchronous embedded data for Android WebView and web: no fetch/polling or database access.
- const literal=JSON.stringify(base).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
- writeFileSync(join(assets,boot),'(function(){try{const data='+literal+';window.zukaitVehicleIndexQaBase=window.zukaitVehicleIndex.validate(data);window.zukaitVehicleAutocomplete.configure(window.zukaitVehicleIndex.create(data));window.ZUKAIT_VEHICLE_INDEX_QA_READY=true;}catch(e){console.warn("QA catalogue unavailable",e);}})();\n');
+ const boot='vehicle_index_bootstrap.js';
  function walk(path){for(const entry of readdirSync(path,{withFileTypes:true})){const file=join(path,entry.name);if(entry.isDirectory())walk(file);else if(/\.(?:html?|m?js|json|css|txt|webmanifest|svg|map)$/i.test(entry.name)){
   let s=readFileSync(file,'utf8');
   // Rewrite every known production backend reference, including isolated Mechanical hosts.
@@ -32,12 +29,7 @@ try{
   const file=join(assets,host);let s=readFileSync(file,'utf8');
   if(!/<head(?:\s[^>]*)?>/i.test(s))throw Error('missing head '+host);
   const policy='<meta http-equiv="Content-Security-Policy" content="connect-src \'self\' '+origin+'; form-action \'self\'; frame-src \'self\' blob: data:; object-src \'none\'">';
-  const scripts=hosts.includes(host)?'<script src="vehicle_index.js?v=qa5"></script><script src="vehicle_index_autocomplete.js?v=qa5"></script><script src="'+boot+'"></script><script src="vehicle_index_loader.js?v=qa5"></script><script src="vehicle_index_qa_sync.js?v=qa5"></script>':'';
-  s=s.replace(/<head(?:\s[^>]*)?>/i,m=>m+policy+scripts);
-  if(host==='offline_test.html'){
-   const managerScripts=['vehicle_index_review.js','vehicle_index_manager.js','vehicle_index_qa_manager_host.js'].map(name=>'<script src="'+name+'?v=qa5"></script>').join('');
-   if(!/<\/body>/i.test(s))throw Error('missing Manager host body');s=s.replace(/<\/body>/i,m=>managerScripts+m);
-  }
+  s=s.replace(/<head(?:\s[^>]*)?>/i,m=>m+policy);
   writeFileSync(file,s);
  }
  function edit(path,fn){const file=join(dir,path),s=readFileSync(file,'utf8'),next=fn(s);if(next===s)throw Error('expected QA edit missing '+path);writeFileSync(file,next);}

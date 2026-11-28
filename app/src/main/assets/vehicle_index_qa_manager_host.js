@@ -1,10 +1,10 @@
-/* Generated QA host only: one Manager menu action, no automatic polling. */
+/* Manager host: one Manager menu action, no automatic polling. */
 (function(root){
  'use strict';
- if(root.ZUKAIT_VEHICLE_INDEX_QA_READY!==true||!root.zukaitVehicleIndexQaBase)return;
+ if(root.ZUKAIT_VEHICLE_INDEX_READY!==true||!root.zukaitVehicleIndexBase)return;
  const doc=root.document;
  const current=()=>root.me?.role==='Manager'&&!!root.me?.id&&!root.zukaitSessionPrivacy?.locked&&!!root.zukaitAuth?.getToken?.();
- const base=root.zukaitVehicleIndexQaBase;
+ const base=root.zukaitVehicleIndexBase;
  let opening=false;
  async function open(){
   if(opening||!current()||typeof root.openModal!=='function'||typeof root.zukaitCloud?.vehicleIndexRequest!=='function')return;
@@ -18,7 +18,7 @@
    if(!isCurrent())return;
    const r=await root.zukaitVehicleIndexLoader.load(base,{read:request,isCurrent});
    if(!isCurrent())return;
-   if(r.status!=='SERVER_CONFIRMED'){container.textContent='QA catalogue server not confirmed. Approval and queue are disabled. Close and retry when connected.';return;}
+   if(r.status!=='SERVER_CONFIRMED'){container.textContent='Catalogue server not confirmed. Approval and queue are disabled. Close and retry when connected.';return;}
    root.zukaitVehicleAutocomplete.configure(root.zukaitVehicleIndex.create(r.snapshot));
    root.zukaitVehicleIndexManager.mount(container,{actor,snapshot:r.snapshot,approve:request,queue:request,isCurrent});
   }catch(_){if(isCurrent())container.textContent='Vehicle Index unavailable. Close and retry.';}

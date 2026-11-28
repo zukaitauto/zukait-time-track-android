@@ -1,8 +1,8 @@
-/* QA-only session-scoped catalogue refresh. Never polls or persists staff approvals locally. */
+/* Session-scoped catalogue refresh. Never polls or persists staff approvals locally. */
 (function(root){
  'use strict';
- if(root.ZUKAIT_VEHICLE_INDEX_QA_READY!==true||!root.zukaitVehicleIndexQaBase)return;
- const base=root.zukaitVehicleIndexQaBase;
+ if(root.ZUKAIT_VEHICLE_INDEX_READY!==true||!root.zukaitVehicleIndexBase)return;
+ const base=root.zukaitVehicleIndexBase;
  let state=null,generation=0;
  const apply=snapshot=>root.zukaitVehicleAutocomplete.configure(root.zukaitVehicleIndex.create(snapshot));
  function reset(){generation++;state=null;apply(base);}

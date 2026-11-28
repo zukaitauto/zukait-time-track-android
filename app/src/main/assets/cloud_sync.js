@@ -1515,10 +1515,10 @@
     return result;
   }
 
-  // Vehicle Index QA uses the existing authenticated, session-epoch guarded API.
-  // Production hosts never set the generated QA flag.
+  // Vehicle Index uses the existing authenticated, session-epoch guarded API.
+  // The bundled catalogue must initialize before these routes are used.
   async function vehicleIndexRequest(command){
-    if(window.ZUKAIT_VEHICLE_INDEX_QA_READY!==true||!me?.id||window.zukaitSessionPrivacy?.locked)throw Error('VEHICLE_INDEX_UNAVAILABLE');
+    if(window.ZUKAIT_VEHICLE_INDEX_READY!==true||!me?.id||window.zukaitSessionPrivacy?.locked)throw Error('VEHICLE_INDEX_UNAVAILABLE');
     if(!command||!['vehicle_index_read','vehicle_index_approval','vehicle_index_intake_queue'].includes(command.action))throw Error('INVALID_VEHICLE_INDEX_ACTION');
     if(command.action==='vehicle_index_read'){if(!['Manager','Supervisor'].includes(me.role))throw Error('VEHICLE_INDEX_FORBIDDEN');}
     else if(me.role!=='Manager')throw Error('MANAGER_ONLY');
