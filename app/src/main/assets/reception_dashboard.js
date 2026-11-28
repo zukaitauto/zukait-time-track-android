@@ -29,7 +29,7 @@
   const companyOptionsHtml=()=>companyOptions.map(x=>'<option value="'+safe(x.value)+'"'+(String(filters.company_filter||'all')===String(x.value)?' selected':'')+'>'+safe(x.label)+'</option>').join('');
   const masterKeys=["vehicle-master","customer-master"];
   const masterRole=()=>["Manager","Supervisor","Receptionist"].includes(role());
-  let masterQuery="",masterSource="jobs",masterPage=0,masterMore=false;
+  let masterQuery="",masterSource="direct-jobs",masterPage=0,masterMore=false;
   let backendAvailable=false;
   let counts={},latest=[],total=0,loading=false,sequence=0,pendingTimer=null;
   function css(){
@@ -264,17 +264,17 @@
   function masterHtml(){
     const vehicle=section==="vehicle-master";
     return '<section class="rdb-master"><h4>'+safe(label(section))+'</h4><p>'+
-      (vehicle?'Search by registration. A plate may belong to different vehicles; confirm VIN during intake.':'Search existing customer contact records by name. Each result is a visit, not a verified unique customer identity.')+
-      '</p><form id="rdb-master-search"><label>'+(vehicle?'Registration number':'Customer name')+'<input name="query" required maxlength="80" autocomplete="off" placeholder="'+(vehicle?'32621-M':'Enter customer name')+'" value="'+safe(masterQuery)+'"></label>'+
-      (vehicle?'':'<label>Search records<select name="source"><option value="jobs"'+(masterSource==="jobs"?' selected':'')+'>Job Cards</option><option value="checklists"'+(masterSource==="checklists"?' selected':'')+'>Checklists</option></select></label>')+
+      (vehicle?'Search by registration. A plate may belong to different vehicles; confirm VIN during intake.':'Search recorded visit contacts by name or phone. Older Job Cards without linked identity records may not be included. Each result is a visit, not a verified unique customer.')+
+      '</p><form id="rdb-master-search"><label>'+(vehicle?'Registration number':'Customer name or mobile')+'<input name="query" required maxlength="80" autocomplete="off" placeholder="'+(vehicle?'32621-M':'Name or mobile number')+'" value="'+safe(masterQuery)+'"></label>'+
+      (vehicle?'':'<label>Search records<select name="source"><option value="direct-jobs"'+(masterSource==="direct-jobs"?' selected':'')+'>Direct Job Cards</option><option value="checklists"'+(masterSource==="checklists"?' selected':'')+'>Reception Checklists</option></select></label>')+
       '<button type="submit">Search</button></form><div id="rdb-master-results" aria-live="polite">Enter a search to view server-confirmed records.</div><nav id="rdb-master-nav" hidden><button type="button" data-rdb="master-prev">Previous</button><span id="rdb-master-page"></span><button type="button" data-rdb="master-next">Next</button></nav></section>';
   }
   async function loadMaster(){
     if(screen!=="master"||!backendAvailable||!masterRole())return;
     const host=document.getElementById("rdb-master-results"),nav=document.getElementById("rdb-master-nav");
     if(!host||!nav)return;
-    const actor=String(window.me?.id||""),actorRole=role(),kind=section,request=++sequence,q=masterQuery,source=masterSource,p=masterPage;
-    const current=()=>request===sequence&&screen==="master"&&section===kind&&actor===String(window.me?.id||"")&&actorRole===role()&&host.isConnected;
+    const actor=String(window.me?.id||""),actorRole=role(),token=window.zukaitAuth?.getToken?.(),generation=window.zukaitSessionPrivacy?.generation,kind=section,request=++sequence,q=masterQuery,source=masterSource,p=masterPage;
+    const current=()=>request===sequence&&screen==="master"&&section===kind&&actor===String(window.me?.id||"")&&actorRole===role()&&token===window.zukaitAuth?.getToken?.()&&generation===window.zukaitSessionPrivacy?.generation&&!window.zukaitSessionPrivacy?.locked&&host.isConnected;
     host.textContent="Searching server…";nav.hidden=true;masterMore=false;
     try{
       if(kind==="vehicle-master"){
@@ -284,10 +284,11 @@
         const rows=Array.isArray(r.candidates)?r.candidates:[];
         host.innerHTML=rows.length?rows.map(c=>'<article><strong>'+safe([c.make,c.model,c.year].filter(Boolean).join(" ")||"Vehicle details not recorded")+'</strong><small>Registration: '+safe(r.registration_display||q)+' · '+safe(c.identity_status==="VIN_VERIFIED"?"VIN verified":"Identity not verified")+'</small><small>VIN ending: '+safe(c.vin_last4||"Not recorded")+' · Recorded visits: '+safe(c.visits??0)+'</small><small>Vehicle ID: '+safe(c.vehicle_id)+'</small></article>').join(""):"No matching vehicle candidates. Use the existing intake workflow for a new vehicle.";
       }else{
-        const r=await window.zukaitReception.action({action:"reception_dashboard",section:source,search:q,page:p,month:"",from:"",to:"",missing_only:false,dated_only:false,checklist_status:"all",company_filter:"all"});
+        const r=await window.zukaitReception.action({action:"customer_master_search",source,query:q,page:p});
         if(!current())return;
-        const rows=(Array.isArray(r.rows)?r.rows:[]).filter(x=>String(x.customer||"").toLowerCase().includes(q.toLowerCase()));
-        masterMore=(p+1)*Number(r.page_size||50)<Number(r.total||0);
+        if(r.available!==true){host.textContent="Customer Master is not available on this server.";return;}
+        const rows=Array.isArray(r.rows)?r.rows:[];
+        masterMore=r.has_more===true&&p<100;
         host.innerHTML=rows.length?rows.map(x=>'<article><strong>'+safe(x.customer)+'</strong><small>'+safe(x.mobile||"Mobile not recorded")+' · '+safe(x.vehicle||"Vehicle not recorded")+' · '+safe(x.registration||"Registration not recorded")+'</small><small>'+safe(x.job_card||x.rc_no||"Reference unavailable")+'</small></article>').join(""):"No matching customer names on this page.";
         nav.hidden=!(p>0||masterMore);nav.querySelector('[data-rdb="master-prev"]').disabled=p===0;nav.querySelector('[data-rdb="master-next"]').disabled=!masterMore;nav.querySelector("#rdb-master-page").textContent="Source results · page "+(p+1);
       }
@@ -295,10 +296,10 @@
   }
   function onMasterSubmit(event){
     if(event.target.id!=="rdb-master-search")return;
-    event.preventDefault();if(!masterRole())return;
+    event.preventDefault();if(!masterRole()||window.zukaitSessionPrivacy?.locked)return;
     const form=event.target,q=String(form.elements.query.value||"").trim();
     if(q.length<(section==="vehicle-master"?2:3)||q.length>80){++sequence;masterMore=false;document.getElementById("rdb-master-nav").hidden=true;document.getElementById("rdb-master-results").textContent="Enter a valid search.";return;}
-    masterQuery=q;masterSource=form.elements.source?.value==="checklists"?"checklists":"jobs";masterPage=0;void loadMaster();
+    masterQuery=q;masterSource=form.elements.source?.value==="checklists"?"checklists":"direct-jobs";masterPage=0;void loadMaster();
   }
   let vwcSection="vwc-checklists";
   function render(){
@@ -376,7 +377,7 @@
       if(typeof window.zukaitEstimate?.openHome!=='function')throw Error('Estimate module is unavailable. Reload and try again.');
       return window.zukaitEstimate.openHome();
     }
-    if(masterKeys.includes(next)){if(!masterRole())throw Error("Reception access required.");++sequence;clearTimeout(pendingTimer);screen="master";section=next;masterQuery="";masterSource="jobs";masterPage=0;masterMore=false;render();return;}
+    if(masterKeys.includes(next)){if(!masterRole())throw Error("Reception access required.");++sequence;clearTimeout(pendingTimer);screen="master";section=next;masterQuery="";masterSource="direct-jobs";masterPage=0;masterMore=false;render();return;}
     if(next==='insurance')return window.zukaitInsuranceManagement?.open();
     if(next==="new")return window.zukaitReception.newChecklist();
     if(next==="create-job")return window.zukaitReception.directJob();

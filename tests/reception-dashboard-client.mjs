@@ -22,6 +22,10 @@ w.fetch=async(_url,args)=>{
    {vehicle_id:"qa-vehicle-two",make:"Nissan",model:"Patrol",identity_status:"PROVISIONAL",visits:1}
   ]};
  }
+ if(body.action==="customer_master_search"){
+  assert.equal(body.query,"QA Customer");assert.equal(body.source,"direct-jobs");assert.equal(body.page,0);
+  res={ok:true,available:true,has_more:false,rows:[{customer:"QA Customer",mobile:"90000000",vehicle:"Toyota Camry 2024",registration:"QA 123",job_card:"JC120"}]};
+ }
  if(body.action==="reception_dashboard"){
   const row={rc_no:"RC0012",sequence_no:12,job_card:"JC120",vehicle:"Toyota Camry 2024",
    registration:"QA 123",customer:"QA Customer",mobile:"90000000",job_type:"INSURANCE",received_date:"2026-10-10",created_date:"2026-10-10",
@@ -66,9 +70,9 @@ for(const key of ["vehicle-master","customer-master"]){
   assert.match(result.textContent,/VIN verified/);assert.match(result.textContent,/Identity not verified/);
   assert.equal(result.querySelectorAll("article").length,2,"A reused plate retains both physical candidates");
  }else{
-  assert.equal(commands.at(-1).action,"reception_dashboard");
-  assert.equal(commands.at(-1).search,"QA Customer");
-  assert.equal(commands.at(-1).section,"jobs");
+  assert.equal(commands.at(-1).action,"customer_master_search");
+  assert.equal(commands.at(-1).query,"QA Customer");
+  assert.equal(commands.at(-1).source,"direct-jobs");
   assert.match(result.textContent,/QA Customer/);assert.match(result.textContent,/90000000/);
   assert.match(result.textContent,/JC120/);
  }
