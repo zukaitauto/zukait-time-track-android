@@ -1,0 +1,60 @@
+name: Vehicle Index isolated QA Android and web candidate
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'scripts/prepare-vehicle-index-qa.mjs'
+      - 'tests/vehicle-index-qa-hosts.mjs'
+      - 'app/src/main/assets/vehicle_index*'
+      - '.github/workflows/vehicle-index-qa.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ZUKAIT_VEHICLE_QA_PUBLISHABLE_KEY: sb_publishable_DBp6FI8Z4ThAq_4LXrZXSg_Xw2uPPgO
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tests/vehicle-index-qa-hosts.mjs
+      - name: Prepare isolated QA source
+        run: |
+          QA_DIR="$(node scripts/prepare-vehicle-index-qa.mjs)"
+          test -d "$QA_DIR"
+          echo "QA_DIR=$QA_DIR" >> "$GITHUB_ENV"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install SDK
+        run: |
+          SDKMANAGER=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -type f -name sdkmanager | head -n 1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+      - run: gradle --no-daemon -p "$QA_DIR" assembleDebug
+      - name: Verify separate package and create test artifacts
+        run: |
+          APK="$QA_DIR/app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.zukait.timetrack.vehicleqa'"
+          mkdir -p "$QA_DIR/deliver"
+          cp "$APK" "$QA_DIR/deliver/ZUKAIT-VEHICLE-QA.apk"
+          tar -czf "$QA_DIR/deliver/ZUKAIT-VEHICLE-QA-web.tar.gz" -C "$QA_DIR/app/src/main" assets
+          (cd "$QA_DIR/deliver" && sha256sum *.apk *.tar.gz > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZUKAIT-VEHICLE-INDEX-QA
+          path: ${{ env.QA_DIR }}/deliver/
+          retention-days: 14
+          if-no-files-found: error

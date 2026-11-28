@@ -1,0 +1,55 @@
+name: Vehicle index isolated foundation
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/vehicle_index*'
+      - 'tests/vehicle-index.mjs'
+      - 'tests/vehicle-index-autocomplete.mjs'
+      - 'tests/vehicle-index-review.mjs'
+      - 'tests/vehicle-index-historical-review.mjs'
+      - 'tests/vehicle-index-historical-manager.mjs'
+      - 'tests/vehicle-index-approval-api.mjs'
+      - 'tests/vehicle-index-loader.mjs'
+      - 'tests/vehicle-index-reviewed.mjs'
+      - 'tests/vehicle-index-intake.mjs'
+      - 'tests/vehicle-index-intake-queue.mjs'
+      - 'supabase/functions/workshop-api/extensions/vehicle_index_intake_queue_api.js'
+      - 'supabase/functions/workshop-api/extensions/vehicle_index_intake.js'
+      - 'docs/vehicle-index-reviewed-seed.sql'
+      - 'supabase/functions/workshop-api/extensions/vehicle_index_read_api.js'
+      - 'supabase/functions/workshop-api/extensions/vehicle_index_approval_api.js'
+      - 'supabase/functions/workshop-api/index.ts'
+      - 'app/src/main/assets/v2/features/insurance/reception.js'
+      - 'app/src/main/assets/job_card_edit.js'
+      - 'app/src/main/assets/manager_job_edit.js'
+      - 'app/src/main/assets/mechanical_prejob_intake.js'
+      - 'app/src/main/assets/mechanical_sections.js'
+      - 'app/src/main/assets/v2/features/estimate/main_module.js'
+      - '.github/workflows/vehicle-index.yml'
+permissions:
+  contents: read
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check app/src/main/assets/vehicle_index.js
+      - run: node tests/vehicle-index.mjs
+      - run: node tests/vehicle-global-identity.mjs
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tests/vehicle-index-autocomplete.mjs
+      - run: node tests/vehicle-index-review.mjs
+      - run: node tests/vehicle-index-historical-review.mjs
+      - run: node tests/vehicle-index-historical-manager.mjs
+      - run: node tests/vehicle-index-approval-api.mjs
+      - run: node tests/vehicle-index-loader.mjs
+      - run: node tests/vehicle-index-reviewed.mjs
+      - run: node tests/vehicle-index-intake.mjs
+      - run: node tests/vehicle-index-intake-queue.mjs
+      - run: node tests/reception-vehicle-authority.mjs
+      - run: node tests/mechanical-inspection-boundary.mjs
+      - run: node tests/mechanical-inspection-session.mjs

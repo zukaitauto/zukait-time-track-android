@@ -171,6 +171,7 @@ export async function mountMechanicalPrejob(root,options={}){
   field(vehicleFields,'VIN / رقم الهيكل','vin',false);
   vehicleCard.append(vehicleFields);f.append(vehicleCard);
   bindMechanicalVehicleLookup(f,n,current,registration=>call({operation:'VEHICLE_LOOKUP',registration}));
+  win.zukaitVehicleAutocomplete?.attach?.(f);
   const customerCard=card('Customer Information / معلومات العميل','mc-customer-card');
   const customerFields=n('div',null,{class:'mc-customer-fields'});
   field(customerFields,'Customer Name / اسم العميل','customer',true);

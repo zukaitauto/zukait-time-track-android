@@ -1514,8 +1514,18 @@
     }
     return result;
   }
+
+  // Vehicle Index uses the existing authenticated, session-epoch guarded API.
+  // The bundled catalogue must initialize before these routes are used.
+  async function vehicleIndexRequest(command){
+    if(window.ZUKAIT_VEHICLE_INDEX_READY!==true||!me?.id||window.zukaitSessionPrivacy?.locked)throw Error('VEHICLE_INDEX_UNAVAILABLE');
+    if(!command||!['vehicle_index_read','vehicle_index_approval','vehicle_index_intake_queue'].includes(command.action))throw Error('INVALID_VEHICLE_INDEX_ACTION');
+    if(command.action==='vehicle_index_read'){if(!['Manager','Supervisor'].includes(me.role))throw Error('VEHICLE_INDEX_FORBIDDEN');}
+    else if(me.role!=='Manager')throw Error('MANAGER_ONLY');
+    return api(command);
+  }
   window.zukaitCloud={
-    resetForSession,init,pull,push,stockRequest,invoicePriceApply,invoicePriceReconcile,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
+    resetForSession,init,pull,push,vehicleIndexRequest,stockRequest,invoicePriceApply,invoicePriceReconcile,managerJobEdit,probeRevision,pullLiveStatus,stop,syncNow,readLatest,readMonthlyFollowup,readManagerProfit,readMechanicalQcOverview,openMechanicalWorkspace,openMechanicalDelivery,addSublet,editSublet,backupNow,backupList,timeManagement,employeeTimeAction,v2CommitEvent,allocateSparePartList:v2AllocateSparePartList,allocateEstimateNo:v2AllocateEstimateNo,v2PilotStatus,v2PilotClaim,
     configured:()=>true,
     get confirmedState(){return confirmedReadRevision>=cloudRevision?confirmedReadState:null},
     get revision(){return cloudRevision},

@@ -97,6 +97,7 @@ export async function mountMechanicalSection(root,options={}){
    if(!result?.ok)throw Error(result?.code||'Vehicle lookup unavailable');
    return result;
   });
+  win.zukaitVehicleAutocomplete?.attach?.(form);
   const km=form.elements.odometer;km.inputMode='decimal';km.pattern='[0-9]{1,10}(\\.[0-9]{1,2})?';
   // Capture VIN label with the phone camera. Use native OCR only when provided by the host;
   // never guess or silently save an uncertain recognition.

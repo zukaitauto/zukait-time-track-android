@@ -1,0 +1,194 @@
+\set ON_ERROR_STOP on
+-- Disposable CI database only. Minimal staff schema matches verified QA column types.
+create role anon nologin;
+create role authenticated nologin;
+create role service_role nologin bypassrls;
+create table public.staff_credentials(user_id text primary key,role text not null,active boolean not null,must_change boolean not null);
+create table public.staff_sessions(token_hash text primary key,user_id text not null references public.staff_credentials(user_id),revoked_at timestamptz);
+grant usage on schema public to service_role,anon,authenticated;
+grant select,update on public.staff_credentials,public.staff_sessions to service_role;
+insert into public.staff_credentials values('manager','Manager',true,false),('employee','Employee',true,false),('locked','Manager',true,true),('inactive','Manager',false,false),('manager2','Manager',true,false);
+insert into public.staff_sessions values(repeat('a',64),'manager',null),(repeat('b',64),'employee',null),(repeat('c',64),'locked',null),(repeat('d',64),'inactive',null),(repeat('e',64),'manager2',now()),(repeat('f',64),'manager2',null);
+\ir ../docs/vehicle-index-storage-review.sql
+do $$
+begin
+ if has_function_privilege('anon','public.zukait_vehicle_index_approve(text,text,bigint,text,text,text,text,text)','EXECUTE')
+ or has_function_privilege('authenticated','public.zukait_vehicle_index_approve(text,text,bigint,text,text,text,text,text)','EXECUTE')
+ or has_table_privilege('authenticated','public.zukait_vehicle_index_entries','INSERT')
+ or has_table_privilege('anon','public.zukait_vehicle_index_audit','SELECT')
+ or has_table_privilege('service_role','public.zukait_vehicle_index_audit','UPDATE')
+ or has_table_privilege('service_role','public.zukait_vehicle_index_audit','DELETE') then raise exception 'unexpected grant';end if;
+ if exists(select 1 from pg_class where relname in ('zukait_vehicle_index_meta','zukait_vehicle_index_entries','zukait_vehicle_index_audit') and not relrowsecurity) then raise exception 'RLS absent';end if;
+end $$;
+set role service_role;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'uninitialized',1,'ADD_MAKE','Toyota',null,null,'Missing make');
+ if r->>'code' is distinct from 'catalogue_not_initialized' then raise exception 'uninitialized: %',r;end if;
+end $$;
+reset role;
+insert into public.zukait_vehicle_index_meta(id,version,base_version) values(true,1,1);
+insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key) values('make:nissan','ADD_MAKE','Nissan','@makes','nissan'),('make:toyota','ADD_MAKE','Toyota','@makes','toyota');
+insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key,make_id) values('model:patrol','ADD_MODEL','Patrol','make:nissan','patrol','make:nissan'),('model:corolla','ADD_MODEL','Corolla','make:toyota','corolla','make:toyota');
+set role service_role;
+do $$
+declare r jsonb; prior jsonb; token text; expected text;
+begin
+ for token,expected in select * from (values (repeat('b',64),'manager_required'),(repeat('c',64),'invalid_session'),(repeat('d',64),'invalid_session'),(repeat('e',64),'invalid_session'),(repeat('0',64),'invalid_session')) as t(token,expected) loop
+  r:=public.zukait_vehicle_index_approve(token,'unauthorized',1,'ADD_MAKE','Lexus',null,null,'Missing make');
+  if r->>'code' is distinct from expected then raise exception 'access guard: % expected %',r,expected;end if;
+ end loop;
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'wrong-model',1,'MODEL_ALIAS','Petrol','make:toyota','model:patrol','Correct spelling');
+ if r->>'code' is distinct from 'unknown_target' then raise exception 'cross-brand guard: %',r;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'duplicate',1,'ADD_MAKE','ＮＩＳＳＡＮ',null,null,'Duplicate name');
+ if r->>'code' is distinct from 'name_exists' then raise exception 'NFKC collision: %',r;end if;
+ prior:=public.zukait_vehicle_index_approve(repeat('a',64),'alias-1',1,'MODEL_ALIAS','Petrol','make:nissan','model:patrol','Correct spelling');
+ if prior->>'ok' is distinct from 'true' or prior->>'version' is distinct from '2' then raise exception 'approval: %',prior;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'alias-1',1,'MODEL_ALIAS','Petrol','make:nissan','model:patrol','Correct spelling');
+ if r is distinct from prior then raise exception 'retry differs: %',r;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('f',64),'alias-1',1,'MODEL_ALIAS','Petrol','make:nissan','model:patrol','Correct spelling');
+ if r->>'code' is distinct from 'request_id_conflict' then raise exception 'actor replay: %',r;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'stale',1,'ADD_MAKE','Lexus',null,null,'Missing make');
+ if r->>'code' is distinct from 'catalogue_changed' then raise exception 'stale version: %',r;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'alias-collision',2,'ADD_MODEL','PETROL','make:nissan',null,'Collision test');
+ if r->>'code' is distinct from 'name_exists' then raise exception 'alias collision: %',r;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'new-brand',2,'ADD_MAKE','Lexus',null,null,'Missing make');
+ if r->>'version' is distinct from '3' then raise exception 'new make: %',r;end if;
+ if (select count(*) from public.zukait_vehicle_index_audit)<>2 or (select version from public.zukait_vehicle_index_meta)<>3 then raise exception 'audit or revision mismatch';end if;
+end $$;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_read(repeat('b',64),1);
+ if r->>'ok' is distinct from 'true' or r->>'version' is distinct from '3' or jsonb_array_length(r->'changes')<>2 or r->'changes'->0->>'kind' is distinct from 'MODEL_ALIAS' then raise exception 'read overlay: %',r;end if;
+ r:=public.zukait_vehicle_index_read(repeat('b',64),2);
+ if r->>'code' is distinct from 'catalogue_base_mismatch' then raise exception 'wrong base: %',r;end if;
+ r:=public.zukait_vehicle_index_read(repeat('e',64),1);
+ if r->>'code' is distinct from 'invalid_session' then raise exception 'revoked read: %',r;end if;
+end $$;
+reset role;
+update public.staff_sessions set revoked_at=now() where token_hash=repeat('a',64);
+set role service_role;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_approve(repeat('a',64),'alias-1',1,'MODEL_ALIAS','Petrol','make:nissan','model:patrol','Correct spelling');
+ if r->>'code' is distinct from 'invalid_session' then raise exception 'revoked retry: %',r;end if;
+end $$;
+reset role;
+select 'vehicle catalogue SQL authorization, NFKC collision, scope, version, idempotency, audit and revocation tests passed' as result;
+
+\ir ../docs/vehicle-index-intake-review.sql
+do $$
+begin
+ if has_function_privilege('anon','public.zukait_vehicle_index_observe_batch(text,jsonb)','EXECUTE') or has_function_privilege('authenticated','public.zukait_vehicle_index_observe_batch(text,jsonb)','EXECUTE') or has_function_privilege('anon','public.zukait_vehicle_index_observe(text,text,text,text,text)','EXECUTE') or has_table_privilege('authenticated','public.zukait_vehicle_index_intake','SELECT') then raise exception 'intake public access';end if;
+end $$;
+insert into public.staff_sessions values(repeat('9',64),'manager',null);
+set role service_role;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_observe_batch(repeat('9',64),'[{"make":"Nissan","model":"Patrol","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC1"},{"make":"Nissan","model":"Petrol","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC1"},{"make":"Nissan","model":"New Example","sourceKind":"RECEPTION_CHECKLIST","sourceId":"RC2"},{"make":" NISSAN ","model":"NEW EXAMPLE","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC2"}]'::jsonb);
+ if r->>'ok' is distinct from 'true' or (select count(*) from public.zukait_vehicle_index_intake)<>1 then raise exception 'intake dedup or known-model check: %',r;end if;
+ r:=public.zukait_vehicle_index_observe(repeat('b',64),'Nissan','Invalid','BODYSHOP_JOB_CARD','JC3');
+ if r->>'code' is distinct from 'intake_forbidden' then raise exception 'employee capture allowed: %',r;end if;
+ r:=public.zukait_vehicle_index_observe(repeat('a',64),'Nissan','Invalid','BODYSHOP_JOB_CARD','JC3');
+ if r->>'code' is distinct from 'intake_forbidden' then raise exception 'revoked capture allowed: %',r;end if;
+ begin
+  perform public.zukait_vehicle_index_observe_batch(repeat('9',64),'[{"make":"Nissan","model":"Should Roll Back","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC9"},{"make":"Nissan","model":"Invalid","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"ID001"}]'::jsonb);
+  raise exception 'expected failure missing';
+ exception when others then
+  if sqlerrm <> 'vehicle_index_intake_rejected' then raise;end if;
+ end;
+ if (select count(*) from public.zukait_vehicle_index_intake)<>1 then raise exception 'partial batch persisted';end if;
+end $$;
+reset role;
+select 'Vehicle intake authorization, alias recognition, deduplication and atomic batch rejection passed' as result;
+
+-- Minimal committed-source fixtures, only in the disposable CI database.
+create table public.workshop_receptions(rc_no text primary key,details jsonb not null,created_by text not null default 'manager');
+create schema zukait_mechanical;
+create table zukait_mechanical.prejob_checklists(checklist_number text primary key,vehicle jsonb not null,created_by text not null default 'manager');
+grant select on public.workshop_receptions to service_role;
+grant usage on schema zukait_mechanical to service_role;
+grant select on zukait_mechanical.prejob_checklists to service_role;
+insert into public.workshop_receptions(rc_no,details) values('RC99','{"make":"Nissan","model":"Recovered Name"}');
+insert into zukait_mechanical.prejob_checklists(checklist_number,vehicle) values('MC-P99','{"make":"Toyota","model":"Recovered Mechanical"}');
+set role service_role;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_intake_list(repeat('b',64),null,null);
+ if r->>'code' is distinct from 'manager_required' then raise exception 'non-manager list';end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('b',64),'RECEPTION_CHECKLIST','RC99');
+ if r->>'code' is distinct from 'manager_required' then raise exception 'non-manager recovery';end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('9',64),'RECEPTION_CHECKLIST','RC99');
+ if r->>'status' is distinct from 'REVIEW_REQUIRED' then raise exception 'recovery: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('9',64),'MECHANICAL_CHECKLIST','MC-P99');
+ if r->>'status' is distinct from 'REVIEW_REQUIRED' then raise exception 'mechanical recovery: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_recover(repeat('9',64),'RECEPTION_CHECKLIST','RC99');
+ if (select count(*) from public.zukait_vehicle_index_intake)<>3 then raise exception 'duplicate recovery';end if;
+ r:=public.zukait_vehicle_index_intake_list(repeat('9',64),null,null);
+ if jsonb_array_length(r->'rows')<>3 then raise exception 'queue list: %',r;end if;
+ r:=public.zukait_vehicle_index_approve(repeat('9',64),'resolve-queue',3,'ADD_MODEL','Recovered Name','make:nissan',null,'Confirm model name');
+ if r->>'ok' is distinct from 'true' then raise exception 'approval: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_list(repeat('9',64),null,null);
+ if jsonb_array_length(r->'rows')<>2 or (select count(*) from public.zukait_vehicle_index_intake)<>3 then raise exception 'resolved queue observation lost: %',r;end if;
+end $$;
+reset role;
+select 'Manager intake list, exact saved checklist recovery, idempotency and retained observations passed' as result;
+
+-- Minimal event-store fixture matching the existing v2 commit-event contract.
+create table public.workshop_v2_events(event_id text primary key,entity_id text not null,actor_id text,event_type text not null,payload jsonb not null);
+grant insert,select on public.workshop_v2_events to service_role;
+insert into public.staff_credentials values('supervisor','Supervisor',true,false),('mechanical-supervisor','Mechanical Supervisor',true,false);
+\ir ../docs/vehicle-index-intake-outbox-review.sql
+grant insert on public.workshop_receptions,zukait_mechanical.prejob_checklists to service_role;
+do $$
+begin
+ if has_function_privilege('authenticated','public.zukait_vehicle_index_intake_drain(text)','EXECUTE') or has_table_privilege('anon','public.zukait_vehicle_index_intake_outbox','SELECT') or has_table_privilege('service_role','public.zukait_vehicle_index_intake_outbox','DELETE') then raise exception 'outbox grants';end if;
+end $$;
+set role service_role;
+insert into public.workshop_receptions(rc_no,details) values('RC100','{"make":"Nissan","model":"Outbox New"}'),('RC101','{"make":"Nissan","model":"Patrol"}');
+insert into zukait_mechanical.prejob_checklists(checklist_number,vehicle) values('MC-P100','{"make":"Toyota","model":"Outbox Mechanical"}');
+begin;
+insert into public.workshop_receptions(rc_no,details) values('RC-rollback','{"make":"Toyota","model":"Do Not Capture"}');
+rollback;
+do $$
+declare r jsonb;
+begin
+ if (select count(*) from public.zukait_vehicle_index_intake_outbox)<>3 then raise exception 'atomic staging';end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('b',64));
+ if r->>'code' is distinct from 'manager_required' then raise exception 'non-manager drain';end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('9',64));
+ if r->>'processed' is distinct from '3' or r->>'more' is distinct from 'false' or (select count(*) from public.zukait_vehicle_index_intake_outbox where result='REVIEW_REQUIRED')<>2 then raise exception 'drain: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('9',64));
+ if r->>'processed' is distinct from '0' or (select count(*) from public.zukait_vehicle_index_intake_outbox)<>3 then raise exception 'retry/history: %',r;end if;
+ if not exists(select 1 from public.zukait_vehicle_index_intake where entered_model='Outbox Mechanical') then raise exception 'missing recovery';end if;
+end $$;
+reset role;
+select 'Transactional checklist recovery, role boundary and retained outbox passed' as result;
+
+set role service_role;
+insert into public.workshop_v2_events values
+ ('new-1','JC777','supervisor','JOB_CREATED','{"jobCard":"JC777","vehicleMake":"Nissan","vehicleModel":"New Direct Model"}'),
+ ('new-2','MJC777','mechanical-supervisor','JOB_CREATED','{"jobCard":"MJC777","vehicleMake":"Toyota","vehicleModel":"New Mechanical Model"}'),
+ ('edit-1','JC777','supervisor','JOB_UPDATED','{"vehicleMake":"Nissan","vehicleModel":"Do Not Capture Edit"}'),
+ ('bad-1','ID001','supervisor','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Do Not Capture ID001"}'),
+ ('bad-2','JC778','employee','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Do Not Capture Employee"}'),
+ ('bad-3','JC779','mechanical-supervisor','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Do Not Capture Cross Department"}');
+insert into public.workshop_v2_events values('new-1','JC777','supervisor','JOB_CREATED','{"vehicleMake":"Nissan","vehicleModel":"New Direct Model"}') on conflict do nothing;
+begin;
+insert into public.workshop_v2_events values('failed-create','JC780','supervisor','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Failed Projection"}');
+rollback;
+do $$
+declare r jsonb;
+begin
+ if (select count(*) from public.zukait_vehicle_index_intake_outbox where processed_at is null)<>2 then raise exception 'event capture scope or duplicate';end if;
+ if not exists(select 1 from public.zukait_vehicle_index_intake_outbox where source_id='JC777' and created_by='supervisor' and source_kind='BODYSHOP_JOB_CARD') then raise exception 'original actor lost';end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('9',64));
+ if r->>'processed' is distinct from '2' or not exists(select 1 from public.zukait_vehicle_index_intake where entered_model='New Direct Model') or not exists(select 1 from public.zukait_vehicle_index_intake where entered_model='New Mechanical Model') then raise exception 'direct job recovery: %',r;end if;
+end $$;
+reset role;
+select 'Committed V2 Job Card events recover new names without edit, rollback, duplicate or role leakage' as result;

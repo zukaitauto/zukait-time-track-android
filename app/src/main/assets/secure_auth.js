@@ -13,9 +13,11 @@
     if(!window.zukaitCloud?.init||!(await window.zukaitCloud.init(true)))throw Error('Connection unavailable. Dashboard could not be verified.');
     current(ticket);
     render();current(ticket);openApp(userObj);privacy()?.unlock();
+    if(['Manager','Supervisor'].includes(userObj.role)&&window.zukaitVehicleIndexQaSync){const key=token();void window.zukaitVehicleIndexQaSync.start({read:body=>window.zukaitCloud.vehicleIndexRequest(body),isCurrent:()=>ticket===authGeneration&&window.me?.id===userObj.id&&window.me?.role===userObj.role&&token()===key&&!privacy()?.locked});}
     try{await window.zukaitV2?.pilot?.autoClaim?.();current(ticket);}catch(e){console.warn('V2 pilot session setup failed',e);}
   }
   function resetDashboard(){
+    window.zukaitVehicleIndexQaSync?.reset();
     window.zukaitCloud?.resetForSession?.();
     privacy()?.clearCachedStorage();
     if(typeof closeModal==='function')closeModal();

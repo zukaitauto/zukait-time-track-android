@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "version": 1,
+  "coverage": "Three-model pilot only; not a complete GCC or worldwide catalogue",
+  "sources": [{"id":"wikidata","license":"CC0-1.0","url":"https://www.wikidata.org/wiki/Wikidata:Licensing","retrievedAt":"2026-11-28"}],
+  "makes": [
+    {"id":"make:nissan","name":"Nissan","sourceId":"wikidata","sourceRecord":"https://www.wikidata.org/wiki/Q1141487"},
+    {"id":"make:toyota","name":"Toyota","sourceId":"wikidata","sourceRecord":"https://www.wikidata.org/wiki/Q914069"}
+  ],
+  "models": [
+    {"id":"wikidata:Q1141487","makeId":"make:nissan","name":"Patrol","sourceId":"wikidata","sourceRecord":"https://www.wikidata.org/wiki/Q1141487"},
+    {"id":"wikidata:Q914069","makeId":"make:toyota","name":"Land Cruiser","sourceId":"wikidata","sourceRecord":"https://www.wikidata.org/wiki/Q914069"},
+    {"id":"wikidata:Q110899968","makeId":"make:toyota","name":"Land Cruiser (J80)","sourceId":"wikidata","sourceRecord":"https://www.wikidata.org/wiki/Q110899968"}
+  ],
+  "aliases": []
+}

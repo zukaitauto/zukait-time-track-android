@@ -513,6 +513,7 @@ function openEditor(id){
     for(const button of document.querySelectorAll('button[onclick*="zukaitVinScan"]'))button.disabled=true;
     for(const name of ['estName','estMobile','estMakeModel','estYear','estReg','estVin','estClaim','estJobCard','estJobLookup'])document.getElementById(name).readOnly=true;
   }
+  if(!e.receptionNo&&!e.jobCard)window.zukaitVehicleAutocomplete?.attachCombined?.(document.getElementById('estMakeModel'),()=>!document.getElementById('estJobCard')?.value?.trim());
   loadEstimateCompanies();
   requestAnimationFrame(()=>{setType(e.type||'LS',false);setVat(e.vatEnabled!==false,false);recalc()});
 }
