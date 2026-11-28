@@ -20,10 +20,10 @@
     "releaseTag": "release-V425-architecture-v2",
     "sourceCommit": "3f5373d6977e806070dda9c1445b0f76ba36fa2a"
   },
-  "sourceCommit": null,
-  "signedAcceptanceRun": null,
-  "verificationRun": null,
-  "receptionVerificationRun": null,
+  "sourceCommit": "e47889c6631f43395ad548fae7d82b7923ac4ef8",
+  "signedAcceptanceRun": 46147572830,
+  "verificationRun": 46147572911,
+  "receptionVerificationRun": 46147572934,
   "approvedAt": null,
   "publishNonce": null,
   "jobLocationQA": {
@@ -71,6 +71,64 @@
       "stagedSqlBlob": "73dc5781bb12e60ca9dbba88829114d5075d5ee5",
       "status": "READ_ONLY_PREFLIGHT_PASSED_NOT_DEPLOYED"
     },
-    "manualAcceptance": "Fresh backup restore, physical Android and Safari, HTTPS restart, data preservation, PC reconciliation and authenticated production smoke remain unverified."
-  }
+    "manualAcceptance": "Fresh backup restore, physical Android and Safari, HTTPS restart, data preservation, PC reconciliation and authenticated production smoke remain unverified.",
+    "finalCandidate": {
+      "sourceCommit": "e47889c6631f43395ad548fae7d82b7923ac4ef8",
+      "pinnedRef": "refs/heads/release/v426-approved-source",
+      "workflows": [
+        {
+          "name": "Consumables Stock live-data release safety",
+          "runId": 46147572851,
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "name": "Connection outage safety",
+          "runId": 46147572965,
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "name": "Android architecture-v2 build\\n# Build verification revision 2",
+          "runId": 46147572899,
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "name": "Inactive Mechanical and Accountant contracts",
+          "runId": 46147572845,
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "name": "Accountant isolated acceptance",
+          "runId": 46147573011,
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "name": "Build Zukait Time Track APK",
+          "runId": 46147572911,
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "name": "Reception verification",
+          "runId": 46147572934,
+          "conclusion": "success",
+          "attempt": 1
+        },
+        {
+          "name": "Build Signed Acceptance APK",
+          "runId": 46147572830,
+          "conclusion": "success",
+          "attempt": 2
+        }
+      ],
+      "signedArtifactId": 15265000389,
+      "signedArtifactArchiveDigest": "sha256:5058985216c30e97aaae1ad9aa7d94873ff6b3fe09bf8f02dfdbca99e9381c74",
+      "manualAcceptanceNotVerified": true
+    }
+  },
+  "accountantVerificationRun": 46147573011
 }
