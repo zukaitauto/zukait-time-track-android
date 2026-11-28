@@ -26,3 +26,23 @@ screen.form.querySelector('input').value='Petrol';screen.form.querySelector('tex
 screen.form.dispatchEvent(new win.Event('submit',{cancelable:true}));assert.match(screen.result.textContent,/Petrol → Patrol · No changes saved/);
 assert.equal(screen.form.querySelectorAll('button').length,1);assert.equal(JSON.stringify(seed),old);
 console.log('Manager Vehicle Index: preview-only validation, role boundary, scoped aliases, duplicate checks and no writes passed');
+
+const requests=[];let active=true;
+const connected=win.zukaitVehicleIndexManager.mount(box,{actor:manager,snapshot:seed,isCurrent:()=>active,requestId:()=> 'fixed-request',approve:async command=>{requests.push(command);if(requests.length===1)throw Error('timeout');return {ok:true,requestId:command.requestId,entryId:'local:123',version:2}}});
+const cs=connected.form.querySelectorAll('select');cs[0].value='MODEL_ALIAS';cs[0].dispatchEvent(new win.Event('change'));cs[1].value='make:nissan';cs[1].dispatchEvent(new win.Event('change'));cs[2].value='wikidata:Q1141487';
+connected.form.querySelector('input').value='Petrol';connected.form.querySelector('textarea').value='Correct spelling';
+connected.form.dispatchEvent(new win.Event('submit',{cancelable:true}));
+assert.equal(requests.length,0,'preview never saves');
+assert.equal(connected.confirm.hidden,false);
+connected.form.querySelector('input').dispatchEvent(new win.Event('input'));
+assert.equal(connected.confirm.hidden,true,'editing invalidates prior preview');
+connected.form.dispatchEvent(new win.Event('submit',{cancelable:true}));
+connected.confirm.click();connected.confirm.click();await new Promise(resolve=>setTimeout(resolve,0));
+assert.equal(requests.length,1);assert.match(connected.result.textContent,/unconfirmed/);
+assert.equal(connected.form.querySelector('input').disabled,true);
+connected.confirm.click();await new Promise(resolve=>setTimeout(resolve,0));
+assert.equal(requests.length,2);assert.deepEqual(requests[0],requests[1]);
+assert.equal(requests[1].proposal.targetId,'wikidata:Q1141487');assert.equal(requests[1].proposal.kind,'MODEL_ALIAS');
+assert.match(connected.result.textContent,/confirmed. Version 2/);assert.equal(connected.confirm.hidden,true);
+assert.equal(JSON.stringify(seed),old);
+console.log('Staged Manager approval UI: explicit confirmation, stale preview invalidation, identical retry and receipt validation passed');

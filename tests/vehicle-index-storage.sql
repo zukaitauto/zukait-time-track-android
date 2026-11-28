@@ -30,7 +30,7 @@ end $$;
 reset role;
 insert into public.zukait_vehicle_index_meta(id,version) values(true,1);
 insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key) values('make:nissan','ADD_MAKE','Nissan','@makes','nissan'),('make:toyota','ADD_MAKE','Toyota','@makes','toyota');
-insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key,make_id) values('model:patrol','ADD_MODEL','Patrol','make:nissan','patrol'),('model:corolla','ADD_MODEL','Corolla','make:toyota','corolla');
+insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key,make_id) values('model:patrol','ADD_MODEL','Patrol','make:nissan','patrol','make:nissan'),('model:corolla','ADD_MODEL','Corolla','make:toyota','corolla','make:toyota');
 set role service_role;
 do $$
 declare r jsonb; prior jsonb; token text; expected text;
