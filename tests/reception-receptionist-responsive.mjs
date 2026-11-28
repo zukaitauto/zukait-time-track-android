@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),playwright=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const user={id:'QA-RC',name:'QA Receptionist',role:'Receptionist',department:'Reception'};
-const files=new Map(['session_privacy.js','mechanical_release_flags.js','vehicle_identifier_uppercase.js','receptionist.html','vendor/pdf/html2canvas-1.4.1.min.js','vendor/pdf/jspdf-4.2.1.min.js','report_pdf_export.js','receptionist_session.js','v2/features/insurance/reception.js','vin_scan.js','reception_estimate.js','v2/features/estimate/main_module.js','reception_vin.js','insurance_management.js','reception_dashboard.js','job_card_edit.js'].map(path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
+const files=new Map(['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_bootstrap.js','vehicle_index_loader.js','vehicle_index_qa_sync.js','session_privacy.js','mechanical_release_flags.js','vehicle_identifier_uppercase.js','receptionist.html','vendor/pdf/html2canvas-1.4.1.min.js','vendor/pdf/jspdf-4.2.1.min.js','report_pdf_export.js','receptionist_session.js','v2/features/insurance/reception.js','vin_scan.js','reception_estimate.js','v2/features/estimate/main_module.js','reception_vin.js','insurance_management.js','reception_dashboard.js','job_card_edit.js'].map(path=>['/'+path,fs.readFileSync('app/src/main/assets/'+path,'utf8')]));
 const record={rc_no:'RC-QA',revision:1,insurance_company:'QA Insurance',details:{make:'Toyota',model:'Camry',customer:'QA <script>unsafe</script>',registration:'QA123'},location:'VWC',approval_status:'APPROVED',can_edit:true};
 for(const engine of ['chromium','webkit']){
  const browser=await playwright[engine].launch({headless:true});
@@ -18,6 +18,7 @@ for(const engine of ['chromium','webkit']){
    if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
    const body=route.request().postDataJSON();calls.push(body);let result;
    if(url.pathname.endsWith('/staff-auth'))result={ok:true,user};
+   else if(body.action==='vehicle_index_read')result={ok:true,baseVersion:5,version:5,changes:[]};
    else if(body.action==='receptionist_delivery_list')result={ok:true,rows:[{jobCard:'QA-JC',receptionNo:'RC-QA',vehicle:'Toyota Camry',registration:'QA123',stage:'DELIVERY',deliveryReady:true,expectedQcRevision:2,expectedVehicleIdentity:'QA-VEHICLE'}]};
    else if(body.action==='reception_dashboard')result={ok:true,section:body.section||'checklists',counts:{checklists:1,jobs:1,waiting:0,approved:1,ready:1,delivered:0,followup:1,vwc:1,'vwc-checklists':1,'vwc-jobs':0,no_promise_date:1},rows:[{rc_no:'RC-QA',sequence_no:1,job_card:'',job_type:'INSURANCE',vehicle:'Toyota Camry',registration:'QA123',customer:'QA <script>unsafe</script>',received_date:'2026-10-10',status:'APPROVED',approval_status:'APPROVED',location:'VWC',promise_date:''}],total:1,page:0,page_size:50};
    else if(body.action==='reception'){
@@ -33,7 +34,7 @@ for(const engine of ['chromium','webkit']){
   await page.locator('.rdb-row').waitFor();
   assert.equal(await page.locator('.rdb-grid').count(),0,'Checklist List opens without dashboard above');
   assert.equal(await page.locator('#reception-app nav button').count(),4);
-  assert.deepEqual(await page.locator('script').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('src').split('?')[0])),["session_privacy.js","mechanical_release_flags.js","vehicle_identifier_uppercase.js","vendor/pdf/html2canvas-1.4.1.min.js","vendor/pdf/jspdf-4.2.1.min.js","report_pdf_export.js","receptionist_session.js","v2/features/insurance/reception.js","vin_scan.js","reception_estimate.js","v2/features/estimate/main_module.js","reception_vin.js","insurance_management.js","reception_dashboard.js","job_card_edit.js"]);
+  assert.deepEqual(await page.locator('script').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('src').split('?')[0])),["vehicle_index.js","vehicle_index_autocomplete.js","vehicle_index_bootstrap.js","vehicle_index_loader.js","vehicle_index_qa_sync.js","session_privacy.js","mechanical_release_flags.js","vehicle_identifier_uppercase.js","vendor/pdf/html2canvas-1.4.1.min.js","vendor/pdf/jspdf-4.2.1.min.js","report_pdf_export.js","receptionist_session.js","v2/features/insurance/reception.js","vin_scan.js","reception_estimate.js","v2/features/estimate/main_module.js","reception_vin.js","insurance_management.js","reception_dashboard.js","job_card_edit.js"]);
   assert.equal(await page.locator('[data-rdb=tile]').count(),0,'Dedicated Reception list hides dashboard cards');
   assert.equal(await page.locator('.rdb-row script').count(),0);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} list overflow`);
@@ -44,6 +45,13 @@ for(const engine of ['chromium','webkit']){
   assert.equal(await page.locator('#rc-external-job').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} Job Card form overflow`);
   await page.evaluate(()=>window.zukaitReceptionDashboard.home());await page.locator('[data-rdb=tile][data-section=new]').click();await page.locator('#rc-form').waitFor();
+  assert.equal(await page.evaluate(()=>window.ZUKAIT_VEHICLE_INDEX_READY),true);
+  await page.locator('[name=make]').fill('Nis');
+  await page.getByRole('button',{name:'Nissan',exact:true}).click();
+  await page.locator('[name=model]').fill('Pat');
+  await page.getByRole('button',{name:'Patrol',exact:true}).click();
+  assert.equal(await page.locator('[name=model]').inputValue(),'Patrol');
+  await page.locator('[name=make]').fill('');
   await page.locator('[name=make]').focus();await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.name),'model');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${engine} ${width} editor overflow`);
   await page.evaluate(()=>window.zukaitReceptionDashboard.home());await page.locator('[data-rdb=tile][data-section=create-job]').click();await page.locator('#rc-direct-job').waitFor();
