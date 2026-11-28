@@ -104,6 +104,46 @@ function validate(approval,record) {
    assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12);
    continue;
   }
+  // V426: explicit owner deferral is limited to the exact signed source.
+  if(approval.v426AcceptanceDeferral) {
+   const waiver=approval.v426AcceptanceDeferral;
+   assert.equal(approval.versionName,'V426','Exception limited to V426');
+   assert.equal(approval.versionCode,389);
+   assert.equal(approval.releaseScope,'standard');
+   assert.equal(approval.sourceCommit,'e47889c6631f43395ad548fae7d82b7923ac4ef8');
+   assert.equal(approval.signedAcceptanceRun,46147572830);
+   assert.equal(approval.verificationRun,46147572911);
+   assert.equal(approval.ownerPublicationRequested,true);
+   assert.equal(approval.ownerRequestedImmediateRelease,true);
+   assert.equal(approval.phase2ActivationApproved,false);
+   assert.equal(approval.previousPublishedRelease?.versionName,'V425');
+   assert.equal(approval.productionBackendChanges,true);
+   assert.equal(approval.backendDeploymentRequired,true);
+   assert.equal(approval.productionBackend?.project,'pjknotnjkufadqavcmii');
+   assert.equal(approval.productionBackend.version,160);
+   assert.equal(approval.productionBackend.bundleSha256,'b4cb4a4736c6fdc0bcc5527c4b71c013f4bc56f8bde1674c4ce567c917f818cf');
+   assert.equal(approval.productionBackend.readbackVerified,true);
+   assert.deepEqual(approval.productionBackend.changedModules,['index.ts','job_edit_rules.js']);
+   assert.equal(approval.receptionVerificationRun,46147572934);
+   assert.equal(approval.productionBackend.sqlReadback?.legacy,'01faf543a75caced4b9d9e240dc5adf4');
+   assert.equal(approval.productionBackend.sqlReadback?.compact,'659fad5f6f95e3974ce03cdba6d462c7');
+   assert.equal(approval.productionBackend.sqlReadback?.serviceRoleOnly,true);
+   assert.deepEqual(waiver.checks,required);
+   assert.equal(waiver.status,'DEFERRED_BY_OWNER_NOT_PERFORMED');
+   assert.equal(waiver.versionName,approval.versionName);
+   assert.equal(waiver.versionCode,approval.versionCode);
+   assert.equal(waiver.sourceCommit,approval.sourceCommit);
+   assert.equal(waiver.signedAcceptanceRun,approval.signedAcceptanceRun);
+   assert.equal(waiver.authorizedBy,'Owner in this conversation');
+   assert.equal(waiver.instruction,'bypass and publish');
+   assert.equal(waiver.recordedDate,'2026-11-28');
+   for(const field of ['physicalAcceptanceStatus','freshProductionBackupRestoreStatus','productionAuthenticatedAcceptance'])assert.equal(approval[field],waiver.status);
+   assert.equal(check?.passed,false,'Deferred check must remain not passed: '+key);
+   assert.equal(check?.status,waiver.status);
+   assert.deepEqual(check?.ownerWaiver,waiver,'V426 exception records must match');
+   assert.ok(typeof check.evidence==='string'&&check.evidence.trim().length>=12);
+   continue;
+  }
   // V425: explicit owner deferral is limited to the exact signed source.
   if(approval.v425AcceptanceDeferral) {
    const waiver=approval.v425AcceptanceDeferral;
@@ -291,6 +331,7 @@ if(require.main===module) {
  const record=JSON.parse(fs.readFileSync('docs/INSURANCE_V305_ACCEPTANCE_GATE.json','utf8'));
  validate(approval,record);
  console.log('V305 acceptance requirements satisfied for approved source '+approval.sourceCommit);
+ if(approval.v426AcceptanceDeferral) console.log('OWNER-DEFERRED: V426 seven manual acceptance gates NOT PERFORMED; signed source, server readback and publication integrity remain mandatory.');
  if(approval.v425AcceptanceDeferral) console.log('OWNER-DEFERRED: V425 seven manual acceptance gates NOT PERFORMED; signed source, server readback and publication integrity remain mandatory.');
  if(approval.v424AcceptanceDeferral) console.log('OWNER-DEFERRED: V424 seven manual acceptance gates NOT PERFORMED; signed source and publication integrity checks remain mandatory.');
  if(approval.v423AcceptanceDeferral) console.log('OWNER-DEFERRED: V423 seven manual acceptance gates NOT PERFORMED; signed source and publication integrity checks remain mandatory.');

@@ -2,7 +2,7 @@
   "versionName": "V426",
   "versionCode": 389,
   "releaseScope": "standard",
-  "approvedForStaff": false,
+  "approvedForStaff": true,
   "ownerPublicationRequested": true,
   "ownerRequestedImmediateRelease": true,
   "ownerRequestedProceed": true,
@@ -10,10 +10,10 @@
   "productionBackendChanges": true,
   "backendDeploymentRequired": true,
   "phase2ActivationApproved": false,
-  "physicalAcceptanceStatus": "NOT_RUN",
-  "freshProductionBackupRestoreStatus": "NOT_RUN",
-  "productionAuthenticatedAcceptance": "NOT_RUN",
-  "reason": "Owner requested PUBLISH after PR #159 QA verification. V426 adds effective Oman vehicle arrival/release dates, removes duplicate location action, and handles database save timeouts. Hold automated publication until exact-source signed APK and required acceptance evidence. Do not reuse V425 deferrals.",
+  "physicalAcceptanceStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "freshProductionBackupRestoreStatus": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "productionAuthenticatedAcceptance": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+  "reason": "Owner explicitly requested 'bypass and publish' for V426 following all eight successful exact-source automated workflows and isolated QA location acceptance. Seven manual checks including fresh backup restore remain unperformed. Production SQL and edge readback verified; final signed artifact, pinned-source and public-byte checks remain mandatory.",
   "previousPublishedRelease": {
     "versionName": "V425",
     "versionCode": 388,
@@ -24,8 +24,8 @@
   "signedAcceptanceRun": 46147572830,
   "verificationRun": 46147572911,
   "receptionVerificationRun": 46147572934,
-  "approvedAt": null,
-  "publishNonce": null,
+  "approvedAt": "2026-11-28T13:13:00Z",
+  "publishNonce": "v426-20261128-e47889c6-46147572830",
   "jobLocationQA": {
     "pr": 159,
     "verifiedSource": "788e73dfd4c0146ee2796f5198cb266af54f31d7",
@@ -69,9 +69,9 @@
         }
       ],
       "stagedSqlBlob": "73dc5781bb12e60ca9dbba88829114d5075d5ee5",
-      "status": "READ_ONLY_PREFLIGHT_PASSED_NOT_DEPLOYED"
+      "status": "DEPLOYED_READBACK_VERIFIED"
     },
-    "manualAcceptance": "Fresh backup restore, physical Android and Safari, HTTPS restart, data preservation, PC reconciliation and authenticated production smoke remain unverified.",
+    "manualAcceptance": "DEFERRED_BY_OWNER_NOT_PERFORMED",
     "finalCandidate": {
       "sourceCommit": "e47889c6631f43395ad548fae7d82b7923ac4ef8",
       "pinnedRef": "refs/heads/release/v426-approved-source",
@@ -130,5 +130,44 @@
       "manualAcceptanceNotVerified": true
     }
   },
-  "accountantVerificationRun": 46147573011
+  "accountantVerificationRun": 46147573011,
+  "v426AcceptanceDeferral": {
+    "checks": [
+      "client_https_restart",
+      "physical_android",
+      "physical_safari",
+      "full_data_preservation",
+      "fresh_backup_restored",
+      "pc_site_reconciled",
+      "production_backend_smoke"
+    ],
+    "status": "DEFERRED_BY_OWNER_NOT_PERFORMED",
+    "versionName": "V426",
+    "versionCode": 389,
+    "sourceCommit": "e47889c6631f43395ad548fae7d82b7923ac4ef8",
+    "signedAcceptanceRun": 46147572830,
+    "authorizedBy": "Owner in this conversation",
+    "instruction": "bypass and publish",
+    "recordedDate": "2026-11-28"
+  },
+  "productionBackend": {
+    "project": "pjknotnjkufadqavcmii",
+    "function": "workshop-api",
+    "previousVersion": 159,
+    "version": 160,
+    "bundleSha256": "b4cb4a4736c6fdc0bcc5527c4b71c013f4bc56f8bde1674c4ce567c917f818cf",
+    "readbackVerified": true,
+    "changedModules": [
+      "index.ts",
+      "job_edit_rules.js"
+    ],
+    "otherLiveModulesPreserved": 60,
+    "sqlMigration": "manager_job_location_date_v426",
+    "sqlReadback": {
+      "legacy": "01faf543a75caced4b9d9e240dc5adf4",
+      "compact": "659fad5f6f95e3974ce03cdba6d462c7",
+      "serviceRoleOnly": true
+    },
+    "scope": "Dated manager vehicle location save and timeout handling only; no staff record changes during installation; authenticated production acceptance deferred."
+  }
 }

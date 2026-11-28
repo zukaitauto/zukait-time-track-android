@@ -204,6 +204,22 @@ jobs:
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/46140586278" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/reception-check.yml"'
             EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude)tests/reception-v305-acceptance.mjs' ':(exclude).github/workflows/publish-approved-release.yml')
           fi
+          # V426 owner-directed exception, scoped to exact signed source and verified live backend.
+          if [ "$(jq -r '.versionName' release-request.json)" = "V426" ] &&
+             [ "$SOURCE_COMMIT" = "e47889c6631f43395ad548fae7d82b7923ac4ef8" ] &&
+             [ "$(jq -r '.v426AcceptanceDeferral.status' release-request.json)" = "DEFERRED_BY_OWNER_NOT_PERFORMED" ]; then
+            test "$(git rev-parse "$GITHUB_SHA:scripts/verify-v305-acceptance.cjs")" = "a8f6a98265e857aed9c8c7a475145094369f2947"
+            test "$(git rev-parse "$GITHUB_SHA:tests/reception-v305-acceptance.mjs")" = "0af965457537ede66a001553287c13bc1326a2cf"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147572851" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/stock-live-data-safety.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147572965" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/connection-outage-safety.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147572899" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/architecture-v2-android.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147572845" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/mechanical-accounting-contracts.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147573011" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/accountant-qa.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147572911" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/build-apk.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147572934" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/reception-check.yml"'
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/46147572830" | jq -e --arg sha "$SOURCE_COMMIT" '.head_sha==$sha and .head_branch=="architecture-v2" and .conclusion=="success" and .path==".github/workflows/build-signed-acceptance.yml"'
+            EXCLUDES+=(':(exclude)scripts/verify-v305-acceptance.cjs' ':(exclude)tests/reception-v305-acceptance.mjs' ':(exclude).github/workflows/publish-approved-release.yml')
+          fi
           if ! git diff --quiet "$SOURCE_COMMIT" "$GITHUB_SHA" -- . "${EXCLUDES[@]}"; then
             echo "Production source drift detected after approved source commit:"
             git diff --name-only "$SOURCE_COMMIT" "$GITHUB_SHA" -- . ':(exclude)release-request.json'
@@ -320,7 +336,7 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true' || env.SOURCE_VERSION_NAME == 'V421' || env.SOURCE_VERSION_NAME == 'V422' || env.SOURCE_VERSION_NAME == 'V423' || env.SOURCE_VERSION_NAME == 'V424' || env.SOURCE_VERSION_NAME == 'V425') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve the exact physically accepted signed APK' }}
+      - name: ${{ (env.UI_ONLY_PUBLICATION == 'true' || env.ACCOUNTANT_PUBLICATION == 'true' || env.SOURCE_VERSION_NAME == 'V421' || env.SOURCE_VERSION_NAME == 'V422' || env.SOURCE_VERSION_NAME == 'V423' || env.SOURCE_VERSION_NAME == 'V424' || env.SOURCE_VERSION_NAME == 'V425' || env.SOURCE_VERSION_NAME == 'V426') && 'Retrieve owner-approved signed candidate; physical acceptance NOT_RUN' || 'Retrieve the exact physically accepted signed APK' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
