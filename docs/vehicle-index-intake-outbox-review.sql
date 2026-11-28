@@ -2,7 +2,7 @@
 begin;
 create table public.zukait_vehicle_index_intake_outbox(
  id bigint generated always as identity primary key,
- source_kind text not null check(source_kind in ('RECEPTION_CHECKLIST','MECHANICAL_CHECKLIST')),
+ source_kind text not null check(source_kind in ('RECEPTION_CHECKLIST','MECHANICAL_CHECKLIST','BODYSHOP_JOB_CARD','MECHANICAL_JOB_CARD')),
  source_id text not null check(char_length(source_id) between 1 and 160),
  entered_make text not null check(char_length(entered_make) between 1 and 160),
  entered_model text not null check(char_length(entered_model) between 1 and 160),
@@ -42,6 +42,32 @@ revoke all on function public.zukait_vehicle_index_stage_checklist() from public
 grant execute on function public.zukait_vehicle_index_stage_checklist() to service_role;
 create trigger zukait_vehicle_index_stage_reception after insert on public.workshop_receptions for each row execute function public.zukait_vehicle_index_stage_checklist();
 create trigger zukait_vehicle_index_stage_mechanical after insert on zukait_mechanical.prejob_checklists for each row execute function public.zukait_vehicle_index_stage_checklist();
+-- Only capture actual, newly committed JOB_CREATED events. The existing
+-- commit_event function inserts the event before projection; any projection
+-- rejection rolls back this row as well. Duplicate event IDs do not insert.
+create function public.zukait_vehicle_index_stage_job_event()
+returns trigger language plpgsql security invoker set search_path=pg_catalog,public as $$
+declare k text; src text; mk text; md text; actor_role text;
+begin
+ if new.event_type is distinct from 'JOB_CREATED' or new.actor_id is null then return new;end if;
+ src:=coalesce(nullif(btrim(new.payload->>'jobCard'),''),btrim(new.entity_id));
+ mk:=new.payload->>'vehicleMake';md:=new.payload->>'vehicleModel';
+ if src is null or upper(src)='ID001' or char_length(src) not between 1 and 160 or mk is null or md is null or char_length(btrim(mk)) not between 1 and 160 or char_length(btrim(md)) not between 1 and 160 or mk~'[[:cntrl:]]' or md~'[[:cntrl:]]' then return new;end if;
+ begin
+  select role into actor_role from public.staff_credentials where user_id=new.actor_id and active;
+  if actor_role is null or actor_role not in ('Manager','Supervisor','Receptionist','Mechanical Supervisor') then return new;end if;
+  k:=case when src~*'^MJC' then 'MECHANICAL_JOB_CARD' else 'BODYSHOP_JOB_CARD' end;
+  if actor_role='Mechanical Supervisor' and k<>'MECHANICAL_JOB_CARD' then return new;end if;
+  insert into public.zukait_vehicle_index_intake_outbox(source_kind,source_id,entered_make,entered_model,created_by)
+  values(k,src,btrim(mk),btrim(md),new.actor_id) on conflict(source_kind,source_id) do nothing;
+ exception when others then
+  raise warning 'vehicle_index_job_outbox_stage_failed [%]',sqlstate;
+ end;
+ return new;
+end $$;
+revoke all on function public.zukait_vehicle_index_stage_job_event() from public,anon,authenticated;
+grant execute on function public.zukait_vehicle_index_stage_job_event() to service_role;
+create trigger zukait_vehicle_index_stage_job_event after insert on public.workshop_v2_events for each row when(new.event_type='JOB_CREATED') execute function public.zukait_vehicle_index_stage_job_event();
 -- Only Manager can drain. One bounded batch on explicit review list opening.
 -- Failed transactions leave pending rows in place. No background polling.
 create function public.zukait_vehicle_index_intake_drain(p_session_hash text)

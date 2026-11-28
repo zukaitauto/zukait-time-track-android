@@ -139,6 +139,10 @@ end $$;
 reset role;
 select 'Manager intake list, exact saved checklist recovery, idempotency and retained observations passed' as result;
 
+-- Minimal event-store fixture matching the existing v2 commit-event contract.
+create table public.workshop_v2_events(event_id text primary key,entity_id text not null,actor_id text,event_type text not null,payload jsonb not null);
+grant insert,select on public.workshop_v2_events to service_role;
+insert into public.staff_credentials values('supervisor','Supervisor',true,false),('mechanical-supervisor','Mechanical Supervisor',true,false);
 \ir ../docs/vehicle-index-intake-outbox-review.sql
 grant insert on public.workshop_receptions,zukait_mechanical.prejob_checklists to service_role;
 do $$
@@ -165,3 +169,26 @@ begin
 end $$;
 reset role;
 select 'Transactional checklist recovery, role boundary and retained outbox passed' as result;
+
+set role service_role;
+insert into public.workshop_v2_events values
+ ('new-1','JC777','supervisor','JOB_CREATED','{"jobCard":"JC777","vehicleMake":"Nissan","vehicleModel":"New Direct Model"}'),
+ ('new-2','MJC777','mechanical-supervisor','JOB_CREATED','{"jobCard":"MJC777","vehicleMake":"Toyota","vehicleModel":"New Mechanical Model"}'),
+ ('edit-1','JC777','supervisor','JOB_UPDATED','{"vehicleMake":"Nissan","vehicleModel":"Do Not Capture Edit"}'),
+ ('bad-1','ID001','supervisor','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Do Not Capture ID001"}'),
+ ('bad-2','JC778','employee','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Do Not Capture Employee"}'),
+ ('bad-3','JC779','mechanical-supervisor','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Do Not Capture Cross Department"}');
+insert into public.workshop_v2_events values('new-1','JC777','supervisor','JOB_CREATED','{"vehicleMake":"Nissan","vehicleModel":"New Direct Model"}') on conflict do nothing;
+begin;
+insert into public.workshop_v2_events values('failed-create','JC780','supervisor','JOB_CREATED','{"vehicleMake":"Toyota","vehicleModel":"Failed Projection"}');
+rollback;
+do $$
+declare r jsonb;
+begin
+ if (select count(*) from public.zukait_vehicle_index_intake_outbox where processed_at is null)<>2 then raise exception 'event capture scope or duplicate';end if;
+ if not exists(select 1 from public.zukait_vehicle_index_intake_outbox where source_id='JC777' and created_by='supervisor' and source_kind='BODYSHOP_JOB_CARD') then raise exception 'original actor lost';end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('9',64));
+ if r->>'processed' is distinct from '2' or not exists(select 1 from public.zukait_vehicle_index_intake where entered_model='New Direct Model') or not exists(select 1 from public.zukait_vehicle_index_intake where entered_model='New Mechanical Model') then raise exception 'direct job recovery: %',r;end if;
+end $$;
+reset role;
+select 'Committed V2 Job Card events recover new names without edit, rollback, duplicate or role leakage' as result;
