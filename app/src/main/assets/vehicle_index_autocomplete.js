@@ -8,8 +8,10 @@
   if(!index||typeof index.searchMakes!=='function'||typeof index.searchModels!=='function'||typeof index.resolve!=='function')throw Error('invalid_vehicle_index');
   provider=index;
  }
- function attach(form,index=provider,fields=null){
-  if(!form||!index||mounted.has(form))return mounted.get(form)||null;
+ function liveIndex(index){return index||{searchMakes:(...args)=>provider.searchMakes(...args),searchModels:(...args)=>provider.searchModels(...args),resolve:(...args)=>provider.resolve(...args)};}
+ function attach(form,index=null,fields=null){
+  if(!form||(!index&&!provider)||mounted.has(form))return mounted.get(form)||null;
+  index=liveIndex(index);
   const make=fields?.make||form.elements?.namedItem('make'),model=fields?.model||form.elements?.namedItem('model');
   if(!make||!model||!make.parentElement||!model.parentElement||!form.contains(make)||!form.contains(model)||make.readOnly||model.readOnly||make.disabled||model.disabled)return null;
   const doc=form.ownerDocument;
@@ -39,6 +41,7 @@
   }
   function select(p,row){
    if(!form.isConnected||p.field.readOnly||p.field.disabled||make.readOnly||model.readOnly||make.disabled||model.disabled){hide(p);return;}
+   if(p===mp&&!index.searchMakes(p.field.value,12).some(r=>r.id===row.id)){hide(p);return;}
    if(p===dp){const current=exactMake();if(!current||!index.searchModels(current.id,p.field.value,12).some(r=>r.id===row.id)){hide(p);return;}}
    choosing=true;
    try{
@@ -86,8 +89,9 @@
  // Estimates persist a single combined make/model string. Keep its existing
  // field and payload; offer two-step suggestions without creating named fields.
  const combined=new WeakMap();
- function attachCombined(field,canEdit=()=>true,index=provider){
-  if(!field||!index||!field.parentElement||field.readOnly||field.disabled||!canEdit()||combined.has(field))return combined.get(field)||null;
+ function attachCombined(field,canEdit=()=>true,index=null){
+  if(!field||(!index&&!provider)||!field.parentElement||field.readOnly||field.disabled||!canEdit()||combined.has(field))return combined.get(field)||null;
+  index=liveIndex(index);
   const doc=field.ownerDocument,panel=doc.createElement('div'),status=doc.createElement('small');
   panel.hidden=true;panel.style.cssText='display:none;flex-wrap:wrap;gap:6px;max-height:160px;overflow:auto;margin:5px 0';
   panel.setAttribute('role','group');panel.setAttribute('aria-label','Vehicle make and model suggestions');
@@ -116,7 +120,7 @@
     const button=doc.createElement('button');button.type='button';button.textContent=row.name;
     button.style.cssText='padding:7px 10px;max-width:100%;white-space:normal;text-align:left';
     button.addEventListener('click',()=>{
-     if(!editable()||field.value!==input){hide();return}
+     if(!editable()||field.value!==input||!(selected?index.searchModels(selected.id,rest,12):index.searchMakes(input,12)).some(r=>r.id===row.id)){hide();return}
      field.value=selected?selected.name+' '+row.name:row.name+' ';
      const EventType=doc.defaultView?.Event;
      if(EventType){field.dispatchEvent(new EventType('input',{bubbles:true}));field.dispatchEvent(new EventType('change',{bubbles:true}));}

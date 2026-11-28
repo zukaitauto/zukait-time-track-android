@@ -7,7 +7,7 @@ const dir=execFileSync(process.execPath,['scripts/prepare-vehicle-index-qa.mjs']
 try{
  const assets=join(dir,'app/src/main/assets'),read=file=>readFileSync(join(assets,file),'utf8');
  for(const host of ['offline_test.html','receptionist.html','mechanical_supervisor.html','mechanical_estimate.html']){
-  const s=read(host);assert.match(s,/vehicle_index_qa_bootstrap\.js/);assert.match(s,/connect-src 'self' https:\/\/omqgkqknbdcnotabffek\.supabase\.co/);
+  const s=read(host);assert.match(s,/vehicle_index_qa_bootstrap\.js/);assert.match(s,/vehicle_index_qa_sync\.js/);assert.match(s,/connect-src 'self' https:\/\/omqgkqknbdcnotabffek\.supabase\.co/);
  }
  for(const file of ['cloud_sync.js','secure_auth.js','receptionist_session.js','mechanical_supervisor.js','mechanical_estimate_host.js']){
   assert.ok(read(file).includes('omqgkqknbdcnotabffek'));assert.ok(!read(file).includes('pjknotnjkufadqavcmii'));
@@ -19,6 +19,16 @@ try{
  const enter=(field,value)=>{field.value=value;field.dispatchEvent(new win.Event('input',{bubbles:true}))};
  enter(form.elements.make,'n');const n=[...adapter.makePanel.querySelectorAll('button')].find(x=>x.textContent==='Nissan');assert.ok(n);n.click();
  enter(form.elements.model,'p');const p=[...adapter.modelPanel.querySelectorAll('button')].find(x=>x.textContent==='Patrol');assert.ok(p);p.click();assert.equal(form.elements.model.value,'Patrol');assert.equal(form.elements.vin.value,'untouched');
+ // Already-mounted autocomplete must see newly approved models without rebuilding a form.
+ for(const file of ['vehicle_index_loader.js','vehicle_index_qa_sync.js'])win.eval(read(file));
+ let active=true,reads=0;
+ const approved={ok:true,baseVersion:5,version:6,changes:[{version:6,id:'local:sync-test',kind:'ADD_MODEL',name:'QA New Model',makeId:'make:nissan',requestId:'sync-test',approvedBy:'M1',approvedAt:'2026-11-28T00:00:00Z'}]};
+ assert.equal(await win.zukaitVehicleIndexQaSync.start({read:async()=>{reads++;return approved},isCurrent:()=>active}),true);
+ enter(form.elements.model,'QA New');assert.ok([...adapter.modelPanel.querySelectorAll('button')].some(x=>x.textContent==='QA New Model'));
+ win.dispatchEvent(new win.Event('focus'));await new Promise(r=>setTimeout(r,0));assert.equal(reads,1);
+ active=false;win.dispatchEvent(new win.Event('focus'));enter(form.elements.model,'QA New');assert.equal(adapter.modelPanel.querySelectorAll('button').length,0);
+ let resolveOld;active=true;const pending=win.zukaitVehicleIndexQaSync.start({read:()=>new Promise(r=>{resolveOld=r}),isCurrent:()=>active});
+ win.zukaitVehicleIndexQaSync.reset();resolveOld(approved);assert.equal(await pending,false);enter(form.elements.model,'QA New');assert.equal(adapter.modelPanel.querySelectorAll('button').length,0);
  assert.match(readFileSync(join(dir,'app/build.gradle'),'utf8'),/com\.zukait\.timetrack\.vehicleqa/);
  assert.doesNotMatch(readFileSync(join(dir,'app/src/main/AndroidManifest.xml'),'utf8'),/REQUEST_INSTALL_PACKAGES/);
 

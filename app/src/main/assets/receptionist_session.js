@@ -24,7 +24,7 @@
   else saved.token=value;
   localStorage.setItem(SESSION,JSON.stringify(saved));token=value;window.me=user;
  }
- function clear(){token='';window.me=null;document.body.classList.remove('receptionist-workspace');try{bridge()?.clearSecureSessionToken?.()}catch(_){}localStorage.removeItem(SESSION);el('identity').textContent='';el('workspace').innerHTML='';el('reception-app').classList.add('hidden');el('login').classList.remove('hidden')}
+ function clear(){window.zukaitVehicleIndexQaSync?.reset();token='';window.me=null;document.body.classList.remove('receptionist-workspace');try{bridge()?.clearSecureSessionToken?.()}catch(_){}localStorage.removeItem(SESSION);el('identity').textContent='';el('workspace').innerHTML='';el('reception-app').classList.add('hidden');el('login').classList.remove('hidden')}
  async function request(functionName,body){
   if(!navigator.onLine)throw Error('Offline. Reconnect before confirming a server action.');
   const requestToken=token,requestOwner=window.me?.id;
@@ -41,6 +41,7 @@
  async function open(user){
   window.me=user;document.body.classList.add('receptionist-workspace');el('identity').textContent=user.name+' · Receptionist';el('login').classList.add('hidden');el('reception-app').classList.remove('hidden');el('message').textContent='';
   await window.zukaitReception.open();window.zukaitSessionPrivacy?.unlock();
+  if(window.zukaitVehicleIndexQaSync){const key=token;void window.zukaitVehicleIndexQaSync.start({read:body=>request('workshop-api',body),isCurrent:()=>token===key&&window.me?.id===user.id&&window.me?.role==='Receptionist'&&!window.zukaitSessionPrivacy?.locked});}
   if(pending())el('message').textContent='A delivery awaits confirmation. Open Vehicle Delivery and confirm the saved action.';
  }
  window.openModal=html=>{el('workspace').innerHTML=html};

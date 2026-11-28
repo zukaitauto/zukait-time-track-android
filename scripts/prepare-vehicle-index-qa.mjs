@@ -32,10 +32,10 @@ try{
   const file=join(assets,host);let s=readFileSync(file,'utf8');
   if(!/<head(?:\s[^>]*)?>/i.test(s))throw Error('missing head '+host);
   const policy='<meta http-equiv="Content-Security-Policy" content="connect-src \'self\' '+origin+'; form-action \'self\'; frame-src \'self\' blob: data:; object-src \'none\'">';
-  const scripts=hosts.includes(host)?'<script src="vehicle_index.js?v=qa5"></script><script src="vehicle_index_autocomplete.js?v=qa5"></script><script src="'+boot+'"></script>':'';
+  const scripts=hosts.includes(host)?'<script src="vehicle_index.js?v=qa5"></script><script src="vehicle_index_autocomplete.js?v=qa5"></script><script src="'+boot+'"></script><script src="vehicle_index_loader.js?v=qa5"></script><script src="vehicle_index_qa_sync.js?v=qa5"></script>':'';
   s=s.replace(/<head(?:\s[^>]*)?>/i,m=>m+policy+scripts);
   if(host==='offline_test.html'){
-   const managerScripts=['vehicle_index_loader.js','vehicle_index_review.js','vehicle_index_manager.js','vehicle_index_qa_manager_host.js'].map(name=>'<script src="'+name+'?v=qa5"></script>').join('');
+   const managerScripts=['vehicle_index_review.js','vehicle_index_manager.js','vehicle_index_qa_manager_host.js'].map(name=>'<script src="'+name+'?v=qa5"></script>').join('');
    if(!/<\/body>/i.test(s))throw Error('missing Manager host body');s=s.replace(/<\/body>/i,m=>managerScripts+m);
   }
   writeFileSync(file,s);
