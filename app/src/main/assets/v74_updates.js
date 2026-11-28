@@ -1264,6 +1264,75 @@ window.v74ExportJobListPDF=function(){let rows=v74ExportData(),html='<html><head
    save();closeModal();render();
    alert('Leave recorded on this device. Synchronize to share it with Manager and Supervisor.');
  }
+ // Manager-only corrections to an explicit annual approval. Preserve daily audit authority.
+ function annualApproval(id){
+   if(!id)return [];
+   const rows=(state.leaves||[]).filter(l=>l&&String(l.approvalId||'')===String(id)&&!l.cancelled);
+   if(!rows.length||rows.some(l=>l.approvalType!=='ANNUAL'||l.period!=='FULL'||l.startAt!=null||l.managerOverride||String(l.emp)!==String(rows[0].emp)))return [];
+   if(new Set(rows.map(l=>l.date)).size!==rows.length)return [];
+   return rows.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ }
+ const validPeriodDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
+ let annualPeriodDraft=null,annualPeriodSaving=false;
+ window.v755OpenAnnualPeriod=function(id){
+   if(me?.role!=='Manager')return;
+   const rows=annualApproval(id);
+   if(!rows.length)return alert('This approval has individual corrections. Use daily records instead.');
+   const first=rows[0],last=rows[rows.length-1];
+   annualPeriodDraft={id:String(id),actor:me.id,version:JSON.stringify(rows)};
+   openModal('<div class="section-title"><h2>Edit Annual Leave Period</h2><button class="secondary" onclick="closeModal()">Close</button></div>'+
+    '<p>'+esc(userSafe(first.emp).name||first.emp)+' · '+rows.length+' recorded working days</p>'+
+    '<div class="grid"><label>From date<br><input type="date" id="v755PeriodFrom" value="'+esc(first.date)+'"></label><label>Last leave date<br><input type="date" id="v755PeriodTo" value="'+esc(last.date)+'"></label></div>'+
+    '<p class="notice">For early return, set the last leave date before duty resumes. Individual corrections inside the period are preserved.</p>'+
+    '<label>Reason for change (required)<br><input id="v755PeriodReason"></label>'+
+    '<button type="button" class="green" onclick="v755SaveAnnualPeriod()">Save leave period</button>');
+ };
+ window.v755SaveAnnualPeriod=async function(){
+   if(me?.role!=='Manager'||annualPeriodSaving||!annualPeriodDraft||annualPeriodDraft.actor!==me.id)return;
+   const draft=annualPeriodDraft,from=document.getElementById('v755PeriodFrom')?.value,to=document.getElementById('v755PeriodTo')?.value,reason=document.getElementById('v755PeriodReason')?.value.trim()||'';
+   if(!validPeriodDate(from)||!validPeriodDate(to)||from>to||Date.parse(to)-Date.parse(from)>=366*86400000)return alert('Choose a valid leave range of 366 days or fewer.');
+   if(!reason)return alert('Enter a reason for changing the leave period.');
+   annualPeriodSaving=true;
+   try{
+     const cloud=window.zukaitCloud;
+     if(typeof cloud?.pull==='function'){
+       if(!window.navigator?.onLine)return alert('Connect and synchronize before editing an approved leave period.');
+       const refreshed=await cloud.pull(true);
+       if(!refreshed||cloud.dirty)return alert('Leave and work records are still syncing. Refresh and retry.');
+     }
+     if(me?.role!=='Manager'||me.id!==draft.actor||annualPeriodDraft!==draft)return;
+     const rows=annualApproval(draft.id);
+     if(!rows.length||JSON.stringify(rows)!==draft.version)return alert('The leave period changed. Reopen it before saving.');
+     const first=rows[0],last=rows[rows.length-1],emp=first.emp;
+     if(userSafe(emp).active===false)return alert('Choose an active staff member.');
+     const remove=rows.filter(l=>l.date<from||l.date>to),keep=rows.filter(l=>l.date>=from&&l.date<=to),add=[];
+     // Do not silently restore missing or cancelled days inside the original active bounds.
+     for(let t=Date.parse(from);t<=Date.parse(to);t+=86400000){
+       const date=new Date(t).toISOString().slice(0,10);
+       if(date>=first.date&&date<=last.date)continue;
+       const row={emp,date,period:'FULL',approvalType:'ANNUAL',approvalId:draft.id,remark:first.remark||''};
+       if(closedLeaveDay(row))continue;
+       if(hasDuplicate(emp,row))return alert('Leave is already recorded for '+date+'.');
+       if(hasSessionConflict(emp,row))return alert('Work time overlaps leave on '+date+'. Review the work record before changing the approval.');
+       add.push(row);
+     }
+     if(!keep.length&&!add.length)return alert('No workshop working days remain. Cancel individual records if the entire approval was incorrect.');
+     if(!remove.length&&!add.length)return alert('No recorded leave days need changing.');
+     if(!confirm('Change annual leave for '+(userSafe(emp).name||emp)+'?\nFrom '+from+' to '+to+'\nAdd '+add.length+' working days; cancel '+remove.length+' working days.\nReason: '+reason))return;
+     const at=Date.now(),by=me.id,today=dateKey(at),audit=[],newRows=[];
+     for(const l of remove)audit.push({id:uid(),action:'DELETE',leaveId:l.id,by,at,reason,before:{...l}});
+     for(const row of add){
+       const id=uid(),backdated=row.date<today;
+       newRows.push({...row,id,by,createdAt:at,cancelled:false,...(backdated?{backdated,backdateReason:reason}:{})});
+       audit.push({id:uid(),action:'ADD',leaveId:id,by,at,reason,backdated,leaveDate:row.date});
+     }
+     for(const l of remove)Object.assign(l,{cancelled:true,cancelledAt:at,cancelledBy:by,cancelReason:reason});
+     state.leaves.push(...newRows);state.leaveAudit=state.leaveAudit||[];state.leaveAudit.push(...audit);
+     annualPeriodDraft=null;save();closeModal();render();
+     alert('Leave period updated on this device. Synchronize to share the change.');
+   }catch(_){alert('Unable to complete the leave period update. Refresh Leave History before retrying.');}
+   finally{annualPeriodSaving=false;}
+ };
  window.v755OpenLeaveList=function(mode){
    const rows=mode==='history'?(window.zukaitV2?.leave?.history?.()||activeLeaveRows()):mode==='month'?leaveMonth():leaveToday();
    const title=mode==='history'?'Total Leave History':mode==='month'?'This Month Leave':'Today’s Leave';

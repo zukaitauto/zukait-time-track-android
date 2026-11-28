@@ -48,7 +48,7 @@
   }
   for(const l of list){
    const emp=String(l.emp),kind=leaveKind(l),eligible=kind&&!l.cancelled&&l.period==='FULL'&&l.startAt==null&&counts.get(key(l))===1&&Number.isFinite(dateMs(l));
-   const prev=last.get(emp),signature=JSON.stringify([kind,String(l.remark||'').trim().toLowerCase(),String(l.by||''),String(l.approvalId||'')]);
+   const prev=last.get(emp),signature=JSON.stringify([kind,String(l.remark||'').trim().toLowerCase(),l.approvalId?'':String(l.by||''),String(l.approvalId||'')]);
    if(eligible&&prev&&prev.signature===signature&&continuous(prev.group[prev.group.length-1],l)){
     prev.group.push(l);
    }else{
@@ -60,6 +60,7 @@
  }
  const span=g=>g.length===1?g[0].date:g[g.length-1].date+' – '+g[0].date;
  const groupLabel=g=>g.length===1?(leaveKind(g[0])?leaveKind(g[0])+' · '+rules.label(g[0]):rules.label(g[0])):leaveKind(g[0])+' · '+g.length+' days';
+ const periodButton=l=>l.approvalType==='ANNUAL'&&l.approvalId?'<button type="button" data-leave-period="'+E(l.approvalId)+'">Edit approved period</button> ':'';
  const buttons=l=>'<button type="button" data-leave-edit="'+E(l.id)+'">Edit</button> <button type="button" class="danger" data-leave-delete="'+E(l.id)+'">Delete leave</button>';
  function details(g,manager){
   return '<details><summary>View '+g.length+' daily records</summary>'+g.map(l=>'<div>'+E(l.date)+(manager?' '+buttons(l):'')+'</div>').join('')+'</details>';
@@ -67,7 +68,7 @@
  function table(list,actions=true){
   const manager=actions&&me.role==='Manager';
   return list.length?'<div class="v78-leave-table"><table><thead><tr><th>Staff</th><th>Date / period</th><th>Leave</th><th>Status</th><th>Remark</th><th>Marked by</th>'+(manager?'<th>Action</th>':'')+'</tr></thead><tbody>'+grouped(list).map(g=>{
-   const l=g[0];return '<tr><td>'+E(person(l.emp).name)+'</td><td>'+E(span(g))+(actions&&!manager&&g.length>1?details(g,false):'')+'</td><td>'+E(groupLabel(g))+'</td><td>'+E(l.cancelled?'Cancelled':'Recorded')+'</td><td>'+E(l.remark||'—')+(l.cancelled?'<br><small>Deleted by '+E(person(l.cancelledBy).name)+' · '+E(l.cancelReason||'Correction')+'</small>':'')+'</td><td>'+E(person(l.by).name||'—')+'</td>'+(manager?'<td>'+(l.cancelled?'':g.length>1?details(g,true):buttons(l))+'</td>':'')+'</tr>';
+   const l=g[0];return '<tr><td>'+E(person(l.emp).name)+'</td><td>'+E(span(g))+(actions&&!manager&&g.length>1?details(g,false):'')+'</td><td>'+E(groupLabel(g))+'</td><td>'+E(l.cancelled?'Cancelled':'Recorded')+'</td><td>'+E(l.remark||'—')+(l.cancelled?'<br><small>Deleted by '+E(person(l.cancelledBy).name)+' · '+E(l.cancelReason||'Correction')+'</small>':'')+'</td><td>'+E(new Set(g.map(x=>String(x.by||''))).size>1?'Multiple':person(l.by).name||'—')+'</td>'+(manager?'<td>'+(l.cancelled?'':periodButton(l)+(g.length>1?details(g,true):buttons(l)))+'</td>':'')+'</tr>';
   }).join('')+'</tbody></table></div>':'<div class="notice">No leave records match these filters.</div>';
  }
  function results(){
@@ -127,7 +128,7 @@
  window.v755OpenLeaveList=open;
  window.v133OpenManagerLeave=()=>open('history');
  window.v133LeaveRows=rows;window.v133PrintLeave=print;window.v133ShareLeave=share;
- document.addEventListener('click',e=>{if(!allowed()||me.role!=='Manager')return;const del=e.target.closest?.('[data-leave-delete]');if(del){window.v114DeleteLeave(del.dataset.leaveDelete);return}const b=e.target.closest?.('[data-leave-edit]');if(b)window.v114EditLeave(b.dataset.leaveEdit)});
+ document.addEventListener('click',e=>{if(!allowed()||me.role!=='Manager')return;const period=e.target.closest?.('[data-leave-period]');if(period){window.v755OpenAnnualPeriod?.(period.dataset.leavePeriod);return}const del=e.target.closest?.('[data-leave-delete]');if(del){window.v114DeleteLeave(del.dataset.leaveDelete);return}const b=e.target.closest?.('[data-leave-edit]');if(b)window.v114EditLeave(b.dataset.leaveEdit)});
  const prevPull=window.v42AfterCloudPull;window.v42AfterCloudPull=function(){const r=prevPull?.apply(this,arguments);refresh();return r};
  window.addEventListener('focus',refresh);
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});
