@@ -35,3 +35,7 @@ This PR adds an inert, dependency-free search core and a three-model CC0 pilot s
 ## Publication boundary
 
 The feature branch and draft PR are for review only. Release metadata, app version, backend routes and production hosts are unchanged. PC publication and signed APK publication are manually release-controlled in existing workflows. The new workflow only runs offline Node tests on PRs. No deployment or publication workflow is dispatched.
+
+## Bulk import candidate (review only)
+
+Run `node tests/vehicle-index-import.mjs` and `node scripts/import-vehicle-index.mjs vehicle-index-review`. The review workflow runs one bounded Wikidata SPARQL request, with a 55-second deadline, 15,000-row cap and 16 MiB response limit. It rejects capped/empty responses and retains the exact source bytes, query, SHA256 hashes, candidate and skip report in a CI artifact. Replay using the raw snapshot and `VEHICLE_INDEX_RETRIEVED_AT=YYYY-MM-DD`. It preserves pilot rows/IDs, uses English model labels and a conservative brand/manufacturer prefix rule; unresolved relationships and duplicate names are reported, not guessed. The raw snapshot is pinned by checksum; individual entity revisions and regional coverage still require review. No candidate is automatically installed or committed. The current pilot remains unchanged until an independently reviewed catalogue import is accepted. This direct-class query is not full worldwide coverage; pickups, commercial vehicles, model families and GCC variants may require additional sources.

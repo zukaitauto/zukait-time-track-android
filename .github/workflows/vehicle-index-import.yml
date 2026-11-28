@@ -1,0 +1,29 @@
+name: Vehicle catalogue import review
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'scripts/import-vehicle-index.mjs'
+      - 'tests/vehicle-index-import.mjs'
+      - '.github/workflows/vehicle-index-import.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/vehicle-index-import.mjs
+      - name: Retrieve CC0 catalogue candidate
+        run: node scripts/import-vehicle-index.mjs vehicle-index-review
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wikidata-catalogue-review
+          path: vehicle-index-review/
+          if-no-files-found: error
+          retention-days: 14
