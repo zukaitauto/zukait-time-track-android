@@ -15,9 +15,16 @@ w.fetch=async(_url,args)=>{
  if(body.action==="reception"&&body.command.operation==="CAPABILITIES")res={ok:true,allowed:true,manager:true};
  if(body.action==="reception"&&body.command.operation==="MASTER")res={ok:true,companies:[]};
  if(body.action==="reception"&&body.command.operation==="LIST")res={ok:true,rows:[]};
+ if(body.action==="vehicle_master_candidates"){
+  assert.equal(body.registration,"QA 123");
+  res={ok:true,available:true,registration_display:"QA 123",candidates:[
+   {vehicle_id:"qa-vehicle-one",make:"Toyota",model:"Camry",year:2024,identity_status:"VIN_VERIFIED",vin_last4:"1234",visits:2},
+   {vehicle_id:"qa-vehicle-two",make:"Nissan",model:"Patrol",identity_status:"PROVISIONAL",visits:1}
+  ]};
+ }
  if(body.action==="reception_dashboard"){
   const row={rc_no:"RC0012",sequence_no:12,job_card:"JC120",vehicle:"Toyota Camry 2024",
-   registration:"QA 123",job_type:"INSURANCE",received_date:"2026-10-10",created_date:"2026-10-10",
+   registration:"QA 123",customer:"QA Customer",mobile:"90000000",job_type:"INSURANCE",received_date:"2026-10-10",created_date:"2026-10-10",
    promise_date:promise,delivered_date:"",location:"VIW",status:"Open",delivered:false};
   res={ok:true,counts:{checklists:1,jobs:1,waiting:0,"vwc-checklists":0,"vwc-jobs":0,vwc:0,
    approved:0,ready:0,delivered:0,followup:1,no_promise_date:promise?0:1},
@@ -43,7 +50,30 @@ for(const [i,name] of ["Create Checklist","Create Job Card","Checklist List","Jo
 "Vehicle With Customer","Approved Vehicles","Ready to Deliver","Delivered Vehicle List","Delivery Follow-up"].entries())
  assert.ok([...buttons].some(b=>b.textContent.includes(name)),name+" label missing");
 const click=async(selector)=>{const b=w.document.querySelector(selector);assert.ok(b,selector);b.click();await settle();};
-for(const key of ["vehicle-master","customer-master"]){const before=commands.length;await click('#rc-root [data-rdb=tile][data-section='+key+']');assert.equal(commands.length,before,"Master must not query until search submitted");assert.ok(w.document.querySelector("#rdb-master-search"));await click('#rc-root [data-rdb=back-dashboard]');}
+for(const key of ["vehicle-master","customer-master"]){
+ const before=commands.length;
+ await click('#rc-root [data-rdb=tile][data-section='+key+']');
+ assert.equal(commands.length,before,"Master must not query until search submitted");
+ const form=w.document.querySelector("#rdb-master-search");assert.ok(form);
+ const submit=async q=>{form.elements.query.value=q;form.dispatchEvent(new w.Event("submit",{bubbles:true,cancelable:true}));await settle();};
+ await submit("Q");assert.equal(commands.length,before,"Reject short query without API traffic");
+ await submit(key==="vehicle-master"?"QA 123":"QA Customer");
+ assert.equal(commands.length,before+1,"One explicit search makes one request");
+ const result=w.document.querySelector("#rdb-master-results");
+ if(key==="vehicle-master"){
+  assert.equal(commands.at(-1).action,"vehicle_master_candidates");
+  assert.match(result.textContent,/Camry/);assert.match(result.textContent,/Patrol/);
+  assert.match(result.textContent,/VIN verified/);assert.match(result.textContent,/Identity not verified/);
+  assert.equal(result.querySelectorAll("article").length,2,"A reused plate retains both physical candidates");
+ }else{
+  assert.equal(commands.at(-1).action,"reception_dashboard");
+  assert.equal(commands.at(-1).search,"QA Customer");
+  assert.equal(commands.at(-1).section,"jobs");
+  assert.match(result.textContent,/QA Customer/);assert.match(result.textContent,/90000000/);
+  assert.match(result.textContent,/JC120/);
+ }
+ await click('#rc-root [data-rdb=back-dashboard]');
+}
 
 const headings={checklists:"Checklist List",jobs:"Job Card List",waiting:"Approval Waiting Insurance",
  vwc:"Vehicle With Customer",approved:"Approved Vehicles",ready:"Ready to Deliver",
