@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createRequire} from 'node:module';
+import {planVehicleIntake,newSavedJobs} from '../supabase/functions/workshop-api/extensions/vehicle_index_intake.js';
+const require=createRequire(import.meta.url),core=require('../app/src/main/assets/vehicle_index.js');
+const index=core.create(JSON.parse(fs.readFileSync('app/src/main/assets/vehicle_index_reviewed.json','utf8')));
+const saved={kind:'RECEPTION_CHECKLIST',id:'RC123',make:'Nissan',model:'New Example',vin:'never copied',customer:'never copied'};
+const actor={role:'Receptionist',id:'test'},receipt={ok:true};
+assert.deepEqual(planVehicleIntake(index,actor,receipt,[saved,{...saved,id:'RC124',make:' nissan ',model:'NEW EXAMPLE'}]),[{make:'Nissan',model:'New Example',sourceKind:'RECEPTION_CHECKLIST',sourceId:'RC123'}]);
+assert.deepEqual(planVehicleIntake(index,actor,{ok:false},[saved]),[]);
+assert.deepEqual(planVehicleIntake(index,{...actor,role:'Employee'},receipt,[saved]),[]);
+assert.deepEqual(planVehicleIntake(index,{...actor,role:'Mechanical Supervisor'},receipt,[saved]),[]);
+assert.equal(planVehicleIntake(index,{...actor,role:'Supervisor'},receipt,[{...saved,kind:'BODYSHOP_JOB_CARD'}]).length,1);
+assert.deepEqual(planVehicleIntake(index,actor,receipt,[{...saved,model:'Patrol'},{...saved,id:'ID001'},{...saved,model:''}]),[]);
+const newJobs=newSavedJobs([{no:'JC1',make:'Nissan',model:'Patrol'}],[{no:'JC1',make:'Nissan',model:'Edited'},{no:'JC2',brand:'Mazda',model:'Unlisted'}]);
+assert.equal(newJobs.length,1);assert.equal(newJobs[0].id,'JC2');
+console.log('Vehicle intake: confirmed saves only, unknown pairs, normalized deduplication, staff role boundaries and no personal data copied passed');
