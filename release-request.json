@@ -37,5 +37,40 @@
     "compactRevisions": 4,
     "rollbackConfirmed": true,
     "scope": "SQL-level QA under light load; not physical or authenticated live acceptance"
+  },
+  "releasePreparation": {
+    "priorVerifiedSource": "392946c237478940e5ae8b16bdea714eb065c02c",
+    "priorSignedRun": 46146170365,
+    "priorRegressionRun": 46146170280,
+    "priorReceptionRun": 46146170353,
+    "subsequentChange": "PR #160: backup script ownership and ACL preservation only; exact source rerun required.",
+    "backendPreflight": {
+      "edgeVersion": 159,
+      "bundleSha256": "3f0be9277ff670981372536f28af01d92cca5e35a7b4a43b5fe37da801beaf00",
+      "changedModules": [
+        "index.ts",
+        "job_edit_rules.js"
+      ],
+      "otherLiveModulesPreserved": 60,
+      "sqlFunctions": [
+        {
+          "name": "zukait_manager_full_job_edit",
+          "expectedPreviousMd5": "83d6ac96733cff216ba2550c804f36d5",
+          "anonExecute": false,
+          "authenticatedExecute": false,
+          "serviceRoleExecute": true
+        },
+        {
+          "name": "zukait_manager_full_job_edit_compact",
+          "expectedPreviousMd5": "a37e2ca077ecbfa493a2bc18a4e58ba4",
+          "anonExecute": false,
+          "authenticatedExecute": false,
+          "serviceRoleExecute": true
+        }
+      ],
+      "stagedSqlBlob": "73dc5781bb12e60ca9dbba88829114d5075d5ee5",
+      "status": "READ_ONLY_PREFLIGHT_PASSED_NOT_DEPLOYED"
+    },
+    "manualAcceptance": "Fresh backup restore, physical Android and Safari, HTTPS restart, data preservation, PC reconciliation and authenticated production smoke remain unverified."
   }
 }
