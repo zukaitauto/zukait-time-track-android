@@ -4,6 +4,7 @@ on:
     branches: [architecture-v2]
     paths:
       - 'docs/vehicle-index-storage-review.sql'
+      - 'docs/vehicle-index-intake-review.sql'
       - 'tests/vehicle-index-storage.sql'
       - '.github/workflows/vehicle-index-storage.yml'
 permissions:

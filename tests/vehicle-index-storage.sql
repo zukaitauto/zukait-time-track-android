@@ -78,3 +78,30 @@ begin
 end $$;
 reset role;
 select 'vehicle catalogue SQL authorization, NFKC collision, scope, version, idempotency, audit and revocation tests passed' as result;
+
+\ir ../docs/vehicle-index-intake-review.sql
+do $$
+begin
+ if has_function_privilege('anon','public.zukait_vehicle_index_observe_batch(text,jsonb)','EXECUTE') or has_function_privilege('authenticated','public.zukait_vehicle_index_observe_batch(text,jsonb)','EXECUTE') or has_function_privilege('anon','public.zukait_vehicle_index_observe(text,text,text,text,text)','EXECUTE') or has_table_privilege('authenticated','public.zukait_vehicle_index_intake','SELECT') then raise exception 'intake public access';end if;
+end $$;
+insert into public.staff_sessions values(repeat('9',64),'manager',null);
+set role service_role;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_observe_batch(repeat('9',64),'[{"make":"Nissan","model":"Patrol","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC1"},{"make":"Nissan","model":"Petrol","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC1"},{"make":"Nissan","model":"New Example","sourceKind":"RECEPTION_CHECKLIST","sourceId":"RC2"},{"make":" NISSAN ","model":"NEW EXAMPLE","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC2"}]'::jsonb);
+ if r->>'ok' is distinct from 'true' or (select count(*) from public.zukait_vehicle_index_intake)<>1 then raise exception 'intake dedup or known-model check: %',r;end if;
+ r:=public.zukait_vehicle_index_observe(repeat('b',64),'Nissan','Invalid','BODYSHOP_JOB_CARD','JC3');
+ if r->>'code' is distinct from 'intake_forbidden' then raise exception 'employee capture allowed: %',r;end if;
+ r:=public.zukait_vehicle_index_observe(repeat('a',64),'Nissan','Invalid','BODYSHOP_JOB_CARD','JC3');
+ if r->>'code' is distinct from 'intake_forbidden' then raise exception 'revoked capture allowed: %',r;end if;
+ begin
+  perform public.zukait_vehicle_index_observe_batch(repeat('9',64),'[{"make":"Nissan","model":"Should Roll Back","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"JC9"},{"make":"Nissan","model":"Invalid","sourceKind":"BODYSHOP_JOB_CARD","sourceId":"ID001"}]'::jsonb);
+  raise exception 'expected failure missing';
+ exception when others then
+  if sqlerrm <> 'vehicle_index_intake_rejected' then raise;end if;
+ end;
+ if (select count(*) from public.zukait_vehicle_index_intake)<>1 then raise exception 'partial batch persisted';end if;
+end $$;
+reset role;
+select 'Vehicle intake authorization, alias recognition, deduplication and atomic batch rejection passed' as result;
