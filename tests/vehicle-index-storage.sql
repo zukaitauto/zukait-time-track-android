@@ -28,7 +28,7 @@ begin
  if r->>'code' is distinct from 'catalogue_not_initialized' then raise exception 'uninitialized: %',r;end if;
 end $$;
 reset role;
-insert into public.zukait_vehicle_index_meta(id,version) values(true,1);
+insert into public.zukait_vehicle_index_meta(id,version,base_version) values(true,1,1);
 insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key) values('make:nissan','ADD_MAKE','Nissan','@makes','nissan'),('make:toyota','ADD_MAKE','Toyota','@makes','toyota');
 insert into public.zukait_vehicle_index_entries(id,kind,name,scope,name_key,make_id) values('model:patrol','ADD_MODEL','Patrol','make:nissan','patrol','make:nissan'),('model:corolla','ADD_MODEL','Corolla','make:toyota','corolla','make:toyota');
 set role service_role;
@@ -56,6 +56,16 @@ begin
  r:=public.zukait_vehicle_index_approve(repeat('a',64),'new-brand',2,'ADD_MAKE','Lexus',null,null,'Missing make');
  if r->>'version' is distinct from '3' then raise exception 'new make: %',r;end if;
  if (select count(*) from public.zukait_vehicle_index_audit)<>2 or (select version from public.zukait_vehicle_index_meta)<>3 then raise exception 'audit or revision mismatch';end if;
+end $$;
+do $$
+declare r jsonb;
+begin
+ r:=public.zukait_vehicle_index_read(repeat('b',64),1);
+ if r->>'ok' is distinct from 'true' or r->>'version' is distinct from '3' or jsonb_array_length(r->'changes')<>2 or r->'changes'->0->>'kind' is distinct from 'MODEL_ALIAS' then raise exception 'read overlay: %',r;end if;
+ r:=public.zukait_vehicle_index_read(repeat('b',64),2);
+ if r->>'code' is distinct from 'catalogue_base_mismatch' then raise exception 'wrong base: %',r;end if;
+ r:=public.zukait_vehicle_index_read(repeat('e',64),1);
+ if r->>'code' is distinct from 'invalid_session' then raise exception 'revoked read: %',r;end if;
 end $$;
 reset role;
 update public.staff_sessions set revoked_at=now() where token_hash=repeat('a',64);

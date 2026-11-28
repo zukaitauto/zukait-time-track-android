@@ -6,6 +6,7 @@ import { invoicePriceApplyApi } from "./extensions/invoice_price_apply_api.js";
 import { consumablesStockApi } from "./extensions/consumables_stock_api.js";
 import { stockMasterApi } from "./extensions/stock_master_api.js";
 import { vehicleIndexApprovalApi } from "./extensions/vehicle_index_approval_api.js";
+import { vehicleIndexReadApi } from "./extensions/vehicle_index_read_api.js";
 import {vehicleMovement} from './vehicle_movement_rules.js';
 import { createDatabaseFetch } from './database_fetch.js';
 import {billRoute} from './accountant/extensions/bill_route.js';
@@ -1248,6 +1249,10 @@ Deno.serve(async (req: Request) => {
     }
     if (!user) return reply({ ok: false, code: "invalid_session" }, 401);
     // Catalogue IDs and request IDs are not job numbers. Route before number translation.
+    if(action==='vehicle_index_read'){
+      const result=await vehicleIndexReadApi(admin,user,body,{enabled:Deno.env.get('ZUKAIT_VEHICLE_INDEX_READ_ENABLED')==='true',sessionHash:await sha256Hex(token)});
+      return reply(result.body,result.status);
+    }
     if(action==='vehicle_index_approval'){
       const result=await vehicleIndexApprovalApi(admin,user,body,{enabled:Deno.env.get('ZUKAIT_VEHICLE_INDEX_APPROVAL_ENABLED')==='true',sessionHash:await sha256Hex(token)});
       return reply(result.body,result.status);

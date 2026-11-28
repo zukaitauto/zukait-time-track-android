@@ -83,4 +83,33 @@ begin
 end $$;
 revoke all on function public.zukait_vehicle_index_approve(text,text,bigint,text,text,text,text,text) from public,anon,authenticated;
 grant execute on function public.zukait_vehicle_index_approve(text,text,bigint,text,text,text,text,text) to service_role;
+
+-- Read one transactionally consistent version and its append-only approval overlay.
+-- Metadata records the installed base version separately from current approvals.
+alter table public.zukait_vehicle_index_meta add column base_version bigint not null check(base_version>=1 and base_version<=version);
+create function public.zukait_vehicle_index_read(p_session_hash text,p_base_version bigint)
+returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
+declare v bigint; b bigint; changes jsonb;
+begin
+ if p_session_hash is null or p_session_hash !~ '^[a-f0-9]{64}$' or not exists(
+ select 1 from public.staff_sessions s join public.staff_credentials c on c.user_id=s.user_id
+ where s.token_hash=p_session_hash and s.revoked_at is null and c.active is true and c.must_change is not true
+ ) then return jsonb_build_object('ok',false,'code','invalid_session');end if;
+ select version,base_version into v,b from public.zukait_vehicle_index_meta where id=true for share;
+ if v is null then return jsonb_build_object('ok',false,'code','catalogue_not_initialized');end if;
+ if p_base_version is distinct from b then return jsonb_build_object('ok',false,'code','catalogue_base_mismatch');end if;
+ if v-b>5000 then return jsonb_build_object('ok',false,'code','catalogue_read_limit');end if;
+ select coalesce(jsonb_agg(jsonb_build_object(
+ 'version',(receipt->>'version')::bigint,'id',receipt->>'entryId','kind',proposal->>'kind',
+ 'name',proposal->>'value','makeId',proposal->>'makeId','targetId',proposal->>'targetId',
+ 'approvedBy',actor_id,'approvedAt',approved_at,'requestId',request_id
+ ) order by (receipt->>'version')::bigint),'[]'::jsonb) into changes
+ from public.zukait_vehicle_index_audit
+ where (receipt->>'version')::bigint>b and (receipt->>'version')::bigint<=v;
+ if jsonb_array_length(changes)<>v-b then return jsonb_build_object('ok',false,'code','catalogue_read_limit');end if;
+ return jsonb_build_object('ok',true,'baseVersion',b,'version',v,'changes',changes);
+end $$;
+revoke all on function public.zukait_vehicle_index_read(text,bigint) from public,anon,authenticated;
+grant execute on function public.zukait_vehicle_index_read(text,bigint) to service_role;
+
 commit;
