@@ -1,0 +1,25 @@
+name: Vehicle index isolated foundation
+on:
+  pull_request:
+    branches: [architecture-v2]
+    paths:
+      - 'app/src/main/assets/vehicle_index*'
+      - 'tests/vehicle-index.mjs'
+      - '.github/workflows/vehicle-index.yml'
+permissions:
+  contents: read
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check app/src/main/assets/vehicle_index.js
+      - run: node tests/vehicle-index.mjs
+      - run: node tests/vehicle-global-identity.mjs
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tests/reception-vehicle-authority.mjs
+      - run: node tests/mechanical-inspection-boundary.mjs
+      - run: node tests/mechanical-inspection-session.mjs
