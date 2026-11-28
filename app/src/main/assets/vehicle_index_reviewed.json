@@ -1,10 +1,16 @@
 {
   "schemaVersion": 1,
-  "version": 2,
-  "coverage": "Conservative QA review subset, not complete Oman or worldwide coverage",
+  "version": 3,
+  "coverage": "Reviewed QA base plus targeted model families; incomplete worldwide coverage",
   "sources": [
     {
       "id": "wikidata-reviewed-20261128",
+      "license": "CC0-1.0",
+      "url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+      "retrievedAt": "2026-11-28"
+    },
+    {
+      "id": "wikidata-priority-series-20261128",
       "license": "CC0-1.0",
       "url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
       "retrievedAt": "2026-11-28"
@@ -75,7 +81,10 @@
       "id": "wikidata-make:Q26777551",
       "name": "Land Rover",
       "sourceId": "wikidata-reviewed-20261128",
-      "sourceRecord": "https://www.wikidata.org/wiki/Q26777551"
+      "sourceRecord": "https://www.wikidata.org/wiki/Q26777551",
+      "searchTerms": [
+        "Range Rover"
+      ]
     },
     {
       "id": "wikidata-make:Q27423",
@@ -160,6 +169,30 @@
       "name": "Honda",
       "sourceId": "wikidata-reviewed-20261128",
       "sourceRecord": "https://www.wikidata.org/wiki/Q9584"
+    },
+    {
+      "id": "wikidata-make:Q29570",
+      "name": "Chevrolet",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q29570"
+    },
+    {
+      "id": "wikidata-make:Q28993",
+      "name": "GMC",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28993"
+    },
+    {
+      "id": "wikidata-make:Q30113",
+      "name": "Jeep",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q30113"
+    },
+    {
+      "id": "wikidata-make:Q216796",
+      "name": "Lincoln",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q216796"
     }
   ],
   "models": [
@@ -1975,6 +2008,251 @@
       "name": "Amaze",
       "sourceId": "wikidata-reviewed-20261128",
       "sourceRecord": "https://www.wikidata.org/wiki/Q11338295"
+    },
+    {
+      "id": "wikidata:Q500035",
+      "makeId": "make:toyota",
+      "name": "Camry",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q500035"
+    },
+    {
+      "id": "wikidata:Q848607",
+      "makeId": "make:toyota",
+      "name": "Hilux",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q848607"
+    },
+    {
+      "id": "series:toyota:corolla",
+      "makeId": "make:toyota",
+      "name": "Corolla",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q55533476"
+    },
+    {
+      "id": "wikidata:Q636791",
+      "makeId": "make:nissan",
+      "name": "Altima",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q636791"
+    },
+    {
+      "id": "wikidata:Q611158",
+      "makeId": "make:nissan",
+      "name": "Armada",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q611158"
+    },
+    {
+      "id": "wikidata:Q1135638",
+      "makeId": "make:nissan",
+      "name": "X-Trail",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1135638"
+    },
+    {
+      "id": "wikidata:Q1465915",
+      "makeId": "make:nissan",
+      "name": "Navara",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1465915"
+    },
+    {
+      "id": "wikidata:Q926124",
+      "makeId": "make:nissan",
+      "name": "Qashqai",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q926124"
+    },
+    {
+      "id": "wikidata:Q374755",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Pajero",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q374755"
+    },
+    {
+      "id": "wikidata:Q911859",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Pajero Sport",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q911859"
+    },
+    {
+      "id": "wikidata:Q1044544",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Outlander",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1044544"
+    },
+    {
+      "id": "wikidata:Q579798",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Triton",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q579798"
+    },
+    {
+      "id": "wikidata:Q1134042",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Range Rover",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1134042"
+    },
+    {
+      "id": "wikidata:Q1165231",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Range Rover Sport",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1165231"
+    },
+    {
+      "id": "wikidata:Q642647",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Range Rover Evoque",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q642647"
+    },
+    {
+      "id": "wikidata:Q28843797",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Range Rover Velar",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28843797"
+    },
+    {
+      "id": "wikidata:Q908027",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Defender",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q908027"
+    },
+    {
+      "id": "wikidata:Q1140003",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Discovery",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1140003"
+    },
+    {
+      "id": "wikidata:Q910928",
+      "makeId": "wikidata-make:Q29570",
+      "name": "Tahoe",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q910928"
+    },
+    {
+      "id": "wikidata:Q859501",
+      "makeId": "wikidata-make:Q29570",
+      "name": "Suburban",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q859501"
+    },
+    {
+      "id": "wikidata:Q871329",
+      "makeId": "wikidata-make:Q29570",
+      "name": "Silverado",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q871329"
+    },
+    {
+      "id": "wikidata:Q287723",
+      "makeId": "wikidata-make:Q29570",
+      "name": "Malibu",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q287723"
+    },
+    {
+      "id": "wikidata:Q482542",
+      "makeId": "wikidata-make:Q29570",
+      "name": "Captiva",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q482542"
+    },
+    {
+      "id": "wikidata:Q494073",
+      "makeId": "wikidata-make:Q29570",
+      "name": "Cruze",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q494073"
+    },
+    {
+      "id": "wikidata:Q12206628",
+      "makeId": "wikidata-make:Q28993",
+      "name": "Yukon",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q12206628"
+    },
+    {
+      "id": "wikidata:Q936505",
+      "makeId": "wikidata-make:Q28993",
+      "name": "Acadia",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q936505"
+    },
+    {
+      "id": "wikidata:Q18669755",
+      "makeId": "wikidata-make:Q28993",
+      "name": "Terrain",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q18669755"
+    },
+    {
+      "id": "wikidata:Q1353305",
+      "makeId": "wikidata-make:Q30113",
+      "name": "Wrangler",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1353305"
+    },
+    {
+      "id": "wikidata:Q1129521",
+      "makeId": "wikidata-make:Q30113",
+      "name": "Grand Cherokee",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1129521"
+    },
+    {
+      "id": "wikidata:Q1686208",
+      "makeId": "wikidata-make:Q30113",
+      "name": "Compass",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1686208"
+    },
+    {
+      "id": "wikidata:Q15907271",
+      "makeId": "wikidata-make:Q30113",
+      "name": "Renegade",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q15907271"
+    },
+    {
+      "id": "wikidata:Q1425644",
+      "makeId": "wikidata-make:Q216796",
+      "name": "Navigator",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1425644"
+    },
+    {
+      "id": "wikidata:Q1760333",
+      "makeId": "wikidata-make:Q216796",
+      "name": "Aviator",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1760333"
+    },
+    {
+      "id": "wikidata:Q77973915",
+      "makeId": "wikidata-make:Q216796",
+      "name": "Nautilus",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q77973915"
+    },
+    {
+      "id": "wikidata:Q65075518",
+      "makeId": "wikidata-make:Q216796",
+      "name": "Corsair",
+      "sourceId": "wikidata-priority-series-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q65075518"
     }
   ],
   "aliases": []

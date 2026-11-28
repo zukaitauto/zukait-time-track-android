@@ -18,7 +18,7 @@
    if(data.sources.find(s=>s.id===r.sourceId)?.license==='INTERNAL-MANAGER'&&(!r.id.startsWith('local:')||!text(r.approvedBy)||!text(r.approvedAt)||!text(r.sourceRecord)||!r.sourceRecord.startsWith('approval:')))throw Error('invalid_internal_approval');
    ids.add(r.id);
   }
-  for(const m of data.makes){row(m,'make');const name=key(m.name);if(names.has(name))throw Error('duplicate_make');names.add(name);makes.set(m.id,m)}
+  for(const m of data.makes){row(m,'make');if(m.searchTerms!==undefined&&(!Array.isArray(m.searchTerms)||m.searchTerms.length>12||m.searchTerms.some(x=>!text(x))))throw Error('invalid_make_search_terms');const name=key(m.name);if(names.has(name))throw Error('duplicate_make');names.add(name);makes.set(m.id,m)}
   names.clear();
   for(const m of data.models){
    row(m,'model');if(!makes.has(m.makeId))throw Error('unknown_make');
@@ -44,7 +44,7 @@
    const rows=kind==='make'?data.makes:data.models.filter(m=>m.makeId===makeId);
    return rows.map(r=>{
     const aliases=data.aliases.filter(a=>a.kind===kind&&a.targetId===r.id);
-    const terms=[r.name,...aliases.map(a=>a.value)].map(key);
+    const terms=[r.name,...(kind==='make'?r.searchTerms||[]:[]),...aliases.map(a=>a.value)].map(key);
     const rank=terms.includes(q)?0:terms.some(t=>t.startsWith(q))?1:terms.some(t=>t.includes(q))?2:3;
     return {r,rank};
    }).filter(x=>x.rank<3).sort((a,b)=>a.rank-b.rank||a.r.name.localeCompare(b.r.name,'en')||a.r.id.localeCompare(b.r.id)).slice(0,size).map(x=>x.r);
