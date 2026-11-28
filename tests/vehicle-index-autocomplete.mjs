@@ -36,8 +36,23 @@ assert.ok(inputs>0);
 const before=new window.FormData(form);assert.deepEqual([...before.keys()],['make','model','vin','registration','customer']);
 const reception=fs.readFileSync('app/src/main/assets/v2/features/insurance/reception.js','utf8');
 assert.equal((reception.match(/zukaitVehicleAutocomplete\?\.attach\?\.\(form\)/g)||[]).length,2);
-for(const name of ['offline_test.html','receptionist.html'])assert.doesNotMatch(fs.readFileSync('app/src/main/assets/'+name,'utf8'),/vehicle_index_autocomplete\.js/,'staged hook must stay inactive until reviewed catalogue is installed');
-console.log('Vehicle autocomplete: explicit selection, scoped models, identity preservation, manual fallback, inactive host boundary passed');
+for(const name of ['offline_test.html','receptionist.html','mechanical_supervisor.html','mechanical_estimate.html']){
+ const host=fs.readFileSync('app/src/main/assets/'+name,'utf8');
+ const ordered=['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_bootstrap.js','vehicle_index_loader.js','vehicle_index_qa_sync.js'];
+ let last=-1;
+ for(const file of ordered){const marker='src="'+file+'?';assert.equal(host.split(marker).length-1,1,name+' loads '+file+' once');const pos=host.indexOf(marker);assert.ok(pos>last,name+' script dependency order');last=pos;}
+ assert.doesNotMatch(host,/omqgkqknbdcnotabffek/,'staff host must not point to QA');
+}
+// Verify the exact deployed bundle instead of merely checking that scripts exist.
+const staffWindow=new JSDOM('<form><input name="make" value="Nissan"><input name="model"></form>',{runScripts:'outside-only'}).window;
+for(const name of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_bootstrap.js'])staffWindow.eval(fs.readFileSync('app/src/main/assets/'+name,'utf8'));
+assert.equal(staffWindow.ZUKAIT_VEHICLE_INDEX_READY,true);
+const reviewed=JSON.parse(fs.readFileSync('app/src/main/assets/vehicle_index_reviewed.json','utf8'));
+assert.equal(JSON.stringify(staffWindow.zukaitVehicleIndexBase),JSON.stringify(staffWindow.zukaitVehicleIndex.validate(reviewed)));
+const sf=staffWindow.document.querySelector('form'),sa=staffWindow.zukaitVehicleAutocomplete.attach(sf);
+assert.ok(sa);sf.elements.model.value='Pat';sf.elements.model.dispatchEvent(new staffWindow.Event('input',{bubbles:true}));
+assert.ok([...sa.modelPanel.querySelectorAll('button')].some(b=>b.textContent==='Patrol'));
+console.log('Vehicle autocomplete: explicit selection, scoped models, identity preservation, manual fallback, staff host initialization passed');
 
 const section=doc.createElement('section');
 section.innerHTML='<label>Make<input id="custom-make" value="Nissan"></label><label>Model<input id="custom-model"></label><input id="other" value="untouched">';
