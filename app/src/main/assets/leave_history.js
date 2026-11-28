@@ -31,7 +31,7 @@
   const key=l=>JSON.stringify([String(l.emp),String(l.date)]);
   const dateMs=l=>/^\d{4}-\d{2}-\d{2}$/.test(String(l.date))?Date.parse(l.date+'T00:00:00Z'):NaN;
   const all=rules.rows(),occupied=new Set(all.filter(Boolean).map(key));
-  for(const l of all.filter(Boolean))counts.set(key(l),(counts.get(key(l))||0)+1);
+  for(const l of all.filter(l=>l&&!l.cancelled))counts.set(key(l),(counts.get(key(l))||0)+1);
   function continuous(newer,older){
    const a=dateMs(older),b=dateMs(newer),gap=(b-a)/86400000;
    if(gap===1)return true;
@@ -47,7 +47,8 @@
    return true;
   }
   for(const l of list){
-   const emp=String(l.emp),kind=leaveKind(l),eligible=kind&&!l.cancelled&&l.period==='FULL'&&l.startAt==null&&counts.get(key(l))===1&&Number.isFinite(dateMs(l));
+   if(l.cancelled){out.push([l]);continue;}
+   const emp=String(l.emp),kind=leaveKind(l),eligible=kind&&l.period==='FULL'&&l.startAt==null&&counts.get(key(l))===1&&Number.isFinite(dateMs(l));
    const prev=last.get(emp),signature=JSON.stringify([kind,String(l.remark||'').trim().toLowerCase(),l.approvalId?'':String(l.by||''),String(l.approvalId||'')]);
    if(eligible&&prev&&prev.signature===signature&&continuous(prev.group[prev.group.length-1],l)){
     prev.group.push(l);

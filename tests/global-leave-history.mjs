@@ -107,3 +107,19 @@ assert.equal(h.rows().length,5);
 h.filter('month','2026-11');assert.equal(h.rows().length,4);
 vm.runInContext("state.leaves.push({id:'cancelled-friday',emp:'E1',date:'2026-11-27',period:'FULL',approvalType:'ANNUAL',approvalId:'A',cancelled:true})",c);
 h.refresh();assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/2026-11-26 – 2026-11-28/);
+
+ // Reapproving a cancelled date preserves its audit row without breaking active grouping.
+vm.runInContext("me.role='Manager';state={leaves:"+JSON.stringify([
+ {id:'re1',emp:'E1',date:'2026-11-28',period:'FULL',approvalType:'ANNUAL',approvalId:'A',remark:'Travel',by:'M'},
+ {id:'re2',emp:'E1',date:'2026-11-29',period:'FULL',approvalType:'ANNUAL',approvalId:'A',remark:'Travel',by:'M'},
+ {id:'reold',emp:'E1',date:'2026-11-29',period:'FULL',approvalType:'ANNUAL',approvalId:'A',remark:'Travel',by:'M',cancelled:true},
+ {id:'re3',emp:'E1',date:'2026-11-30',period:'FULL',approvalType:'ANNUAL',approvalId:'A',remark:'Travel',by:'M'}
+])+ "}",c);
+h.open('history');
+assert.match(nodes.leaveHistoryResults.innerHTML,/Annual leave · 3 days/);
+h.filter('status','all');
+assert.match(nodes.leaveHistoryResults.innerHTML,/Annual leave · 3 days/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/Cancelled/);
+assert.match(nodes.leaveHistoryResults.innerHTML,/<b>3<\/b> leave days/);
+vm.runInContext("state.leaves.push({id:'duplicate',emp:'E1',date:'2026-11-29',period:'FULL',approvalType:'ANNUAL',approvalId:'A',remark:'Travel',by:'M'})",c);
+h.refresh();assert.doesNotMatch(nodes.leaveHistoryResults.innerHTML,/Annual leave · 3 days/);
