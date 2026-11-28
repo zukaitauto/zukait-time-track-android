@@ -107,14 +107,14 @@ reset role;
 select 'Vehicle intake authorization, alias recognition, deduplication and atomic batch rejection passed' as result;
 
 -- Minimal committed-source fixtures, only in the disposable CI database.
-create table public.workshop_receptions(rc_no text primary key,details jsonb not null);
+create table public.workshop_receptions(rc_no text primary key,details jsonb not null,created_by text not null default 'manager');
 create schema zukait_mechanical;
-create table zukait_mechanical.prejob_checklists(checklist_number text primary key,vehicle jsonb not null);
+create table zukait_mechanical.prejob_checklists(checklist_number text primary key,vehicle jsonb not null,created_by text not null default 'manager');
 grant select on public.workshop_receptions to service_role;
 grant usage on schema zukait_mechanical to service_role;
 grant select on zukait_mechanical.prejob_checklists to service_role;
-insert into public.workshop_receptions values('RC99','{"make":"Nissan","model":"Recovered Name"}');
-insert into zukait_mechanical.prejob_checklists values('MC-P99','{"make":"Toyota","model":"Recovered Mechanical"}');
+insert into public.workshop_receptions(rc_no,details) values('RC99','{"make":"Nissan","model":"Recovered Name"}');
+insert into zukait_mechanical.prejob_checklists(checklist_number,vehicle) values('MC-P99','{"make":"Toyota","model":"Recovered Mechanical"}');
 set role service_role;
 do $$
 declare r jsonb;
@@ -138,3 +138,30 @@ begin
 end $$;
 reset role;
 select 'Manager intake list, exact saved checklist recovery, idempotency and retained observations passed' as result;
+
+\ir ../docs/vehicle-index-intake-outbox-review.sql
+grant insert on public.workshop_receptions,zukait_mechanical.prejob_checklists to service_role;
+do $$
+begin
+ if has_function_privilege('authenticated','public.zukait_vehicle_index_intake_drain(text)','EXECUTE') or has_table_privilege('anon','public.zukait_vehicle_index_intake_outbox','SELECT') or has_table_privilege('service_role','public.zukait_vehicle_index_intake_outbox','DELETE') then raise exception 'outbox grants';end if;
+end $$;
+set role service_role;
+insert into public.workshop_receptions(rc_no,details) values('RC100','{"make":"Nissan","model":"Outbox New"}'),('RC101','{"make":"Nissan","model":"Patrol"}');
+insert into zukait_mechanical.prejob_checklists(checklist_number,vehicle) values('MC-P100','{"make":"Toyota","model":"Outbox Mechanical"}');
+begin;
+insert into public.workshop_receptions(rc_no,details) values('RC-rollback','{"make":"Toyota","model":"Do Not Capture"}');
+rollback;
+do $$
+declare r jsonb;
+begin
+ if (select count(*) from public.zukait_vehicle_index_intake_outbox)<>3 then raise exception 'atomic staging';end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('b',64));
+ if r->>'code' is distinct from 'manager_required' then raise exception 'non-manager drain';end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('9',64));
+ if r->>'processed' is distinct from '3' or r->>'more' is distinct from 'false' or (select count(*) from public.zukait_vehicle_index_intake_outbox where result='REVIEW_REQUIRED')<>2 then raise exception 'drain: %',r;end if;
+ r:=public.zukait_vehicle_index_intake_drain(repeat('9',64));
+ if r->>'processed' is distinct from '0' or (select count(*) from public.zukait_vehicle_index_intake_outbox)<>3 then raise exception 'retry/history: %',r;end if;
+ if not exists(select 1 from public.zukait_vehicle_index_intake where entered_model='Outbox Mechanical') then raise exception 'missing recovery';end if;
+end $$;
+reset role;
+select 'Transactional checklist recovery, role boundary and retained outbox passed' as result;

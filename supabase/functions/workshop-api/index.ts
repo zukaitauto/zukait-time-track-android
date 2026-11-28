@@ -1256,7 +1256,7 @@ Deno.serve(async (req: Request) => {
       return reply(result.body,result.status);
     }
     if(action==='vehicle_index_intake_queue'){
-      const result=await vehicleIndexIntakeQueueApi(admin,user,body,{enabled:Deno.env.get('ZUKAIT_VEHICLE_INDEX_INTAKE_ENABLED')==='true',sessionHash:await sha256Hex(token)});
+      const result=await vehicleIndexIntakeQueueApi(admin,user,body,{enabled:Deno.env.get('ZUKAIT_VEHICLE_INDEX_INTAKE_ENABLED')==='true',recoveryEnabled:Deno.env.get('ZUKAIT_VEHICLE_INDEX_RECOVERY_ENABLED')==='true',sessionHash:await sha256Hex(token)});
       return reply(result.body,result.status);
     }
     if(action==='vehicle_index_approval'){

@@ -81,7 +81,7 @@
      const r=await queue({action:'vehicle_index_intake_queue',operation:'LIST',after});
      if(!container.isConnected||!isCurrent())return;
      if(!r?.ok||r.version!==data.version||!Array.isArray(r.rows)||r.rows.length>50){status.textContent='Catalogue changed or queue unavailable. Reopen Vehicle Index.';cursor=null;more.hidden=true;return;}
-     status.textContent=r.rows.length?r.rows.length+' pending name(s)':'No pending names on this page.';cursor=r.next;more.hidden=!cursor;
+     status.textContent=(r.rows.length?r.rows.length+' pending name(s)':'No pending names on this page.')+(r.recovery?.more?' · More saved checklists remain; refresh to recover the next batch.':r.recovery?.deferred?' · Recovery deferred; refresh to retry.':'');cursor=r.next;more.hidden=!cursor;
      for(const entry of r.rows){
       const line=el('div'),pick=el('button','Review '+entry.make+' '+entry.model);pick.type='button';
       line.append(pick,el('small',' '+entry.sourceKind+' '+entry.sourceId));

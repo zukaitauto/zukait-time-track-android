@@ -5,6 +5,7 @@ on:
     paths:
       - 'docs/vehicle-index-storage-review.sql'
       - 'docs/vehicle-index-intake-review.sql'
+      - 'docs/vehicle-index-intake-outbox-review.sql'
       - 'tests/vehicle-index-storage.sql'
       - '.github/workflows/vehicle-index-storage.yml'
 permissions:

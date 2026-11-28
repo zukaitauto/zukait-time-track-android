@@ -18,3 +18,10 @@ const screen=win.zukaitVehicleIndexManager.mount(box,{actor,snapshot:seed,isCurr
 [...box.querySelectorAll('button')].find(b=>b.textContent==='New vehicle names — review').click();await new Promise(r=>setTimeout(r,0));
 [...box.querySelectorAll('button')].find(b=>b.textContent==='Review Nissan Petrol').click();assert.equal(screen.form.querySelector('input').value,'Petrol');assert.equal(screen.form.querySelector('select').value,'ADD_MODEL');assert.equal(sent,0);
 console.log('Intake queue Manager permissions, authoritative recovery request and review-only prefill passed');
+
+let drainCalls=0,listCalls=0;
+const recoveryDb={rpc:async(name)=>{if(name.endsWith('_drain')){drainCalls++;return {data:{ok:true,processed:2,more:true}};}listCalls++;return {data:{ok:true,version:1,rows:[row]}}}};
+const recovered=await route(recoveryDb,actor,request,{...opts,recoveryEnabled:true});assert.deepEqual(recovered.body.recovery,{processed:2,more:true});assert.equal(drainCalls,1);assert.equal(listCalls,1);
+await route(recoveryDb,actor,{...request,after:{makeKey:'nissan',modelKey:'petrol'}},{...opts,recoveryEnabled:true});assert.equal(drainCalls,1);assert.equal(listCalls,2);
+const unavailable=await route({rpc:async name=>{if(name.endsWith('_drain'))throw Error('timeout');return {data:{ok:true,version:1,rows:[row]}}}},actor,request,{...opts,recoveryEnabled:true});assert.equal(unavailable.body.ok,true);assert.equal(unavailable.body.recovery.deferred,true);
+console.log('Bounded on-demand recovery, no paging drains and recovery failure isolation passed');
