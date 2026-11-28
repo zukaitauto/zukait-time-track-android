@@ -1,0 +1,1981 @@
+{
+  "schemaVersion": 1,
+  "version": 2,
+  "coverage": "Conservative QA review subset, not complete Oman or worldwide coverage",
+  "sources": [
+    {
+      "id": "wikidata-reviewed-20261128",
+      "license": "CC0-1.0",
+      "url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+      "retrievedAt": "2026-11-28"
+    }
+  ],
+  "makes": [
+    {
+      "id": "make:nissan",
+      "name": "Nissan",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q20165"
+    },
+    {
+      "id": "make:toyota",
+      "name": "Toyota",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q53268"
+    },
+    {
+      "id": "wikidata-make:Q1117001",
+      "name": "Great Wall",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1117001"
+    },
+    {
+      "id": "wikidata-make:Q172741",
+      "name": "Subaru",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q172741"
+    },
+    {
+      "id": "wikidata-make:Q181642",
+      "name": "Suzuki",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q181642"
+    },
+    {
+      "id": "wikidata-make:Q20827633",
+      "name": "Ford",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q20827633"
+    },
+    {
+      "id": "wikidata-make:Q23317",
+      "name": "Audi",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q23317"
+    },
+    {
+      "id": "wikidata-make:Q234803",
+      "name": "Rolls-Royce",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q234803"
+    },
+    {
+      "id": "wikidata-make:Q246",
+      "name": "Volkswagen",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q246"
+    },
+    {
+      "id": "wikidata-make:Q26678",
+      "name": "BMW",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q26678"
+    },
+    {
+      "id": "wikidata-make:Q26777551",
+      "name": "Land Rover",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q26777551"
+    },
+    {
+      "id": "wikidata-make:Q27423",
+      "name": "BYD",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q27423"
+    },
+    {
+      "id": "wikidata-make:Q28223947",
+      "name": "Haval",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28223947"
+    },
+    {
+      "id": "wikidata-make:Q29366",
+      "name": "Changan",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q29366"
+    },
+    {
+      "id": "wikidata-make:Q35349",
+      "name": "Kia",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q35349"
+    },
+    {
+      "id": "wikidata-make:Q35886",
+      "name": "Lamborghini",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q35886"
+    },
+    {
+      "id": "wikidata-make:Q35919",
+      "name": "Lexus",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q35919"
+    },
+    {
+      "id": "wikidata-make:Q35935",
+      "name": "Lotus",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q35935"
+    },
+    {
+      "id": "wikidata-make:Q35996",
+      "name": "Mazda",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q35996"
+    },
+    {
+      "id": "wikidata-make:Q36008",
+      "name": "Mercedes-Benz",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q36008"
+    },
+    {
+      "id": "wikidata-make:Q36033",
+      "name": "Mitsubishi",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q36033"
+    },
+    {
+      "id": "wikidata-make:Q40993",
+      "name": "Porsche",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q40993"
+    },
+    {
+      "id": "wikidata-make:Q55118127",
+      "name": "Geely",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q55118127"
+    },
+    {
+      "id": "wikidata-make:Q55931",
+      "name": "Hyundai",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q55931"
+    },
+    {
+      "id": "wikidata-make:Q9584",
+      "name": "Honda",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q9584"
+    }
+  ],
+  "models": [
+    {
+      "id": "wikidata:Q1141487",
+      "makeId": "make:nissan",
+      "name": "Patrol",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1141487"
+    },
+    {
+      "id": "wikidata:Q1132451",
+      "makeId": "make:nissan",
+      "name": "Sunny",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1132451"
+    },
+    {
+      "id": "wikidata:Q377287",
+      "makeId": "make:nissan",
+      "name": "Maxima",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q377287"
+    },
+    {
+      "id": "wikidata:Q1278086",
+      "makeId": "make:nissan",
+      "name": "Murano",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1278086"
+    },
+    {
+      "id": "wikidata:Q26186522",
+      "makeId": "make:nissan",
+      "name": "Kicks",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q26186522"
+    },
+    {
+      "id": "wikidata:Q26261942",
+      "makeId": "make:nissan",
+      "name": "Versa",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q26261942"
+    },
+    {
+      "id": "wikidata:Q1993846",
+      "makeId": "make:nissan",
+      "name": "Rogue",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1993846"
+    },
+    {
+      "id": "wikidata:Q530013",
+      "makeId": "make:nissan",
+      "name": "Tiida",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q530013"
+    },
+    {
+      "id": "wikidata:Q48806840",
+      "makeId": "make:nissan",
+      "name": "Terra",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q48806840"
+    },
+    {
+      "id": "wikidata:Q1820396",
+      "makeId": "make:nissan",
+      "name": "Titan",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1820396"
+    },
+    {
+      "id": "wikidata:Q107315585",
+      "makeId": "make:nissan",
+      "name": "Navara D40",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q107315585"
+    },
+    {
+      "id": "wikidata:Q126424490",
+      "makeId": "make:nissan",
+      "name": "X-Trail I",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q126424490"
+    },
+    {
+      "id": "wikidata:Q141966233",
+      "makeId": "make:nissan",
+      "name": "Qashqai J12",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q141966233"
+    },
+    {
+      "id": "wikidata:Q86674790",
+      "makeId": "make:nissan",
+      "name": "Ariya",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q86674790"
+    },
+    {
+      "id": "wikidata:Q97501874",
+      "makeId": "make:nissan",
+      "name": "Magnite",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q97501874"
+    },
+    {
+      "id": "wikidata:Q934829",
+      "makeId": "make:nissan",
+      "name": "Serena",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q934829"
+    },
+    {
+      "id": "wikidata:Q776328",
+      "makeId": "make:nissan",
+      "name": "Note",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q776328"
+    },
+    {
+      "id": "wikidata:Q1068935",
+      "makeId": "make:nissan",
+      "name": "Teana",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1068935"
+    },
+    {
+      "id": "wikidata:Q269036",
+      "makeId": "make:nissan",
+      "name": "350Z",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q269036"
+    },
+    {
+      "id": "wikidata:Q936668",
+      "makeId": "make:nissan",
+      "name": "370Z",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q936668"
+    },
+    {
+      "id": "wikidata:Q672060",
+      "makeId": "make:nissan",
+      "name": "Cefiro",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q672060"
+    },
+    {
+      "id": "wikidata:Q1324018",
+      "makeId": "make:nissan",
+      "name": "Bluebird",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1324018"
+    },
+    {
+      "id": "wikidata:Q11509834",
+      "makeId": "make:nissan",
+      "name": "Skyline",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q11509834"
+    },
+    {
+      "id": "wikidata:Q914069",
+      "makeId": "make:toyota",
+      "name": "Land Cruiser",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q914069"
+    },
+    {
+      "id": "wikidata:Q2594060",
+      "makeId": "make:toyota",
+      "name": "Land Cruiser Prado",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q2594060"
+    },
+    {
+      "id": "wikidata:Q110899968",
+      "makeId": "make:toyota",
+      "name": "Land Cruiser (J80)",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q110899968"
+    },
+    {
+      "id": "wikidata:Q6902966",
+      "makeId": "make:toyota",
+      "name": "Yaris",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q6902966"
+    },
+    {
+      "id": "wikidata:Q819982",
+      "makeId": "make:toyota",
+      "name": "RAV4",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q819982"
+    },
+    {
+      "id": "wikidata:Q97094785",
+      "makeId": "make:toyota",
+      "name": "Corolla Cross",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q97094785"
+    },
+    {
+      "id": "wikidata:Q1424419",
+      "makeId": "make:toyota",
+      "name": "Fortuner",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1424419"
+    },
+    {
+      "id": "wikidata:Q1421661",
+      "makeId": "make:toyota",
+      "name": "Highlander",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1421661"
+    },
+    {
+      "id": "wikidata:Q1342708",
+      "makeId": "make:toyota",
+      "name": "FJ Cruiser",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1342708"
+    },
+    {
+      "id": "wikidata:Q1342063",
+      "makeId": "make:toyota",
+      "name": "4Runner",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1342063"
+    },
+    {
+      "id": "wikidata:Q1353337",
+      "makeId": "make:toyota",
+      "name": "Tundra",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1353337"
+    },
+    {
+      "id": "wikidata:Q1581540",
+      "makeId": "make:toyota",
+      "name": "Tacoma",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1581540"
+    },
+    {
+      "id": "wikidata:Q981209",
+      "makeId": "make:toyota",
+      "name": "HiAce",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q981209"
+    },
+    {
+      "id": "wikidata:Q1417715",
+      "makeId": "make:toyota",
+      "name": "Avalon",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1417715"
+    },
+    {
+      "id": "wikidata:Q1402888",
+      "makeId": "make:toyota",
+      "name": "Innova",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1402888"
+    },
+    {
+      "id": "wikidata:Q2447201",
+      "makeId": "make:toyota",
+      "name": "Rush",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q2447201"
+    },
+    {
+      "id": "wikidata:Q647404",
+      "makeId": "make:toyota",
+      "name": "Supra",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q647404"
+    },
+    {
+      "id": "wikidata:Q573411",
+      "makeId": "make:toyota",
+      "name": "Crown",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q573411"
+    },
+    {
+      "id": "wikidata:Q3269710",
+      "makeId": "make:toyota",
+      "name": "Vios",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3269710"
+    },
+    {
+      "id": "wikidata:Q85872511",
+      "makeId": "make:toyota",
+      "name": "Raize",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q85872511"
+    },
+    {
+      "id": "wikidata:Q1582046",
+      "makeId": "make:toyota",
+      "name": "Alphard",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1582046"
+    },
+    {
+      "id": "wikidata:Q385463",
+      "makeId": "make:toyota",
+      "name": "Vellfire",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q385463"
+    },
+    {
+      "id": "wikidata:Q4119859",
+      "makeId": "make:toyota",
+      "name": "Camry Hybrid",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q4119859"
+    },
+    {
+      "id": "wikidata:Q20826097",
+      "makeId": "make:toyota",
+      "name": "Corolla Altis",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q20826097"
+    },
+    {
+      "id": "wikidata:Q16046970",
+      "makeId": "make:toyota",
+      "name": "Hilux Surf",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q16046970"
+    },
+    {
+      "id": "wikidata:Q123563331",
+      "makeId": "make:toyota",
+      "name": "Hilux Champ",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q123563331"
+    },
+    {
+      "id": "wikidata:Q106388685",
+      "makeId": "make:toyota",
+      "name": "GR86",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106388685"
+    },
+    {
+      "id": "wikidata:Q2354579",
+      "makeId": "wikidata-make:Q1117001",
+      "name": "Wingle",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q2354579"
+    },
+    {
+      "id": "wikidata:Q28225749",
+      "makeId": "wikidata-make:Q1117001",
+      "name": "Wingle 5",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28225749"
+    },
+    {
+      "id": "wikidata:Q107363931",
+      "makeId": "wikidata-make:Q1117001",
+      "name": "Wingle 7",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q107363931"
+    },
+    {
+      "id": "wikidata:Q125635795",
+      "makeId": "wikidata-make:Q1117001",
+      "name": "Shanhai Cannon",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q125635795"
+    },
+    {
+      "id": "wikidata:Q117084952",
+      "makeId": "wikidata-make:Q172741",
+      "name": "WRX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q117084952"
+    },
+    {
+      "id": "wikidata:Q1324599",
+      "makeId": "wikidata-make:Q172741",
+      "name": "Forester",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1324599"
+    },
+    {
+      "id": "wikidata:Q3502403",
+      "makeId": "wikidata-make:Q172741",
+      "name": "BRZ",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3502403"
+    },
+    {
+      "id": "wikidata:Q106798021",
+      "makeId": "wikidata-make:Q172741",
+      "name": "Solterra",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106798021"
+    },
+    {
+      "id": "wikidata:Q1421437",
+      "makeId": "wikidata-make:Q172741",
+      "name": "Tribeca",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1421437"
+    },
+    {
+      "id": "wikidata:Q16867829",
+      "makeId": "wikidata-make:Q172741",
+      "name": "Levorg",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q16867829"
+    },
+    {
+      "id": "wikidata:Q100152215",
+      "makeId": "wikidata-make:Q172741",
+      "name": "Outback (sixth generation)",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q100152215"
+    },
+    {
+      "id": "wikidata:Q112841757",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Grand Vitara",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q112841757"
+    },
+    {
+      "id": "wikidata:Q116180373",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Fronx",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q116180373"
+    },
+    {
+      "id": "wikidata:Q1410131",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Jimny",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1410131"
+    },
+    {
+      "id": "wikidata:Q25393987",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Swift",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q25393987"
+    },
+    {
+      "id": "wikidata:Q23924645",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Baleno",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q23924645"
+    },
+    {
+      "id": "wikidata:Q4050439",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Ertiga",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q4050439"
+    },
+    {
+      "id": "wikidata:Q24906041",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Ciaz",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q24906041"
+    },
+    {
+      "id": "wikidata:Q1235235",
+      "makeId": "wikidata-make:Q181642",
+      "name": "Kizashi",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1235235"
+    },
+    {
+      "id": "wikidata:Q30860163",
+      "makeId": "wikidata-make:Q181642",
+      "name": "S-Cross",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q30860163"
+    },
+    {
+      "id": "wikidata:Q598084",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Explorer",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q598084"
+    },
+    {
+      "id": "wikidata:Q680524",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Escape",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q680524"
+    },
+    {
+      "id": "wikidata:Q962328",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Edge",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q962328"
+    },
+    {
+      "id": "wikidata:Q3077075",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Everest",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3077075"
+    },
+    {
+      "id": "wikidata:Q338888",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "EcoSport",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q338888"
+    },
+    {
+      "id": "wikidata:Q534238",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Bronco",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q534238"
+    },
+    {
+      "id": "wikidata:Q90665373",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Bronco Sport",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q90665373"
+    },
+    {
+      "id": "wikidata:Q75419891",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Mustang Mach-E",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q75419891"
+    },
+    {
+      "id": "wikidata:Q859639",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Transit",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q859639"
+    },
+    {
+      "id": "wikidata:Q5467907",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Ranger T6",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q5467907"
+    },
+    {
+      "id": "wikidata:Q99642802",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "F-150 Lightning",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q99642802"
+    },
+    {
+      "id": "wikidata:Q938795",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Taurus",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q938795"
+    },
+    {
+      "id": "wikidata:Q275747",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Mondeo",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q275747"
+    },
+    {
+      "id": "wikidata:Q660121",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Flex",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q660121"
+    },
+    {
+      "id": "wikidata:Q3077085",
+      "makeId": "wikidata-make:Q20827633",
+      "name": "Figo",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3077085"
+    },
+    {
+      "id": "wikidata:Q118840",
+      "makeId": "wikidata-make:Q23317",
+      "name": "Q7",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q118840"
+    },
+    {
+      "id": "wikidata:Q100326648",
+      "makeId": "wikidata-make:Q23317",
+      "name": "Q5 Sportback",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q100326648"
+    },
+    {
+      "id": "wikidata:Q106620903",
+      "makeId": "wikidata-make:Q23317",
+      "name": "Q6 e-tron",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106620903"
+    },
+    {
+      "id": "wikidata:Q106793330",
+      "makeId": "wikidata-make:Q23317",
+      "name": "A6 e-tron",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106793330"
+    },
+    {
+      "id": "wikidata:Q60849683",
+      "makeId": "wikidata-make:Q23317",
+      "name": "e-tron GT",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q60849683"
+    },
+    {
+      "id": "wikidata:Q113294587",
+      "makeId": "wikidata-make:Q23317",
+      "name": "Q6",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q113294587"
+    },
+    {
+      "id": "wikidata:Q120278400",
+      "makeId": "wikidata-make:Q23317",
+      "name": "Q9",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q120278400"
+    },
+    {
+      "id": "wikidata:Q114878243",
+      "makeId": "wikidata-make:Q23317",
+      "name": "RS e-tron GT",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q114878243"
+    },
+    {
+      "id": "wikidata:Q207341",
+      "makeId": "wikidata-make:Q23317",
+      "name": "A8",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q207341"
+    },
+    {
+      "id": "wikidata:Q1510648",
+      "makeId": "wikidata-make:Q234803",
+      "name": "Ghost",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1510648"
+    },
+    {
+      "id": "wikidata:Q112567175",
+      "makeId": "wikidata-make:Q234803",
+      "name": "Spectre",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q112567175"
+    },
+    {
+      "id": "wikidata:Q1240129",
+      "makeId": "wikidata-make:Q234803",
+      "name": "Silver Spirit",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1240129"
+    },
+    {
+      "id": "wikidata:Q1414808",
+      "makeId": "wikidata-make:Q234803",
+      "name": "Silver Spur",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1414808"
+    },
+    {
+      "id": "wikidata:Q10656489",
+      "makeId": "wikidata-make:Q234803",
+      "name": "Wraith (2013)",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q10656489"
+    },
+    {
+      "id": "wikidata:Q1586972",
+      "makeId": "wikidata-make:Q234803",
+      "name": "Phantom II",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1586972"
+    },
+    {
+      "id": "wikidata:Q1586981",
+      "makeId": "wikidata-make:Q234803",
+      "name": "Phantom III",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1586981"
+    },
+    {
+      "id": "wikidata:Q1027973",
+      "makeId": "wikidata-make:Q246",
+      "name": "Amarok",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1027973"
+    },
+    {
+      "id": "wikidata:Q106518090",
+      "makeId": "wikidata-make:Q246",
+      "name": "Teramont",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106518090"
+    },
+    {
+      "id": "wikidata:Q15966358",
+      "makeId": "wikidata-make:Q246",
+      "name": "T-Roc",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q15966358"
+    },
+    {
+      "id": "wikidata:Q107185864",
+      "makeId": "wikidata-make:Q246",
+      "name": "Multivan T7",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q107185864"
+    },
+    {
+      "id": "wikidata:Q107938216",
+      "makeId": "wikidata-make:Q246",
+      "name": "ID.5",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q107938216"
+    },
+    {
+      "id": "wikidata:Q106488554",
+      "makeId": "wikidata-make:Q246",
+      "name": "Tiguan X",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106488554"
+    },
+    {
+      "id": "wikidata:Q56290342",
+      "makeId": "wikidata-make:Q26678",
+      "name": "X5",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q56290342"
+    },
+    {
+      "id": "wikidata:Q109967114",
+      "makeId": "wikidata-make:Q26678",
+      "name": "XM",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q109967114"
+    },
+    {
+      "id": "wikidata:Q111677072",
+      "makeId": "wikidata-make:Q26678",
+      "name": "i7",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q111677072"
+    },
+    {
+      "id": "wikidata:Q86663388",
+      "makeId": "wikidata-make:Q26678",
+      "name": "iX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q86663388"
+    },
+    {
+      "id": "wikidata:Q112190791",
+      "makeId": "wikidata-make:Q26678",
+      "name": "iX1",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q112190791"
+    },
+    {
+      "id": "wikidata:Q136100817",
+      "makeId": "wikidata-make:Q26678",
+      "name": "iX3",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q136100817"
+    },
+    {
+      "id": "wikidata:Q56342425",
+      "makeId": "wikidata-make:Q26678",
+      "name": "M8",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q56342425"
+    },
+    {
+      "id": "wikidata:Q112515397",
+      "makeId": "wikidata-make:Q26678",
+      "name": "2 Series Coupe",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q112515397"
+    },
+    {
+      "id": "wikidata:Q116664564",
+      "makeId": "wikidata-make:Q26678",
+      "name": "M4 CSL",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q116664564"
+    },
+    {
+      "id": "wikidata:Q18111920",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Discovery Sport",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q18111920"
+    },
+    {
+      "id": "wikidata:Q1130052",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Freelander",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1130052"
+    },
+    {
+      "id": "wikidata:Q3217023",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Freelander 2",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3217023"
+    },
+    {
+      "id": "wikidata:Q67226167",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Defender L663",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q67226167"
+    },
+    {
+      "id": "wikidata:Q7292685",
+      "makeId": "wikidata-make:Q26777551",
+      "name": "Range Rover (P38A)",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q7292685"
+    },
+    {
+      "id": "wikidata:Q108894190",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Atto 3",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q108894190"
+    },
+    {
+      "id": "wikidata:Q107400144",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Dolphin",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q107400144"
+    },
+    {
+      "id": "wikidata:Q114414285",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Seal",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q114414285"
+    },
+    {
+      "id": "wikidata:Q105609431",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Song Pro",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q105609431"
+    },
+    {
+      "id": "wikidata:Q117628582",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Seagull",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q117628582"
+    },
+    {
+      "id": "wikidata:Q12062571",
+      "makeId": "wikidata-make:Q27423",
+      "name": "G6",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q12062571"
+    },
+    {
+      "id": "wikidata:Q98886444",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Han",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q98886444"
+    },
+    {
+      "id": "wikidata:Q21233121",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Tang",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q21233121"
+    },
+    {
+      "id": "wikidata:Q4836871",
+      "makeId": "wikidata-make:Q27423",
+      "name": "Qin",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q4836871"
+    },
+    {
+      "id": "wikidata:Q105395576",
+      "makeId": "wikidata-make:Q27423",
+      "name": "e1",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q105395576"
+    },
+    {
+      "id": "wikidata:Q105888419",
+      "makeId": "wikidata-make:Q27423",
+      "name": "e3",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q105888419"
+    },
+    {
+      "id": "wikidata:Q12064314",
+      "makeId": "wikidata-make:Q28223947",
+      "name": "H6",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q12064314"
+    },
+    {
+      "id": "wikidata:Q16687853",
+      "makeId": "wikidata-make:Q28223947",
+      "name": "H1",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q16687853"
+    },
+    {
+      "id": "wikidata:Q28225745",
+      "makeId": "wikidata-make:Q28223947",
+      "name": "H2",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28225745"
+    },
+    {
+      "id": "wikidata:Q57737742",
+      "makeId": "wikidata-make:Q28223947",
+      "name": "F5",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q57737742"
+    },
+    {
+      "id": "wikidata:Q123052422",
+      "makeId": "wikidata-make:Q28223947",
+      "name": "Raptor",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q123052422"
+    },
+    {
+      "id": "wikidata:Q112631422",
+      "makeId": "wikidata-make:Q28223947",
+      "name": "H6s",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q112631422"
+    },
+    {
+      "id": "wikidata:Q28150732",
+      "makeId": "wikidata-make:Q29366",
+      "name": "CS35",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28150732"
+    },
+    {
+      "id": "wikidata:Q28225748",
+      "makeId": "wikidata-make:Q29366",
+      "name": "CS75",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28225748"
+    },
+    {
+      "id": "wikidata:Q105575927",
+      "makeId": "wikidata-make:Q29366",
+      "name": "UNI-K",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q105575927"
+    },
+    {
+      "id": "wikidata:Q108328772",
+      "makeId": "wikidata-make:Q29366",
+      "name": "UNI-V",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q108328772"
+    },
+    {
+      "id": "wikidata:Q50824540",
+      "makeId": "wikidata-make:Q29366",
+      "name": "Alsvin",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q50824540"
+    },
+    {
+      "id": "wikidata:Q120667783",
+      "makeId": "wikidata-make:Q29366",
+      "name": "Hunter",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q120667783"
+    },
+    {
+      "id": "wikidata:Q27902767",
+      "makeId": "wikidata-make:Q29366",
+      "name": "Eado",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q27902767"
+    },
+    {
+      "id": "wikidata:Q27903041",
+      "makeId": "wikidata-make:Q29366",
+      "name": "Raeton",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q27903041"
+    },
+    {
+      "id": "wikidata:Q145527",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Sportage",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q145527"
+    },
+    {
+      "id": "wikidata:Q489836",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Sorento",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q489836"
+    },
+    {
+      "id": "wikidata:Q489832",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Cerato",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q489832"
+    },
+    {
+      "id": "wikidata:Q65044174",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Seltos",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q65044174"
+    },
+    {
+      "id": "wikidata:Q97613890",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Sonet",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q97613890"
+    },
+    {
+      "id": "wikidata:Q23058524",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Telluride",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q23058524"
+    },
+    {
+      "id": "wikidata:Q488173",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Carnival",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q488173"
+    },
+    {
+      "id": "wikidata:Q493781",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Rio",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q493781"
+    },
+    {
+      "id": "wikidata:Q12586722",
+      "makeId": "wikidata-make:Q35349",
+      "name": "K5",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q12586722"
+    },
+    {
+      "id": "wikidata:Q104223817",
+      "makeId": "wikidata-make:Q35349",
+      "name": "K8",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q104223817"
+    },
+    {
+      "id": "wikidata:Q497198",
+      "makeId": "wikidata-make:Q35349",
+      "name": "K9",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q497198"
+    },
+    {
+      "id": "wikidata:Q121480968",
+      "makeId": "wikidata-make:Q35349",
+      "name": "K3",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q121480968"
+    },
+    {
+      "id": "wikidata:Q20444159",
+      "makeId": "wikidata-make:Q35349",
+      "name": "K4",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q20444159"
+    },
+    {
+      "id": "wikidata:Q105975708",
+      "makeId": "wikidata-make:Q35349",
+      "name": "EV6",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q105975708"
+    },
+    {
+      "id": "wikidata:Q110114350",
+      "makeId": "wikidata-make:Q35349",
+      "name": "EV9",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q110114350"
+    },
+    {
+      "id": "wikidata:Q28170697",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Stinger",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28170697"
+    },
+    {
+      "id": "wikidata:Q488191",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Carens",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q488191"
+    },
+    {
+      "id": "wikidata:Q484201",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Mohave",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q484201"
+    },
+    {
+      "id": "wikidata:Q22754238",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Niro",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q22754238"
+    },
+    {
+      "id": "wikidata:Q489621",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Forte",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q489621"
+    },
+    {
+      "id": "wikidata:Q488997",
+      "makeId": "wikidata-make:Q35349",
+      "name": "Credos",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q488997"
+    },
+    {
+      "id": "wikidata:Q1051787",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Urraco",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1051787"
+    },
+    {
+      "id": "wikidata:Q1060937",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Jarama",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1060937"
+    },
+    {
+      "id": "wikidata:Q108811029",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Huracán STO",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q108811029"
+    },
+    {
+      "id": "wikidata:Q111594172",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Huracán Tecnica",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q111594172"
+    },
+    {
+      "id": "wikidata:Q108082919",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Countach LPI 800-4",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q108082919"
+    },
+    {
+      "id": "wikidata:Q1127712",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Gallardo Superleggera",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1127712"
+    },
+    {
+      "id": "wikidata:Q11752697",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Miura P400 S",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q11752697"
+    },
+    {
+      "id": "wikidata:Q3077088",
+      "makeId": "wikidata-make:Q35886",
+      "name": "Urus",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3077088"
+    },
+    {
+      "id": "wikidata:Q660273",
+      "makeId": "wikidata-make:Q35919",
+      "name": "RX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q660273"
+    },
+    {
+      "id": "wikidata:Q1509972",
+      "makeId": "wikidata-make:Q35919",
+      "name": "LX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1509972"
+    },
+    {
+      "id": "wikidata:Q577397",
+      "makeId": "wikidata-make:Q35919",
+      "name": "ES",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q577397"
+    },
+    {
+      "id": "wikidata:Q838833",
+      "makeId": "wikidata-make:Q35919",
+      "name": "IS",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q838833"
+    },
+    {
+      "id": "wikidata:Q1045746",
+      "makeId": "wikidata-make:Q35919",
+      "name": "GS",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1045746"
+    },
+    {
+      "id": "wikidata:Q1044847",
+      "makeId": "wikidata-make:Q35919",
+      "name": "LS",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1044847"
+    },
+    {
+      "id": "wikidata:Q16325434",
+      "makeId": "wikidata-make:Q35919",
+      "name": "NX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q16325434"
+    },
+    {
+      "id": "wikidata:Q50379353",
+      "makeId": "wikidata-make:Q35919",
+      "name": "UX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q50379353"
+    },
+    {
+      "id": "wikidata:Q1458281",
+      "makeId": "wikidata-make:Q35919",
+      "name": "GX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1458281"
+    },
+    {
+      "id": "wikidata:Q15140120",
+      "makeId": "wikidata-make:Q35919",
+      "name": "RC",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q15140120"
+    },
+    {
+      "id": "wikidata:Q22084860",
+      "makeId": "wikidata-make:Q35919",
+      "name": "LC",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q22084860"
+    },
+    {
+      "id": "wikidata:Q110123748",
+      "makeId": "wikidata-make:Q35919",
+      "name": "RZ",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q110123748"
+    },
+    {
+      "id": "wikidata:Q65147581",
+      "makeId": "wikidata-make:Q35919",
+      "name": "LM",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q65147581"
+    },
+    {
+      "id": "wikidata:Q119268467",
+      "makeId": "wikidata-make:Q35919",
+      "name": "TX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q119268467"
+    },
+    {
+      "id": "wikidata:Q119104237",
+      "makeId": "wikidata-make:Q35919",
+      "name": "LBX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q119104237"
+    },
+    {
+      "id": "wikidata:Q106639062",
+      "makeId": "wikidata-make:Q35935",
+      "name": "Emira",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106639062"
+    },
+    {
+      "id": "wikidata:Q1141769",
+      "makeId": "wikidata-make:Q35935",
+      "name": "Exige",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1141769"
+    },
+    {
+      "id": "wikidata:Q114257197",
+      "makeId": "wikidata-make:Q35935",
+      "name": "Emeya",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q114257197"
+    },
+    {
+      "id": "wikidata:Q125560683",
+      "makeId": "wikidata-make:Q35935",
+      "name": "Evora 400",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q125560683"
+    },
+    {
+      "id": "wikidata:Q1420047",
+      "makeId": "wikidata-make:Q35935",
+      "name": "Esprit",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1420047"
+    },
+    {
+      "id": "wikidata:Q109601206",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-50",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q109601206"
+    },
+    {
+      "id": "wikidata:Q111154152",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-60",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q111154152"
+    },
+    {
+      "id": "wikidata:Q1140384",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-7",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1140384"
+    },
+    {
+      "id": "wikidata:Q116526635",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-90",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q116526635"
+    },
+    {
+      "id": "wikidata:Q117261019",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-5 (KE)",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q117261019"
+    },
+    {
+      "id": "wikidata:Q117261030",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-5 (KF)",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q117261030"
+    },
+    {
+      "id": "wikidata:Q647131",
+      "makeId": "wikidata-make:Q35996",
+      "name": "CX-9",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q647131"
+    },
+    {
+      "id": "wikidata:Q127110",
+      "makeId": "wikidata-make:Q35996",
+      "name": "MX-5",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q127110"
+    },
+    {
+      "id": "wikidata:Q1128405",
+      "makeId": "wikidata-make:Q36008",
+      "name": "GL-Class",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1128405"
+    },
+    {
+      "id": "wikidata:Q11338233",
+      "makeId": "wikidata-make:Q36008",
+      "name": "GLA",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q11338233"
+    },
+    {
+      "id": "wikidata:Q111666705",
+      "makeId": "wikidata-make:Q36008",
+      "name": "EQS SUV",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q111666705"
+    },
+    {
+      "id": "wikidata:Q111843003",
+      "makeId": "wikidata-make:Q36008",
+      "name": "T-Class",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q111843003"
+    },
+    {
+      "id": "wikidata:Q11115368",
+      "makeId": "wikidata-make:Q36008",
+      "name": "CLS Shooting Brake",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q11115368"
+    },
+    {
+      "id": "wikidata:Q16735809",
+      "makeId": "wikidata-make:Q36033",
+      "name": "ASX",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q16735809"
+    },
+    {
+      "id": "wikidata:Q1241335",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Mirage",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1241335"
+    },
+    {
+      "id": "wikidata:Q34001920",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Xpander",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q34001920"
+    },
+    {
+      "id": "wikidata:Q28956871",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Eclipse Cross",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q28956871"
+    },
+    {
+      "id": "wikidata:Q129485079",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Outlander Sport",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q129485079"
+    },
+    {
+      "id": "wikidata:Q108864143",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Pajero Evolution",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q108864143"
+    },
+    {
+      "id": "wikidata:Q628166",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Pajero Mini",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q628166"
+    },
+    {
+      "id": "wikidata:Q15660834",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Lancer Evolution X",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q15660834"
+    },
+    {
+      "id": "wikidata:Q934776",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Colt",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q934776"
+    },
+    {
+      "id": "wikidata:Q14552308",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Delica",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q14552308"
+    },
+    {
+      "id": "wikidata:Q115802799",
+      "makeId": "wikidata-make:Q36033",
+      "name": "Xforce",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q115802799"
+    },
+    {
+      "id": "wikidata:Q122354909",
+      "makeId": "wikidata-make:Q36033",
+      "name": "L Series",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q122354909"
+    },
+    {
+      "id": "wikidata:Q1125114",
+      "makeId": "wikidata-make:Q40993",
+      "name": "944",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1125114"
+    },
+    {
+      "id": "wikidata:Q124935918",
+      "makeId": "wikidata-make:Q40993",
+      "name": "911 Targa",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q124935918"
+    },
+    {
+      "id": "wikidata:Q2753440",
+      "makeId": "wikidata-make:Q40993",
+      "name": "Macan",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q2753440"
+    },
+    {
+      "id": "wikidata:Q138002323",
+      "makeId": "wikidata-make:Q40993",
+      "name": "Cayenne Electric",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q138002323"
+    },
+    {
+      "id": "wikidata:Q123471583",
+      "makeId": "wikidata-make:Q55118127",
+      "name": "Emgrand",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q123471583"
+    },
+    {
+      "id": "wikidata:Q130210854",
+      "makeId": "wikidata-make:Q55118127",
+      "name": "Atlas",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q130210854"
+    },
+    {
+      "id": "wikidata:Q130270729",
+      "makeId": "wikidata-make:Q55118127",
+      "name": "EX2",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q130270729"
+    },
+    {
+      "id": "wikidata:Q127240756",
+      "makeId": "wikidata-make:Q55118127",
+      "name": "Galaxy E5",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q127240756"
+    },
+    {
+      "id": "wikidata:Q117455268",
+      "makeId": "wikidata-make:Q55118127",
+      "name": "Boyue Cool",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q117455268"
+    },
+    {
+      "id": "wikidata:Q102337681",
+      "makeId": "wikidata-make:Q55118127",
+      "name": "Xingrui",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q102337681"
+    },
+    {
+      "id": "wikidata:Q482430",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Tucson",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q482430"
+    },
+    {
+      "id": "wikidata:Q489852",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Santa Fe",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q489852"
+    },
+    {
+      "id": "wikidata:Q482458",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Sonata",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q482458"
+    },
+    {
+      "id": "wikidata:Q30322680",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Kona",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q30322680"
+    },
+    {
+      "id": "wikidata:Q106069882",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Staria",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106069882"
+    },
+    {
+      "id": "wikidata:Q483466",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Starex",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q483466"
+    },
+    {
+      "id": "wikidata:Q178581",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Veloster",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q178581"
+    },
+    {
+      "id": "wikidata:Q112577811",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Ioniq 6",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q112577811"
+    },
+    {
+      "id": "wikidata:Q131293474",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Ioniq 9",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q131293474"
+    },
+    {
+      "id": "wikidata:Q482462",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Getz",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q482462"
+    },
+    {
+      "id": "wikidata:Q106423063",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Alcazar",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q106423063"
+    },
+    {
+      "id": "wikidata:Q62381823",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Venue",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q62381823"
+    },
+    {
+      "id": "wikidata:Q107526590",
+      "makeId": "wikidata-make:Q55931",
+      "name": "Elantra N",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q107526590"
+    },
+    {
+      "id": "wikidata:Q1518219",
+      "makeId": "wikidata-make:Q55931",
+      "name": "i30",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1518219"
+    },
+    {
+      "id": "wikidata:Q18326533",
+      "makeId": "wikidata-make:Q55931",
+      "name": "H350",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q18326533"
+    },
+    {
+      "id": "wikidata:Q844767",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Civic",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q844767"
+    },
+    {
+      "id": "wikidata:Q5892130",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Accord",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q5892130"
+    },
+    {
+      "id": "wikidata:Q127433070",
+      "makeId": "wikidata-make:Q9584",
+      "name": "CR-V",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q127433070"
+    },
+    {
+      "id": "wikidata:Q1426415",
+      "makeId": "wikidata-make:Q9584",
+      "name": "HR-V",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1426415"
+    },
+    {
+      "id": "wikidata:Q1162891",
+      "makeId": "wikidata-make:Q9584",
+      "name": "City",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1162891"
+    },
+    {
+      "id": "wikidata:Q3139963",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Pilot",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3139963"
+    },
+    {
+      "id": "wikidata:Q13195000",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Odyssey",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q13195000"
+    },
+    {
+      "id": "wikidata:Q1135125",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Fit",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1135125"
+    },
+    {
+      "id": "wikidata:Q22752926",
+      "makeId": "wikidata-make:Q9584",
+      "name": "BR-V",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q22752926"
+    },
+    {
+      "id": "wikidata:Q109546578",
+      "makeId": "wikidata-make:Q9584",
+      "name": "ZR-V",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q109546578"
+    },
+    {
+      "id": "wikidata:Q9293515",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Crosstour",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q9293515"
+    },
+    {
+      "id": "wikidata:Q3272026",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Passport",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q3272026"
+    },
+    {
+      "id": "wikidata:Q1626665",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Ridgeline",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q1626665"
+    },
+    {
+      "id": "wikidata:Q11338295",
+      "makeId": "wikidata-make:Q9584",
+      "name": "Amaze",
+      "sourceId": "wikidata-reviewed-20261128",
+      "sourceRecord": "https://www.wikidata.org/wiki/Q11338295"
+    }
+  ],
+  "aliases": []
+}
