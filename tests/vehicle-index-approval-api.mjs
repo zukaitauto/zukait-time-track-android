@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {vehicleIndexApprovalApi as route} from '../supabase/functions/workshop-api/extensions/vehicle_index_approval_api.js';
+const user={id:'M1',role:'Manager'},sessionHash='a'.repeat(64),options={enabled:true,sessionHash};
+const body={action:'vehicle_index_approval',operation:'APPROVE',requestId:'req-1',proposal:{kind:'MODEL_ALIAS',value:'Petrol',makeId:'make:nissan',targetId:'wikidata:Q1141487',reason:'Correct spelling',expectedVersion:2}};
+let calls=0,args;
+const db={rpc:async(name,params)=>{calls++;args=params;assert.equal(name,'zukait_vehicle_index_approve');return{data:{ok:true,requestId:'req-1',entryId:'local:1',version:3}}}};
+assert.equal((await route(db,user,body,{sessionHash})).status,423);
+for(const role of ['Accountant','Supervisor','Receptionist','Mechanical Supervisor','Employee'])assert.equal((await route(db,{...user,role},body,options)).status,403);
+assert.equal((await route(db,user,body,{enabled:true})).status,401);
+assert.equal((await route(db,user,{...body,proposal:{...body.proposal,approvedBy:'forged'}},options)).status,400);
+assert.equal((await route(db,user,{...body,proposal:{...body.proposal,targetId:null}},options)).status,400);
+assert.equal((await route(db,user,{...body,proposal:{...body.proposal,reason:'no'}},options)).status,400);
+assert.equal(calls,0);
+const ok=await route(db,user,body,options);assert.equal(ok.status,200);assert.equal(ok.body.version,3);assert.equal(args.p_session_hash,sessionHash);assert.equal(args.p_target_id,body.proposal.targetId);assert.ok(!Object.hasOwn(args,'p_actor'));
+for(const [code,status] of [['invalid_session',401],['manager_required',403],['catalogue_changed',409],['name_exists',409],['request_id_conflict',409],['catalogue_not_initialized',423]])assert.equal((await route({rpc:async()=>({data:{ok:false,code}})},user,body,options)).status,status);
+assert.equal((await route({rpc:async()=>({data:{ok:true,requestId:'other',entryId:'local:1',version:3}})},user,body,options)).status,503);
+assert.equal((await route({rpc:async()=>({error:{message:'internal secret'}})},user,body,options)).body.code,'vehicle_index_unconfirmed');
+console.log('Vehicle Index approval route: default off, authenticated manager only, strict request and RPC receipt validation passed');
