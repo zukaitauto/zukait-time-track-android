@@ -930,10 +930,15 @@ function computeLiveStatus(data: any, revision: number, changedBy: string) {
       .filter((a:any)=>a && a.emp===s.emp && a.job===s.job && !a.cancelled)
       .sort((a:any,b:any)=>(Number(b.assignedAt)||0)-(Number(a.assignedAt)||0))[0] || null;
   };
+  const sessionsByEmployee = new Map<any, any[]>();
+  for (const session of sessions) {
+    if (!session || session.cancelled) continue;
+    const group = sessionsByEmployee.get(session.emp);
+    if (group) group.push(session);
+    else sessionsByEmployee.set(session.emp, [session]);
+  }
   return users.filter((u:any)=>u && u.role==="Employee").map((u:any)=>{
-    const empSessions = sessions
-      .filter((s:any)=>s && !s.cancelled && s.emp===u.id)
-      .slice()
+    const empSessions = (sessionsByEmployee.get(u.id) || []).slice()
       .sort((a:any,b:any)=>(Number(b.start)||0)-(Number(a.start)||0) || String(b.id||"").localeCompare(String(a.id||"")));
     const open = empSessions.find((s:any)=>s.end==null) || null;
     let status = "Available";
