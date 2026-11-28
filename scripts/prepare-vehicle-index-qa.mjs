@@ -20,7 +20,7 @@ try{
  const boot='vehicle_index_qa_bootstrap.js';
  // Synchronous embedded data for Android WebView and web: no fetch/polling or database access.
  const literal=JSON.stringify(base).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
- writeFileSync(join(assets,boot),'(function(){try{const data='+literal+';window.zukaitVehicleAutocomplete.configure(window.zukaitVehicleIndex.create(data));window.ZUKAIT_VEHICLE_INDEX_QA_READY=true;}catch(e){console.warn("QA catalogue unavailable",e);}})();\n');
+ writeFileSync(join(assets,boot),'(function(){try{const data='+literal+';window.zukaitVehicleIndexQaBase=window.zukaitVehicleIndex.validate(data);window.zukaitVehicleAutocomplete.configure(window.zukaitVehicleIndex.create(data));window.ZUKAIT_VEHICLE_INDEX_QA_READY=true;}catch(e){console.warn("QA catalogue unavailable",e);}})();\n');
  function walk(path){for(const entry of readdirSync(path,{withFileTypes:true})){const file=join(path,entry.name);if(entry.isDirectory())walk(file);else if(/\.(?:html?|m?js|json|css|txt|webmanifest|svg|map)$/i.test(entry.name)){
   let s=readFileSync(file,'utf8');
   // Rewrite every known production backend reference, including isolated Mechanical hosts.
@@ -33,7 +33,12 @@ try{
   if(!/<head(?:\s[^>]*)?>/i.test(s))throw Error('missing head '+host);
   const policy='<meta http-equiv="Content-Security-Policy" content="connect-src \'self\' '+origin+'; form-action \'self\'; frame-src \'self\' blob: data:; object-src \'none\'">';
   const scripts=hosts.includes(host)?'<script src="vehicle_index.js?v=qa5"></script><script src="vehicle_index_autocomplete.js?v=qa5"></script><script src="'+boot+'"></script>':'';
-  s=s.replace(/<head(?:\s[^>]*)?>/i,m=>m+policy+scripts);writeFileSync(file,s);
+  s=s.replace(/<head(?:\s[^>]*)?>/i,m=>m+policy+scripts);
+  if(host==='offline_test.html'){
+   const managerScripts=['vehicle_index_loader.js','vehicle_index_review.js','vehicle_index_manager.js','vehicle_index_qa_manager_host.js'].map(name=>'<script src="'+name+'?v=qa5"></script>').join('');
+   if(!/<\/body>/i.test(s))throw Error('missing Manager host body');s=s.replace(/<\/body>/i,m=>managerScripts+m);
+  }
+  writeFileSync(file,s);
  }
  function edit(path,fn){const file=join(dir,path),s=readFileSync(file,'utf8'),next=fn(s);if(next===s)throw Error('expected QA edit missing '+path);writeFileSync(file,next);}
  function once(s,a,b){if(s.split(a).length!==2)throw Error('unexpected QA edit '+a);return s.replace(a,()=>b);}

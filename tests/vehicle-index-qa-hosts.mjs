@@ -21,5 +21,16 @@ try{
  enter(form.elements.model,'p');const p=[...adapter.modelPanel.querySelectorAll('button')].find(x=>x.textContent==='Patrol');assert.ok(p);p.click();assert.equal(form.elements.model.value,'Patrol');assert.equal(form.elements.vin.value,'untouched');
  assert.match(readFileSync(join(dir,'app/build.gradle'),'utf8'),/com\.zukait\.timetrack\.vehicleqa/);
  assert.doesNotMatch(readFileSync(join(dir,'app/src/main/AndroidManifest.xml'),'utf8'),/REQUEST_INSTALL_PACKAGES/);
- console.log('QA source: pinned bundle, isolated hosts, separate APK and actual autocomplete adapter passed');
+
+ assert.match(read('offline_test.html'),/vehicle_index_qa_manager_host\.js/);
+ assert.doesNotMatch(read('receptionist.html'),/vehicle_index_qa_manager_host\.js/);
+ const dashboard=new JSDOM('<div id="managerView"><div class="manager-actions"></div></div><div id="modal"></div>',{runScripts:'outside-only'}),w=dashboard.window;
+ for(const file of ['vehicle_index.js','vehicle_index_autocomplete.js','vehicle_index_qa_bootstrap.js','vehicle_index_loader.js','vehicle_index_review.js','vehicle_index_manager.js'])w.eval(read(file));
+ let token='test-token',calls=0;w.me={id:'M1',role:'Manager'};w.zukaitAuth={getToken:()=>token};w.openModal=s=>w.document.querySelector('#modal').innerHTML=s;
+ w.zukaitCloud={vehicleIndexRequest:async body=>{calls++;assert.equal(body.action,'vehicle_index_read');return {ok:true,baseVersion:5,version:5,changes:[]}}};
+ w.eval(read('vehicle_index_qa_manager_host.js'));w.zukaitVehicleIndexQaHost.install();w.zukaitVehicleIndexQaHost.install();
+ assert.equal(w.document.querySelectorAll('[data-vehicle-index-qa-menu]').length,1);assert.equal(calls,0);
+ await w.zukaitVehicleIndexQaHost.open();assert.equal(calls,1);assert.match(w.document.querySelector('#modal').textContent,/51 makes · 429 models/);assert.match(w.document.querySelector('#modal').textContent,/New vehicle names/);
+ w.me={id:'S1',role:'Supervisor'};w.zukaitVehicleIndexQaHost.install();assert.equal(w.document.querySelectorAll('[data-vehicle-index-qa-menu]').length,0);await w.zukaitVehicleIndexQaHost.open();assert.equal(calls,1);
+ console.log('QA source: pinned bundle, isolated hosts, separate APK, autocomplete and authenticated Manager entry passed');
 }finally{rmSync(dir,{recursive:true,force:true});}
