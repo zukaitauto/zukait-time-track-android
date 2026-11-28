@@ -29,7 +29,7 @@
   }
   const mp=makePanel(make),dp=makePanel(model);
   let choosing=false;
-  function hide(p){p.panel.replaceChildren();p.panel.hidden=true;p.panel.style.display='none'}
+  function hide(p){if(p.hiding)return;p.hiding=true;try{p.panel.hidden=true;p.panel.style.display='none';p.panel.replaceChildren()}finally{p.hiding=false}}
   function exactMake(){
    const q=normalize(make.value);
    if(!q)return null;
@@ -98,7 +98,8 @@
   status.setAttribute('role','status');status.style.cssText='display:block;margin-top:4px';
   field.insertAdjacentElement('afterend',panel);panel.insertAdjacentElement('afterend',status);
   const editable=()=>field.isConnected&&!field.readOnly&&!field.disabled&&canEdit();
-  function hide(){panel.replaceChildren();panel.hidden=true;panel.style.display='none'}
+  let hiding=false;
+  function hide(){if(hiding)return;hiding=true;try{panel.hidden=true;panel.style.display='none';panel.replaceChildren()}finally{hiding=false}}
   function render(){
    hide();status.textContent='';
    if(!editable())return;

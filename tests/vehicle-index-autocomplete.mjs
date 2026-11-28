@@ -53,6 +53,23 @@ const sf=staffWindow.document.querySelector('form'),sa=staffWindow.zukaitVehicle
 assert.ok(sa);sf.elements.model.value='Pat';sf.elements.model.dispatchEvent(new staffWindow.Event('input',{bubbles:true}));
 assert.ok([...sa.modelPanel.querySelectorAll('button')].some(b=>b.textContent==='Patrol'));
 console.log('Vehicle autocomplete: explicit selection, scoped models, identity preservation, manual fallback, staff host initialization passed');
+// Chromium can dispatch focusout synchronously while a focused suggestion is removed.
+// Closing the same panel again must not re-enter replaceChildren during that removal.
+function verifyBlurDuringRemoval(panel,target,trigger){
+ const replace=panel.replaceChildren.bind(panel),errors=[];let removing=false;
+ const onError=e=>{errors.push(e.error);e.preventDefault()};window.addEventListener('error',onError);
+ panel.replaceChildren=(...children)=>{
+  if(removing)throw Error('Suggestion removal re-entered during blur');
+  removing=true;try{target.dispatchEvent(new window.FocusEvent('focusout',{bubbles:true,relatedTarget:null}));return replace(...children)}finally{removing=false}
+ };
+ try{trigger();assert.deepEqual(errors,[],'Removing focused suggestions must not recursively clear the panel')}
+ finally{panel.replaceChildren=replace;window.removeEventListener('error',onError)}
+}
+enter(make,'Nis');verifyBlurDuringRemoval(panels.makePanel,form,()=>enter(make,'Nis'));
+const blurHost=doc.createElement('div'),blurField=doc.createElement('input');blurHost.appendChild(blurField);doc.body.appendChild(blurHost);
+const blurUI=ui.attachCombined(blurField);blurField.value='Nis';blurField.dispatchEvent(new window.Event('input'));
+verifyBlurDuringRemoval(blurUI.panel,blurHost,()=>blurField.dispatchEvent(new window.Event('input')));
+console.log('Vehicle suggestions: synchronous blur during removal cannot re-enter panel clearing');
 
 const section=doc.createElement('section');
 section.innerHTML='<label>Make<input id="custom-make" value="Nissan"></label><label>Model<input id="custom-model"></label><input id="other" value="untouched">';
