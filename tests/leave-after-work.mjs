@@ -133,3 +133,24 @@ c.me=staff[1];
 html='';
 c.v755OpenUpcomingLeave();
 assert.equal(html,'','Upcoming Leave is Manager only');
+
+ c.me=staff[2];c.zukaitCloud=undefined;c.state.sessions=[];c.state.leaveAudit=[];
+ c.state.leaves=[
+  {id:'annual1',emp:'EMP011',date:'2026-10-08',period:'FULL',approvalType:'ANNUAL',approvalId:'range1',by:'MGR001',remark:'Travel'},
+  {id:'annual2',emp:'EMP011',date:'2026-10-10',period:'FULL',approvalType:'ANNUAL',approvalId:'range1',by:'MGR001',remark:'Travel'},
+  {id:'annual3',emp:'EMP011',date:'2026-10-11',period:'FULL',approvalType:'ANNUAL',approvalId:'range1',by:'MGR001',remark:'Travel'}
+ ];
+ fields.v755PeriodFrom={value:'2026-10-08'};fields.v755PeriodTo={value:'2026-10-10'};fields.v755PeriodReason={value:'Early return'};
+ c.v755OpenAnnualPeriod('range1');assert.match(html,/Edit Annual Leave Period/);
+ await c.v755SaveAnnualPeriod();assert.equal(c.state.leaves.length,3);assert.equal(c.state.leaves[2].cancelled,true);
+ assert.equal(c.state.leaveAudit[0].action,'DELETE');assert.equal(c.state.leaveAudit[0].before.cancelled,undefined);
+ c.v755OpenAnnualPeriod('range1');fields.v755PeriodTo.value='2026-10-12';fields.v755PeriodReason.value='Extension';
+ c.state.sessions=[{...work,start:new Date(2026,9,12,9).getTime(),end:new Date(2026,9,12,10).getTime()}];
+ const blocked=JSON.stringify(c.state);await c.v755SaveAnnualPeriod();assert.equal(JSON.stringify(c.state),blocked);
+ c.state.sessions=[];await c.v755SaveAnnualPeriod();
+ assert.equal(c.state.leaves.length,5);assert.equal(c.state.leaves[2].cancelled,true);
+ assert.equal(c.state.leaves.filter(l=>!l.cancelled&&l.date==='2026-10-11').length,1);
+ assert.equal(c.state.leaves.filter(l=>l.date==='2026-10-09').length,0);
+ assert.equal(c.state.leaveAudit.filter(a=>a.action==='ADD').length,2);
+ c.v755OpenAnnualPeriod('range1');fields.v755PeriodTo.value='2026-10-13';c.me=staff[1];
+ const restricted=JSON.stringify(c.state);await c.v755SaveAnnualPeriod();assert.equal(JSON.stringify(c.state),restricted);
