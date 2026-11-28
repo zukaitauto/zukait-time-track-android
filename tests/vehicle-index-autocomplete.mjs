@@ -38,3 +38,24 @@ const reception=fs.readFileSync('app/src/main/assets/v2/features/insurance/recep
 assert.equal((reception.match(/zukaitVehicleAutocomplete\?\.attach\?\.\(form\)/g)||[]).length,2);
 for(const name of ['offline_test.html','receptionist.html'])assert.doesNotMatch(fs.readFileSync('app/src/main/assets/'+name,'utf8'),/vehicle_index_autocomplete\.js/,'staged hook must stay inactive until reviewed catalogue is installed');
 console.log('Vehicle autocomplete: explicit selection, scoped models, identity preservation, manual fallback, inactive host boundary passed');
+
+const section=doc.createElement('section');
+section.innerHTML='<label>Make<input id="custom-make" value="Nissan"></label><label>Model<input id="custom-model"></label><input id="other" value="untouched">';
+doc.body.append(section);
+const customMake=section.querySelector('#custom-make'),customModel=section.querySelector('#custom-model');
+const customPanels=ui.attach(section,index,{make:customMake,model:customModel});
+assert.ok(customPanels);
+enter(customModel,'p');
+const stale=customPanels.modelPanel.querySelector('button');
+customMake.value='Toyota';stale.click();
+assert.equal(customModel.value,'p','stale model choice after programmatic make change is rejected');
+customMake.value='Nissan';enter(customModel,'p');customModel.readOnly=true;
+customPanels.modelPanel.querySelector('button').click();
+assert.equal(customModel.value,'p','read-only fields cannot be modified');
+customModel.readOnly=false;enter(customModel,'p');
+customPanels.modelPanel.querySelector('button').click();
+assert.equal(customModel.value,'Patrol');
+assert.equal(section.querySelector('#other').value,'untouched');
+const locked=doc.createElement('form');locked.innerHTML='<label><input name="make" readonly></label><label><input name="model"></label>';doc.body.append(locked);
+assert.equal(ui.attach(locked,index),null);
+for(const file of ['job_card_edit.js','manager_job_edit.js','mechanical_prejob_intake.js'])assert.match(fs.readFileSync('app/src/main/assets/'+file,'utf8'),/zukaitVehicleAutocomplete\?\.attach\?\./);

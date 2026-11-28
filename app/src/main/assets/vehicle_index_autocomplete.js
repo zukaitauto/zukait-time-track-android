@@ -8,10 +8,10 @@
   if(!index||typeof index.searchMakes!=='function'||typeof index.searchModels!=='function'||typeof index.resolve!=='function')throw Error('invalid_vehicle_index');
   provider=index;
  }
- function attach(form,index=provider){
+ function attach(form,index=provider,fields=null){
   if(!form||!index||mounted.has(form))return mounted.get(form)||null;
-  const make=form.elements?.namedItem('make'),model=form.elements?.namedItem('model');
-  if(!make||!model||!make.parentElement||!model.parentElement)return null;
+  const make=fields?.make||form.elements?.namedItem('make'),model=fields?.model||form.elements?.namedItem('model');
+  if(!make||!model||!make.parentElement||!model.parentElement||!form.contains(make)||!form.contains(model)||make.readOnly||model.readOnly||make.disabled||model.disabled)return null;
   const doc=form.ownerDocument;
   if(!doc)return null;
   function makePanel(field){
@@ -38,6 +38,8 @@
    if(EventType){field.dispatchEvent(new EventType('input',{bubbles:true}));field.dispatchEvent(new EventType('change',{bubbles:true}));}
   }
   function select(p,row){
+   if(!form.isConnected||p.field.readOnly||p.field.disabled||make.readOnly||model.readOnly||make.disabled||model.disabled){hide(p);return;}
+   if(p===dp){const current=exactMake();if(!current||!index.searchModels(current.id,p.field.value,12).some(r=>r.id===row.id)){hide(p);return;}}
    choosing=true;
    try{
     p.field.value=row.name;

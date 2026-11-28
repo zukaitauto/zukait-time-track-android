@@ -7,6 +7,9 @@ on:
       - 'tests/vehicle-index.mjs'
       - 'tests/vehicle-index-autocomplete.mjs'
       - 'app/src/main/assets/v2/features/insurance/reception.js'
+      - 'app/src/main/assets/job_card_edit.js'
+      - 'app/src/main/assets/manager_job_edit.js'
+      - 'app/src/main/assets/mechanical_prejob_intake.js'
       - '.github/workflows/vehicle-index.yml'
 permissions:
   contents: read
