@@ -1840,7 +1840,7 @@ Deno.serve(async (req: Request) => {
             if (saved?.ok) return savedReply(saved);
           }
         }
-        if(error){const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
+        if(error){if(String(error.code||'')==='57014'||/statement timeout|connection timeout/i.test(String(error.message||'')))return reply({ok:false,code:"job_edit_timeout",message:"The database did not confirm the correction. Reopen the Job Card and check its current location before retrying."},503);const code=String(error.message||'').match(/job_number_[a-z0-9_]+|job_edit_manager_required|reception_[a-z0-9_]+|insurance_job_requires_approved_reception/)?.[0];return reply({ok:false,code:code||"job_edit_unavailable",message:code||'Job Card correction could not be saved.'},409);}
         if(committed?.ok) return savedReply(committed);
         if(committed?.code!=="conflict")return reply({ok:false,code:"job_edit_unavailable"},503);
       }

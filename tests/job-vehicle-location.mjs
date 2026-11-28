@@ -5,6 +5,7 @@ const {jobEditTransition:change,preserveJobEditAuthority:protect}=await import('
 const d={jobs:[{no:'J',make:'Toyota',model:'Camry',reg:'123',jobType:'Cash',receptionLocation:'VIW',editRevision:1}],assign:[],sessions:[{id:'live',job:'J',start:123,end:null}]},manager={id:'M',role:'Manager'};
 const command={jobCard:'J',operation:'FULL_EDIT',expectedJob:d.jobs[0],expectedEditRevision:1,expectedAssignments:[],allocations:[],patch:{receptionLocation:'VWC'},reason:'Customer collected vehicle pending parts'};
 const r=change(d,manager,command,12345);assert.equal(r.ok,true);assert.equal(r.job.receptionLocation,'VWC');assert.deepEqual(r.data.sessions,d.sessions);assert.deepEqual(r.data.assign,d.assign);assert.equal(r.data.jobEdits[0].before.receptionLocation,'VIW');assert.equal(r.data.jobEdits[0].after.receptionLocation,'VWC');assert.equal(d.jobs[0].receptionLocation,'VIW');
+const datedNow=Date.parse('2026-11-28T08:00:00Z'),dated={...command,patch:{receptionLocation:'VWC',receptionLocationDate:'2026-11-27'}};const datedResult=change(d,manager,dated,datedNow);assert.equal(datedResult.ok,true);assert.equal(datedResult.job.receptionLocationDate,'2026-11-27');assert.equal(datedResult.job.vehicleMovements[0].date,'2026-11-27');assert.equal(datedResult.job.vehicleMovements[0].by,'M');assert.deepEqual(datedResult.data.sessions,d.sessions);for(const date of ['2026-11-29','2026-11-31','bad'])assert.equal(change(d,manager,{...dated,patch:{...dated.patch,receptionLocationDate:date}},datedNow).code,'job_edit_invalid_location_date');assert.equal(change(d,manager,{...dated,patch:{receptionLocationDate:'2026-11-27'}},datedNow).code,'job_edit_invalid_location_date');const forgedDate=structuredClone(d);forgedDate.jobs[0].receptionLocationDate='2026-11-27';assert.equal(protect(forgedDate,d,manager).jobs[0].receptionLocationDate,undefined);
 for(const role of ['Employee','Supervisor','Receptionist'])assert.equal(change(d,{id:'X',role},command,1).ok,false);
 for(const value of ['OTHER',true,null,''])assert.equal(change(d,manager,{...command,patch:{receptionLocation:value}},1).ok,false);
 const stale=structuredClone(d);stale.jobs[0].editRevision++;assert.equal(change(stale,manager,command,1).code,'job_edit_conflict');
@@ -31,5 +32,30 @@ for(const linked of [false,true]){await reset(linked);assert.equal((await call()
 await reset(true);await assert.rejects(call('fail'),/full_edit_commit_failed/);assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');assert.equal(Number((await db.query('select count(*) n from workshop_reception_movements')).rows[0].n),0);
 await reset(true);assert.equal((await call('Reason','M',0)).code,'conflict');assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');await assert.rejects(call('Reason','S'),/manager_required/);await assert.rejects(call(''),/reason_required/);
 await reset(true);await db.exec("update workshop_receptions set repair_status='CTL'");await assert.rejects(call('Reason','M',2),/ctl_release_required/);
+// Exercise the staged legacy replacement in the isolated PG-compatible fixture.
+const staged=fs.readFileSync('supabase/staged/MANAGER_JOB_LOCATION_DATE.sql','utf8');
+await db.exec(staged.split('-- LEGACY PATH\n')[1].split('-- COMPACT PATH\n')[0]);
+await reset(true);
+const effective='2026-01-15';
+const historical=structuredClone(r.data);historical.jobs[0].receptionLocationDate=effective;
+assert.equal((await call('dated movement','M',1,historical)).ok,true);
+assert.equal((await db.query("select to_char(occurred_at at time zone 'Asia/Muscat','YYYY-MM-DD') as d from workshop_reception_movements")).rows[0].d,effective);
+await reset(true);
+const future=structuredClone(r.data);future.jobs[0].receptionLocationDate='9999-12-31';
+await assert.rejects(call('future movement','M',1,future),/location_invalid_date/);
+assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');
+// Use a small isolated projection fixture for the compact wrapper as well.
+// The actual compact delta encoding is covered separately; this tests its date and transaction wiring.
+await db.exec(`create schema private;
+create function private.capture_manager_job_projection(workshop_state,workshop_state,text) returns void language plpgsql as $body$begin return; end$body$;
+create function zukait_manager_full_job_edit_before_location_v1_compact(bigint,jsonb,text,text,text,jsonb) returns jsonb language sql as $body$select zukait_manager_full_job_edit_before_location_v1($1,$2,$3,$4,$5,$6)$body$;`);
+await db.exec(staged.split('-- COMPACT PATH\n')[1].replace(/commit;\s*$/i,''));
+const compact=async(reason='dated movement',data=historical)=>(await db.query('select zukait_manager_full_job_edit_compact($1,$2::jsonb,$3,$4,$5,$6::jsonb) r',[1,JSON.stringify(data),'M','J',reason,JSON.stringify([{state_revision:2}])])).rows[0].r;
+await reset(true);assert.equal((await compact()).ok,true);
+assert.equal((await db.query("select to_char(occurred_at at time zone 'Asia/Muscat','YYYY-MM-DD') as d from workshop_reception_movements")).rows[0].d,effective);
+assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VWC');
+await reset(true);await assert.rejects(compact('fail'),/full_edit_commit_failed/);assert.equal((await db.query('select location from workshop_receptions')).rows[0].location,'VIW');assert.equal(Number((await db.query('select count(*) n from workshop_reception_movements')).rows[0].n),0);
+await reset(true);await assert.rejects(compact('future movement',future),/location_invalid_date/);
+console.log('Dated linked movement and rollback on invalid date passed on both SQL wrappers.');
 console.log('Job location: Manager-only audited direct/linked updates, shared VWC, state/live revisions, stale saves, rollback and CTL protection passed.');
 }finally{await db.close()}

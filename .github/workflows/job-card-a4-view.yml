@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'app/src/main/assets/job_card_edit.js'
+      - 'app/src/main/assets/manager_job_edit.js'
+      - 'app/src/main/assets/reception_dashboard.js'
+      - 'supabase/functions/workshop-api/job_edit_rules.js'
+      - 'supabase/staged/MANAGER_JOB_LOCATION_DATE.sql'
+      - 'tests/job-vehicle-location.mjs'
+      - 'tests/reception-dashboard-client.mjs'
       - 'tests/job-card-a4-view.mjs'
       - '.github/workflows/job-card-a4-view.yml'
 permissions:
@@ -19,3 +25,5 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node tests/job-card-a4-view.mjs
       - run: node tests/reception-job-edit.mjs
+      - run: node tests/job-vehicle-location.mjs
+      - run: node tests/reception-dashboard-client.mjs

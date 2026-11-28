@@ -1,7 +1,7 @@
 // Session roles and the current server job, never submitted role/status, own edits.
 const copy=v=>JSON.parse(JSON.stringify(v));
 const fields=['make','model','year','reg','vin','customer','mobile','notes','color','colorCode','jobType','insuranceCompany','claimNo','amount'];
-const fullFields=['receptionLocation','createdAt','vehicle','brand','insurance','customerName','customerMobile','vinNumber','chassis','claimNumber','promiseDate','email','customerAddress','creditAccount','intakeOdometer','intakeOdometerUnit','jobIntakeOdometer','jobIntakeOdometerUnit','invoiceDate','workDescription','deliveredAt','deliveryDate'];
+const fullFields=['receptionLocation','receptionLocationDate','createdAt','vehicle','brand','insurance','customerName','customerMobile','vinNumber','chassis','claimNumber','promiseDate','email','customerAddress','creditAccount','intakeOdometer','intakeOdometerUnit','jobIntakeOdometer','jobIntakeOdometerUnit','invoiceDate','workDescription','deliveredAt','deliveryDate'];
 const calendarDate=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
 const identity=['make','model','year','reg','vin','customer','mobile','jobType','insuranceCompany','claimNo'];
 const same=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
@@ -16,7 +16,7 @@ export function jobEditProjection(job){
 }
 // Read-only Job Card fields, separate from editable fields and cost/time records.
 export function jobViewProjection(job){
- const viewFields=['receptionLocation','id','status','completed','cancelled','deliveredAt','deliveryDate','promiseDate','finalInvoiceAmount','invoiceAmount','invoiceDate',
+ const viewFields=['receptionLocation','receptionLocationDate','id','status','completed','cancelled','deliveredAt','deliveryDate','promiseDate','finalInvoiceAmount','invoiceAmount','invoiceDate',
  'vehicleMake','vehicleModel','brand','modelYear','vehicleYear','registration','registrationNo','VIN','vinNumber','chassis','chassisNo',
  'customerName','customerMobile','customerContact','contact','phone','tel','email','customerAddress','address',
  'colour','colourCode','insurance','claimNumber','claim','jobNotes','workDescription','work_description','workDescriptions','description','descriptions','workDetails','requestedWork','remarks',
@@ -62,6 +62,9 @@ export function jobEditTransition(data,user,request,now){
    if(!full||!['VIW','VWC'].includes(v))return error('job_edit_invalid_location');
    if((old.delivered||old.cancelled||old.archived||['DELIVERED','CANCELLED','ARCHIVED','DELETED'].includes(String(old.status||'').toUpperCase()))&&v!==old.receptionLocation)return error('job_edit_location_closed');
    next.receptionLocation=v;
+  }else if(k==='receptionLocationDate'){
+   if(!full||!calendarDate(v))return error('job_edit_invalid_location_date');
+   next.receptionLocationDate=v;
   }else if(k==='amount'){
    const parsed=optionalJobAmount(v);if(!parsed.ok)return error('job_edit_invalid_amount');
    if(old.finalInvoiceAmount!=null&&old.finalInvoiceAmount!==''&&parsed.value!==Number(old.finalInvoiceAmount)){
@@ -87,6 +90,7 @@ export function jobEditTransition(data,user,request,now){
   }
   if(!full&&old.receptionNo&&identity.includes(k)&&String(next[k]||'')!==String(old[k]||''))return error('job_edit_linked_identity');
  }
+ if(full){const prior=old.receptionLocation||'VIW',desired=next.receptionLocation||prior,changed=desired!==prior; if('receptionLocationDate' in patch&&!changed)return error('job_edit_invalid_location_date'); if(changed){const today=new Date(now+14400000).toISOString().slice(0,10),date=patch.receptionLocationDate||today;const created=old.createdAt==null?null:new Date(Number(old.createdAt)+14400000),opened=created&&Number.isFinite(created.getTime())?created.toISOString().slice(0,10):null,last=old.vehicleMovements?.at(-1)?.date||old.receptionLocationDate;if(!calendarDate(date)||date>today||(opened&&date<opened)||(last&&date<last))return error('job_edit_invalid_location_date');next.receptionLocationDate=date;next.vehicleMovements=[...(old.vehicleMovements||[]),{from:prior,expected:prior,to:desired,date,reason,by:user.id,at:now}];}}
  if(full&&'jobIntakeOdometerUnit' in patch)next.jobIntakeOdometerUnit=next.jobIntakeOdometerUnit.toUpperCase();
  if(full&&'jobIntakeOdometer' in patch&&'odometer' in old)next.odometer=next.jobIntakeOdometer;
  if(full&&'jobIntakeOdometerUnit' in patch)for(const k of ['odometerUnit','jobIntakeUnit'])if(k in old)next[k]=next.jobIntakeOdometerUnit;
@@ -130,6 +134,7 @@ export function preserveJobEditAuthority(candidate,current,user){
   if('vehicleMovements' in old)j.vehicleMovements=copy(old.vehicleMovements);else delete j.vehicleMovements;
   // Vehicle location changes use the audited dedicated edit, never snapshot saves.
   if('receptionLocation' in old)j.receptionLocation=copy(old.receptionLocation);else delete j.receptionLocation;
+  if('receptionLocationDate' in old)j.receptionLocationDate=copy(old.receptionLocationDate);else delete j.receptionLocationDate;
   // Dedicated edits survive stale snapshot saves; all delivered details are Manager-only.
   if(Number(j.editRevision||0)!==Number(old.editRevision||0)||!['Manager','Supervisor'].includes(user?.role)||(old.delivered&&user.role!=='Manager')){
    for(const k of protectedFields){if(k in old)j[k]=copy(old[k]);else delete j[k];}
